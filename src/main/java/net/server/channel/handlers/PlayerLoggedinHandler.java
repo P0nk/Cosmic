@@ -27,7 +27,10 @@ import client.inventory.*;
 import client.keybind.KeyBinding;
 import config.YamlConfig;
 import constants.game.GameConstants;
+import database.character.CharacterLoader;
+import model.CharacterIdentity;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.PlayerBuffValueHolder;
 import net.server.Server;
@@ -64,9 +67,11 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(PlayerLoggedinHandler.class);
     private static final Set<Integer> attemptingLoginAccounts = new HashSet<>();
 
+    private final CharacterLoader chrLoader;
     private final NoteService noteService;
 
-    public PlayerLoggedinHandler(NoteService noteService) {
+    public PlayerLoggedinHandler(CharacterLoader chrLoader, NoteService noteService) {
+        this.chrLoader = chrLoader;
         this.noteService = noteService;
     }
 
@@ -94,7 +99,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
-        final int cid = p.readInt(); // TODO: investigate if this is the "client id" supplied in PacketCreator#getServerIP()
+        final int chrId = p.readInt();
         final Server server = Server.getInstance();
 
         if (!c.tryacquireClient()) {
@@ -105,8 +110,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
         try {
             World wserv = server.getWorld(c.getWorld());
             if (wserv == null) {
-                c.disconnect(true, false);
-                return;
+                throw new GameViolationException("World not found");
             }
 
             Channel cserv = wserv.getChannel(c.getChannel());
@@ -115,19 +119,17 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 cserv = wserv.getChannel(c.getChannel());
 
                 if (cserv == null) {
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Channel not found");
                 }
             }
 
-            Character player = wserv.getPlayerStorage().getCharacterById(cid);
+            Character player = wserv.getPlayerStorage().getCharacterById(chrId);
 
             final Hwid hwid;
             if (player == null) {
                 hwid = SessionCoordinator.getInstance().pickLoginSessionHwid(c);
                 if (hwid == null) {
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Unable to pick hwid");
                 }
             } else {
                 hwid = player.getClient().getHwid();
@@ -135,23 +137,18 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             c.setHwid(hwid);
 
-            if (!server.validateCharacteridInTransition(c, cid)) {
-                c.disconnect(true, false);
-                return;
+            if (!server.validateCharacteridInTransition(c, chrId)) {
+                throw new GameViolationException("Attempt to enter game without chr id in transition");
             }
 
             boolean newcomer = false;
             if (player == null) {
-                try {
-                    player = Character.loadCharFromDB(cid, c, true);
+                Optional<Character> loadedChr = chrLoader.loadForChannel(chrId, c);
+                if (loadedChr.isPresent()) {
+                    player = loadedChr.get();
                     newcomer = true;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                if (player == null) { //If you are still getting null here then please just uninstall the game >.>, we dont need you fucking with the logs
-                    c.disconnect(true, false);
-                    return;
+                } else {
+                    throw new GameViolationException("Unable to load chr");
                 }
             }
             c.setPlayer(player);
@@ -184,7 +181,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                         c.setAccID(0);
 
                         if (state == Client.LOGIN_LOGGEDIN) {
-                            c.disconnect(true, false);
+                            throw new GameViolationException("Attempt to log in when already logged in");
                         } else {
                             c.sendPacket(PacketCreator.getAfterLoginError(7));
                         }
@@ -212,13 +209,13 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             wserv.addPlayer(player);
             player.setEnteredChannelWorld();
 
-            List<PlayerBuffValueHolder> buffs = server.getPlayerBuffStorage().getBuffsFromStorage(cid);
+            List<PlayerBuffValueHolder> buffs = server.getPlayerBuffStorage().getBuffsFromStorage(chrId);
             if (buffs != null) {
                 List<Pair<Long, PlayerBuffValueHolder>> timedBuffs = getLocalStartTimes(buffs);
                 player.silentGiveBuffs(timedBuffs);
             }
 
-            Map<Disease, Pair<Long, MobSkill>> diseases = server.getPlayerBuffStorage().getDiseasesFromStorage(cid);
+            Map<Disease, Pair<Long, MobSkill>> diseases = server.getPlayerBuffStorage().getDiseasesFromStorage(chrId);
             if (diseases != null) {
                 player.silentApplyDiseases(diseases);
             }
@@ -336,9 +333,9 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             c.sendPacket(PacketCreator.updateBuddylist(player.getBuddylist().getBuddies()));
 
-            CharacterNameAndId pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
+            CharacterIdentity pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
             if (pendingBuddyRequest != null) {
-                c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.getId(), c.getPlayer().getId(), pendingBuddyRequest.getName()));
+                c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.id(), c.getPlayer().getId(), pendingBuddyRequest.name()));
             }
 
             c.sendPacket(PacketCreator.updateGender(player));
@@ -361,11 +358,6 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
                 player.reloadQuestExpirations();
 
-                    /*
-                    if (!c.hasVotedAlready()){
-                        player.sendPacket(PacketCreator.earnTitleMessage("You can vote now! Vote and earn a vote point!"));
-                    }
-                    */
                 if (player.isGM()) {
                     Server.getInstance().broadcastGMMessage(c.getWorld(), PacketCreator.earnTitleMessage((player.gmLevel() < 6 ? "GM " : "Admin ") + player.getName() + " has logged in"));
                 }
@@ -415,7 +407,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             }
 
             if (newcomer) {
-                EventInstanceManager eim = EventRecallCoordinator.getInstance().recallEventInstance(cid);
+                EventInstanceManager eim = EventRecallCoordinator.getInstance().recallEventInstance(chrId);
                 if (eim != null) {
                     eim.registerPlayer(player);
                 }

@@ -31,19 +31,27 @@ import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
+import server.TimerManager;
 import server.life.LifeFactory;
 import server.life.Monster;
 import server.maps.MapObject;
 import server.maps.MapObjectType;
 import server.quest.Quest;
+import service.TransitionService;
 import tools.PacketCreator;
 import tools.Randomizer;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public final class AdminCommandHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(AdminCommandHandler.class);
+    private final TransitionService transitionService;
+
+    public AdminCommandHandler(TransitionService transitionService) {
+        this.transitionService = transitionService;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -95,7 +103,7 @@ public final class AdminCommandHandler extends AbstractPacketHandler {
                         target.ban(description + " " + reason);
                     } else {
                         target.block(type, duration, description);
-                        target.sendPolice(duration, reason, 6000);
+                        sendPolice(target.getClient(), reason);
                     }
                     c.sendPacket(PacketCreator.getGMEffect(4, (byte) 0));
                 } else if (Character.ban(victim, reason, false)) {
@@ -182,5 +190,12 @@ public final class AdminCommandHandler extends AbstractPacketHandler {
                 log.info("New GM packet encountered (MODE: {}): {}", mode, p);
                 break;
         }
+    }
+
+    private void sendPolice(Client c, String reason) {
+        c.sendPacket(PacketCreator.sendPolice(String.format("You have been blocked by the#b %s Police for %s.#k", "Cosmic", reason)));
+        c.getPlayer().setBanned();
+        TimerManager.getInstance().schedule(() -> transitionService.disconnect(c, false, false),
+                TimeUnit.SECONDS.toMillis(6));
     }
 }

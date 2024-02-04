@@ -28,6 +28,7 @@ import client.status.MonsterStatusEffect;
 import config.YamlConfig;
 import constants.id.MobId;
 import constants.skills.*;
+import database.drop.DropProvider;
 import net.packet.Packet;
 import net.server.channel.Channel;
 import net.server.coordinator.world.MonsterAggroCoordinator;
@@ -60,6 +61,7 @@ import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -86,7 +88,7 @@ public class Monster extends AbstractLoadedLife {
     private final Set<Integer> usedAttacks = new HashSet<>();
     private Set<Integer> calledMobOids = null;
     private WeakReference<Monster> callerMob = new WeakReference<>(null);
-    private final List<Integer> stolenItems = new ArrayList<>(5);
+    private final AtomicBoolean isStolen = new AtomicBoolean(false);
     private int team;
     private int parentMobOid = 0;
     private int spawnEffect = 0;
@@ -737,9 +739,9 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    public List<MonsterDropEntry> retrieveRelevantDrops() {
+    public List<MonsterDropEntry> retrieveRelevantDrops(DropProvider dropProvider) {
         if (this.getStats().isFriendly()) {     // thanks Conrad for noticing friendly mobs not spawning loots after a recent update
-            return MonsterInformationProvider.getInstance().retrieveEffectiveDrop(this.getId());
+            return dropProvider.getMonsterDropEntries(this.getId());
         }
 
         Map<Integer, Character> pchars = map.getMapAllPlayers();
@@ -752,7 +754,7 @@ public class Monster extends AbstractLoadedLife {
             }
         }
 
-        return LootManager.retrieveRelevantDrops(this.getId(), lootChars);
+        return LootManager.retrieveRelevantDrops(this.getId(), lootChars, dropProvider);
     }
 
     public Character killBy(final Character killer) {
@@ -1644,12 +1646,9 @@ public class Monster extends AbstractLoadedLife {
         return stats.getName();
     }
 
-    public void addStolen(int itemId) {
-        stolenItems.add(itemId);
-    }
-
-    public List<Integer> getStolen() {
-        return stolenItems;
+    public boolean trySteal() {
+        boolean wasAlreadyStolen = this.isStolen.getAndSet(true);
+        return !wasAlreadyStolen;
     }
 
     public void setTempEffectiveness(Element e, ElementalEffectiveness ee, long milli) {

@@ -43,10 +43,10 @@ import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
-import server.Shop;
-import server.ShopFactory;
 import server.TimerManager;
 import server.maps.*;
+import server.shop.Shop;
+import server.shop.ShopFactory;
 import service.NoteService;
 import tools.PacketCreator;
 import tools.Pair;
@@ -54,17 +54,21 @@ import tools.Pair;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class UseCashItemHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(UseCashItemHandler.class);
+    private static final int MIU_MIU_SHOP_ID = 1338;
 
     private final NoteService noteService;
+    private final ShopFactory shopFactory;
 
-    public UseCashItemHandler(NoteService noteService) {
+    public UseCashItemHandler(NoteService noteService, ShopFactory shopFactory) {
         this.noteService = noteService;
+        this.shopFactory = shopFactory;
     }
 
     @Override
@@ -509,9 +513,9 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             }
         } else if (itemType == 545) { // MiuMiu's travel store
             if (player.getShop() == null) {
-                Shop shop = ShopFactory.getInstance().getShop(1338);
-                if (shop != null) {
-                    shop.sendShop(c);
+                Optional<Shop> shop = shopFactory.getShop(MIU_MIU_SHOP_ID);
+                if (shop.isPresent()) {
+                    shop.get().sendShop(c);
                     remove(c, position, itemId);
                 }
             } else {

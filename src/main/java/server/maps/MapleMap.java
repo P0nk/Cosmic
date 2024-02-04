@@ -36,6 +36,7 @@ import constants.game.GameConstants;
 import constants.id.MapId;
 import constants.id.MobId;
 import constants.inventory.ItemConstants;
+import database.drop.DropProvider;
 import net.packet.Packet;
 import net.server.Server;
 import net.server.channel.Channel;
@@ -109,6 +110,7 @@ public class MapleMap {
     private final int world;
     private int seats;
     private byte monsterRate;
+    private final DropProvider dropProvider;
     private boolean clock;
     private boolean boat;
     private boolean docked = false;
@@ -168,7 +170,7 @@ public class MapleMap {
     // due to the nature of loadMapFromWz (synchronized), sole function that calls 'generateMapDropRangeCache', this lock remains optional.
     private static final Lock bndLock = new ReentrantLock(true);
 
-    public MapleMap(int mapid, int world, int channel, int returnMapId, float monsterRate) {
+    public MapleMap(int mapid, int world, int channel, int returnMapId, float monsterRate, DropProvider dropProvider) {
         this.mapid = mapid;
         this.channel = channel;
         this.world = world;
@@ -177,6 +179,7 @@ public class MapleMap {
         if (this.monsterRate == 0) {
             this.monsterRate = 1;
         }
+        this.dropProvider = dropProvider;
 
         final ReadWriteLock chrLock = new ReentrantReadWriteLock(true);
         chrRLock = chrLock.readLock();
@@ -629,17 +632,19 @@ public class MapleMap {
         }
     }
 
-    private byte dropItemsFromMonsterOnMap(List<MonsterDropEntry> dropEntry, Point pos, byte d, int chRate, byte droptype, int mobpos, Character chr, Monster mob) {
-        if (dropEntry.isEmpty()) {
+    private byte dropItemsFromMonsterOnMap(List<MonsterDropEntry> dropEntries, Point pos, byte d, int chRate,
+                                           byte droptype, int mobpos, Character chr, Monster mob) {
+        if (dropEntries.isEmpty()) {
             return d;
         }
 
-        Collections.shuffle(dropEntry);
+        List<MonsterDropEntry> shuffledDropEntries = new ArrayList<>(dropEntries);
+        Collections.shuffle(shuffledDropEntries);
 
         Item idrop;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-        for (final MonsterDropEntry de : dropEntry) {
+        for (final MonsterDropEntry de : shuffledDropEntries) {
             float cardRate = chr.getCardRate(de.itemId);
             int dropChance = (int) Math.min((float) de.chance * chRate * cardRate, Integer.MAX_VALUE);
 
@@ -678,13 +683,19 @@ public class MapleMap {
         return d;
     }
 
-    private byte dropGlobalItemsFromMonsterOnMap(List<MonsterGlobalDropEntry> globalEntry, Point pos, byte d, byte droptype, int mobpos, Character chr, Monster mob) {
-        Collections.shuffle(globalEntry);
+    private byte dropGlobalItemsFromMonsterOnMap(List<MonsterGlobalDropEntry> globalDropEntries, Point pos, byte d,
+                                                 byte droptype, int mobpos, Character chr, Monster mob) {
+        if (globalDropEntries.isEmpty()) {
+            return d;
+        }
+
+        List<MonsterGlobalDropEntry> shuffledGlobalDropEntries = new ArrayList<>(globalDropEntries);
+        Collections.shuffle(shuffledGlobalDropEntries);
 
         Item idrop;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-        for (final MonsterGlobalDropEntry de : globalEntry) {
+        for (final MonsterGlobalDropEntry de : shuffledGlobalDropEntries) {
             if (Randomizer.nextInt(999999) < de.chance) {
                 if (droptype == 3) {
                     pos.x = mobpos + (d % 2 == 0 ? (40 * (d + 1) / 2) : -(40 * (d / 2)));
@@ -726,14 +737,14 @@ public class MapleMap {
             chRate = 1;
         }
 
-        final MonsterInformationProvider mi = MonsterInformationProvider.getInstance();
-        final List<MonsterGlobalDropEntry> globalEntry = mi.getRelevantGlobalDrops(this.getId());
+        final List<MonsterGlobalDropEntry> globalEntry = dropProvider.getRelevantGlobalDrops(this.getId());
 
         final List<MonsterDropEntry> dropEntry = new ArrayList<>();
         final List<MonsterDropEntry> visibleQuestEntry = new ArrayList<>();
         final List<MonsterDropEntry> otherQuestEntry = new ArrayList<>();
 
-        List<MonsterDropEntry> lootEntry = YamlConfig.config.server.USE_SPAWN_RELEVANT_LOOT ? mob.retrieveRelevantDrops() : mi.retrieveEffectiveDrop(mob.getId());
+        List<MonsterDropEntry> lootEntry = YamlConfig.config.server.USE_SPAWN_RELEVANT_LOOT ?
+                mob.retrieveRelevantDrops(dropProvider) : dropProvider.getMonsterDropEntries(mob.getId());
         sortDropEntries(lootEntry, dropEntry, visibleQuestEntry, otherQuestEntry, chr);     // thanks Articuno, Limit, Rohenn for noticing quest loots not showing up in only-quest item drops scenario
 
         if (lootEntry.isEmpty()) {   // thanks resinate

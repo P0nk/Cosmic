@@ -31,6 +31,7 @@ import client.inventory.InventoryType;
 import client.inventory.Item;
 import config.YamlConfig;
 import constants.skills.*;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import tools.PacketCreator;
 import tools.Randomizer;
@@ -385,9 +386,7 @@ public class AssignAPProcessor {
             } else {
                 if (inPacket.available() < 16) {
                     AutobanFactory.PACKET_EDIT.alert(chr, "Didn't send full packet for Auto Assign.");
-
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Auto Assign packet is too small");
                 }
 
                 for (int i = 0; i < 2; i++) {

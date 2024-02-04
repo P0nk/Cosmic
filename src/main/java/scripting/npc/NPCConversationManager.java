@@ -84,7 +84,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     private String scriptName;
     private String getText;
     private boolean itemScript;
-    private List<PartyCharacter> otherParty;
 
     private final Map<Integer, String> npcDefaultTalks = new HashMap<>();
 
@@ -102,11 +101,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         this(c, npc, -1, scriptName, false);
     }
 
-    public NPCConversationManager(Client c, int npc, List<PartyCharacter> otherParty, boolean test) {
+    public NPCConversationManager(Client c, int npc) {
         super(c);
         this.c = c;
         this.npc = npc;
-        this.otherParty = otherParty;
     }
 
     public NPCConversationManager(Client c, int npc, int oid, String scriptName, boolean itemScript) {
@@ -274,8 +272,21 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return getPlayer().getMeso();
     }
 
+    // TODO: refactor scripts to use this instead of "getMeso() < amount"
+    public boolean hasMeso(int amount) {
+        return getMeso() >= amount;
+    }
+
     public void gainMeso(int gain) {
         getPlayer().gainMeso(gain);
+    }
+
+    // TODO: refactor scripts to use this instead of "gainMeso(-amount)"
+    public void loseMeso(int loss) {
+        if (loss < 0) {
+            throw new IllegalArgumentException("Can only lose positive amount of mesos");
+        }
+        gainMeso(-loss);
     }
 
     public void gainExp(int gain) {
@@ -374,17 +385,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void resetStats() {
         getPlayer().resetStats();
-    }
-
-    public void openShopNPC(int id) {
-        Shop shop = ShopFactory.getInstance().getShop(id);
-
-        if (shop != null) {
-            shop.sendShop(c);
-        } else {    // check for missing shopids thanks to resinate
-            log.warn("Shop ID: {} is missing from database.", id);
-            ShopFactory.getInstance().getShop(11000).sendShop(c);
-        }
     }
 
     public void maxMastery() {

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import testutil.Any;
 import testutil.Mocks;
 
 import java.util.Collections;
@@ -17,8 +18,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static testutil.AnyValues.daoException;
-import static testutil.AnyValues.string;
+import static testutil.Any.daoException;
 
 class NoteServiceTest {
 
@@ -46,8 +46,8 @@ class NoteServiceTest {
         verify(noteDao).save(noteCaptor.capture());
         var note = noteCaptor.getValue();
         assertEquals(message, note.message());
-        assertEquals(from, note.from());
-        assertEquals(to, note.to());
+        assertEquals(from, note.sender());
+        assertEquals(to, note.receiver());
         assertEquals(0, note.fame());
     }
 
@@ -64,8 +64,8 @@ class NoteServiceTest {
         verify(noteDao).save(noteCaptor.capture());
         var note = noteCaptor.getValue();
         assertEquals(message, note.message());
-        assertEquals(from, note.from());
-        assertEquals(to, note.to());
+        assertEquals(from, note.sender());
+        assertEquals(to, note.receiver());
         assertEquals(1, note.fame());
     }
 
@@ -73,7 +73,7 @@ class NoteServiceTest {
     void sendFailure() {
         doThrow(daoException()).when(noteDao).save(any());
 
-        boolean success = noteService.sendNormal(string(), string(), string());
+        boolean success = noteService.sendNormal(Any.string(), Any.string(), Any.string());
 
         assertFalse(success);
         verify(noteDao).save(any());

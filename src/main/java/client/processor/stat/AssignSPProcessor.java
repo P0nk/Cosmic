@@ -30,6 +30,7 @@ import client.SkillFactory;
 import client.autoban.AutobanFactory;
 import constants.game.GameConstants;
 import constants.skills.Aran;
+import net.netty.GameViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.PacketCreator;
@@ -50,9 +51,7 @@ public class AssignSPProcessor {
         if ((!GameConstants.isPqSkillMap(player.getMapId()) && GameConstants.isPqSkill(skillid)) || (!player.isGM() && GameConstants.isGMSkills(skillid)) || (!GameConstants.isInJobTree(skillid, player.getJob().getId()) && !player.isGM())) {
             AutobanFactory.PACKET_EDIT.alert(player, "tried to packet edit in distributing sp.");
             log.warn("Chr {} tried to use skill {} without it being in their job.", c.getPlayer().getName(), skillid);
-
-            c.disconnect(true, false);
-            return false;
+            throw new GameViolationException("Assign SP into invalid skill");
         }
 
         return true;

@@ -27,6 +27,7 @@ import client.creator.novice.LegendCreator;
 import client.creator.novice.NoblesseCreator;
 import constants.id.ItemId;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,8 +81,7 @@ public final class CreateCharHandler extends AbstractPacketHandler {
         for (int item : items) {
             if (!isLegal(item)) {
                 log.warn("Owner from account {} tried to packet edit in chr creation", c.getAccountName());
-                c.disconnect(true, false);
-                return;
+                throw new GameViolationException("Create character with invalid equip");
             }
         }
 

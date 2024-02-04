@@ -53,6 +53,7 @@ import scripting.event.EventInstanceManager;
 import server.Storage;
 import server.TimerManager;
 import server.maps.*;
+import service.TransitionService;
 import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.Pair;
@@ -97,7 +98,7 @@ public class World {
     private final Map<Integer, Integer> relationships = new HashMap<>();
     private final Map<Integer, Pair<Integer, Integer>> relationshipCouples = new HashMap<>();
     private final Map<Integer, GuildSummary> gsStore = new HashMap<>();
-    private PlayerStorage players = new PlayerStorage();
+    private PlayerStorage players;
     private final ServicesManager services = new ServicesManager(WorldServices.SAVE_CHARACTER);
     private final MatchCheckerCoordinator matchChecker = new MatchCheckerCoordinator();
     private final PartySearchCoordinator partySearch = new PartySearchCoordinator();
@@ -161,7 +162,8 @@ public class World {
     private ScheduledFuture<?> timeoutSchedule;
     private ScheduledFuture<?> hpDecSchedule;
 
-    public World(int world, int flag, String eventmsg, int exprate, int droprate, int bossdroprate, int mesorate, int questrate, int travelrate, int fishingrate) {
+    public World(int world, int flag, String eventmsg, int exprate, int droprate, int bossdroprate, int mesorate,
+                 int questrate, int travelrate, int fishingrate, TransitionService transitionService) {
         this.id = world;
         this.flag = flag;
         this.eventmsg = eventmsg;
@@ -174,6 +176,8 @@ public class World {
         this.fishingrate = fishingrate;
         runningPartyId.set(1000000001); // partyid must not clash with charid to solve update item looting issues, found thanks to Vcoc
         runningMessengerId.set(1);
+
+        this.players = new PlayerStorage(transitionService);
 
         ReadWriteLock channelLock = new ReentrantReadWriteLock(true);
         this.chnRLock = channelLock.readLock();
@@ -196,12 +200,11 @@ public class World {
         mountsSchedule = tman.register(new MountTirednessTask(this), MINUTES.toMillis(1), MINUTES.toMillis(1));
         merchantSchedule = tman.register(new HiredMerchantTask(this), 10 * MINUTES.toMillis(1), 10 * MINUTES.toMillis(1));
         timedMapObjectsSchedule = tman.register(new TimedMapObjectTask(this), MINUTES.toMillis(1), MINUTES.toMillis(1));
-        charactersSchedule = tman.register(new CharacterAutosaverTask(this), HOURS.toMillis(1), HOURS.toMillis(1));
         marriagesSchedule = tman.register(new WeddingReservationTask(this), MINUTES.toMillis(YamlConfig.config.server.WEDDING_RESERVATION_INTERVAL), MINUTES.toMillis(YamlConfig.config.server.WEDDING_RESERVATION_INTERVAL));
         mapOwnershipSchedule = tman.register(new MapOwnershipTask(this), SECONDS.toMillis(20), SECONDS.toMillis(20));
         fishingSchedule = tman.register(new FishingTask(this), SECONDS.toMillis(10), SECONDS.toMillis(10));
         partySearchSchedule = tman.register(new PartySearchTask(this), SECONDS.toMillis(10), SECONDS.toMillis(10));
-        timeoutSchedule = tman.register(new TimeoutTask(this), SECONDS.toMillis(10), SECONDS.toMillis(10));
+        timeoutSchedule = tman.register(new TimeoutTask(this, transitionService), SECONDS.toMillis(10), SECONDS.toMillis(10));
         hpDecSchedule = tman.register(new CharacterHpDecreaseTask(this), YamlConfig.config.server.MAP_DAMAGE_OVERTIME_INTERVAL, YamlConfig.config.server.MAP_DAMAGE_OVERTIME_INTERVAL);
 
         if (YamlConfig.config.server.USE_FAMILY_SYSTEM) {
@@ -446,18 +449,6 @@ public class World {
         accountCharsLock.lock();
         try {
             accountChars.get(accountId).remove(chrId);
-        } finally {
-            accountCharsLock.unlock();
-        }
-    }
-
-    public void clearAccountCharacterView(Integer accountId) {
-        accountCharsLock.lock();
-        try {
-            SortedMap<Integer, Character> accChars = accountChars.remove(accountId);
-            if (accChars != null) {
-                accChars.clear();
-            }
         } finally {
             accountCharsLock.unlock();
         }
@@ -2134,11 +2125,6 @@ public class World {
         if (timedMapObjectsSchedule != null) {
             timedMapObjectsSchedule.cancel(false);
             timedMapObjectsSchedule = null;
-        }
-
-        if (charactersSchedule != null) {
-            charactersSchedule.cancel(false);
-            charactersSchedule = null;
         }
 
         if (marriagesSchedule != null) {

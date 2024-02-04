@@ -27,8 +27,11 @@ import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
 import constants.skills.*;
+import database.drop.DropProvider;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import server.StatEffect;
+import service.BanService;
 import tools.PacketCreator;
 import tools.Pair;
 
@@ -39,6 +42,10 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
+
+    public CloseRangeDamageHandler(DropProvider dropProvider, BanService banService) {
+        super(dropProvider, banService);
+    }
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
@@ -51,12 +58,8 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
         chr.getAutobanManager().spam(8);*/
 
         AttackInfo attack = parseDamage(p, chr, false, false);
-        if (chr.getBuffEffect(BuffStat.MORPH) != null) {
-            if (chr.getBuffEffect(BuffStat.MORPH).isMorphWithoutAttack()) {
-                // How are they attacking when the client won't let them?
-                chr.getClient().disconnect(false, false);
-                return;
-            }
+        if (chr.getBuffEffect(BuffStat.MORPH) != null && chr.getBuffEffect(BuffStat.MORPH).isMorphWithoutAttack()) {
+            throw new GameViolationException("Attempt to attack with morph skill that disallows attacking");
         }
 
         if (chr.getDojoEnergy() < 10000 && (attack.skill == 1009 || attack.skill == 10001009 || attack.skill == 20001009)) // PE hacking or maybe just lagging

@@ -1,24 +1,29 @@
 package database.note;
 
 import database.DaoException;
+import database.PgDatabaseConnection;
 import model.Note;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.JdbiException;
-import tools.DatabaseConnection;
 
 import java.util.List;
 import java.util.Optional;
 
 public class NoteDao {
+    private final PgDatabaseConnection connection;
+
+    public NoteDao(PgDatabaseConnection connection) {
+        this.connection = connection;
+    }
 
     public void save(Note note) {
-        try (Handle handle = DatabaseConnection.getHandle()) {
+        try (Handle handle = connection.getHandle()) {
             handle.createUpdate("""
-                            INSERT INTO notes (`message`, `from`, `to`, `timestamp`, `fame`, `deleted`)
+                            INSERT INTO note (message, sender, receiver, timestamp, fame, deleted)
                             VALUES (?, ?, ?, ?, ?, ?)""")
                     .bind(0, note.message())
-                    .bind(1, note.from())
-                    .bind(2, note.to())
+                    .bind(1, note.sender())
+                    .bind(2, note.receiver())
                     .bind(3, note.timestamp())
                     .bind(4, note.fame())
                     .bind(5, 0)
@@ -28,23 +33,25 @@ public class NoteDao {
         }
     }
 
-    public List<Note> findAllByTo(String to) {
-        try (Handle handle = DatabaseConnection.getHandle()) {
+    public List<Note> findAllByTo(String receiver) {
+        try (Handle handle = connection.getHandle()) {
+            // Using LOWER as a workaround for notes not appearing when being sent to name with wrongly typed casing.
+            // Ideally, the character ids should be the identifier rather than name.
             return handle.createQuery("""
-                            SELECT * 
-                            FROM notes
-                            WHERE `deleted` = 0
-                            AND `to` = ?""")
-                    .bind(0, to)
+                            SELECT *
+                            FROM note
+                            WHERE deleted = 0
+                            AND LOWER(receiver) = LOWER(?)""")
+                    .bind(0, receiver)
                     .mapTo(Note.class)
                     .list();
         } catch (JdbiException e) {
-            throw new DaoException("Failed to find notes sent to: %s".formatted(to), e);
+            throw new DaoException("Failed to find notes sent to: %s".formatted(receiver), e);
         }
     }
 
     public Optional<Note> delete(int id) {
-        try (Handle handle = DatabaseConnection.getHandle()) {
+        try (Handle handle = connection.getHandle()) {
             Optional<Note> note = findById(handle, id);
             if (note.isEmpty()) {
                 return Optional.empty();
@@ -62,9 +69,9 @@ public class NoteDao {
         try {
             note = handle.createQuery("""
                             SELECT *
-                            FROM notes
-                            WHERE `deleted` = 0
-                            AND `id` = ?""")
+                            FROM note
+                            WHERE deleted = 0
+                            AND id = ?""")
                     .bind(0, id)
                     .mapTo(Note.class)
                     .findOne();
@@ -77,9 +84,9 @@ public class NoteDao {
     private void deleteById(Handle handle, int id) {
         try {
             handle.createUpdate("""
-                        UPDATE notes
-                        SET `deleted` = 1
-                        WHERE `id` = ?""")
+                        UPDATE note
+                        SET deleted = 1
+                        WHERE id = ?""")
                     .bind(0, id)
                     .execute();
         } catch (JdbiException e) {

@@ -7,6 +7,7 @@ import net.server.Server;
 import net.server.coordinator.session.SessionCoordinator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.TransitionService;
 
 public class ChannelServerInitializer extends ServerChannelInitializer {
     private static final Logger log = LoggerFactory.getLogger(ChannelServerInitializer.class);
@@ -14,7 +15,8 @@ public class ChannelServerInitializer extends ServerChannelInitializer {
     private final int world;
     private final int channel;
 
-    public ChannelServerInitializer(int world, int channel) {
+    public ChannelServerInitializer(int world, int channel, TransitionService transitionService) {
+        super(transitionService);
         this.world = world;
         this.channel = channel;
     }

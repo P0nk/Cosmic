@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.maps.MapleMap;
 
 import java.util.Collection;
@@ -36,7 +37,7 @@ public class ReloadMapCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         MapleMap newMap = c.getChannelServer().getMapFactory().resetMap(player.getMapId());
         int callerid = c.getPlayer().getId();

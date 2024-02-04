@@ -25,18 +25,34 @@ import client.Character;
 import client.Client;
 import client.Family;
 import client.SkillFactory;
+import client.command.CommandContext;
 import client.command.CommandsExecutor;
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.manipulator.CashIdGenerator;
 import client.newyear.NewYearCardRecord;
+import client.processor.action.MakerProcessor;
 import client.processor.npc.FredrickProcessor;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import config.ServerConfig;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.inventory.ItemConstants;
 import constants.net.OpcodeConstants;
 import constants.net.ServerConstants;
+import database.PgDatabaseConfig;
+import database.PgDatabaseConnection;
+import database.character.CharacterLoader;
+import database.character.CharacterSaver;
+import database.drop.DropDao;
+import database.drop.DropProvider;
+import database.maker.MakerDao;
+import database.maker.MakerInfoProvider;
+import database.migration.FlywayRunner;
+import database.monsterbook.MonsterCardDao;
 import database.note.NoteDao;
+import database.shop.ShopDao;
 import net.ChannelDependencies;
 import net.PacketProcessor;
 import net.netty.LoginServer;
@@ -59,7 +75,10 @@ import server.TimerManager;
 import server.expeditions.ExpeditionBossLog;
 import server.life.PlayerNPC;
 import server.quest.Quest;
+import server.shop.ShopFactory;
+import service.BanService;
 import service.NoteService;
+import service.TransitionService;
 import tools.DatabaseConnection;
 import tools.Pair;
 
@@ -349,7 +368,7 @@ public class Server {
             wldRLock.unlock();
         }
 
-        Channel channel = new Channel(worldid, channelid, getCurrentTime());
+        Channel channel = new Channel(worldid, channelid, getCurrentTime(), channelDependencies);
         channel.setServerMessage(YamlConfig.config.worlds.get(worldid).why_am_i_recommended);
 
         if (world.addChannel(channel)) {
@@ -413,16 +432,14 @@ public class Server {
         String event_message = YamlConfig.config.worlds.get(i).event_message;
         String why_am_i_recommended = YamlConfig.config.worlds.get(i).why_am_i_recommended;
 
-        World world = new World(i,
-                flag,
-                event_message,
-                exprate, droprate, bossdroprate, mesorate, questrate, travelrate, fishingrate);
+        World world = new World(i, flag, event_message, exprate, droprate, bossdroprate, mesorate, questrate,
+                travelrate, fishingrate, channelDependencies.transitionService());
 
         Map<Integer, String> channelInfo = new HashMap<>();
         long bootTime = getCurrentTime();
         for (int j = 1; j <= YamlConfig.config.worlds.get(i).channels; j++) {
             int channelid = j;
-            Channel channel = new Channel(i, channelid, bootTime);
+            Channel channel = new Channel(i, channelid, bootTime, channelDependencies);
 
             world.addChannel(channel);
             channelInfo.put(channelid, channel.getIP());
@@ -840,11 +857,15 @@ public class Server {
             Runtime.getRuntime().addShutdownHook(new Thread(shutdown(false)));
         }
 
+        PgDatabaseConfig pgDbConfig = readPgDbConfig();
+        runDatabaseMigration(pgDbConfig);
+        PgDatabaseConnection pgDbConnection = createPgDbConnection(pgDbConfig);
+
         if (!DatabaseConnection.initializeConnectionPool()) {
             throw new IllegalStateException("Failed to initiate a connection to the database");
         }
 
-        channelDependencies = registerChannelDependencies();
+        channelDependencies = registerChannelDependencies(pgDbConnection);
 
         final ExecutorService initExecutor = Executors.newFixedThreadPool(10);
         // Run slow operations asynchronously to make startup faster
@@ -905,7 +926,7 @@ public class Server {
             }
         }
 
-        loginServer = initLoginServer(8484);
+        loginServer = initLoginServer(8484, channelDependencies.transitionService());
 
         log.info("Listening on port 8484");
 
@@ -914,25 +935,72 @@ public class Server {
         log.info("Cosmic is now online after {} ms.", initDuration.toMillis());
 
         OpcodeConstants.generateOpcodeNames();
-        CommandsExecutor.getInstance();
 
         for (Channel ch : this.getAllChannels()) {
             ch.reloadEventScriptManager();
         }
     }
 
-    private ChannelDependencies registerChannelDependencies() {
-        NoteService noteService = new NoteService(new NoteDao());
+    private PgDatabaseConfig readPgDbConfig() {
+        final ServerConfig serverConfig = YamlConfig.config.server;
+        String pgDbHost = System.getenv("PG_DB_HOST");
+        if (pgDbHost == null) {
+            pgDbHost = serverConfig.PG_DB_HOST;
+        }
+        return new PgDatabaseConfig(
+                serverConfig.PG_DB_NAME, pgDbHost, serverConfig.PG_DB_SCHEMA,
+                serverConfig.PG_DB_ADMIN_USERNAME, serverConfig.PG_DB_ADMIN_PASSWORD,
+                serverConfig.PG_DB_USERNAME, serverConfig.PG_DB_PASSWORD,
+                Duration.ofSeconds(serverConfig.INIT_CONNECTION_POOL_TIMEOUT)
+        );
+    }
+
+    private void runDatabaseMigration(PgDatabaseConfig config) {
+        FlywayRunner flywayRunner = new FlywayRunner(config);
+        flywayRunner.migrate();
+    }
+
+    private PgDatabaseConnection createPgDbConnection(PgDatabaseConfig config) {
+        var hikariConfig = createHikariConfig(config);
+        var dataSource = new HikariDataSource(hikariConfig);
+        return new PgDatabaseConnection(dataSource);
+    }
+
+    private HikariConfig createHikariConfig(PgDatabaseConfig config) {
+        final HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(config.getJdbcUrl());
+        hikariConfig.setSchema(config.schema());
+        hikariConfig.setUsername(config.username());
+        hikariConfig.setPassword(config.password());
+        hikariConfig.setInitializationFailTimeout(config.poolInitTimeout().toMillis());
+        return hikariConfig;
+    }
+
+    private ChannelDependencies registerChannelDependencies(PgDatabaseConnection connection) {
+        MonsterCardDao monsterCardDao = new MonsterCardDao(connection);
+        CharacterLoader characterLoader = new CharacterLoader(monsterCardDao);
+        CharacterSaver characterSaver = new CharacterSaver(monsterCardDao);
+        TransitionService transitionService = new TransitionService(characterSaver);
+        BanService banService = new BanService(transitionService);
+        NoteService noteService = new NoteService(new NoteDao(connection));
+        MakerProcessor makerProcessor = new MakerProcessor(new MakerInfoProvider(new MakerDao(connection)));
         FredrickProcessor fredrickProcessor = new FredrickProcessor(noteService);
-        ChannelDependencies channelDependencies = new ChannelDependencies(noteService, fredrickProcessor);
+        DropProvider dropProvider = new DropProvider(new DropDao(connection));
+        ShopFactory shopFactory = new ShopFactory(new ShopDao(connection));
+        CommandContext commandContext = new CommandContext(null, dropProvider, shopFactory,
+                characterSaver, transitionService);
+        CommandsExecutor commandsExecutor = new CommandsExecutor(commandContext);
+        ChannelDependencies channelDependencies = new ChannelDependencies(characterLoader, characterSaver, noteService,
+                fredrickProcessor, makerProcessor, dropProvider, commandsExecutor, shopFactory, transitionService,
+                banService);
 
         PacketProcessor.registerGameHandlerDependencies(channelDependencies);
 
         return channelDependencies;
     }
 
-    private LoginServer initLoginServer(int port) {
-        LoginServer loginServer = new LoginServer(port);
+    private LoginServer initLoginServer(int port, TransitionService transitionService) {
+        LoginServer loginServer = new LoginServer(port, transitionService);
         loginServer.start();
         return loginServer;
     }
@@ -1373,7 +1441,7 @@ public class Server {
     }
 
     public void updateCharacterEntry(Character chr) {
-        Character chrView = chr.generateCharacterEntry();
+        Character chrView = chr.createCharacterView();
 
         lgnWLock.lock();
         try {
@@ -1398,7 +1466,7 @@ public class Server {
 
             worldChars.put(chrid, world);
 
-            Character chrView = chr.generateCharacterEntry();
+            Character chrView = chr.createCharacterView();
 
             World wserv = this.getWorld(chrView.getWorld());
             if (wserv != null) {
@@ -1429,52 +1497,8 @@ public class Server {
         }
     }
 
-    public void transferWorldCharacterEntry(Character chr, Integer toWorld) { // used before setting the new worldid on the character object
-        lgnWLock.lock();
-        try {
-            Integer chrid = chr.getId(), accountid = chr.getAccountID(), world = worldChars.get(chr.getId());
-            if (world != null) {
-                World wserv = this.getWorld(world);
-                if (wserv != null) {
-                    wserv.unregisterAccountCharacterView(accountid, chrid);
-                }
-            }
-
-            worldChars.put(chrid, toWorld);
-
-            Character chrView = chr.generateCharacterEntry();
-
-            World wserv = this.getWorld(toWorld);
-            if (wserv != null) {
-                wserv.registerAccountCharacterView(chrView.getAccountID(), chrView);
-            }
-        } finally {
-            lgnWLock.unlock();
-        }
-    }
-    
-    /*
-    public void deleteAccountEntry(Integer accountid) { is this even a thing?
-        lgnWLock.lock();
-        try {
-            accountCharacterCount.remove(accountid);
-            accountChars.remove(accountid);
-        } finally {
-            lgnWLock.unlock();
-        }
-    
-        for (World wserv : this.getWorlds()) {
-            wserv.clearAccountCharacterView(accountid);
-            wserv.unregisterAccountStorage(accountid);
-        }
-    }
-    */
-
-    public SortedMap<Integer, List<Character>> loadAccountCharlist(int accountId, int visibleWorlds) {
+    public SortedMap<Integer, List<Character>> loadAccountCharlist(int accountId) {
         List<World> worlds = this.getWorlds();
-        if (worlds.size() > visibleWorlds) {
-            worlds = worlds.subList(0, visibleWorlds);
-        }
 
         SortedMap<Integer, List<Character>> worldChrs = new TreeMap<>();
         int chrTotal = 0;
@@ -1499,11 +1523,11 @@ public class Server {
         return worldChrs;
     }
 
-    private static Pair<Short, List<List<Character>>> loadAccountCharactersViewFromDb(int accId, int wlen) {
-        short characterCount = 0;
-        List<List<Character>> wchars = new ArrayList<>(wlen);
-        for (int i = 0; i < wlen; i++) {
-            wchars.add(i, new LinkedList<>());
+    private static Pair<Short, List<List<Character>>> loadAccountCharactersViewFromDb(int accId, int worlds) {
+        short chrCount = 0;
+        List<List<Character>> worldChrs = new ArrayList<>(worlds);
+        for (int i = 0; i < worlds; i++) {
+            worldChrs.add(i, new LinkedList<>());
         }
 
         List<Character> chars = new LinkedList<>();
@@ -1528,32 +1552,32 @@ public class Server {
                 ps.setInt(1, accId);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        characterCount++;
+                        chrCount++;
 
                         int cworld = rs.getByte("world");
-                        if (cworld >= wlen) {
+                        if (cworld >= worlds) {
                             continue;
                         }
 
                         if (cworld > curWorld) {
-                            wchars.add(curWorld, chars);
+                            worldChrs.add(curWorld, chars);
 
                             curWorld = cworld;
                             chars = new LinkedList<>();
                         }
 
                         Integer cid = rs.getInt("id");
-                        chars.add(Character.loadCharacterEntryFromDB(rs, accPlayerEquips.get(cid)));
+                        chars.add(Character.loadCharacterViewFromDB(rs, accPlayerEquips.get(cid)));
                     }
                 }
             }
 
-            wchars.add(curWorld, chars);
+            worldChrs.add(curWorld, chars);
         } catch (SQLException sqle) {
             sqle.printStackTrace();
         }
 
-        return new Pair<>(characterCount, wchars);
+        return new Pair<>(chrCount, worldChrs);
     }
 
     public void loadAllAccountsCharactersView() {
@@ -1874,7 +1898,7 @@ public class Server {
 
         for (Client c : toDisconnect) {    // thanks Lei for pointing a deadlock issue with srvLock
             if (c.isLoggedIn()) {
-                c.disconnect(false, false);
+                channelDependencies.transitionService().disconnect(c, false, false);
             } else {
                 SessionCoordinator.getInstance().closeSession(c, true);
             }

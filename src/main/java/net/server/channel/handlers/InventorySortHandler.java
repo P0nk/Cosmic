@@ -26,6 +26,7 @@ import client.Client;
 import client.inventory.*;
 import config.YamlConfig;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import server.ItemInformationProvider;
@@ -298,8 +299,7 @@ public final class InventorySortHandler extends AbstractPacketHandler {
 
         byte invType = p.readByte();
         if (invType < 1 || invType > 5) {
-            c.disconnect(false, false);
-            return;
+            throw GameViolationException.inventoryType(invType);
         }
 
         ArrayList<Item> itemarray = new ArrayList<>();

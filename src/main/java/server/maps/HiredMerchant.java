@@ -31,6 +31,7 @@ import client.inventory.manipulator.InventoryManipulator;
 import client.inventory.manipulator.KarmaManipulator;
 import client.processor.npc.FredrickProcessor;
 import config.YamlConfig;
+import database.character.CharacterSaver;
 import net.packet.Packet;
 import net.server.Server;
 import server.ItemInformationProvider;
@@ -232,7 +233,7 @@ public class HiredMerchant extends AbstractMapObject {
         }
     }
 
-    public void takeItemBack(int slot, Character chr) {
+    public void takeItemBack(int slot, Character chr, CharacterSaver chrSaver) {
         synchronized (items) {
             PlayerShopItem shopItem = items.get(slot);
             if (shopItem.isExist()) {
@@ -251,10 +252,6 @@ public class HiredMerchant extends AbstractMapObject {
 
                 removeFromSlot(slot);
                 chr.sendPacket(PacketCreator.updateHiredMerchant(this, chr));
-            }
-
-            if (YamlConfig.config.server.USE_ENFORCE_MERCHANT_SAVE) {
-                chr.saveCharToDB(false);
             }
         }
     }
@@ -459,10 +456,6 @@ public class HiredMerchant extends AbstractMapObject {
                     ps.setInt(1, ownerId);
                     ps.executeUpdate();
                 }
-            }
-
-            if (YamlConfig.config.server.USE_ENFORCE_MERCHANT_SAVE) {
-                c.getPlayer().saveCharToDB(false);
             }
 
             synchronized (items) {

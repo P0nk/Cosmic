@@ -22,6 +22,7 @@ package client.command.commands.gm6;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import config.YamlConfig;
 
 public class SupplyRateCouponCommand extends Command {
@@ -30,7 +31,7 @@ public class SupplyRateCouponCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.dropMessage(5, "Syntax: !supplyratecoupon <yes|no>");

@@ -21,15 +21,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package client;
 
-import client.inventory.InventoryType;
 import config.YamlConfig;
-import constants.game.GameConstants;
 import constants.id.MapId;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
 import net.PacketHandler;
 import net.PacketProcessor;
+import net.netty.DisconnectException;
+import net.netty.GameViolationException;
 import net.netty.InvalidPacketHeaderException;
 import net.packet.InPacket;
 import net.packet.Packet;
@@ -54,13 +54,10 @@ import scripting.npc.NPCConversationManager;
 import scripting.npc.NPCScriptManager;
 import scripting.quest.QuestActionManager;
 import scripting.quest.QuestScriptManager;
-import server.MapleLeafLogger;
 import server.ThreadManager;
 import server.TimerManager;
 import server.life.Monster;
-import server.maps.FieldLimit;
 import server.maps.MapleMap;
-import server.maps.MiniDungeonInfo;
 import tools.BCrypt;
 import tools.DatabaseConnection;
 import tools.HexTool;
@@ -68,13 +65,11 @@ import tools.PacketCreator;
 
 import javax.script.ScriptEngine;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
-import java.util.Date;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
@@ -84,6 +79,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Client extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(Client.class);
+    private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
 
     public static final int LOGIN_NOTLOGGEDIN = 0;
     public static final int LOGIN_SERVER_TRANSITION = 1;
@@ -125,9 +121,6 @@ public class Client extends ChannelInboundHandlerAdapter {
     private final Lock announcerLock = new ReentrantLock(true);
     // thanks Masterrulax & try2hack for pointing out a bottleneck issue with shared locks, shavit for noticing an opportunity for improvement
     private Calendar tempBanCalendar;
-    private int votePoints;
-    private int voteTime = -1;
-    private int visibleWorlds;
     private long lastNpcClick;
     private long lastPacket = System.currentTimeMillis();
     private int lang = 0;
@@ -201,6 +194,8 @@ public class Client extends ChannelInboundHandlerAdapter {
             try {
                 MonitoredChrLogger.logPacketIfMonitored(this, opcode, packet.getBytes());
                 handler.handlePacket(packet, this);
+            } catch (GameViolationException gve) {
+                throw new DisconnectException(this, gve.getMessage());
             } catch (final Throwable t) {
                 final String chrInfo = player != null ? player.getName() + " on map " + player.getMapId() : "?";
                 log.warn("Error in packet handler {}. Chr {}, account {}. Packet: {}", handler.getClass().getSimpleName(),
@@ -229,6 +224,8 @@ public class Client extends ChannelInboundHandlerAdapter {
             SessionCoordinator.getInstance().closeSession(this, true);
         } else if (cause instanceof IOException) {
             closeMapleSession();
+        } else {
+            ctx.fireExceptionCaught(cause);
         }
     }
 
@@ -283,10 +280,6 @@ public class Client extends ChannelInboundHandlerAdapter {
         return remoteAddress;
     }
 
-    public boolean isInTransition() {
-        return inTransition;
-    }
-
     public EventManager getEventManager(String event) {
         return getChannelServer().getEventSM().getEventManager(event);
     }
@@ -303,50 +296,12 @@ public class Client extends ChannelInboundHandlerAdapter {
         return new AbstractPlayerInteraction(this);
     }
 
-    public void sendCharList(int server) {
-        this.sendPacket(PacketCreator.getCharList(this, server, 0));
-    }
-
-    public List<Character> loadCharacters(int serverId) {
-        List<Character> chars = new ArrayList<>(15);
-        try {
-            for (CharNameAndId cni : loadCharactersInternal(serverId)) {
-                chars.add(Character.loadCharFromDB(cni.id, this, false));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return chars;
-    }
-
-    public List<String> loadCharacterNames(int worldId) {
-        List<String> chars = new ArrayList<>(15);
-        for (CharNameAndId cni : loadCharactersInternal(worldId)) {
-            chars.add(cni.name);
-        }
-        return chars;
-    }
-
-    private List<CharNameAndId> loadCharactersInternal(int worldId) {
-        List<CharNameAndId> chars = new ArrayList<>(15);
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT id, name FROM characters WHERE accountid = ? AND world = ?")) {
-            ps.setInt(1, this.getAccID());
-            ps.setInt(2, worldId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    chars.add(new CharNameAndId(rs.getString("name"), rs.getInt("id")));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return chars;
-    }
-
     public boolean isLoggedIn() {
         return loggedIn;
+    }
+
+    public boolean isInTransition() {
+        return serverTransition;
     }
 
     public boolean hasBannedIP() {
@@ -364,38 +319,6 @@ public class Client extends ChannelInboundHandlerAdapter {
             e.printStackTrace();
         }
         return ret;
-    }
-
-    public int getVoteTime() {
-        if (voteTime != -1) {
-            return voteTime;
-        }
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT date FROM bit_votingrecords WHERE UPPER(account) = UPPER(?)")) {
-            ps.setString(1, accountName);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return -1;
-                }
-                voteTime = rs.getInt("date");
-            }
-        } catch (SQLException e) {
-            log.error("Error getting voting time");
-            return -1;
-        }
-        return voteTime;
-    }
-
-    public void resetVoteTime() {
-        voteTime = -1;
-    }
-
-    public boolean hasVotedAlready() {
-        Date currentDate = new Date();
-        int timeNow = (int) (currentDate.getTime() / 1000);
-        int difference = (timeNow - getVoteTime());
-        return difference < 86400 && difference > 0;
     }
 
     public boolean hasBannedHWID() {
@@ -456,21 +379,6 @@ public class Client extends ChannelInboundHandlerAdapter {
         return ret;
     }
 
-    private void loadHWIDIfNescessary() throws SQLException {
-        if (hwid == null) {
-            try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("SELECT hwid FROM accounts WHERE id = ?")) {
-                ps.setInt(1, accId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        hwid = new Hwid(rs.getString("hwid"));
-                    }
-                }
-            }
-        }
-    }
-
     // TODO: Recode to close statements...
     private void loadMacsIfNescessary() throws SQLException {
         if (macs.isEmpty()) {
@@ -487,20 +395,6 @@ public class Client extends ChannelInboundHandlerAdapter {
                     }
                 }
             }
-        }
-    }
-
-    public void banHWID() {
-        try {
-            loadHWIDIfNescessary();
-
-            try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("INSERT INTO hwidbans (hwid) VALUES (?)")) {
-                ps.setString(1, hwid.hwid());
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
@@ -539,19 +433,19 @@ public class Client extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public int finishLogin() {
+    public boolean finishLogin() {
         encoderLock.lock();
         try {
             if (getLoginState() > LOGIN_NOTLOGGEDIN) { // 0 = LOGIN_NOTLOGGEDIN, 1= LOGIN_SERVER_TRANSITION, 2 = LOGIN_LOGGEDIN
                 loggedIn = false;
-                return 7;
+                return false;
             }
             updateLoginState(Client.LOGIN_LOGGEDIN);
         } finally {
             encoderLock.unlock();
         }
 
-        return 0;
+        return true;
     }
 
     public void setPin(String pin) {
@@ -575,8 +469,7 @@ public class Client extends ChannelInboundHandlerAdapter {
             return true;
         }
 
-        pinattempt++;
-        if (pinattempt > 5) {
+        if (++pinattempt >= MAX_FAILED_LOGIN_ATTEMPTS) {
             SessionCoordinator.getInstance().closeSession(this, false);
         }
         if (pin.equals(other)) {
@@ -608,8 +501,7 @@ public class Client extends ChannelInboundHandlerAdapter {
             return true;
         }
 
-        picattempt++;
-        if (picattempt > 5) {
+        if (++picattempt >= MAX_FAILED_LOGIN_ATTEMPTS) {
             SessionCoordinator.getInstance().closeSession(this, false);
         }
         if (pic.equals(other)) {    // thanks ryantpayton (HeavenClient) for noticing null pics being checked here
@@ -623,8 +515,7 @@ public class Client extends ChannelInboundHandlerAdapter {
     public int login(String login, String pwd, Hwid hwid) {
         int loginok = 5;
 
-        loginattempt++;
-        if (loginattempt > 4) {
+        if (++loginattempt >= MAX_FAILED_LOGIN_ATTEMPTS) {
             loggedIn = false;
             SessionCoordinator.getInstance().closeSession(this, false);
             return 6;   // thanks Survival_Project for finding out an issue with AUTOMATIC_REGISTER here
@@ -739,23 +630,6 @@ public class Client extends ChannelInboundHandlerAdapter {
 
     public Calendar getTempBanCalendar() {
         return tempBanCalendar;
-    }
-
-    public boolean hasBeenBanned() {
-        return tempBanCalendar != null;
-    }
-
-    public static long dottedQuadToLong(String dottedQuad) throws RuntimeException {
-        String[] quads = dottedQuad.split("\\.");
-        if (quads.length != 4) {
-            throw new RuntimeException("Invalid IP Address format.");
-        }
-        long ipAddress = 0;
-        for (int i = 0; i < 4; i++) {
-            int quad = Integer.parseInt(quads[i]);
-            ipAddress += (long) (quad % 256) * (long) Math.pow(256, 4 - i);
-        }
-        return ipAddress;
     }
 
     public void updateHwid(Hwid hwid) {
@@ -947,18 +821,18 @@ public class Client extends ChannelInboundHandlerAdapter {
     }
 
     public final void disconnect(final boolean shutdown, final boolean cashshop) {
-        if (canDisconnect()) {
+        if (tryDisconnect()) {
             ThreadManager.getInstance().newTask(() -> disconnectInternal(shutdown, cashshop));
         }
     }
 
     public final void forceDisconnect() {
-        if (canDisconnect()) {
+        if (tryDisconnect()) {
             disconnectInternal(true, false);
         }
     }
 
-    private synchronized boolean canDisconnect() {
+    public synchronized boolean tryDisconnect() {
         if (disconnecting) {
             return false;
         }
@@ -970,10 +844,9 @@ public class Client extends ChannelInboundHandlerAdapter {
     private void disconnectInternal(boolean shutdown, boolean cashshop) {//once per Client instance
         if (player != null && player.isLoggedin() && player.getClient() != null) {
             final int messengerid = player.getMessenger() == null ? 0 : player.getMessenger().getId();
-            //final int fid = player.getFamilyId();
             final BuddyList bl = player.getBuddylist();
-            final MessengerCharacter chrm = new MessengerCharacter(player, 0);
-            final GuildCharacter chrg = player.getMGC();
+            final MessengerCharacter messengerChr = new MessengerCharacter(player, 0);
+            final GuildCharacter guildChr = player.getMGC();
             final Guild guild = player.getGuild();
 
             player.cancelMagicDoor();
@@ -986,14 +859,8 @@ public class Client extends ChannelInboundHandlerAdapter {
                     if (!cashshop) {
                         if (!this.serverTransition) { // meaning not changing channels
                             if (messengerid > 0) {
-                                wserv.leaveMessenger(messengerid, chrm);
+                                wserv.leaveMessenger(messengerid, messengerChr);
                             }
-                                                        /*      
-                                                        if (fid > 0) {
-                                                                final Family family = worlda.getFamily(fid);
-                                                                family.
-                                                        }
-                                                        */
 
                             player.forfeitExpirableQuests();    //This is for those quests that you have to stay logged in for a certain amount of time
 
@@ -1018,15 +885,14 @@ public class Client extends ChannelInboundHandlerAdapter {
                 log.error("Account stuck", e);
             } finally {
                 if (!this.serverTransition) {
-                    if (chrg != null) {
-                        chrg.setCharacter(null);
+                    if (guildChr != null) {
+                        guildChr.setCharacter(null);
                     }
                     wserv.removePlayer(player);
                     //getChannelServer().removePlayer(player); already being done
 
-                    player.saveCooldowns();
                     player.cancelAllDebuffs();
-                    player.saveCharToDB(true);
+                    player.saveCharToDB();
 
                     player.logOff();
                     if (YamlConfig.config.server.INSTANT_NAME_CHANGE) {
@@ -1036,7 +902,6 @@ public class Client extends ChannelInboundHandlerAdapter {
                 } else {
                     getChannelServer().removePlayer(player);
 
-                    player.saveCooldowns();
                     player.cancelAllDebuffs();
                     player.saveCharToDB();
                 }
@@ -1058,7 +923,7 @@ public class Client extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void clear() {
+    public void clear() {
         // player hard reference removal thanks to Steve (kaito1410)
         if (this.player != null) {
             this.player.empty(true); // clears schedules and stuff
@@ -1222,66 +1087,6 @@ public class Client extends ChannelInboundHandlerAdapter {
         return disconnect;
     }
 
-    public void checkChar(int accid) {  /// issue with multiple chars from same account login found by shavit, resinate
-        if (!YamlConfig.config.server.USE_CHARACTER_ACCOUNT_CHECK) {
-            return;
-        }
-
-        for (World w : Server.getInstance().getWorlds()) {
-            for (Character chr : w.getPlayerStorage().getAllCharacters()) {
-                if (accid == chr.getAccountID()) {
-                    log.warn("Chr {} has been removed from world {}. Possible Dupe attempt.", chr.getName(), GameConstants.WORLD_NAMES[w.getId()]);
-                    chr.getClient().forceDisconnect();
-                    w.getPlayerStorage().removePlayer(chr.getId());
-                }
-            }
-        }
-    }
-
-    public int getVotePoints() {
-        int points = 0;
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT `votepoints` FROM accounts WHERE id = ?")) {
-            ps.setInt(1, accId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    points = rs.getInt("votepoints");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        votePoints = points;
-        return votePoints;
-    }
-
-    public void addVotePoints(int points) {
-        votePoints += points;
-        saveVotePoints();
-    }
-
-    public void useVotePoints(int points) {
-        if (points > votePoints) {
-            //Should not happen, should probably log this
-            return;
-        }
-        votePoints -= points;
-        saveVotePoints();
-        MapleLeafLogger.log(player, false, Integer.toString(points));
-    }
-
-    private void saveVotePoints() {
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("UPDATE accounts SET votepoints = ? WHERE id = ?")) {
-            ps.setInt(1, votePoints);
-            ps.setInt(2, accId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void lockClient() {
         lock.lock();
     }
@@ -1302,32 +1107,6 @@ public class Client extends ChannelInboundHandlerAdapter {
     public void releaseClient() {
         unlockClient();
         actionsSemaphore.release();
-    }
-
-    public boolean tryacquireEncoder() {
-        if (actionsSemaphore.tryAcquire()) {
-            encoderLock.lock();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public void unlockEncoder() {
-        encoderLock.unlock();
-        actionsSemaphore.release();
-    }
-
-    private static class CharNameAndId {
-
-        public String name;
-        public int id;
-
-        public CharNameAndId(String name, int id) {
-            super();
-            this.name = name;
-            this.id = id;
-        }
     }
 
     private static boolean checkHash(String hash, String type, String password) {
@@ -1458,67 +1237,8 @@ public class Client extends ChannelInboundHandlerAdapter {
         sendPacket(PacketCreator.enableActions());
     }
 
-    public void changeChannel(int channel) {
-        Server server = Server.getInstance();
-        if (player.isBanned()) {
-            disconnect(false, false);
-            return;
-        }
-        if (!player.isAlive() || FieldLimit.CANNOTMIGRATE.check(player.getMap().getFieldLimit())) {
-            sendPacket(PacketCreator.enableActions());
-            return;
-        } else if (MiniDungeonInfo.isDungeonMap(player.getMapId())) {
-            sendPacket(PacketCreator.serverNotice(5, "Changing channels or entering Cash Shop or MTS are disabled when inside a Mini-Dungeon."));
-            sendPacket(PacketCreator.enableActions());
-            return;
-        }
-
-        String[] socket = Server.getInstance().getInetSocket(this, getWorld(), channel);
-        if (socket == null) {
-            sendPacket(PacketCreator.serverNotice(1, "Channel " + channel + " is currently disabled. Try another channel."));
-            sendPacket(PacketCreator.enableActions());
-            return;
-        }
-
-        player.closePlayerInteractions();
-        player.closePartySearchInteractions();
-
-        player.unregisterChairBuff();
-        server.getPlayerBuffStorage().addBuffsToStorage(player.getId(), player.getAllBuffs());
-        server.getPlayerBuffStorage().addDiseasesToStorage(player.getId(), player.getAllDiseases());
-        player.setDisconnectedFromChannelWorld();
-        player.notifyMapTransferToPartner(-1);
-        player.removeIncomingInvites();
-        player.cancelAllBuffs(true);
-        player.cancelAllDebuffs();
-        player.cancelBuffExpireTask();
-        player.cancelDiseaseExpireTask();
-        player.cancelSkillCooldownTask();
-        player.cancelQuestExpirationTask();
-        //Cancelling magicdoor? Nope
-        //Cancelling mounts? Noty
-
-        player.getInventory(InventoryType.EQUIPPED).checked(false); //test
-        player.getMap().removePlayer(player);
-        player.clearBanishPlayerData();
-        player.getClient().getChannelServer().removePlayer(player);
-
-        player.saveCharToDB();
-
-        player.setSessionTransitionState();
-        try {
-            sendPacket(PacketCreator.getChannelChange(InetAddress.getByName(socket[0]), Integer.parseInt(socket[1])));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public long getSessionId() {
         return this.sessionId;
-    }
-
-    public boolean canRequestCharlist() {
-        return lastNpcClick + 877 < Server.getInstance().getCurrentTime();
     }
 
     public boolean canClickNPC() {
@@ -1531,15 +1251,6 @@ public class Client extends ChannelInboundHandlerAdapter {
 
     public void removeClickedNPC() {
         lastNpcClick = 0;
-    }
-
-    public int getVisibleWorlds() {
-        return visibleWorlds;
-    }
-
-    public void requestedServerlist(int worlds) {
-        visibleWorlds = worlds;
-        setClickedNPC();
     }
 
     public void closePlayerScriptInteractions() {

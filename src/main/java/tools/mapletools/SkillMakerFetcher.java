@@ -4,7 +4,10 @@ import provider.wz.WZFiles;
 import server.ItemInformationProvider;
 import tools.DatabaseConnection;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,7 +22,8 @@ import java.util.Map;
  * ItemMaker.wz.xml files and generate a SQL file with every data info
  * for the Maker DB tables.
  */
-
+// TODO: adjust to new Postgres table structure.
+// New column names, and two of the columns should have null instead of 0.
 public class SkillMakerFetcher {
     private static final Path INPUT_FILE = WZFiles.ETC.getFile().resolve("ItemMake.img.xml");
     private static final Path OUTPUT_FILE = ToolConstants.getOutputFile("maker-data.sql");

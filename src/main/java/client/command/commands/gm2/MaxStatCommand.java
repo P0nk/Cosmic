@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.Stat;
 import client.command.Command;
+import client.command.CommandContext;
 import config.YamlConfig;
 
 public class MaxStatCommand extends Command {
@@ -35,7 +36,7 @@ public class MaxStatCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         player.loseExp(player.getExp(), false, false);
         player.setLevel(255);

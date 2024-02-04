@@ -31,10 +31,13 @@
         <yamlbeans.version>1.15</yamlbeans.version> <!-- Config file -->
         <jcip-annotations.version>1.0</jcip-annotations.version> <!-- Annotations for concurrency documentation -->
         <HikariCP.version>5.0.1</HikariCP.version> <!-- Database connection pool -->
+        <postgresql.version>42.5.4</postgresql.version> <!-- PostgreSQL JDBC driver -->
+        <flyway.version>9.15.1</flyway.version> <!-- Database migration -->
         <mysql-connector-j.version>8.0.32</mysql-connector-j.version> <!-- MySQL JDBC driver -->
         <jdbi-version>3.37.1</jdbi-version> <!-- Convenience wrapper around JDBC -->
         <junit.version>5.9.2</junit.version> <!-- Unit test -->
         <mockito.version>5.1.1</mockito.version> <!-- Unit test -->
+        <caffeine.version>3.1.4</caffeine.version> <!-- Caching -->
     </properties>
 
     <dependencies>
@@ -47,6 +50,11 @@
             <groupId>net.jcip</groupId>
             <artifactId>jcip-annotations</artifactId>
             <version>${jcip-annotations.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
         </dependency>
 
         <!-- Database -->
@@ -61,9 +69,19 @@
             <version>${mysql-connector-j.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-core</artifactId>
             <version>${jdbi-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
         </dependency>
 
 

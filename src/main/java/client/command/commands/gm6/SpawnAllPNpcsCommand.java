@@ -26,6 +26,7 @@ package client.command.commands.gm6;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.life.PlayerNPC;
 
 public class SpawnAllPNpcsCommand extends Command {
@@ -34,7 +35,7 @@ public class SpawnAllPNpcsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         PlayerNPC.multicastSpawnPlayerNPC(player.getMapId(), player.getWorld());
     }

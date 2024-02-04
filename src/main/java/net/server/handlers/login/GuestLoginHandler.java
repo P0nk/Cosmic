@@ -24,17 +24,23 @@ package net.server.handlers.login;
 import client.Client;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
+import service.TransitionService;
 import tools.PacketCreator;
 
 /*
  * @author David
  */
 public final class GuestLoginHandler extends AbstractPacketHandler {
+    private final TransitionService transitionService;
+
+    public GuestLoginHandler(TransitionService transitionService) {
+        this.transitionService = transitionService;
+    }
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
         c.sendPacket(PacketCreator.sendGuestTOS());
         //System.out.println(slea.toString());
-        new LoginPasswordHandler().handlePacket(p, c);
+        new LoginPasswordHandler(transitionService).handlePacket(p, c);
     }
 }

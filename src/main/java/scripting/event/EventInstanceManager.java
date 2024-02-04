@@ -26,6 +26,7 @@ import client.Skill;
 import client.SkillFactory;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
+import database.drop.DropProvider;
 import net.server.coordinator.world.EventRecallCoordinator;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
@@ -110,11 +111,11 @@ public class EventInstanceManager {
     // forces deletion of items not supposed to be held outside of the event, dealt on a player's leaving moment.
     private final Set<Integer> exclusiveItems = new HashSet<>();
 
-    public EventInstanceManager(EventManager em, String name) {
+    public EventInstanceManager(EventManager em, String name, DropProvider dropProvider) {
         this.em = em;
         this.name = name;
         this.ess = new EventScriptScheduler();
-        this.mapManager = new MapManager(this, em.getWorldServer().getId(), em.getChannelServer().getId());
+        this.mapManager = new MapManager(this, em.getWorldServer().getId(), em.getChannelServer().getId(), dropProvider);
 
         ReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
         this.readLock = readWriteLock.readLock();

@@ -2,6 +2,7 @@ package net.server.handlers.login;
 
 import client.Client;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import tools.PacketCreator;
 
@@ -16,12 +17,12 @@ public final class AcceptToSHandler extends AbstractPacketHandler {
     }
 
     @Override
-    public final void handlePacket(InPacket p, Client c) {
+    public void handlePacket(InPacket p, Client c) {
         if (p.available() == 0 || p.readByte() != 1 || c.acceptToS()) {
-            c.disconnect(false, false);//Client dc's but just because I am cool I do this (:
-            return;
+            throw new GameViolationException("ToS not accepted");
         }
-        if (c.finishLogin() == 0) {
+
+        if (c.finishLogin()) {
             c.sendPacket(PacketCreator.getAuthSuccess(c));
         } else {
             c.sendPacket(PacketCreator.getLoginFailed(9));//shouldn't happen XD

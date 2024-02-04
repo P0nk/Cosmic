@@ -26,6 +26,7 @@ package client.command.commands.gm6;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import tools.PacketCreator;
 
@@ -38,7 +39,7 @@ public class WarpWorldCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !warpworld <worldid>");
@@ -54,7 +55,7 @@ public class WarpWorldCommand extends Command {
                 player.getMap().removePlayer(player);//LOL FORGOT THIS ><
                 player.setSessionTransitionState();
                 player.setWorld(worldb);
-                player.saveCharToDB();//To set the new world :O (true because else 2 player instances are created, one in both worlds)
+                ctx.characterSaver().save(player);//To set the new world :O (true because else 2 player instances are created, one in both worlds)
                 c.sendPacket(PacketCreator.getChannelChange(InetAddress.getByName(socket[0]), Integer.parseInt(socket[1])));
             } catch (UnknownHostException | NumberFormatException ex) {
                 ex.printStackTrace();

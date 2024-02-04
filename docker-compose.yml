@@ -4,6 +4,7 @@ services:
     build: .
     depends_on:
       - db
+      - pg_db
     ports:
       # Login server
       - "8484:8484"
@@ -19,16 +20,27 @@ services:
       - ./wz:/opt/server/wz
     environment:
       DB_HOST: "db" ## Remember if this is present it will OVERRIDE the host in the config.yaml, if you put here anything other than db, you'll need to change the config.yaml jdbc string to port 3307, and not port 3306
-    
+      PG_DB_HOST: "pg_db"
+
   db:
     image: mysql:8.0.23
+    ports:
+      - "3307:3306"
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "true"
       MYSQL_DATABASE: "cosmic"
       MYSQL_USER: "cosmic_server"
       MYSQL_PASSWORD: "snailshell"
-    ports:
-      - "3307:3306"
     volumes:
       - ./database/docker-db-data:/var/lib/mysql
       - ./database/sql:/docker-entrypoint-initdb.d
+
+  pg_db:
+    image: postgres:15.0
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./database/docker-pg-db-data:/var/lib/postgresql/data
+      - ./database/postgres-scripts:/docker-entrypoint-initdb.d

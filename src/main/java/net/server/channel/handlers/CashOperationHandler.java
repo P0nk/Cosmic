@@ -33,6 +33,7 @@ import config.YamlConfig;
 import constants.id.ItemId;
 import constants.inventory.ItemConstants;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import org.slf4j.Logger;
@@ -287,8 +288,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
 
                     byte invType = p.readByte();
                     if (invType < 1 || invType > 5) {
-                        c.disconnect(false, false);
-                        return;
+                        throw GameViolationException.inventoryType(invType);
                     }
 
                     Inventory mi = chr.getInventory(InventoryType.getByType(invType));

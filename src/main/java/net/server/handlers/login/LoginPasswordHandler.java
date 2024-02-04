@@ -21,13 +21,19 @@
  */
 package net.server.handlers.login;
 
+import client.Character;
 import client.Client;
 import client.DefaultDates;
 import config.YamlConfig;
+import constants.game.GameConstants;
 import net.PacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
 import net.server.coordinator.session.Hwid;
+import net.server.world.World;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import service.TransitionService;
 import tools.BCrypt;
 import tools.DatabaseConnection;
 import tools.HexTool;
@@ -41,6 +47,12 @@ import java.sql.*;
 import java.util.Calendar;
 
 public final class LoginPasswordHandler implements PacketHandler {
+    private static final Logger log = LoggerFactory.getLogger(LoginPasswordHandler.class);
+    private final TransitionService transitionService;
+
+    public LoginPasswordHandler(TransitionService transitionService) {
+        this.transitionService = transitionService;
+    }
 
     @Override
     public boolean validateState(Client c) {
@@ -123,11 +135,28 @@ public final class LoginPasswordHandler implements PacketHandler {
             c.sendPacket(PacketCreator.getLoginFailed(loginok));
             return;
         }
-        if (c.finishLogin() == 0) {
-            c.checkChar(c.getAccID());
+        if (c.finishLogin()) {
+            checkChar(c);
             login(c);
         } else {
             c.sendPacket(PacketCreator.getLoginFailed(7));
+        }
+    }
+
+    private void checkChar(Client c) { // issue with multiple chars from same account login found by shavit, resinate
+        if (!YamlConfig.config.server.USE_CHARACTER_ACCOUNT_CHECK) {
+            return;
+        }
+
+        final int accId = c.getAccID();
+        for (World w : Server.getInstance().getWorlds()) {
+            for (Character chr : w.getPlayerStorage().getAllCharacters()) {
+                if (accId == chr.getAccountID()) {
+                    log.warn("Chr {} has been removed from world {}. Possible Dupe attempt.", chr.getName(), GameConstants.WORLD_NAMES[w.getId()]);
+                    transitionService.forceDisconnect(c);
+                    w.getPlayerStorage().removePlayer(chr.getId());
+                }
+            }
         }
     }
 

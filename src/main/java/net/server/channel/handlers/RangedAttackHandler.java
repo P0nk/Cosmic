@@ -33,12 +33,15 @@ import constants.id.ItemId;
 import constants.id.MapId;
 import constants.inventory.ItemConstants;
 import constants.skills.*;
+import database.drop.DropProvider;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.packet.Packet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
 import server.StatEffect;
+import service.BanService;
 import tools.PacketCreator;
 import tools.Randomizer;
 
@@ -47,6 +50,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class RangedAttackHandler extends AbstractDealDamageHandler {
     private static final Logger log = LoggerFactory.getLogger(RangedAttackHandler.class);
+
+    public RangedAttackHandler(DropProvider dropProvider, BanService banService) {
+        super(dropProvider, banService);
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -62,9 +69,7 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
 
         if (chr.getBuffEffect(BuffStat.MORPH) != null) {
             if (chr.getBuffEffect(BuffStat.MORPH).isMorphWithoutAttack()) {
-                // How are they attacking when the client won't let them?
-                chr.getClient().disconnect(false, false);
-                return;
+                throw new GameViolationException("Attempt to attack with morph skill that disallows attacking");
             }
         }
 

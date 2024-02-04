@@ -30,7 +30,7 @@ public abstract class Command {
     protected int rank;
     protected String description;
 
-    public abstract void execute(Client client, String[] params);
+    public abstract void execute(Client client, String[] params, CommandContext ctx);
 
     public String getDescription() {
         return description;

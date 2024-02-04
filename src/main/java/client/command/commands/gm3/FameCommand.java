@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.Stat;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class FameCommand extends Command {
     {
@@ -34,7 +35,7 @@ public class FameCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 2) {
             player.yellowMessage("Syntax: !fame <playername> <gainfame>");

@@ -25,6 +25,7 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import client.processor.action.BuybackProcessor;
 
 public class BuyBackCommand extends Command {
@@ -33,7 +34,7 @@ public class BuyBackCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         if (params.length < 1) {
             c.getPlayer().yellowMessage("Syntax: @buyback <info|now>");
             return;

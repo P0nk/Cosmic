@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.life.Monster;
 import server.life.NPC;
 import server.life.PlayerNPC;
@@ -39,7 +40,7 @@ public class WhereaMiCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
 
         HashSet<Character> chars = new HashSet<>();

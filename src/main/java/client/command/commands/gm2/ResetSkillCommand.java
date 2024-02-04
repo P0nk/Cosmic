@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.*;
 import client.command.Command;
+import client.command.CommandContext;
 import provider.Data;
 import provider.DataProviderFactory;
 import provider.wz.WZFiles;
@@ -36,7 +37,7 @@ public class ResetSkillCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (Data skill_ : DataProviderFactory.getDataProvider(WZFiles.STRING).getData("Skill.img").getChildren()) {
             try {

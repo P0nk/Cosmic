@@ -28,6 +28,7 @@ import client.inventory.manipulator.InventoryManipulator;
 import constants.id.ItemId;
 import constants.id.MapId;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import org.slf4j.Logger;
@@ -67,8 +68,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
         }
 
         if (chr.getCashShop().isOpened()) {
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Changing channel inside cash shop");
         }
 
         try {
@@ -179,8 +179,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
         final Character chr = c.getPlayer();
 
         if (!chr.getCashShop().isOpened()) {
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Enter map from cash shop, but is not in cash shop");
         }
         String[] socket = Server.getInstance().getInetSocket(c, c.getWorld(), c.getChannel());
         if (socket == null) {

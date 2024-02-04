@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.SkillFactory;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class BuffMapCommand extends Command {
     {
@@ -34,7 +35,7 @@ public class BuffMapCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         SkillFactory.getSkill(9101001).getEffect(SkillFactory.getSkill(9101001).getMaxLevel()).applyTo(player, true);
         SkillFactory.getSkill(9101002).getEffect(SkillFactory.getSkill(9101002).getMaxLevel()).applyTo(player, true);

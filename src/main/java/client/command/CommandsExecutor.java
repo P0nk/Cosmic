@@ -43,16 +43,27 @@ import java.util.List;
 
 public class CommandsExecutor {
     private static final Logger log = LoggerFactory.getLogger(CommandsExecutor.class);
-    private static final CommandsExecutor instance = new CommandsExecutor();
     private static final char USER_HEADING = '@';
     private static final char GM_HEADING = '!';
 
     private final HashMap<String, Command> registeredCommands = new HashMap<>();
     private final List<Pair<List<String>, List<String>>> commandsNameDesc = new ArrayList<>();
+    private final CommandContext commandContext;
     private Pair<List<String>, List<String>> levelCommandsCursor;
 
-    public static CommandsExecutor getInstance() {
-        return instance;
+    public CommandsExecutor(CommandContext commandContext) {
+        this.commandContext = commandContext.with(this);
+        registerCommands();
+    }
+
+    private void registerCommands() {
+        registerLv0Commands();
+        registerLv1Commands();
+        registerLv2Commands();
+        registerLv3Commands();
+        registerLv4Commands();
+        registerLv5Commands();
+        registerLv6Commands();
     }
 
     public static boolean isCommand(Client client, String content) {
@@ -61,16 +72,6 @@ public class CommandsExecutor {
             return heading == USER_HEADING || heading == GM_HEADING;
         }
         return heading == USER_HEADING;
-    }
-
-    private CommandsExecutor() {
-        registerLv0Commands();
-        registerLv1Commands();
-        registerLv2Commands();
-        registerLv3Commands();
-        registerLv4Commands();
-        registerLv5Commands();
-        registerLv6Commands();
     }
 
     public List<Pair<List<String>, List<String>>> getGmCommands() {
@@ -120,7 +121,7 @@ public class CommandsExecutor {
             params = new String[]{};
         }
 
-        command.execute(client, params);
+        command.execute(client, params, commandContext);
         log.info("Chr {} used command {}", client.getPlayer().getName(), command.getClass().getSimpleName());
     }
 
@@ -188,7 +189,6 @@ public class CommandsExecutor {
         addCommand("online", OnlineCommand.class);
         addCommand("gm", GmCommand.class);
         addCommand("reportbug", ReportBugCommand.class);
-        addCommand("points", ReadPointsCommand.class);
         addCommand("joinevent", JoinEventCommand.class);
         addCommand("leaveevent", LeaveEventCommand.class);
         addCommand("ranks", RanksCommand.class);
@@ -288,9 +288,7 @@ public class CommandsExecutor {
         addCommand("togglewhitechat", 3, ChatCommand.class);
         addCommand("fame", 3, FameCommand.class);
         addCommand("givenx", 3, GiveNxCommand.class);
-        addCommand("givevp", 3, GiveVpCommand.class);
         addCommand("givems", 3, GiveMesosCommand.class);
-        addCommand("giverp", 3, GiveRpCommand.class);
         addCommand("expeds", 3, ExpedsCommand.class);
         addCommand("kill", 3, KillCommand.class);
         addCommand("seed", 3, SeedCommand.class);
