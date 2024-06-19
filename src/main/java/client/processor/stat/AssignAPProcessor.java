@@ -552,16 +552,14 @@ public class AssignAPProcessor {
                         return false;
                     }
 
-                    int hp = player.getMaxHp();
-                    int level_ = player.getLevel();
-                    if (hp < level_ * 14 + 148) {
+                    int hplose = -takeHp(player.getJob());
+                    if (player.getMaxHp() + hplose < getMinHp(player.getJob(), player.getLevel())) {
                         player.message("You don't have the minimum HP pool required to swap.");
                         c.sendPacket(PacketCreator.enableActions());
                         return false;
                     }
 
                     int curHp = player.getHp();
-                    int hplose = -takeHp(player.getJob());
                     player.assignHP(hplose, -1);
                     if (!YamlConfig.config.server.USE_FIXED_RATIO_HPMP_UPDATE) {
                         player.updateHp(Math.max(1, curHp + hplose));
@@ -583,29 +581,14 @@ public class AssignAPProcessor {
                         return false;
                     }
 
-                    int mp = player.getMaxMp();
-                    int level = player.getLevel();
-                    Job job = player.getJob();
-
-                    boolean canWash = true;
-                    if (job.isA(Job.SPEARMAN) && mp < 4 * level + 156) {
-                        canWash = false;
-                    } else if ((job.isA(Job.FIGHTER) || job.isA(Job.ARAN1)) && mp < 4 * level + 56) {
-                        canWash = false;
-                    } else if (job.isA(Job.THIEF) && job.getId() % 100 > 0 && mp < level * 14 - 4) {
-                        canWash = false;
-                    } else if (mp < level * 14 + 148) {
-                        canWash = false;
-                    }
-
-                    if (!canWash) {
+                    int mplose = -takeMp(player.getJob());
+                    if (player.getMaxMp() + mplose < getMinMp(player.getJob(), player.getLevel())) {
                         player.message("You don't have the minimum MP pool required to swap.");
                         c.sendPacket(PacketCreator.enableActions());
                         return false;
                     }
 
                     int curMp = player.getMp();
-                    int mplose = -takeMp(job);
                     player.assignMP(mplose, -1);
                     if (!YamlConfig.config.server.USE_FIXED_RATIO_HPMP_UPDATE) {
                         player.updateMp(Math.max(0, curMp + mplose));
@@ -896,4 +879,109 @@ public class AssignAPProcessor {
         return MaxMP;
     }
 
+    public static int getMinHp(Job job, int level) {
+        int multiplier = 0;
+        int offset = 0;
+
+        if (job == Job.WARRIOR ||
+            job.isA(Job.PAGE) ||
+            job.isA(Job.SPEARMAN) ||
+            job == Job.DAWNWARRIOR1 ||
+            job == Job.ARAN1) {
+            multiplier = 24; offset = 118;
+
+        } else if (job.isA(Job.FIGHTER) ||
+                   job.isA(Job.DAWNWARRIOR2) ||
+                   job.isA(Job.ARAN2)) {
+            multiplier = 24; offset = 418;
+
+        } else if (job.isA(Job.MAGICIAN) ||
+                   job.isA(Job.BLAZEWIZARD1)) {
+            multiplier = 10; offset = 54;
+
+        } else if (job == Job.BOWMAN ||
+                   job == Job.THIEF ||
+                   job == Job.WINDARCHER1 ||
+                   job == Job.NIGHTWALKER1) {
+            multiplier = 20; offset = 58;
+
+        } else if (job.isA(Job.HUNTER) ||
+                   job.isA(Job.CROSSBOWMAN) ||
+                   job.isA(Job.ASSASSIN) ||
+                   job.isA(Job.BANDIT) ||
+                   job.isA(Job.WINDARCHER2) ||
+                   job.isA(Job.NIGHTWALKER2)) {
+            multiplier = 20; offset = 358;
+
+        } else if (job == Job.PIRATE ||
+                   job == Job.THUNDERBREAKER1) {
+            multiplier = 22; offset = 38;
+
+        } else if (job.isA(Job.BRAWLER) ||
+                   job.isA(Job.GUNSLINGER) ||
+                   job.isA(Job.THUNDERBREAKER2)) {
+            multiplier = 22; offset = 338;
+
+        } else if (job == Job.BEGINNER ||
+                   job == Job.NOBLESSE) {
+            multiplier = 12; offset = 38;
+        }
+
+        return (multiplier * level) + offset;
+    }
+
+    public static int getMinMp(Job job, int level) {
+        int multiplier = 0;
+        int offset = 0;
+
+        if (job == Job.WARRIOR ||
+            job.isA(Job.FIGHTER) ||
+            job.isA(Job.DAWNWARRIOR1) ||
+            job.isA(Job.ARAN1)) {
+            multiplier = 4; offset = 55;
+
+        } else if (job.isA(Job.PAGE) ||
+                   job.isA(Job.SPEARMAN)) {
+            multiplier = 4; offset = 155;
+
+        } else if (job == Job.MAGICIAN ||
+                   job == Job.BLAZEWIZARD1) {
+            multiplier = 22; offset = -1;
+
+        } else if (job.isA(Job.FP_WIZARD) ||
+                   job.isA(Job.IL_WIZARD) ||
+                   job.isA(Job.CLERIC) ||
+                   job.isA(Job.BLAZEWIZARD2)) {
+            multiplier = 22; offset = 449;
+
+        } else if (job == Job.BOWMAN ||
+                   job == Job.THIEF ||
+                   job == Job.WINDARCHER1 ||
+                   job == Job.NIGHTWALKER1) {
+            multiplier = 14; offset = -15;
+
+        } else if (job.isA(Job.HUNTER) ||
+                   job.isA(Job.CROSSBOWMAN) ||
+                   job.isA(Job.ASSASSIN) ||
+                   job.isA(Job.BANDIT) ||
+                   job.isA(Job.WINDARCHER2) ||
+                   job.isA(Job.NIGHTWALKER2)) {
+            multiplier = 14; offset = 135;
+
+        } else if (job == Job.PIRATE ||
+                   job == Job.THUNDERBREAKER1) {
+            multiplier = 18; offset = -55;
+
+        } else if (job.isA(Job.BRAWLER) ||
+                   job.isA(Job.GUNSLINGER) ||
+                   job.isA(Job.THUNDERBREAKER2)) {
+            multiplier = 18; offset = 95;
+
+        } else if (job == Job.BEGINNER ||
+                   job == Job.NOBLESSE) {
+            multiplier = 10; offset = -5;
+        }
+
+        return (multiplier * level) + offset;
+    }
 }
