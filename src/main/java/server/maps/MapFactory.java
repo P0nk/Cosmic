@@ -160,7 +160,7 @@ public class MapFactory {
         map.setMobInterval((short) DataTool.getInt(infoData.getChildByPath("createMobInterval"), 5000));
         PortalFactory portalFactory = new PortalFactory();
         for (Data portal : mapData.getChildByPath("portal")) {
-            map.addPortal(portalFactory.makePortal(DataTool.getInt(portal.getChildByPath("pt")), portal));
+            map.addPortal(portalFactory.makePortal(DataTool.getInt(portal.getChildByPath("pt")), map.getId(), portal));
         }
         Data timeMob = infoData.getChildByPath("timeMob");
         if (timeMob != null) {
