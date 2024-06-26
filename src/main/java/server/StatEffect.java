@@ -325,6 +325,8 @@ public class StatEffect {
                     ret.berserk = DataTool.getInt("berserk", source, 0);
                     ret.booster = DataTool.getInt("booster", source, 0);
 
+                    // TODO: For some reason adding the BERSERK buff stat makes the user attack VERY slowly. It also doesn't increase
+                    //  the damage output like it should either..
                     addBuffStatPairToListIfNotZero(statups, BuffStat.BERSERK, ret.berserk);
                     addBuffStatPairToListIfNotZero(statups, BuffStat.BOOSTER, ret.booster);
 

@@ -70,6 +70,8 @@ import server.life.SpawnPoint;
 import server.partyquest.CarnivalFactory;
 import server.partyquest.CarnivalFactory.MCSkill;
 import server.partyquest.GuardianSpawnPoint;
+import server.partyquest.pyramid.Pyramid;
+import server.partyquest.pyramid.PyramidProcessor;
 import tools.PacketCreator;
 import tools.Pair;
 import tools.Randomizer;
@@ -181,6 +183,9 @@ public class MapleMap {
     private int deathCP;
     private int timeDefault;
     private int timeExpand;
+
+    // Pyramid PQ
+    private MapPyramidInfo pyramidInfo = null;
 
     //locks
     private final Lock chrRLock;
@@ -1327,6 +1332,11 @@ public class MapleMap {
     }
 
     public boolean damageMonster(final Character chr, final Monster monster, final int damage) {
+        Pyramid pyramid = PyramidProcessor.getPyramidForCharacter(chr.getId());
+        if (pyramid != null) {
+            pyramid.hitMonster(chr, monster, damage);
+        }
+
         if (monster.getId() == MobId.ZAKUM_1) {
             for (MapObject object : chr.getMap().getMapObjects()) {
                 Monster mons = chr.getMap().getMonsterByOid(object.getObjectId());
@@ -1402,6 +1412,7 @@ public class MapleMap {
 
         if (chr == null) {
             if (removeKilledMonsterObject(monster)) {
+                monster.killBy(null);
                 monster.dispatchMonsterKilled(false);
                 broadcastMessage(PacketCreator.killMonster(monster.getObjectId(), animation), monster.getPosition());
                 monster.aggroSwitchController(null, false);
@@ -3599,6 +3610,10 @@ public class MapleMap {
     }
 
     private int getNumShouldSpawn(int numPlayers) {
+        // If the map has a fixed mob capacity, the number of players is irrelevant
+        if (mobCapacity > -1) {
+            return mobCapacity;
+        }
         /*
         System.out.println("----------------------------------");
         for (SpawnPoint spawnPoint : getMonsterSpawn()) {
@@ -4509,6 +4524,14 @@ public class MapleMap {
 
     public void setTimeExpand(int timeExpand) {
         this.timeExpand = timeExpand;
+    }
+
+    public void setPyramidInfo(MapPyramidInfo pyramidInfo) {
+        this.pyramidInfo = pyramidInfo;
+    }
+
+    public MapPyramidInfo getPyramidInfo() {
+        return this.pyramidInfo;
     }
 
 }

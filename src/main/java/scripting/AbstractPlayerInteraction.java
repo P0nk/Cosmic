@@ -49,7 +49,6 @@ import server.maps.MapObject;
 import server.maps.MapObjectType;
 import server.maps.MapleMap;
 import server.partyquest.PartyQuest;
-import server.partyquest.Pyramid;
 import server.quest.Quest;
 import tools.PacketCreator;
 import tools.Pair;
@@ -1069,10 +1068,6 @@ public class AbstractPlayerInteraction {
 
     public String numberWithCommas(int number) {
         return GameConstants.numberWithCommas(number);
-    }
-
-    public Pyramid getPyramid() {
-        return (Pyramid) getPlayer().getPartyQuest();
     }
 
     public int createExpedition(ExpeditionType type) {

@@ -5,6 +5,8 @@ USE `cosmic`;
 
   INSERT IGNORE INTO temp_data (`dropperid`, `itemid`, `minimum_quantity`, `maximum_quantity`, `questid`, `chance`) VALUES
   #-- copy+paste inside here as many drop data as possible from the spider (drop generator) files --
+(9700019, 2022613, 1, 1, 0, 1000000),
+(9700029, 2022618, 1, 1, 0, 1000000),
 (5100004, 2383034, 1, 1, 0, 10000),
 (2100108, 2381030, 1, 1, 0, 10000),
 (3230300, 2382021, 1, 1, 0, 10000),

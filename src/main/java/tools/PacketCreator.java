@@ -7315,6 +7315,14 @@ public class PacketCreator {
         return p;
     }
 
+    public static Packet MassacreResult(byte nRank, int nIncExp) {
+        //CField_MassacreResult__OnMassacreResult @ 0x005617C5
+        final OutPacket p = OutPacket.create(SendOpcode.PYRAMID_SCORE); //MASSACRERESULT | 0x009E
+        p.writeByte(nRank); //(0 - S) (1 - A) (2 - B) (3 - C) (4 - D) ( Else - Crash )
+        p.writeInt(nIncExp);
+        return p;
+    }
+
     public static Packet spawnDragon(Dragon dragon) {
         OutPacket p = OutPacket.create(SendOpcode.SPAWN_DRAGON);
         p.writeInt(dragon.getOwner().getId());//objectid = owner id
@@ -7386,15 +7394,6 @@ public class PacketCreator {
         });
         return p;
     }
-
-    private static Packet MassacreResult(byte nRank, int nIncExp) {
-        //CField_MassacreResult__OnMassacreResult @ 0x005617C5
-        final OutPacket p = OutPacket.create(SendOpcode.PYRAMID_SCORE); //MASSACRERESULT | 0x009E
-        p.writeByte(nRank); //(0 - S) (1 - A) (2 - B) (3 - C) (4 - D) ( Else - Crash )
-        p.writeInt(nIncExp);
-        return p;
-    }
-
 
     private static Packet Tournament__Tournament(byte nState, byte nSubState) {
         final OutPacket p = OutPacket.create(SendOpcode.TOURNAMENT);

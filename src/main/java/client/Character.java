@@ -147,6 +147,9 @@ import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.MonsterCarnivalParty;
 import server.partyquest.PartyQuest;
+import server.partyquest.pyramid.PyramidCharacterStats;
+import server.partyquest.pyramid.PyramidDifficulty;
+import server.partyquest.pyramid.PyramidProcessor;
 import server.quest.Quest;
 import tools.DatabaseConnection;
 import tools.LongTool;
@@ -359,6 +362,10 @@ public class Character extends AbstractCharacterObject {
     private boolean pendingNameChange; //only used to change name on logout, not to be relied upon elsewhere
     private long loginTime;
     private boolean chasing = false;
+
+    // Pyramid PQ
+    PyramidCharacterStats pyramidCharacterStats = null;
+
 
     private Character() {
         super.setListener(new AbstractCharacterListener() {
@@ -1331,6 +1338,8 @@ public class Character extends AbstractCharacterObject {
             warpMap = eim.getMapInstance(map);
         } else if (this.getMonsterCarnival() != null && this.getMonsterCarnival().getEventMap().getId() == map) {
             warpMap = this.getMonsterCarnival().getEventMap();
+        } else if (PyramidProcessor.getPyramidForCharacter(this.id) != null) {
+            warpMap = PyramidProcessor.getPyramidForCharacter(this.id).getMap(map);
         } else {
             warpMap = client.getChannelServer().getMapFactory().getMap(map);
         }
@@ -7504,6 +7513,9 @@ public class Character extends AbstractCharacterObject {
         if (eim != null) {
             eim.playerKilled(this);
         }
+        if (PyramidProcessor.getPyramidForCharacter(this.getId()) != null) {
+            PyramidProcessor.getPyramidForCharacter(this.getId()).playerDead(this);
+        }
         int[] charmID = {ItemId.SAFETY_CHARM, ItemId.EASTER_BASKET, ItemId.EASTER_CHARM};
         int possesed = 0;
         int i;
@@ -11246,5 +11258,89 @@ public class Character extends AbstractCharacterObject {
 
     public void setChasing(boolean chasing) {
         this.chasing = chasing;
+    }
+
+    public void setPyramidCharacterStats(PyramidCharacterStats stats) {
+        this.pyramidCharacterStats = stats;
+    }
+
+    public PyramidCharacterStats getPyramidCharacterStats() {
+        return this.pyramidCharacterStats;
+    }
+
+    public void sendPyramidResults() {
+        if (getPyramidCharacterStats() == null) {
+            return;
+        }
+
+        byte rank = getPyramidCharacterStats().getRank().getCode();
+        int pyramidExp = getPyramidCharacterStats().calculateExp();
+
+        if (rank == 4) {
+            sendPacket(PacketCreator.mapEffect("killing/fail"));
+        }
+        sendPacket(PacketCreator.pyramidScore(rank, pyramidExp));
+        gainExp(pyramidExp, true, true);
+    }
+
+    public void clearPyramidResults() {
+        setPyramidCharacterStats(null);
+    }
+
+    public boolean startPyramidBonus(int difficultyCode) {
+        return startPyramidBonus(PyramidDifficulty.getById(difficultyCode));
+    }
+
+    public boolean startPyramidBonus(PyramidDifficulty difficulty) {
+        int monsterId = difficulty.equals(PyramidDifficulty.HELL) ? 9700029 : 9700019;
+
+        if (LifeFactory.getMonster(monsterId) == null) {
+            log.warn("Error while attempting to start Pyramid Bonus. Mob ID " + monsterId + " is invalid.");
+            return false;
+        }
+
+        int mapId = 926010010;
+        MapleMap map = getClient().getChannelServer().getMapFactory().getDisposableMap(mapId);
+        if (map == null) {
+            log.warn("Error while attempting to start Pyramid Bonus. Map ID " + mapId + " is invalid.");
+            return false;
+        }
+
+        int numberOfMonsters = switch (difficulty) {
+            case EASY -> 30;
+            case NORMAL -> 40;
+            case HARD, HELL -> 50;
+        };
+
+        Point topLeft = new Point(-361, -115);
+        Point topRight = new Point(352, -115);
+        Point bottomMiddle = new Point(4, 125);
+
+
+        for (int i = 0; i < (numberOfMonsters / 3); i++) {
+            map.spawnMonsterOnGroundBelow(LifeFactory.getMonster(monsterId), topLeft);
+        }
+        for (int i = 0; i < (numberOfMonsters / 3); i++) {
+            map.spawnMonsterOnGroundBelow(LifeFactory.getMonster(monsterId), topRight);
+        }
+        for (int i = 0; i < (numberOfMonsters / 3); i++) {
+            map.spawnMonsterOnGroundBelow(LifeFactory.getMonster(monsterId), bottomMiddle);
+        }
+        if (numberOfMonsters % 3 != 0) {
+            for (int i = 0; i < (numberOfMonsters % 3); i++) {
+                map.spawnMonsterOnGroundBelow(LifeFactory.getMonster(monsterId), bottomMiddle);
+            }
+        }
+
+        // Have to use changeMapInternal.. because we need our own instance of the map
+        changeMapInternal(map, map.getPortal(0).getPosition(), PacketCreator.getWarpToMap(map, 0, this));
+        setPyramidCharacterStats(null);
+
+        TimerManager.getInstance().schedule(() -> {
+            if (getMap().getId() == mapId) {
+                changeMap(926010000);
+            }
+        }, SECONDS.toMillis(60));
+        return true;
     }
 }

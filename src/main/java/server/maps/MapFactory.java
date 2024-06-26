@@ -191,6 +191,12 @@ public class MapFactory {
             map.setMapLineBoundings(bounds[0], bounds[1], bounds[2], bounds[3]);
         }
 
+        // Load Pyramid PQ values, if available
+        Data mobMassacreData = mapData.getChildByPath("mobMassacre");
+        if (mobMassacreData != null) {
+            map.setPyramidInfo(new MapPyramidInfo(mobMassacreData));
+        }
+
         List<Foothold> allFootholds = new LinkedList<>();
         Point lBound = new Point();
         Point uBound = new Point();
@@ -309,7 +315,7 @@ public class MapFactory {
         map.setBoat(mapData.getChildByPath("shipObj") != null);
         map.setTimeLimit(DataTool.getIntConvert("timeLimit", infoData, -1));
         map.setFieldType(DataTool.getIntConvert("fieldType", infoData, 0));
-        map.setMobCapacity(DataTool.getIntConvert("fixedMobCapacity", infoData, 500));//Is there a map that contains more than 500 mobs?
+        map.setMobCapacity(DataTool.getIntConvert("fixedMobCapacity", infoData, -1));
 
         Data recData = infoData.getChildByPath("recovery");
         if (recData != null) {

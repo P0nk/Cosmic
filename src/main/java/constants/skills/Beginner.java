@@ -41,5 +41,6 @@ public class Beginner {
     public static final int YETI_MOUNT1 = 1017;
     public static final int YETI_MOUNT2 = 1018;
     public static final int WITCH_BROOMSTICK = 1019;
+    public static final int RAGE_OF_PHARAOH = 1020;
     public static final int BALROG_MOUNT = 1031;
 }

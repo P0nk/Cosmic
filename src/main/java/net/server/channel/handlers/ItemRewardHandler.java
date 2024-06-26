@@ -54,23 +54,37 @@ public final class ItemRewardHandler extends AbstractPacketHandler {
 
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         Pair<Integer, List<RewardItem>> rewards = ii.getItemReward(itemId);
-        for (RewardItem reward : rewards.getRight()) {
-            if (!InventoryManipulator.checkSpace(c, reward.itemid, reward.quantity, "")) {
-                c.sendPacket(PacketCreator.getShowInventoryFull());
-                break;
+
+        // Check that ALL inventories have at least 1 free slot.. otherwise this can be exploited
+        for (byte i = 1; i <= 4; i++) {
+            if (c.getPlayer().getInventory(InventoryType.getByType(i)).isFull()) {
+                c.getPlayer().dropMessage(1, "Please make sure you have a enough space in your inventory.");
+                c.sendPacket(PacketCreator.enableActions());
+                return;
             }
-            if (Randomizer.nextInt(rewards.getLeft()) < reward.prob) {//Is it even possible to get an item with prob 1?
+        }
+
+        int randomNumber = Randomizer.nextInt(rewards.getLeft());
+        int runningProb = 0;
+
+        for (RewardItem reward : rewards.getRight()) {
+            runningProb += reward.prob;
+            if (randomNumber < runningProb) {//Is it even possible to get an item with prob 1?
+                Item item;
                 if (ItemConstants.getInventoryType(reward.itemid) == InventoryType.EQUIP) {
-                    final Item item = ii.getEquipById(reward.itemid);
+                    item = ii.getEquipById(reward.itemid);
                     if (reward.period != -1) {
                         // TODO is this a bug, meant to be 60 * 60 * 1000?
                         item.setExpiration(currentServerTime() + reward.period * 60 * 60 * 10);
                     }
-                    InventoryManipulator.addFromDrop(c, item, false);
                 } else {
-                    InventoryManipulator.addById(c, reward.itemid, reward.quantity, "", -1);
+                    item = new Item(reward.itemid, (short) 0, reward.quantity, -1);
                 }
+
+                InventoryManipulator.addFromDrop(c, item, false);
                 InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, false, false);
+                c.sendPacket(PacketCreator.getShowItemGain(reward.itemid, reward.quantity, true));
+
                 if (reward.worldmsg != null) {
                     String msg = reward.worldmsg;
                     msg.replaceAll("/name", c.getPlayer().getName());

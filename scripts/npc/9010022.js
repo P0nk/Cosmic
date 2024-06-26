@@ -1,16 +1,20 @@
-var status;
+/* Dimensional Mirror
+	Located in various towns.
+	Handles warping the player to various locations like; CarnivalPQ, Nett's Pyramid, Mu Lung Dojo, etc...
+ */
+
+var status = -1;
 var sel;
 
 function start() {
-    status = -1;
     action(1, 0, 0);
 }
 
 function action(mode, type, selection) {
-    if (mode == -1) {
+    if (mode === -1) {
         cm.dispose();
     } else {
-        if (mode == 0) {
+        if (mode === 0) {
             cm.dispose();
             return;
         }
@@ -41,15 +45,13 @@ function action(mode, type, selection) {
                     selStr += "#3# Monster Carnival 2";
                 }
 
-                /*
-                if (cm.getLevel() >= 40) { NOT IMPLEMENTED
-                    selStr += "#5# Nett's Pyramid"; 
-                } 
+                if (cm.getLevel() >= 40) {
+                    selStr += "#5# Nett's Pyramid";
+                }
 
-                if (cm.getLevel() >= 25 && cm.getLevel() <= 30) { NOT IMPLEMENTED
-                    selStr += "#6# Construction Site"; 
-                } 
-                */
+                // if (cm.getLevel() >= 25 && cm.getLevel() <= 30) { NOT IMPLEMENTED
+                //     selStr += "#6# Construction Site";
+                // }
 
                 cm.sendDimensionalMirror(selStr);
             }

@@ -30,6 +30,7 @@ import scripting.event.EventInstanceManager;
 import server.maps.Door;
 import server.maps.MapleMap;
 import server.partyquest.MonsterCarnival;
+import server.partyquest.pyramid.PyramidProcessor;
 import tools.PacketCreator;
 
 import java.util.Collection;
@@ -407,6 +408,10 @@ public class Party {
                 if (eim != null) {
                     eim.disbandParty();
                 }
+
+                if (PyramidProcessor.getPyramidForCharacter(player.getId()) != null) {
+                    PyramidProcessor.getPyramidForCharacter(player.getId()).disbandParty();
+                }
             } else {
                 MapleMap map = player.getMap();
                 if (map != null) {
@@ -423,6 +428,10 @@ public class Party {
                 EventInstanceManager eim = player.getEventInstance();
                 if (eim != null) {
                     eim.leftParty(player);
+                }
+
+                if (PyramidProcessor.getPyramidForCharacter(player.getId()) != null) {
+                    PyramidProcessor.getPyramidForCharacter(player.getId()).leaveParty(player);
                 }
             }
 

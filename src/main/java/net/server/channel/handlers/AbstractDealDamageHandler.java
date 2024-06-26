@@ -98,6 +98,8 @@ import server.maps.MapItem;
 import server.maps.MapObject;
 import server.maps.MapObjectType;
 import server.maps.MapleMap;
+import server.partyquest.pyramid.Pyramid;
+import server.partyquest.pyramid.PyramidProcessor;
 import tools.PacketCreator;
 import tools.Randomizer;
 
@@ -158,6 +160,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         try {
             if (player.isBanned()) {
                 return;
+            }
+            if (attack.skill == Beginner.RAGE_OF_PHARAOH) {
+                Pyramid pyramid = PyramidProcessor.getPyramidForCharacter(player.getId());
+                if (pyramid != null) {
+                    pyramid.useSkill(player);
+                }
             }
             if (attack.skill != 0) {
                 theSkill = SkillFactory.getSkill(attack.skill); // thanks Conrad for noticing some Aran skills not consuming MP
@@ -277,6 +285,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         distanceToDetect += 250000;
                     } else if (attack.skill == Shadower.BOOMERANG_STEP) {
                         distanceToDetect += 60000;
+                    } else if (attack.skill == Beginner.RAGE_OF_PHARAOH) {
+                        distanceToDetect += 400000; // TODO: Find the true range of the skill
                     }
 
                     if (distance > distanceToDetect) {

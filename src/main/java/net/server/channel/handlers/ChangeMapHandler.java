@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import server.Trade;
 import server.maps.MapleMap;
 import server.maps.Portal;
+import server.partyquest.pyramid.PyramidProcessor;
 import tools.PacketCreator;
 
 import java.awt.*;
@@ -100,6 +101,9 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
                         boolean executeStandardPath = true;
                         if (chr.getEventInstance() != null) {
                             executeStandardPath = chr.getEventInstance().revivePlayer(chr);
+                        }
+                        if (PyramidProcessor.getPyramidForCharacter(chr.getId()) != null) {
+                            executeStandardPath = PyramidProcessor.getPyramidForCharacter(chr.getId()).revivePlayer(chr);
                         }
                         if (executeStandardPath) {
                             chr.respawn(map.getReturnMapId());
