@@ -43,7 +43,18 @@ public class PortalScriptManager extends AbstractScriptManager {
         return instance;
     }
 
+    public boolean isScriptAvailable(String scriptPath) {
+        ScriptEngine engine = getInvocableScriptEngine(scriptPath);
+
+        return engine instanceof Invocable;
+    }
+
     private PortalScript getPortalScript(String scriptName) throws ScriptException {
+        // Additional protection in case fallback has some issue
+        if (scriptName == null || scriptName.isEmpty()) {
+            return null;
+        }
+
         String scriptPath = "portal/" + scriptName + ".js";
         PortalScript script = scripts.get(scriptPath);
         if (script != null) {
