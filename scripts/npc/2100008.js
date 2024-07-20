@@ -58,8 +58,8 @@ function action(mode, type, selection) {
                     }
                 }
                 if (cm.getChar().getGender() == 1) {
-                    for (var i = 0; i < fface.length; i++) {
-                        pushIfItemExists(facenew, fface[i] + cm.getChar().getFace()
+                    for (var i = 0; i < fface_v.length; i++) {
+                        pushIfItemExists(facenew, fface_v[i] + cm.getChar().getFace()
                             % 1000 - (cm.getChar().getFace()
                                 % 100));
                     }
