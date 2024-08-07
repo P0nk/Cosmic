@@ -35,6 +35,6 @@ public class Randomizer {
     }
 
     public static int rand(final int lbound, final int ubound) {
-        return (int) ((rand.nextDouble() * (ubound - lbound + 1)) + lbound);
+        return ((int) (rand.nextDouble() * (ubound - lbound + 1))) + lbound;
     }
 }
