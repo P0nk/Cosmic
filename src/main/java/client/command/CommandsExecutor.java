@@ -24,6 +24,10 @@
 package client.command;
 
 import client.Client;
+import client.command.commands.gm0.AddDexCommand;
+import client.command.commands.gm0.AddIntCommand;
+import client.command.commands.gm0.AddLukCommand;
+import client.command.commands.gm0.AddStrCommand;
 import client.command.commands.gm0.ChangeLanguageCommand;
 import client.command.commands.gm0.DisposeCommand;
 import client.command.commands.gm0.DropLimitCommand;
@@ -42,10 +46,8 @@ import client.command.commands.gm0.ReadPointsCommand;
 import client.command.commands.gm0.ReportBugCommand;
 import client.command.commands.gm0.ShowRatesCommand;
 import client.command.commands.gm0.StaffCommand;
-import client.command.commands.gm0.StatDexCommand;
 import client.command.commands.gm0.StatIntCommand;
 import client.command.commands.gm0.StatLukCommand;
-import client.command.commands.gm0.StatStrCommand;
 import client.command.commands.gm0.TimeCommand;
 import client.command.commands.gm0.ToggleExpCommand;
 import client.command.commands.gm0.UptimeCommand;
@@ -340,6 +342,10 @@ public class CommandsExecutor {
     private void registerLv0Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
 
+        addCommand("dex", AddDexCommand.class);
+        addCommand("int", AddIntCommand.class);
+        addCommand("luk", AddLukCommand.class);
+        addCommand("str", AddStrCommand.class);
         addCommand(new String[]{"help", "commands"}, HelpCommand.class);
         addCommand("droplimit", DropLimitCommand.class);
         addCommand("time", TimeCommand.class);
@@ -358,10 +364,10 @@ public class CommandsExecutor {
         addCommand("joinevent", JoinEventCommand.class);
         addCommand("leaveevent", LeaveEventCommand.class);
         addCommand("ranks", RanksCommand.class);
-        addCommand("str", StatStrCommand.class);
-        addCommand("dex", StatDexCommand.class);
-        addCommand("int", StatIntCommand.class);
-        addCommand("luk", StatLukCommand.class);
+        //addCommand("str", StatStrCommand.class);
+        //addCommand("dex", StatDexCommand.class);
+        //addCommand("int", StatIntCommand.class);
+        //addCommand("luk", StatLukCommand.class);
         addCommand("enableauth", EnableAuthCommand.class);
         addCommand("toggleexp", ToggleExpCommand.class);
         addCommand("mylawn", MapOwnerClaimCommand.class);
