@@ -198,20 +198,12 @@ function action(mode, type, selection) {
         } else {
             if (mats instanceof Array) {
                 for (var i = 0; complete && i < mats.length; i++) {
-                    if (matQty[i] * selection == 1) {
-                        if (!cm.haveItem(mats[i])) {
+                    if (!cm.haveItem(mats[i], matQty[i])) {
                             complete = false;
-                        }
-                    } else {
-                        if (!cm.haveItem(mats[i], matQty[i] * selection)) {
-                            complete = false;
-                        }
                     }
                 }
             } else {
-                if (!cm.haveItem(mats, matQty * selection)) {
-                    complete = false;
-                }
+                complete = false;
             }
         }
 
