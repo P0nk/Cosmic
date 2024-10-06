@@ -25,6 +25,7 @@ package client.command.commands.gm2;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import tools.PacketCreator;
 
 public class UnBugCommand extends Command {
@@ -33,7 +34,7 @@ public class UnBugCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         c.getPlayer().getMap().broadcastMessage(PacketCreator.enableActions());
     }
 }

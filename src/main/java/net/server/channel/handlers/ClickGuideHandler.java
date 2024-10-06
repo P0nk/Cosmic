@@ -36,9 +36,9 @@ public class ClickGuideHandler extends AbstractPacketHandler {
     @Override
     public void handlePacket(InPacket p, Client c) {
         if (c.getPlayer().getJob().equals(Job.NOBLESSE)) {
-            NPCScriptManager.getInstance().start(c, NpcId.MIMO, null);
+            NPCScriptManager.getInstance().start(c, NpcId.MIMO);
         } else {
-            NPCScriptManager.getInstance().start(c, NpcId.LILIN, null);
+            NPCScriptManager.getInstance().start(c, NpcId.LILIN);
         }
     }
 

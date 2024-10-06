@@ -12,6 +12,15 @@ public class ServerConfig {
     public String DB_PASS;
     public int INIT_CONNECTION_POOL_TIMEOUT;
 
+    // PostgreSQL database configuration
+    public String PG_DB_URL;
+    public String PG_DB_SCHEMA;
+    public String PG_DB_ADMIN_USERNAME;
+    public String PG_DB_ADMIN_PASSWORD;
+    public String PG_DB_USERNAME;
+    public String PG_DB_PASSWORD;
+    public boolean PG_DB_CLEAN;
+
     //Login Configuration
     public int WORLDS;
     public int WLDLIST_SIZE;
@@ -32,7 +41,6 @@ public class ServerConfig {
     public int BYPASS_PIN_EXPIRATION;
 
     public boolean AUTOMATIC_REGISTER;
-    public boolean BCRYPT_MIGRATION;
     public boolean COLLECTIVE_CHARSLOT;
     public boolean DETERRED_MULTICLIENT;
 
@@ -82,7 +90,6 @@ public class ServerConfig {
     public boolean USE_AUTOBAN;
     public boolean USE_AUTOBAN_LOG;
     public boolean USE_EXP_GAIN_LOG;
-    public boolean USE_AUTOSAVE;
     public boolean USE_SERVER_AUTOASSIGNER;
     public boolean USE_REFRESH_RANK_MOVE;
     public boolean USE_ENFORCE_ADMIN_ACCOUNT;
@@ -94,7 +101,6 @@ public class ServerConfig {
     public boolean USE_ENFORCE_ITEM_SUGGESTION;
     public boolean USE_ENFORCE_UNMERCHABLE_CASH;
     public boolean USE_ENFORCE_UNMERCHABLE_PET;
-    public boolean USE_ENFORCE_MERCHANT_SAVE;
     public boolean USE_ENFORCE_MDOOR_POSITION;
     public boolean USE_SPAWN_CLEAN_MDOOR;
     public boolean USE_SPAWN_RELEVANT_LOOT;
@@ -207,19 +213,12 @@ public class ServerConfig {
     public boolean USE_FULL_HOLY_SYMBOL;
 
     //Character Configuration
-    public boolean USE_ADD_SLOTS_BY_LEVEL;
     public boolean USE_ADD_RATES_BY_LEVEL;
     public boolean USE_STACK_COUPON_RATES;
     public boolean USE_PERFECT_PITCH;
 
     //Quest Configuration
     public boolean USE_QUEST_RATE;
-
-    //Quest Points Configuration
-    public int QUEST_POINT_REPEATABLE_INTERVAL;
-    public int QUEST_POINT_REQUIREMENT;
-    public int QUEST_POINT_PER_QUEST_COMPLETE;
-    public int QUEST_POINT_PER_EVENT_CLEAR;
 
     //Guild Configuration
     public int CREATE_GUILD_MIN_PARTNERS;

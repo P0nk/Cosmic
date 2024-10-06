@@ -36,6 +36,8 @@ import net.server.Server;
 import net.server.guild.Guild;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
 import scripting.event.EventManager;
 import scripting.npc.NPCScriptManager;
@@ -61,11 +63,16 @@ import java.util.*;
 import static java.util.concurrent.TimeUnit.DAYS;
 
 public class AbstractPlayerInteraction {
+    private static final Logger log = LoggerFactory.getLogger(AbstractPlayerInteraction.class);
 
     public Client c;
 
     public AbstractPlayerInteraction(Client c) {
         this.c = c;
+    }
+
+    public void log(String message) {
+        log.info(message);
     }
 
     public Client getClient() {
@@ -356,13 +363,17 @@ public class AbstractPlayerInteraction {
     }
 
     public void openNpc(int npcid, String script) {
+        openNpc(npcid, script, Collections.emptyMap());
+    }
+
+    public void openNpc(int npcId, String script, Map<String, Object> additionalBindings) {
         if (c.getCM() != null) {
             return;
         }
 
         c.removeClickedNPC();
         NPCScriptManager.getInstance().dispose(c);
-        NPCScriptManager.getInstance().start(c, npcid, script, null);
+        NPCScriptManager.getInstance().startWithBindings(c, npcId, script, additionalBindings);
     }
 
     public int getQuestStatus(int id) {

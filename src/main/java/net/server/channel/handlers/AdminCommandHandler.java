@@ -26,24 +26,31 @@ import client.Client;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.manipulator.InventoryManipulator;
+import lombok.extern.slf4j.Slf4j;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
 import server.life.LifeFactory;
 import server.life.Monster;
 import server.maps.MapObject;
 import server.maps.MapObjectType;
 import server.quest.Quest;
+import service.BanService;
 import tools.PacketCreator;
 import tools.Randomizer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 public final class AdminCommandHandler extends AbstractPacketHandler {
-    private static final Logger log = LoggerFactory.getLogger(AdminCommandHandler.class);
+
+    private final BanService banService;
+
+    public AdminCommandHandler(BanService banService) {
+        this.banService = banService;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -81,28 +88,7 @@ public final class AdminCommandHandler extends AbstractPacketHandler {
                 c.getPlayer().yellowMessage("Please use !ban <IGN> <Reason>");
                 break;
             case 0x04: // /block <name> <duration (in days)> <HACK/BOT/AD/HARASS/CURSE/SCAM/MISCONDUCT/SELL/ICASH/TEMP/GM/IPROGRAM/MEGAPHONE>
-                victim = p.readString();
-                int type = p.readByte(); //reason
-                int duration = p.readInt();
-                String description = p.readString();
-                String reason = c.getPlayer().getName() + " used /ban to ban";
-                target = c.getChannelServer().getPlayerStorage().getCharacterByName(victim);
-                if (target != null) {
-                    String readableTargetName = Character.makeMapleReadable(target.getName());
-                    String ip = target.getClient().getRemoteAddress();
-                    reason += readableTargetName + " (IP: " + ip + ")";
-                    if (duration == -1) {
-                        target.ban(description + " " + reason);
-                    } else {
-                        target.block(type, duration, description);
-                        target.sendPolice(duration, reason, 6000);
-                    }
-                    c.sendPacket(PacketCreator.getGMEffect(4, (byte) 0));
-                } else if (Character.ban(victim, reason, false)) {
-                    c.sendPacket(PacketCreator.getGMEffect(4, (byte) 0));
-                } else {
-                    c.sendPacket(PacketCreator.getGMEffect(6, (byte) 1));
-                }
+                handleBlock(p, c);
                 break;
             case 0x10: // /h, information added by vana -- <and tele mode f1> ... hide ofcourse
                 c.getPlayer().Hide(p.readByte() == 1);
@@ -181,6 +167,19 @@ public final class AdminCommandHandler extends AbstractPacketHandler {
             default:
                 log.info("New GM packet encountered (MODE: {}): {}", mode, p);
                 break;
+        }
+    }
+
+    private void handleBlock(InPacket p, Client c) {
+        String victimName = p.readString();
+        byte reason = p.readByte();
+        int durationDays = p.readInt();
+        String description = p.readString();
+        if (durationDays == -1) {
+            banService.permaBan(c, victimName, reason, description);
+        } else {
+            Duration duration = Duration.ofDays(durationDays);
+            banService.tempBan(c, victimName, duration, reason, description);
         }
     }
 }

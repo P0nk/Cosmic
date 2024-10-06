@@ -22,7 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package scripting.npc;
 
 import client.Character;
-import client.*;
+import client.Client;
+import client.Job;
+import client.Skill;
+import client.SkillFactory;
+import client.SkinColor;
+import client.Stat;
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.Pet;
@@ -31,7 +36,6 @@ import constants.game.GameConstants;
 import constants.id.MapId;
 import constants.id.NpcId;
 import constants.inventory.ItemConstants;
-import constants.string.LanguageConstants;
 import net.server.Server;
 import net.server.channel.Channel;
 import net.server.coordinator.matchchecker.MatchCheckerListenerFactory.MatchCheckerType;
@@ -46,8 +50,13 @@ import provider.Data;
 import provider.DataProviderFactory;
 import provider.wz.WZFiles;
 import scripting.AbstractPlayerInteraction;
-import server.*;
+import server.ItemInformationProvider;
+import server.MapleLeafLogger;
+import server.Marriage;
+import server.SkillbookInformationProvider;
 import server.SkillbookInformationProvider.SkillBookEntry;
+import server.StatEffect;
+import server.TimerManager;
 import server.events.gm.Event;
 import server.expeditions.Expedition;
 import server.expeditions.ExpeditionType;
@@ -68,8 +77,13 @@ import tools.packets.WeddingPackets;
 
 import java.awt.*;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -84,7 +98,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     private String scriptName;
     private String getText;
     private boolean itemScript;
-    private List<PartyCharacter> otherParty;
 
     private final Map<Integer, String> npcDefaultTalks = new HashMap<>();
 
@@ -102,11 +115,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         this(c, npc, -1, scriptName, false);
     }
 
-    public NPCConversationManager(Client c, int npc, List<PartyCharacter> otherParty, boolean test) {
+    public NPCConversationManager(Client c, int npc) {
         super(c);
         this.c = c;
         this.npc = npc;
-        this.otherParty = otherParty;
     }
 
     public NPCConversationManager(Client c, int npc, int oid, String scriptName, boolean itemScript) {
@@ -274,8 +286,21 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return getPlayer().getMeso();
     }
 
+    // TODO: refactor scripts to use this instead of "getMeso() < amount"
+    public boolean hasMeso(int amount) {
+        return getMeso() >= amount;
+    }
+
     public void gainMeso(int gain) {
         getPlayer().gainMeso(gain);
+    }
+
+    // TODO: refactor scripts to use this instead of "gainMeso(-amount)"
+    public void loseMeso(int loss) {
+        if (loss < 0) {
+            throw new IllegalArgumentException("Can only lose positive amount of mesos");
+        }
+        gainMeso(-loss);
     }
 
     public void gainMeso(Double gain) {
@@ -378,17 +403,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void resetStats() {
         getPlayer().resetStats();
-    }
-
-    public void openShopNPC(int id) {
-        Shop shop = ShopFactory.getInstance().getShop(id);
-
-        if (shop != null) {
-            shop.sendShop(c);
-        } else {    // check for missing shopids thanks to resinate
-            log.warn("Shop ID: {} is missing from database.", id);
-            ShopFactory.getInstance().getShop(11000).sendShop(c);
-        }
     }
 
     public void maxMastery() {
@@ -622,7 +636,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     public boolean sendCPQMapLists() {
-        String msg = LanguageConstants.getMessage(getPlayer(), LanguageConstants.CPQPickRoom);
+        String msg = MonsterCarnival.PICK_ROOM_TEXT;
         int msgLen = msg.length();
         for (int i = 0; i < 6; i++) {
             if (fieldTaken(i)) {
@@ -678,7 +692,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 if (mc != null) {
                     mc.setChallenged(false);
                     mc.changeMap(map, map.getPortal(0));
-                    mc.sendPacket(PacketCreator.serverNotice(6, LanguageConstants.getMessage(mc, LanguageConstants.CPQEntryLobby)));
+                    mc.sendPacket(PacketCreator.serverNotice(6, MonsterCarnival.ENTER_LOBBY_TEXT));
                     TimerManager tMan = TimerManager.getInstance();
                     tMan.schedule(() -> mapClock((int) MINUTES.toSeconds(3)), 1500);
 
@@ -865,7 +879,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     public boolean sendCPQMapLists2() {
-        String msg = LanguageConstants.getMessage(getPlayer(), LanguageConstants.CPQPickRoom);
+        String msg = MonsterCarnival.PICK_ROOM_TEXT;
         int msgLen = msg.length();
         for (int i = 0; i < 3; i++) {
             if (fieldTaken2(i)) {
@@ -921,7 +935,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 if (mc != null) {
                     mc.setChallenged(false);
                     mc.changeMap(map, map.getPortal(0));
-                    mc.sendPacket(PacketCreator.serverNotice(6, LanguageConstants.getMessage(mc, LanguageConstants.CPQEntryLobby)));
+                    mc.sendPacket(PacketCreator.serverNotice(6, MonsterCarnival.ENTER_LOBBY_TEXT));
                     TimerManager tMan = TimerManager.getInstance();
                     tMan.schedule(() -> mapClock((int) MINUTES.toSeconds(3)), 1500);
 
@@ -955,7 +969,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         for (MapObject mmo : map.getAllPlayer()) {
             Character mc = (Character) mmo;
             if (mc.getParty() == null) {
-                sendOk(LanguageConstants.getMessage(mc, LanguageConstants.CPQFindError));
+                sendOk(MonsterCarnival.FIND_ERROR_TEXT);
                 return;
             }
             if (mc.getParty().getLeader().getId() == mc.getId()) {
@@ -966,13 +980,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         if (leader != null) {
             if (!leader.isChallenged()) {
                 if (!sendCPQChallenge("cpq2", leader.getId())) {
-                    sendOk(LanguageConstants.getMessage(leader, LanguageConstants.CPQChallengeRoomAnswer));
+                    sendOk(MonsterCarnival.FACING_CHALLENGE_TEXT);
                 }
             } else {
-                sendOk(LanguageConstants.getMessage(leader, LanguageConstants.CPQChallengeRoomAnswer));
+                sendOk(MonsterCarnival.FACING_CHALLENGE_TEXT);
             }
         } else {
-            sendOk(LanguageConstants.getMessage(leader, LanguageConstants.CPQLeaderNotFound));
+            sendOk(MonsterCarnival.LEADER_NOT_FOUND_TEXT);
         }
     }
 
@@ -986,7 +1000,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         for (MapObject mmo : map.getAllPlayer()) {
             Character mc = (Character) mmo;
             if (mc.getParty() == null) {
-                sendOk(LanguageConstants.getMessage(mc, LanguageConstants.CPQFindError));
+                sendOk(MonsterCarnival.FIND_ERROR_TEXT);
                 return;
             }
             if (mc.getParty().getLeader().getId() == mc.getId()) {
@@ -997,13 +1011,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         if (leader != null) {
             if (!leader.isChallenged()) {
                 if (!sendCPQChallenge("cpq1", leader.getId())) {
-                    sendOk(LanguageConstants.getMessage(leader, LanguageConstants.CPQChallengeRoomAnswer));
+                    sendOk(MonsterCarnival.FACING_CHALLENGE_TEXT);
                 }
             } else {
-                sendOk(LanguageConstants.getMessage(leader, LanguageConstants.CPQChallengeRoomAnswer));
+                sendOk(MonsterCarnival.FACING_CHALLENGE_TEXT);
             }
         } else {
-            sendOk(LanguageConstants.getMessage(leader, LanguageConstants.CPQLeaderNotFound));
+            sendOk(MonsterCarnival.LEADER_NOT_FOUND_TEXT);
         }
     }
 

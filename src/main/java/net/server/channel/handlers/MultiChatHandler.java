@@ -25,6 +25,7 @@ import client.Character;
 import client.Client;
 import client.autoban.AutobanFactory;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import net.server.world.World;
@@ -53,9 +54,9 @@ public final class MultiChatHandler extends AbstractPacketHandler {
         if (chattext.length() > Byte.MAX_VALUE && !player.isGM()) {
             AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit chats.");
             log.warn("Chr {} tried to send text with length of {}", c.getPlayer().getName(), chattext.length());
-            c.disconnect(true, false);
-            return;
+            throw GameViolationException.textLength(chattext);
         }
+
         World world = c.getWorldServer();
         if (type == 0) {
             world.buddyChat(recipients, player.getId(), player.getName(), chattext);

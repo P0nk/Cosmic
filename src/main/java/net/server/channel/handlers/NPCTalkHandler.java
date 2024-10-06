@@ -33,10 +33,16 @@ import scripting.npc.NPCScriptManager;
 import server.life.NPC;
 import server.life.PlayerNPC;
 import server.maps.MapObject;
+import server.shop.ShopFactory;
 import tools.PacketCreator;
 
 public final class NPCTalkHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(NPCTalkHandler.class);
+    private final ShopFactory shopFactory;
+
+    public NPCTalkHandler(ShopFactory shopFactory) {
+        this.shopFactory = shopFactory;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -67,13 +73,13 @@ public final class NPCTalkHandler extends AbstractPacketHandler {
 
                 // Custom handling to reduce the amount of scripts needed.
                 if (npc.getId() >= NpcId.GACHAPON_MIN && npc.getId() <= NpcId.GACHAPON_MAX) {
-                    NPCScriptManager.getInstance().start(c, npc.getId(), "gachapon", null);
+                    NPCScriptManager.getInstance().start(c, npc.getId(), "gachapon");
                 } else if (npc.getName().endsWith("Maple TV")) {
-                    NPCScriptManager.getInstance().start(c, npc.getId(), "mapleTV", null);
+                    NPCScriptManager.getInstance().start(c, npc.getId(), "mapleTV");
                 } else {
                     boolean hasNpcScript = NPCScriptManager.getInstance().start(c, npc.getId(), oid, null);
                     if (!hasNpcScript) {
-                        if (!npc.hasShop()) {
+                        if (!hasShop(npc)) {
                             log.warn("NPC {} ({}) is not coded", npc.getName(), npc.getId());
                             return;
                         } else if (c.getPlayer().getShop() != null) {
@@ -81,7 +87,7 @@ public final class NPCTalkHandler extends AbstractPacketHandler {
                             return;
                         }
 
-                        npc.sendShop(c);
+                        sendShop(npc, c);
                     }
                 }
             }
@@ -89,10 +95,18 @@ public final class NPCTalkHandler extends AbstractPacketHandler {
             NPCScriptManager nsm = NPCScriptManager.getInstance();
 
             if (pnpc.getScriptId() < NpcId.CUSTOM_DEV && !nsm.isNpcScriptAvailable(c, "" + pnpc.getScriptId())) {
-                nsm.start(c, pnpc.getScriptId(), "rank_user", null);
+                nsm.start(c, pnpc.getScriptId(), "rank_user");
             } else {
-                nsm.start(c, pnpc.getScriptId(), null);
+                nsm.start(c, pnpc.getScriptId());
             }
         }
+    }
+
+    private boolean hasShop(NPC npc) {
+        return shopFactory.getShop(npc.getId()).isPresent();
+    }
+
+    private void sendShop(NPC npc, Client c) {
+        shopFactory.getShop(npc.getId()).ifPresent(shop -> shop.sendShop(c));
     }
 }

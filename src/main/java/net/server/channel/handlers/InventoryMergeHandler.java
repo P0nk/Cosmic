@@ -29,6 +29,7 @@ import client.inventory.Item;
 import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import server.ItemInformationProvider;
@@ -49,8 +50,7 @@ public final class InventoryMergeHandler extends AbstractPacketHandler {
 
         byte invType = p.readByte();
         if (invType < 1 || invType > 5) {
-            c.disconnect(false, false);
-            return;
+            throw GameViolationException.inventoryType(invType);
         }
 
         InventoryType inventoryType = InventoryType.getByType(invType);

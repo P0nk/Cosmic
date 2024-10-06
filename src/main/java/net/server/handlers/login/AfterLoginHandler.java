@@ -24,10 +24,15 @@ package net.server.handlers.login;
 import client.Client;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
-import net.server.coordinator.session.SessionCoordinator;
+import service.AccountService;
 import tools.PacketCreator;
 
 public final class AfterLoginHandler extends AbstractPacketHandler {
+    private final AccountService accountService;
+
+    public AfterLoginHandler(final AccountService accountService) {
+        this.accountService = accountService;
+    }
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
@@ -57,8 +62,7 @@ public final class AfterLoginHandler extends AbstractPacketHandler {
                 c.sendPacket(PacketCreator.requestPinAfterFailure());
             }
         } else if (c2 == 0 && c3 == 5) {
-            SessionCoordinator.getInstance().closeSession(c, null);
-            c.updateLoginState(Client.LOGIN_NOTLOGGEDIN);
+            accountService.setLoggedOutAndDisconnect(c);
         }
     }
 }

@@ -3,6 +3,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.game.NpcChat;
 import constants.id.NpcId;
 import server.ThreadManager;
@@ -86,7 +87,7 @@ public class IdCommand extends Command {
     }
 
     @Override
-    public void execute(Client client, final String[] params) {
+    public void execute(Client client, final String[] params, CommandContext ctx) {
         final Character chr = client.getPlayer();
         if (params.length < 2) {
             chr.yellowMessage("Syntax: !id <type> <query>");

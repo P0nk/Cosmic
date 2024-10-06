@@ -33,9 +33,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Calendar;
-
-import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * @author Ronan
@@ -60,7 +57,7 @@ public final class TransferNameHandler extends AbstractPacketHandler {
         if (chr.getLevel() < 10) {
             c.sendPacket(PacketCreator.sendNameTransferRules(4));
             return;
-        } else if (c.getTempBanCalendar() != null && c.getTempBanCalendar().getTimeInMillis() + DAYS.toMillis(30) < Calendar.getInstance().getTimeInMillis()) {
+        } else if (c.wasRecentlyBanned()) {
             c.sendPacket(PacketCreator.sendNameTransferRules(2));
             return;
         }

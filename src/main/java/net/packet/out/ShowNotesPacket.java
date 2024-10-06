@@ -22,7 +22,7 @@ public final class ShowNotesPacket extends ByteBufOutPacket {
 
     private void writeNote(Note note) {
         writeInt(note.id());
-        writeString(note.from() + " "); //Stupid nexon forgot space lol
+        writeString(note.sender() + " "); //Stupid nexon forgot space lol
         writeString(note.message());
         writeLong(getTime(note.timestamp()));
         writeByte(note.fame());

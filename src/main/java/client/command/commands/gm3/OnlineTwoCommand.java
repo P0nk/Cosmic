@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import net.server.channel.Channel;
 
@@ -35,7 +36,7 @@ public class OnlineTwoCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         int total = 0;
         for (Channel ch : Server.getInstance().getChannelsFromWorld(player.getWorld())) {

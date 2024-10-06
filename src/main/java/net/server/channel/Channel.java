@@ -24,6 +24,8 @@ package net.server.channel;
 import client.Character;
 import config.YamlConfig;
 import constants.id.MapId;
+import database.drop.DropProvider;
+import net.ChannelDependencies;
 import net.netty.ChannelServer;
 import net.packet.Packet;
 import net.server.PlayerStorage;
@@ -46,6 +48,7 @@ import server.maps.MapManager;
 import server.maps.MapleMap;
 import server.maps.MiniDungeon;
 import server.maps.MiniDungeonInfo;
+import service.TransitionService;
 import tools.PacketCreator;
 import tools.Pair;
 
@@ -82,12 +85,14 @@ public final class Channel {
     private final int world;
     private final int channel;
 
-    private PlayerStorage players = new PlayerStorage();
+    private PlayerStorage players;
     private ChannelServer channelServer;
     private String serverMessage;
     private MapManager mapManager;
     private EventScriptManager eventSM;
     private ServicesManager services;
+    private final DropProvider dropProvider;
+    private final TransitionService transitionService;
     private final Map<Integer, HiredMerchant> hiredMerchants = new HashMap<>();
     private final Map<Integer, Integer> storedVars = new HashMap<>();
     private final Set<Integer> playersAway = new HashSet<>();
@@ -122,12 +127,15 @@ public final class Channel {
     private final Lock merchRlock;
     private final Lock merchWlock;
 
-    public Channel(final int world, final int channel, long startTime) {
+    public Channel(final int world, final int channel, long startTime, ChannelDependencies channelDependencies) {
         this.world = world;
         this.channel = channel;
+        this.dropProvider = channelDependencies.dropProvider();
+        this.transitionService = channelDependencies.transitionService();
+        this.players = new PlayerStorage(channelDependencies.transitionService());
 
         this.ongoingStartTime = startTime + 10000;  // rude approach to a world's last channel boot time, placeholder for the 1st wedding reservation ever
-        this.mapManager = new MapManager(null, world, channel);
+        this.mapManager = new MapManager(null, world, channel, dropProvider);
         this.port = BASE_PORT + (this.channel - 1) + (world * 100);
         this.ip = YamlConfig.config.server.HOST + ":" + port;
 
@@ -136,15 +144,15 @@ public final class Channel {
         this.merchWlock = rwLock.writeLock();
 
         try {
-            this.channelServer = initServer(port, world, channel);
+            this.channelServer = initServer(port, world, channel, channelDependencies.transitionService());
             expedType.addAll(Arrays.asList(ExpeditionType.values()));
 
             if (Server.getInstance().isOnline()) {  // postpone event loading to improve boot time... thanks Riizade, daronhudson for noticing slow startup times
-                eventSM = new EventScriptManager(this, getEvents());
+                eventSM = new EventScriptManager(this, getEvents(), dropProvider);
                 eventSM.init();
             } else {
                 String[] ev = {"0_EXAMPLE"};
-                eventSM = new EventScriptManager(this, ev);
+                eventSM = new EventScriptManager(this, ev, dropProvider);
             }
 
             dojoStage = new int[20];
@@ -164,8 +172,8 @@ public final class Channel {
         }
     }
 
-    private ChannelServer initServer(int port, int world, int channel) {
-        ChannelServer channelServer = new ChannelServer(port, world, channel);
+    private ChannelServer initServer(int port, int world, int channel, TransitionService transitionService) {
+        ChannelServer channelServer = new ChannelServer(port, world, channel, transitionService);
         channelServer.start();
         return channelServer;
     }
@@ -177,7 +185,7 @@ public final class Channel {
 
         eventSM.cancel();
         eventSM = null;
-        eventSM = new EventScriptManager(this, getEvents());
+        eventSM = new EventScriptManager(this, getEvents(), dropProvider);
     }
 
     public synchronized void shutdown() {
@@ -342,16 +350,12 @@ public final class Channel {
         playersAway.remove(chrId);
     }
 
-    public boolean canUninstall() {
-        return players.getSize() == 0 && playersAway.isEmpty();
-    }
-
     private void disconnectAwayPlayers() {
         World wserv = getWorldServer();
         for (Integer cid : playersAway) {
             Character chr = wserv.getPlayerStorage().getCharacterById(cid);
             if (chr != null && chr.isLoggedin()) {
-                chr.getClient().forceDisconnect();
+                transitionService.forceDisconnect(chr.getClient());
             }
         }
     }

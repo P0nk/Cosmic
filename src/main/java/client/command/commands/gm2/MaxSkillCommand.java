@@ -29,6 +29,7 @@ import client.Job;
 import client.Skill;
 import client.SkillFactory;
 import client.command.Command;
+import client.command.CommandContext;
 import provider.Data;
 import provider.DataProviderFactory;
 import provider.wz.WZFiles;
@@ -39,7 +40,7 @@ public class MaxSkillCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (Data skill_ : DataProviderFactory.getDataProvider(WZFiles.STRING).getData("Skill.img").getChildren()) {
             try {

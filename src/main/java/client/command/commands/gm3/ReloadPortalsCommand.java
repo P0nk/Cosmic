@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import scripting.portal.PortalScriptManager;
 
 public class ReloadPortalsCommand extends Command {
@@ -34,7 +35,7 @@ public class ReloadPortalsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         PortalScriptManager.getInstance().reloadPortalScripts();
         player.dropMessage(5, "Reloaded Portals");

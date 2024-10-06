@@ -26,6 +26,7 @@ import client.Client;
 import client.SkillMacro;
 import client.autoban.AutobanFactory;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 
 public final class SkillMacroHandler extends AbstractPacketHandler {
@@ -42,8 +43,7 @@ public final class SkillMacroHandler extends AbstractPacketHandler {
             String name = p.readString();
             if (name.length() > 12) {
                 AutobanFactory.PACKET_EDIT.alert(chr, "Invalid name length " + name + " (" + name.length() + ") for skill macro.");
-                c.disconnect(false, false);
-                break;
+                throw GameViolationException.textLength(name);
             }
 
             int shout = p.readByte();

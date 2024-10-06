@@ -14,9 +14,9 @@ var staff_heading = "!";
 var levels = ["Common", "Donator", "JrGM", "GM", "SuperGM", "Developer", "Admin"];
 var commands;
 
+// Expectation: "ce" bound to an instance of java.client.command.CommandsExecutor
 function writeHeavenMSCommands() {
-    const CommandsExecutor = Java.type('client.command.CommandsExecutor');
-    commands = CommandsExecutor.getInstance().getGmCommands();
+    commands = ce.getGmCommands();
 }
 
 function start() {
