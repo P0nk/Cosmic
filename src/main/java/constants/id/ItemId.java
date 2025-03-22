@@ -70,14 +70,16 @@ public class ItemId {
     // Throwing star
     public static final int SUBI_THROWING_STARS = 2070000;
     public static final int HWABI_THROWING_STARS = 2070007;
+    private static final int ORANGE_THROWING_STARS = 2070013;
     public static final int BALANCED_FURY = 2070018;
     public static final int CRYSTAL_ILBI_THROWING_STARS = 2070016;
-    private static final int THROWING_STAR_MIN = SUBI_THROWING_STARS;
-    private static final int THROWING_STAR_MAX = 2070016;
-    public static final int DEVIL_RAIN_THROWING_STAR = 2070014;
 
-    public static int[] allThrowingStarIds() {
-        return IntStream.range(THROWING_STAR_MIN, THROWING_STAR_MAX + 1).toArray();
+    public static IntStream allThrowingStarIds() {
+        // excluding 2070015 - A Beginner Thief's Throwing Stars
+        return IntStream.concat(
+                IntStream.range(SUBI_THROWING_STARS, ORANGE_THROWING_STARS + 1),
+                IntStream.of(CRYSTAL_ILBI_THROWING_STARS, BALANCED_FURY)
+        );
     }
 
     // Bullet
@@ -87,8 +89,12 @@ public class ItemId {
     public static final int BLAZE_CAPSULE = 2331000;
     public static final int GLAZE_CAPSULE = 2332000;
 
-    public static int[] allBulletIds() {
-        return IntStream.range(BULLET_MIN, BULLET_MAX + 1).toArray();
+    public static IntStream allBulletIds() {
+        return IntStream.range(BULLET_MIN, BULLET_MAX + 1);
+    }
+
+    public static IntStream allBulletCapsuleIds() {
+        return IntStream.of(BLAZE_CAPSULE, GLAZE_CAPSULE);
     }
 
     // Starter
@@ -216,6 +222,10 @@ public class ItemId {
     public static final int ADVANCED_MONSTER_CRYSTAL_2 = 4260007;
     public static final int ADVANCED_MONSTER_CRYSTAL_3 = 4260008;
 
+    public static boolean isMonsterCrystal(int itemId) {
+        return itemId / 10000 == 426;
+    }
+
     // NPC weather (PQ)
     public static final int NPC_WEATHER_GROWLIE = 5120016; // Henesys PQ
 
@@ -280,7 +290,7 @@ public class ItemId {
 
     public static boolean isWeddingRing(int itemId) {
         return itemId == WEDDING_RING_MOONSTONE || itemId == WEDDING_RING_STAR ||
-                itemId == WEDDING_RING_GOLDEN || itemId == WEDDING_RING_SILVER;
+               itemId == WEDDING_RING_GOLDEN || itemId == WEDDING_RING_SILVER;
     }
 
     // Priority buff

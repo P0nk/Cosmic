@@ -109,7 +109,7 @@ public class Pet extends Item {
         }
     }
 
-    public void saveToDb() {
+    public void saveToDb() { // TODO: throw SQLException
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("UPDATE pets SET name = ?, level = ?, closeness = ?, fullness = ?, summoned = ?, flag = ? WHERE petid = ?")) {
             ps.setString(1, getName());

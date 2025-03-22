@@ -2,6 +2,7 @@ package client.command.commands.gm6;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractScriptManager;
@@ -27,7 +28,7 @@ public class DevtestCommand extends Command {
     }
 
     @Override
-    public void execute(Client client, String[] params) {
+    public void execute(Client client, String[] params, CommandContext context) {
         DevtestScriptManager scriptManager = new DevtestScriptManager();
         ScriptEngine scriptEngine = scriptManager.getInvocableScriptEngine("devtest.js");
         try {

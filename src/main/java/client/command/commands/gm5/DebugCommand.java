@@ -26,6 +26,7 @@ package client.command.commands.gm5;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.NpcId;
 import net.server.Server;
 import server.TimerManager;
@@ -48,7 +49,7 @@ public class DebugCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
 
         if (params.length < 1) {

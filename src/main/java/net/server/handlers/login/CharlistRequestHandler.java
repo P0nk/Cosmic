@@ -21,13 +21,24 @@
  */
 package net.server.handlers.login;
 
+import client.Character;
 import client.Client;
+import model.CharacterIdentity;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
+import net.packet.Packet;
 import net.server.Server;
 import net.server.channel.Channel;
 import net.server.world.World;
+import tools.DatabaseConnection;
 import tools.PacketCreator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class CharlistRequestHandler extends AbstractPacketHandler {
 
@@ -51,6 +62,42 @@ public final class CharlistRequestHandler extends AbstractPacketHandler {
 
         c.setWorld(world);
         c.setChannel(channel);
-        c.sendCharList(world);
+        sendChrList(c, world);
+    }
+
+    private void sendChrList(Client c, int worldId) {
+        List<Character> chrs = loadChrs(c, worldId);
+        Packet charListPacket = PacketCreator.getCharList(c, chrs, 0);
+        c.sendPacket(charListPacket);
+    }
+
+    private List<Character> loadChrs(Client c, int worldId) {
+        List<Character> chars = new ArrayList<>();
+        try {
+            for (CharacterIdentity identity : loadChrIdentities(c.getAccID(), worldId)) {
+                chars.add(Character.loadCharFromDB(identity.id(), c, false));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return chars;
+    }
+
+    private List<CharacterIdentity> loadChrIdentities(int accountId, int worldId) {
+        List<CharacterIdentity> chars = new ArrayList<>(15);
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT id, name FROM characters WHERE accountid = ? AND world = ?")) {
+            ps.setInt(1, accountId);
+            ps.setInt(2, worldId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    chars.add(new CharacterIdentity(rs.getString("name"), rs.getInt("id")));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return chars;
     }
 }

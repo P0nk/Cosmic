@@ -276,38 +276,45 @@ public final class PacketProcessor {
     }
 
     private void registerLoginHandlers() {
-        registerHandler(RecvOpcode.ACCEPT_TOS, new AcceptToSHandler());
-        registerHandler(RecvOpcode.AFTER_LOGIN, new AfterLoginHandler());
+        registerHandler(RecvOpcode.ACCEPT_TOS, new AcceptToSHandler(channelDeps.accountService()));
+        registerHandler(RecvOpcode.AFTER_LOGIN, new AfterLoginHandler(channelDeps.accountService()));
         registerHandler(RecvOpcode.SERVERLIST_REREQUEST, new ServerlistRequestHandler());
         registerHandler(RecvOpcode.CHARLIST_REQUEST, new CharlistRequestHandler());
-        registerHandler(RecvOpcode.CHAR_SELECT, new CharSelectedHandler());
-        registerHandler(RecvOpcode.LOGIN_PASSWORD, new LoginPasswordHandler());
+        registerHandler(RecvOpcode.CHAR_SELECT, new CharSelectedHandler(channelDeps.accountService(),
+                channelDeps.banService(), channelDeps.transitionService()));
+        registerHandler(RecvOpcode.LOGIN_PASSWORD, new LoginPasswordHandler(channelDeps.accountService(),
+                channelDeps.transitionService(), channelDeps.banService()));
         registerHandler(RecvOpcode.RELOG, new RelogRequestHandler());
         registerHandler(RecvOpcode.SERVERLIST_REQUEST, new ServerlistRequestHandler());
         registerHandler(RecvOpcode.SERVERSTATUS_REQUEST, new ServerStatusRequestHandler());
         registerHandler(RecvOpcode.CHECK_CHAR_NAME, new CheckCharNameHandler());
-        registerHandler(RecvOpcode.CREATE_CHAR, new CreateCharHandler());
+        registerHandler(RecvOpcode.CREATE_CHAR, new CreateCharHandler(channelDeps.characterCreator()));
         registerHandler(RecvOpcode.DELETE_CHAR, new DeleteCharHandler());
         registerHandler(RecvOpcode.VIEW_ALL_CHAR, new ViewAllCharHandler());
-        registerHandler(RecvOpcode.PICK_ALL_CHAR, new ViewAllCharSelectedHandler());
-        registerHandler(RecvOpcode.REGISTER_PIN, new RegisterPinHandler());
+        registerHandler(RecvOpcode.PICK_ALL_CHAR, new ViewAllCharSelectedHandler(channelDeps.accountService(),
+                channelDeps.banService(), channelDeps.transitionService()));
+        registerHandler(RecvOpcode.REGISTER_PIN, new RegisterPinHandler(channelDeps.accountService()));
         registerHandler(RecvOpcode.GUEST_LOGIN, new GuestLoginHandler());
-        registerHandler(RecvOpcode.REGISTER_PIC, new RegisterPicHandler());
-        registerHandler(RecvOpcode.CHAR_SELECT_WITH_PIC, new CharSelectedWithPicHandler());
-        registerHandler(RecvOpcode.SET_GENDER, new SetGenderHandler());
-        registerHandler(RecvOpcode.VIEW_ALL_WITH_PIC, new ViewAllCharSelectedWithPicHandler());
-        registerHandler(RecvOpcode.VIEW_ALL_PIC_REGISTER, new ViewAllCharRegisterPicHandler());
+        registerHandler(RecvOpcode.REGISTER_PIC, new RegisterPicHandler(channelDeps.banService(),
+                channelDeps.accountService(), channelDeps.transitionService()));
+        registerHandler(RecvOpcode.CHAR_SELECT_WITH_PIC, new CharSelectedWithPicHandler(channelDeps.accountService(),
+                channelDeps.banService(), channelDeps.transitionService()));
+        registerHandler(RecvOpcode.SET_GENDER, new SetGenderHandler(channelDeps.accountService()));
+        registerHandler(RecvOpcode.VIEW_ALL_WITH_PIC, new ViewAllCharSelectedWithPicHandler(channelDeps.accountService(),
+                channelDeps.banService(), channelDeps.transitionService()));
+        registerHandler(RecvOpcode.VIEW_ALL_PIC_REGISTER, new ViewAllCharRegisterPicHandler(channelDeps.banService(),
+                channelDeps.accountService(), channelDeps.transitionService()));
     }
 
     private void registerChannelHandlers() {
         registerHandler(RecvOpcode.NAME_TRANSFER, new TransferNameHandler());
         registerHandler(RecvOpcode.CHECK_CHAR_NAME, new TransferNameResultHandler());
         registerHandler(RecvOpcode.WORLD_TRANSFER, new TransferWorldHandler());
-        registerHandler(RecvOpcode.CHANGE_CHANNEL, new ChangeChannelHandler());
+        registerHandler(RecvOpcode.CHANGE_CHANNEL, new ChangeChannelHandler(channelDeps.transitionService()));
         registerHandler(RecvOpcode.STRANGE_DATA, LoginRequiringNoOpHandler.getInstance());
-        registerHandler(RecvOpcode.GENERAL_CHAT, new GeneralChatHandler());
+        registerHandler(RecvOpcode.GENERAL_CHAT, new GeneralChatHandler(channelDeps.commandsExecutor()));
         registerHandler(RecvOpcode.WHISPER, new WhisperHandler());
-        registerHandler(RecvOpcode.NPC_TALK, new NPCTalkHandler());
+        registerHandler(RecvOpcode.NPC_TALK, new NPCTalkHandler(channelDeps.shopFactory()));
         registerHandler(RecvOpcode.NPC_TALK_MORE, new NPCMoreTalkHandler());
         registerHandler(RecvOpcode.QUEST_ACTION, new QuestActionHandler());
         registerHandler(RecvOpcode.GRENADE_EFFECT, new GrenadeEffectHandler());
@@ -315,28 +322,30 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.ITEM_SORT, new InventoryMergeHandler());
         registerHandler(RecvOpcode.ITEM_MOVE, new ItemMoveHandler());
         registerHandler(RecvOpcode.MESO_DROP, new MesoDropHandler());
-        registerHandler(RecvOpcode.PLAYER_LOGGEDIN, new PlayerLoggedinHandler(channelDeps.noteService()));
-        registerHandler(RecvOpcode.CHANGE_MAP, new ChangeMapHandler());
+        registerHandler(RecvOpcode.PLAYER_LOGGEDIN, new PlayerLoggedinHandler(channelDeps.characterLoader(),
+                channelDeps.accountService(), channelDeps.noteService()));
+        registerHandler(RecvOpcode.CHANGE_MAP, new ChangeMapHandler(channelDeps.transitionService()));
         registerHandler(RecvOpcode.MOVE_LIFE, new MoveLifeHandler());
-        registerHandler(RecvOpcode.CLOSE_RANGE_ATTACK, new CloseRangeDamageHandler());
-        registerHandler(RecvOpcode.RANGED_ATTACK, new RangedAttackHandler());
-        registerHandler(RecvOpcode.MAGIC_ATTACK, new MagicDamageHandler());
+        registerHandler(RecvOpcode.CLOSE_RANGE_ATTACK, new CloseRangeDamageHandler(channelDeps.dropProvider(), channelDeps.banService()));
+        registerHandler(RecvOpcode.RANGED_ATTACK, new RangedAttackHandler(channelDeps.dropProvider(), channelDeps.banService()));
+        registerHandler(RecvOpcode.MAGIC_ATTACK, new MagicDamageHandler(channelDeps.dropProvider(), channelDeps.banService()));
         registerHandler(RecvOpcode.TAKE_DAMAGE, new TakeDamageHandler());
         registerHandler(RecvOpcode.MOVE_PLAYER, new MovePlayerHandler());
-        registerHandler(RecvOpcode.USE_CASH_ITEM, new UseCashItemHandler(channelDeps.noteService()));
+        registerHandler(RecvOpcode.USE_CASH_ITEM, new UseCashItemHandler(channelDeps.noteService(),
+                channelDeps.shopFactory(), channelDeps.accountService()));
         registerHandler(RecvOpcode.USE_ITEM, new UseItemHandler());
         registerHandler(RecvOpcode.USE_RETURN_SCROLL, new UseItemHandler());
         registerHandler(RecvOpcode.USE_UPGRADE_SCROLL, new ScrollHandler());
         registerHandler(RecvOpcode.USE_SUMMON_BAG, new UseSummonBagHandler());
         registerHandler(RecvOpcode.FACE_EXPRESSION, new FaceExpressionHandler());
-        registerHandler(RecvOpcode.HEAL_OVER_TIME, new HealOvertimeHandler());
+        registerHandler(RecvOpcode.HEAL_OVER_TIME, new HealOvertimeHandler(channelDeps.banService()));
         registerHandler(RecvOpcode.ITEM_PICKUP, new ItemPickupHandler());
         registerHandler(RecvOpcode.CHAR_INFO_REQUEST, new CharInfoRequestHandler());
         registerHandler(RecvOpcode.SPECIAL_MOVE, new SpecialMoveHandler());
         registerHandler(RecvOpcode.USE_INNER_PORTAL, new InnerPortalHandler());
         registerHandler(RecvOpcode.CANCEL_BUFF, new CancelBuffHandler());
         registerHandler(RecvOpcode.CANCEL_ITEM_EFFECT, new CancelItemEffectHandler());
-        registerHandler(RecvOpcode.PLAYER_INTERACTION, new PlayerInteractionHandler());
+        registerHandler(RecvOpcode.PLAYER_INTERACTION, new PlayerInteractionHandler(channelDeps.characterSaver()));
         registerHandler(RecvOpcode.RPS_ACTION, new RPSActionHandler());
         registerHandler(RecvOpcode.DISTRIBUTE_AP, new DistributeAPHandler());
         registerHandler(RecvOpcode.DISTRIBUTE_SP, new DistributeSPHandler());
@@ -348,11 +357,11 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.DENY_PARTY_REQUEST, new DenyPartyRequestHandler());
         registerHandler(RecvOpcode.MULTI_CHAT, new MultiChatHandler());
         registerHandler(RecvOpcode.USE_DOOR, new DoorHandler());
-        registerHandler(RecvOpcode.ENTER_MTS, new EnterMTSHandler());
-        registerHandler(RecvOpcode.ENTER_CASHSHOP, new EnterCashShopHandler());
+        registerHandler(RecvOpcode.ENTER_MTS, new EnterMTSHandler(channelDeps.characterSaver()));
+        registerHandler(RecvOpcode.ENTER_CASHSHOP, new EnterCashShopHandler(channelDeps.characterSaver()));
         registerHandler(RecvOpcode.DAMAGE_SUMMON, new DamageSummonHandler());
         registerHandler(RecvOpcode.MOVE_SUMMON, new MoveSummonHandler());
-        registerHandler(RecvOpcode.SUMMON_ATTACK, new SummonDamageHandler());
+        registerHandler(RecvOpcode.SUMMON_ATTACK, new SummonDamageHandler(channelDeps.dropProvider(), channelDeps.banService()));
         registerHandler(RecvOpcode.BUDDYLIST_MODIFY, new BuddylistModifyHandler());
         registerHandler(RecvOpcode.USE_ITEMEFFECT, new UseItemEffectHandler());
         registerHandler(RecvOpcode.USE_CHAIR, new UseChairHandler());
@@ -365,7 +374,8 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.MESSENGER, new MessengerHandler());
         registerHandler(RecvOpcode.NPC_ACTION, new NPCAnimationHandler());
         registerHandler(RecvOpcode.CHECK_CASH, new TouchingCashShopHandler());
-        registerHandler(RecvOpcode.CASHSHOP_OPERATION, new CashOperationHandler(channelDeps.noteService()));
+        registerHandler(RecvOpcode.CASHSHOP_OPERATION, new CashOperationHandler(channelDeps.noteService(),
+                channelDeps.accountService()));
         registerHandler(RecvOpcode.COUPON_CODE, new CouponCodeHandler());
         registerHandler(RecvOpcode.SPAWN_PET, new SpawnPetHandler());
         registerHandler(RecvOpcode.MOVE_PET, new MovePetHandler());
@@ -388,7 +398,7 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.PET_EXCLUDE_ITEMS, new PetExcludeItemsHandler());
         registerHandler(RecvOpcode.OWL_ACTION, new UseOwlOfMinervaHandler());
         registerHandler(RecvOpcode.OWL_WARP, new OwlWarpHandler());
-        registerHandler(RecvOpcode.TOUCH_MONSTER_ATTACK, new TouchMonsterDamageHandler());
+        registerHandler(RecvOpcode.TOUCH_MONSTER_ATTACK, new TouchMonsterDamageHandler(channelDeps.dropProvider(), channelDeps.banService()));
         registerHandler(RecvOpcode.TROCK_ADD_MAP, new TrockAddMapHandler());
         registerHandler(RecvOpcode.HIRED_MERCHANT_REQUEST, new HiredMerchantRequest());
         registerHandler(RecvOpcode.MOB_BANISH_PLAYER, new MobBanishPlayerHandler());
@@ -396,7 +406,7 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.REPORT, new ReportHandler());
         registerHandler(RecvOpcode.MONSTER_BOOK_COVER, new MonsterBookCoverHandler());
         registerHandler(RecvOpcode.AUTO_DISTRIBUTE_AP, new AutoAssignHandler());
-        registerHandler(RecvOpcode.MAKER_SKILL, new MakerSkillHandler());
+        registerHandler(RecvOpcode.MAKER_SKILL, new MakerSkillHandler(channelDeps.makerProcessor()));
         registerHandler(RecvOpcode.OPEN_FAMILY_PEDIGREE, new OpenFamilyPedigreeHandler());
         registerHandler(RecvOpcode.OPEN_FAMILY, new OpenFamilyHandler());
         registerHandler(RecvOpcode.ADD_FAMILY, new FamilyAddHandler());
@@ -409,12 +419,12 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.SCRIPTED_ITEM, new ScriptedItemHandler());
         registerHandler(RecvOpcode.TOUCHING_REACTOR, new TouchReactorHandler());
         registerHandler(RecvOpcode.BEHOLDER, new BeholderHandler());
-        registerHandler(RecvOpcode.ADMIN_COMMAND, new AdminCommandHandler());
+        registerHandler(RecvOpcode.ADMIN_COMMAND, new AdminCommandHandler(channelDeps.banService()));
         registerHandler(RecvOpcode.ADMIN_LOG, new AdminLogHandler());
         registerHandler(RecvOpcode.ALLIANCE_OPERATION, new AllianceOperationHandler());
         registerHandler(RecvOpcode.DENY_ALLIANCE_REQUEST, new DenyAllianceRequestHandler());
         registerHandler(RecvOpcode.USE_SOLOMON_ITEM, new UseSolomonHandler());
-        registerHandler(RecvOpcode.USE_GACHA_EXP, new UseGachaExpHandler());
+        registerHandler(RecvOpcode.USE_GACHA_EXP, new UseGachaExpHandler(channelDeps.banService()));
         registerHandler(RecvOpcode.NEW_YEAR_CARD_REQUEST, new NewYearCardHandler());
         registerHandler(RecvOpcode.CASHSHOP_SURPRISE, new CashShopSurpriseHandler());
         registerHandler(RecvOpcode.USE_ITEM_REWARD, new ItemRewardHandler());
@@ -439,7 +449,7 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.FREDRICK_ACTION, new FredrickHandler(channelDeps.fredrickProcessor()));
         registerHandler(RecvOpcode.MONSTER_CARNIVAL, new MonsterCarnivalHandler());
         registerHandler(RecvOpcode.REMOTE_STORE, new RemoteStoreHandler());
-        registerHandler(RecvOpcode.WEDDING_ACTION, new WeddingHandler());
+        registerHandler(RecvOpcode.WEDDING_ACTION, new WeddingHandler(channelDeps.characterSaver()));
         registerHandler(RecvOpcode.WEDDING_TALK, new WeddingTalkHandler());
         registerHandler(RecvOpcode.WEDDING_TALK_MORE, new WeddingTalkMoreHandler());
         registerHandler(RecvOpcode.WATER_OF_LIFE, new UseWaterOfLifeHandler());

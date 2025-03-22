@@ -23,6 +23,7 @@ package net.server;
 
 import client.Character;
 import client.Client;
+import service.TransitionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,12 +35,14 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PlayerStorage {
+    private final TransitionService transitionService;
     private final Map<Integer, Character> storage = new LinkedHashMap<>();
     private final Map<String, Character> nameStorage = new LinkedHashMap<>();
     private final Lock rlock;
     private final Lock wlock;
 
-    public PlayerStorage() {
+    public PlayerStorage(TransitionService transitionService) {
+        this.transitionService = transitionService;
         ReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
         this.rlock = readWriteLock.readLock();
         this.wlock = readWriteLock.writeLock();
@@ -108,7 +111,7 @@ public class PlayerStorage {
         for (Character mc : chrList) {
             Client client = mc.getClient();
             if (client != null) {
-                client.forceDisconnect();
+                transitionService.forceDisconnect(client);
             }
         }
 

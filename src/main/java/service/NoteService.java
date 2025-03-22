@@ -1,7 +1,7 @@
 package service;
 
 import client.Character;
-import database.DaoException;
+import database.DatabaseException;
 import database.note.NoteDao;
 import model.Note;
 import net.packet.out.ShowNotesPacket;
@@ -52,7 +52,7 @@ public class NoteService {
         try {
             noteDao.save(note);
             return true;
-        } catch (DaoException e) {
+        } catch (DatabaseException e) {
             log.error("Failed to send note {}", note, e);
             return false;
         }
@@ -80,7 +80,7 @@ public class NoteService {
         final List<Note> notes;
         try {
             notes = noteDao.findAllByTo(to);
-        } catch (DaoException e) {
+        } catch (DatabaseException e) {
             log.error("Failed to find notes sent to chr name {}", to, e);
             return Collections.emptyList();
         }
@@ -101,7 +101,7 @@ public class NoteService {
     public Optional<Note> delete(int noteId) {
         try {
             return noteDao.delete(noteId);
-        } catch (DaoException e) {
+        } catch (DatabaseException e) {
             log.error("Failed to discard note with id {}", noteId, e);
             return Optional.empty();
         }

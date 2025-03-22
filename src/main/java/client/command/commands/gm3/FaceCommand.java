@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.Stat;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.inventory.ItemConstants;
 import server.ItemInformationProvider;
 
@@ -36,7 +37,7 @@ public class FaceCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !face [<playername>] <faceid>");

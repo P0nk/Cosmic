@@ -23,6 +23,7 @@ package net.server.channel.handlers;
 
 import client.Character;
 import client.Client;
+import database.character.CharacterSaver;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
@@ -33,6 +34,12 @@ import tools.PacketCreator;
  * @author Flav
  */
 public class EnterCashShopHandler extends AbstractPacketHandler {
+    private final CharacterSaver chrSaver;
+
+    public EnterCashShopHandler(CharacterSaver chrSaver) {
+        this.chrSaver = chrSaver;
+    }
+
     @Override
     public void handlePacket(InPacket p, Client c) {
         try {
@@ -87,7 +94,7 @@ public class EnterCashShopHandler extends AbstractPacketHandler {
             c.getChannelServer().removePlayer(mc);
             mc.getMap().removePlayer(mc);
             mc.getCashShop().open(true);
-            mc.saveCharToDB();
+            chrSaver.save(mc);
         } catch (Exception e) {
             e.printStackTrace();
         }

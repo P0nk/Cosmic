@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.Disease;
 import client.command.Command;
+import client.command.CommandContext;
 import server.life.MobSkill;
 import server.life.MobSkillFactory;
 import server.life.MobSkillType;
@@ -42,7 +43,7 @@ public class DebuffCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !debuff SLOW|SEDUCE|ZOMBIFY|CONFUSE|STUN|POISON|SEAL|DARKNESS|WEAKEN|CURSE");

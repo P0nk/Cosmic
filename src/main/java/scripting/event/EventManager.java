@@ -24,6 +24,7 @@ package scripting.event;
 import client.Character;
 import config.YamlConfig;
 import constants.game.GameConstants;
+import database.drop.DropProvider;
 import net.server.Server;
 import net.server.channel.Channel;
 import net.server.guild.Guild;
@@ -51,7 +52,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-//import jdk.nashorn.api.scripting.ScriptUtils;
 
 /**
  * @author Matze
@@ -63,6 +63,7 @@ public class EventManager {
     private Channel cserv;
     private World wserv;
     private Server server;
+    private final DropProvider dropProvider;
     private final EventScriptScheduler ess = new EventScriptScheduler();
     private final Map<String, EventInstanceManager> instances = new HashMap<>();
     private final Map<String, Integer> instanceLocks = new HashMap<>();
@@ -82,12 +83,13 @@ public class EventManager {
 
     private static final int maxLobbys = 8;     // an event manager holds up to this amount of concurrent lobbys
 
-    public EventManager(Channel cserv, Invocable iv, String name) {
+    public EventManager(Channel cserv, Invocable iv, String name, DropProvider dropProvider) {
         this.server = Server.getInstance();
         this.iv = iv;
         this.cserv = cserv;
         this.wserv = server.getWorld(cserv.getWorld());
         this.name = name;
+        this.dropProvider = dropProvider;
 
         this.openedLobbys = new ArrayList<>();
         for (int i = 0; i < maxLobbys; i++) {
@@ -219,7 +221,7 @@ public class EventManager {
         EventInstanceManager ret = getReadyInstance();
 
         if (ret == null) {
-            ret = new EventInstanceManager(this, name);
+            ret = new EventInstanceManager(this, name, dropProvider);
         } else {
             ret.setName(name);
         }
@@ -235,7 +237,7 @@ public class EventManager {
     }
 
     public Marriage newMarriage(String name) throws EventInstanceInProgressException {
-        Marriage ret = new Marriage(this, name);
+        Marriage ret = new Marriage(this, name, dropProvider);
 
         synchronized (instances) {
             if (instances.containsKey(name)) {
@@ -922,7 +924,7 @@ public class EventManager {
             queueLock.unlock();
         }
 
-        EventInstanceManager eim = new EventInstanceManager(this, "sampleName" + nextEventId);
+        EventInstanceManager eim = new EventInstanceManager(this, "sampleName" + nextEventId, dropProvider);
         queueLock.lock();
         try {
             if (this.isDisposed()) {  // EM already disposed

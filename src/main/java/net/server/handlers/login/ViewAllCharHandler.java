@@ -41,12 +41,7 @@ public final class ViewAllCharHandler extends AbstractPacketHandler {
     @Override
     public final void handlePacket(InPacket p, Client c) {
         try {
-            if (!c.canRequestCharlist()) {   // client breaks if the charlist request pops too soon
-                c.sendPacket(PacketCreator.showAllCharacter(0, 0));
-                return;
-            }
-
-            SortedMap<Integer, List<Character>> worldChrs = Server.getInstance().loadAccountCharlist(c.getAccID(), c.getVisibleWorlds());
+            SortedMap<Integer, List<Character>> worldChrs = Server.getInstance().loadAccountCharlist(c.getAccID());
             worldChrs = limitTotalChrs(worldChrs, CHARACTER_LIMIT);
 
             padChrsIfNeeded(worldChrs);

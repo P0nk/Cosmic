@@ -24,6 +24,7 @@ package net.server.channel.handlers;
 import client.Client;
 import client.autoban.AutobanFactory;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +48,9 @@ public final class PetChatHandler extends AbstractPacketHandler {
         if (text.length() > Byte.MAX_VALUE) {
             AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit with pets.");
             log.warn("Chr {} tried to send text with length of {}", c.getPlayer().getName(), text.length());
-            c.disconnect(true, false);
-            return;
+            throw GameViolationException.textLength(text);
         }
+
         c.getPlayer().getMap().broadcastMessage(c.getPlayer(), PacketCreator.petChat(c.getPlayer().getId(), pet, act, text), true);
         ChatLogger.log(c, "Pet", text);
     }

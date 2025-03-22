@@ -26,6 +26,7 @@ package client.command.commands.gm1;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.NpcId;
 import server.ItemInformationProvider;
 import server.life.MonsterDropEntry;
@@ -40,7 +41,7 @@ public class WhatDropsFromCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.dropMessage(5, "Please do @whatdropsfrom <monster name>");
@@ -56,7 +57,7 @@ public class WhatDropsFromCommand extends Command {
                 int mobId = data.getLeft();
                 String mobName = data.getRight();
                 output += mobName + " drops the following items:\r\n\r\n";
-                for (MonsterDropEntry drop : MonsterInformationProvider.getInstance().retrieveDrop(mobId)) {
+                for (MonsterDropEntry drop : ctx.dropProvider().getMonsterDropEntries(mobId)) {
                     try {
                         String name = ItemInformationProvider.getInstance().getName(drop.itemId);
                         if (name == null || name.equals("null") || drop.chance == 0) {

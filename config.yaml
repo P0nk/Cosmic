@@ -165,6 +165,14 @@ server:
     DB_PASS: ""
     INIT_CONNECTION_POOL_TIMEOUT: 90    # Seconds
 
+    PG_DB_URL: "jdbc:postgresql://localhost:5432/cosmic"
+    PG_DB_SCHEMA: "cosmic"
+    PG_DB_ADMIN_USERNAME: "cosmic_admin"
+    PG_DB_ADMIN_PASSWORD: "redsnailshell"
+    PG_DB_USERNAME: "cosmic_server"
+    PG_DB_PASSWORD: "bluesnailshell"
+    PG_DB_CLEAN: false                   # !!! WARNING !!! Deletes the entire database - starts from scratch.
+
     #Login Configuration
     WORLDS: 1                           #Initial number of worlds on the server.
     WLDLIST_SIZE: 21                    #Max possible worlds on the server.
@@ -185,7 +193,6 @@ server:
     BYPASS_PIN_EXPIRATION: 15           #Enables PIN bypass, which will remain active for that account by that client machine for N minutes. Set 0 to disable.
 
     AUTOMATIC_REGISTER: true        #Automatically register players when they login with a nonexistent username.
-    BCRYPT_MIGRATION: true          #Performs a migration from old SHA-1 and SHA-512 password to bcrypt.
     COLLECTIVE_CHARSLOT: false      #Available character slots are contabilized globally rather than per world server.
     DETERRED_MULTICLIENT: false     #Enables detection of multi-client and suspicious remote IP on the login system.
     #Besides blocking logging in with several client sessions on the same machine, this also blocks suspicious login attempts for players that tries to login on an account using several diferent remote addresses.
@@ -234,7 +241,6 @@ server:
     USE_AUTOBAN: false                  #Commands the server to detect infractors automatically.
     USE_AUTOBAN_LOG: true               #Log autoban related messages. Still logs even with USE_AUTOBAN disabled.
     USE_EXP_GAIN_LOG: false #Logs characters exp gains; logs world rate & coupon exp, total gained exp, and current exp, level can be calculated from "ExpTable".
-    USE_AUTOSAVE: true                  #Enables server autosaving feature (saves characters to DB each 1 hour).
     USE_SERVER_AUTOASSIGNER: false       #HeavenMS-builtin autoassigner, uses algorithm based on distributing AP accordingly with required secondary stat on equipments.
     USE_REFRESH_RANK_MOVE: true
     USE_ENFORCE_ADMIN_ACCOUNT: false    #Forces accounts having GM characters to be treated as a "GM account" by the client (localhost). Some of the GM account perks is the ability to FLY, but unable to TRADE.
@@ -246,7 +252,6 @@ server:
     USE_ENFORCE_ITEM_SUGGESTION: false  #Forces the Owl of Minerva and the Cash Shop to always display the defined item array instead of those featured by the players.
     USE_ENFORCE_UNMERCHABLE_CASH: true  #Forces players to not sell CASH items via merchants, drops of it disappears.
     USE_ENFORCE_UNMERCHABLE_PET: true   #Forces players to not sell pets via merchants, drops of it disappears. (since non-named pets gets dirty name and other possible DB-related issues)
-    USE_ENFORCE_MERCHANT_SAVE: true     #Forces automatic DB save on merchant owners, at every item movement on shop.
     USE_ENFORCE_MDOOR_POSITION: false   #Forces mystic door to be spawned near spawnpoints.
     USE_SPAWN_CLEAN_MDOOR: false         #Makes mystic doors to be spawned without deploy animation. This clears disconnecting issues that may happen when trying to cancel doors a couple seconds after deployment.
     USE_SPAWN_RELEVANT_LOOT: true       #Forces to only spawn loots that are collectable by the player or any of their party members.
@@ -359,19 +364,12 @@ server:
     USE_FULL_HOLY_SYMBOL: false      #Holy symbol doesn't require EXP sharers to work in full.
 
     #Character Configuration
-    USE_ADD_SLOTS_BY_LEVEL: false    #Slots are added each 20 levels.
     USE_ADD_RATES_BY_LEVEL: false    #Rates are added each 20 levels.
     USE_STACK_COUPON_RATES: false   #Multiple coupons effects builds up together.
     USE_PERFECT_PITCH: false         #For lvl 30 or above, each lvlup grants player 1 perfect pitch.
 
     #Quest Configuration
     USE_QUEST_RATE: false           #Exp/Meso gained by quests uses fixed server exp/meso rate times quest rate as multiplier, instead of player rates.
-
-    #Quest Points Configuration
-    QUEST_POINT_REPEATABLE_INTERVAL: 25  #Minimum interval between repeatable quest completions for quest points to be awarded.
-    QUEST_POINT_REQUIREMENT: 0          #Exchange factor between N quest points to +1 fame, set 0 to disable the entire quest point mechanism.
-    QUEST_POINT_PER_QUEST_COMPLETE: 0    #Each completed quest awards N quest points, set 0 to disable.
-    QUEST_POINT_PER_EVENT_CLEAR: 0       #Each completed event instance awards N quest points, set 0 to disable.
 
     #Guild Configuration
     CREATE_GUILD_MIN_PARTNERS: 6         #Minimum number of members on Guild Headquarters to establish a new guild.

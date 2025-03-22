@@ -26,6 +26,7 @@ import client.Skill;
 import client.SkillFactory;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
+import database.drop.DropProvider;
 import net.server.coordinator.world.EventRecallCoordinator;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
@@ -50,8 +51,15 @@ import tools.Pair;
 
 import javax.script.ScriptException;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -110,11 +118,11 @@ public class EventInstanceManager {
     // forces deletion of items not supposed to be held outside of the event, dealt on a player's leaving moment.
     private final Set<Integer> exclusiveItems = new HashSet<>();
 
-    public EventInstanceManager(EventManager em, String name) {
+    public EventInstanceManager(EventManager em, String name, DropProvider dropProvider) {
         this.em = em;
         this.name = name;
         this.ess = new EventScriptScheduler();
-        this.mapManager = new MapManager(this, em.getWorldServer().getId(), em.getChannelServer().getId());
+        this.mapManager = new MapManager(this, em.getWorldServer().getId(), em.getChannelServer().getId(), dropProvider);
 
         ReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
         this.readLock = readWriteLock.readLock();
@@ -1094,10 +1102,6 @@ public class EventInstanceManager {
 
     public final void setEventCleared() {
         eventCleared = true;
-
-        for (Character chr : getPlayers()) {
-            chr.awardQuestPoint(YamlConfig.config.server.QUEST_POINT_PER_EVENT_CLEAR);
-        }
 
         scriptLock.lock();
         try {
