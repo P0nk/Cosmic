@@ -24,6 +24,8 @@ package net.server.channel.handlers;
 
 import client.Character;
 import client.Client;
+import client.inventory.InventoryType;
+import constants.id.ItemId;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import server.maps.HiredMerchant;
@@ -39,6 +41,13 @@ public class RemoteStoreHandler extends AbstractPacketHandler {
         HiredMerchant hm = getMerchant(c);
         if (hm != null && hm.isOwner(chr)) {
             if (hm.getChannel() == chr.getClient().getChannel()) {
+                boolean isPlayerOnMerchantMap = chr.getMapId() == hm.getMapId();
+                if (!isPlayerOnMerchantMap) {
+                    var remoteControl = chr.getInventory(InventoryType.CASH).findById(ItemId.REMOTE_CONTROLLER);
+                    if (remoteControl == null) {
+                        return;
+                    }
+                }
                 hm.visitShop(chr);
             } else {
                 c.sendPacket(PacketCreator.remoteChannelChange((byte) (hm.getChannel() - 1)));
