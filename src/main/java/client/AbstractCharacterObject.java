@@ -55,9 +55,7 @@ public abstract class AbstractCharacterObject extends AbstractAnimatedMapObject 
         this.statRlock = statLock.readLock();
         this.statWlock = statLock.writeLock();
 
-        for (int i = 0; i < remainingSp.length; i++) {
-            remainingSp[i] = 0;
-        }
+        Arrays.fill(remainingSp, 0);
     }
 
     protected void setListener(AbstractCharacterListener listener) {
