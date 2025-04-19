@@ -52,6 +52,9 @@ function action(mode, type, selection) {
     } else if (status == 2) {
         if (cm.getMeso() < cost) {
             cm.sendNext("It looks like you don't have enough mesos. Sorry but you won't be able to use this without it.")
+        } else if (cm.getPlayer().getLevel() < 25) {
+            cm.sendOk("Hmmm... You are too weak to go to the Ant Tunnel. I suggest you train a bit more before going there.");
+            cm.dispose();
         } else {
             cm.gainMeso(-cost);
             cm.warp(105070001);
