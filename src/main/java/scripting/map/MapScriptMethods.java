@@ -26,6 +26,7 @@ import client.Client;
 import client.QuestStatus;
 import constants.id.MapId;
 import scripting.AbstractPlayerInteraction;
+import server.TimerManager;
 import server.quest.Quest;
 import tools.PacketCreator;
 
@@ -99,6 +100,7 @@ public class MapScriptMethods extends AbstractPlayerInteraction {
     public void goLith() {
         lockUI();
         c.sendPacket(PacketCreator.showIntro("Effect/Direction3.img/goLith/Scene" + c.getPlayer().getGender()));
+        TimerManager.getInstance().schedule(this::unlockUI,7000);
     }
 
     public void explorerQuest(short questid, String questName) {
