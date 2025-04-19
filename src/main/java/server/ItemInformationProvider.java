@@ -1670,7 +1670,7 @@ public class ItemInformationProvider {
         for (Data child : getItemData(itemId).getChildByPath("reward").getChildren()) {
             RewardItem reward = new RewardItem();
             reward.itemid = DataTool.getInt("item", child, 0);
-            reward.prob = (byte) DataTool.getInt("prob", child, 0);
+            reward.prob = (short) DataTool.getInt("prob", child, 0);
             reward.quantity = (short) DataTool.getInt("count", child, 0);
             reward.effect = DataTool.getString("Effect", child, "");
             reward.worldmsg = DataTool.getString("worldMsg", child, null);
