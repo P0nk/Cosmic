@@ -40,6 +40,7 @@ import java.util.List;
 /**
  * @author Jay Estrella
  * @author kevintjuh93
+ * @author Manu13
  */
 public final class ItemRewardHandler extends AbstractPacketHandler {
     @Override
@@ -69,6 +70,7 @@ public final class ItemRewardHandler extends AbstractPacketHandler {
                     InventoryManipulator.addFromDrop(c, item, false);
                 } else {
                     InventoryManipulator.addById(c, reward.itemid, reward.quantity, "", -1);
+                    c.getPlayer().message("You have received " + reward.quantity + " " + ii.getName(reward.itemid) + " for opening a " + ii.getName(itemId) + ".");
                 }
                 InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, false, false);
                 if (reward.worldmsg != null) {
