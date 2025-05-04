@@ -29,6 +29,7 @@ import client.inventory.InventoryType; // Slimy Add
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.Pet;
+import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
