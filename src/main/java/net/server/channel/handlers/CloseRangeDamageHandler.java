@@ -36,6 +36,7 @@ import constants.skills.DragonKnight;
 import constants.skills.Hero;
 import constants.skills.NightWalker;
 import constants.skills.Rogue;
+import constants.skills.Bandit;
 import constants.skills.WindArcher;
 import net.packet.InPacket;
 import server.StatEffect;

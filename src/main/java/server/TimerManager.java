@@ -136,6 +136,10 @@ public class TimerManager implements TimerManagerMBean {
         return ses.isTerminated();
     }
 
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable r, int initialDelay, int period) {
+        return ses.scheduleAtFixedRate(r, initialDelay, period, MILLISECONDS);
+    }
+
 
     private static class LoggingSaveRunnable implements Runnable {
         Runnable r;
@@ -153,4 +157,6 @@ public class TimerManager implements TimerManagerMBean {
             }
         }
     }
+
+
 }

@@ -67,9 +67,17 @@ public class SpawnPoint {
     }
 
     public boolean shouldSpawn() {
-        if (denySpawn || mobTime < 0 || spawnedMonsters.get() > 0) {
+   //     if (denySpawn || mobTime < 0 || spawnedMonsters.get() > 0) {
+        return shouldSpawn(1);
+    }
+
+    public boolean shouldSpawn(int maxSpawnedMonsters) {
+        Monster mob = LifeFactory.getMonster(monster);
+        int max = mob != null && (mob.isBoss() || mob.getId() == 9001007) ? 1 : maxSpawnedMonsters; // Merogie - Patched to make dps dummy only spawn 1.
+        if (denySpawn || mobTime < 0 || spawnedMonsters.get() >= max) {
             return false;
         }
+
         return nextPossibleSpawn <= Server.getInstance().getCurrentTime();
     }
 

@@ -269,10 +269,12 @@ public class PacketCreator {
     private static void addTeleportInfo(OutPacket p, Character chr) {
         final List<Integer> tele = chr.getTrockMaps();
         final List<Integer> viptele = chr.getVipTrockMaps();
-        for (int i = 0; i < 5; i++) {
+//        for (int i = 0; i < 5; i++) {  // original
+        for (int i = 0; i < 10; i++) { // merogie - trock increase
             p.writeInt(tele.get(i));
         }
-        for (int i = 0; i < 10; i++) {
+//        for (int i = 0; i < 10; i++) {  // original
+        for (int i = 0; i < 20; i++) {  // merogie - trock increase
             p.writeInt(viptele.get(i));
         }
     }
@@ -433,7 +435,7 @@ public class PacketCreator {
             p.writeShort(pet.getTameness());
             p.writeByte(pet.getFullness());
             addExpirationTime(p, item.getExpiration());
-            p.writeShort(pet.getPetAttribute()); // PetAttribute noticed by lrenex & Spoon
+            p.writeShort(1); // PetAttribute noticed by lrenex & Spoon // Global pet speed modifier.
             p.writeShort(0); // PetSkill
             p.writeInt(18000); // RemainLife
             p.writeShort(0); // attribute
@@ -1247,6 +1249,10 @@ public class PacketCreator {
      * @param message The message to convey.
      * @return The server notice packet.
      */
+    public static Packet serverNotice(int type, int channel, String message, boolean smegaEar) {
+        return serverMessage(type, channel, message, false, smegaEar, 0);
+    }
+
     public static Packet serverNotice(int type, String message, int npc) {
         return serverMessage(type, 0, message, false, false, npc);
     }
@@ -1255,9 +1261,7 @@ public class PacketCreator {
         return serverMessage(type, channel, message, false, false, 0);
     }
 
-    public static Packet serverNotice(int type, int channel, String message, boolean smegaEar) {
-        return serverMessage(type, channel, message, false, smegaEar, 0);
-    }
+
 
     /**
      * Gets a server message packet.
@@ -5500,13 +5504,15 @@ public class PacketCreator {
         if (vip) {
             p.writeByte(1);
             List<Integer> map = chr.getVipTrockMaps();
-            for (int i = 0; i < 10; i++) {
+//            for (int i = 0; i < 10; i++) {  // original
+            for (int i = 0; i < 20; i++) {  // merogie - trock increase
                 p.writeInt(map.get(i));
             }
         } else {
             p.writeByte(0);
             List<Integer> map = chr.getTrockMaps();
-            for (int i = 0; i < 5; i++) {
+//            for (int i = 0; i < 5; i++) {  // original
+            for (int i = 0; i < 10; i++) {  // merogie - trock increase
                 p.writeInt(map.get(i));
             }
         }

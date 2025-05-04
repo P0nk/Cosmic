@@ -76,6 +76,16 @@ public final class UseItemHandler extends AbstractPacketHandler {
                     remove(c, slot);
                 }
                 return;
+            } else if (itemId == ItemId.HP_CAP_INCREASE) {
+                Character player = c.getPlayer();
+                player.updateMaxHp(player.getMaxHp() + 500);
+                remove(c, slot);
+                return;
+            } else if (itemId == ItemId.MP_CAP_INCREASE) {
+                Character player = c.getPlayer();
+                player.updateMaxMp(player.getMaxMp() + 500);
+                remove(c, slot);
+                return;
             }
 
             remove(c, slot);

@@ -1,4 +1,4 @@
-/* 
+/*
  This file is part of the OdinMS Maple Story Server
  Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
  Matthias Butz <matze@odinms.de>
@@ -267,7 +267,7 @@ public class Character extends AbstractCharacterObject {
     private final Pet[] pets = new Pet[3];
     private PlayerShop playerShop = null;
     private Shop shop = null;
-    private SkinColor skinColor = SkinColor.LIGHT;
+    private SkinColor skinColor = SkinColor.NORMAL;
     private Storage storage = null;
     private Trade trade = null;
     private MonsterBook monsterbook;
@@ -405,7 +405,7 @@ public class Character extends AbstractCharacterObject {
         savedLocations = new SavedLocation[SavedLocationType.values().length];
 
         for (InventoryType type : InventoryType.values()) {
-            byte b = 24;
+            byte b = 48;
             if (type == InventoryType.CASH) {
                 b = 96;
             }
@@ -472,10 +472,10 @@ public class Character extends AbstractCharacterObject {
         ret.accountid = c.getAccID();
         ret.buddylist = new BuddyList(20);
         ret.maplemount = null;
-        ret.getInventory(InventoryType.EQUIP).setSlotLimit(24);
-        ret.getInventory(InventoryType.USE).setSlotLimit(24);
-        ret.getInventory(InventoryType.SETUP).setSlotLimit(24);
-        ret.getInventory(InventoryType.ETC).setSlotLimit(24);
+        ret.getInventory(InventoryType.EQUIP).setSlotLimit(96);
+        ret.getInventory(InventoryType.USE).setSlotLimit(96);
+        ret.getInventory(InventoryType.SETUP).setSlotLimit(96);
+        ret.getInventory(InventoryType.ETC).setSlotLimit(96);
 
         // Select a keybinding method
         int[] selectedKey;
@@ -498,10 +498,14 @@ public class Character extends AbstractCharacterObject {
 
 
         //to fix the map 0 lol
-        for (int i = 0; i < 5; i++) {
+        //for (int i = 0; i < 5; i++) {  // original
+        for (int i = 0; i < 10; i++) {    // merogie - trock increase
+
             ret.trockmaps.add(MapId.NONE);
         }
-        for (int i = 0; i < 10; i++) {
+
+       // for (int i = 0; i < 10; i++) {   // original
+        for (int i = 0; i < 20; i++) {   // merogie - trock increase
             ret.viptrockmaps.add(MapId.NONE);
         }
 
@@ -1207,7 +1211,7 @@ public class Character extends AbstractCharacterObject {
             addhp += Randomizer.rand(300, 350);
             addmp += Randomizer.rand(150, 200);
         }
-        
+
         /*
         //aran perks?
         int newJobId = newJob.getId();
@@ -1291,7 +1295,7 @@ public class Character extends AbstractCharacterObject {
         if (guild != null) {
             guild.broadcast(packet, id);
         }
-        
+
         /*
         if(partnerid > 0) {
             partner.sendPacket(packet); not yet implemented
@@ -2026,7 +2030,7 @@ public class Character extends AbstractCharacterObject {
                                 this.getMap().pickItemDrop(pickupPacket, mapitem);
                             } else if (ItemId.isNxCard(mapitem.getItemId())) {
                                 // Add NX to account, show effect and make item disappear
-                                int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250;
+                                int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250; // Tom: Multiplied NX Card by 10x.
                                 this.getCashShop().gainCash(1, nxGain);
 
                                 if (YamlConfig.config.server.USE_ANNOUNCE_NX_COUPON_LOOT) {
@@ -3423,7 +3427,7 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
-    private List<BuffStatValueHolder> getAllStatups() {
+    public List<BuffStatValueHolder> getAllStatups() {
         effLock.lock();
         chrLock.lock();
         try {
@@ -5306,12 +5310,20 @@ public class Character extends AbstractCharacterObject {
     }
 
     public int getMaxLevel() {
-        if (!YamlConfig.config.server.USE_ENFORCE_JOB_LEVEL_RANGE || isGmJob()) {
+        if (!YamlConfig.config.server.USE_ENFORCE_JOB_LEVEL_RANGE || isGmJob() || isBeginnerJob()) {  // job == 0 for beginners
             return getMaxClassLevel();
         }
 
         return GameConstants.getJobMaxLevel(job);
     }
+
+//    public int getMaxLevel() {
+//        if (!YamlConfig.config.server.USE_ENFORCE_JOB_LEVEL_RANGE || isGmJob()||job == 0) {
+//            return getMaxClassLevel();
+//        }
+//
+//        return GameConstants.getJobMaxLevel(job);
+//    }
 
     public int getMeso() {
         return meso.get();
@@ -6016,7 +6028,7 @@ public class Character extends AbstractCharacterObject {
         ceffect = energycharge.getEffect(getSkillLevel(energycharge));
         TimerManager tMan = TimerManager.getInstance();
         if (energybar < 10000) {
-            energybar += 102;
+            energybar += 510; // original was 102 -- merogie
             if (energybar > 10000) {
                 energybar = 10000;
             }
@@ -6341,7 +6353,7 @@ public class Character extends AbstractCharacterObject {
             addhp += Randomizer.rand(10, 14);
             addmp += Randomizer.rand(22, 24);
         } else if (job.isA(Job.BOWMAN) || job.isA(Job.THIEF) || (job.getId() > 1299 && job.getId() < 1500)) {
-            addhp += Randomizer.rand(20, 24);
+            addhp += Randomizer.rand(20, 24) + 12;
             addmp += Randomizer.rand(14, 16);
         } else if (job.isA(Job.GM)) {
             addhp += 30000;
@@ -6352,7 +6364,7 @@ public class Character extends AbstractCharacterObject {
             addhp += Randomizer.rand(22, 28);
             addmp += Randomizer.rand(18, 23);
         } else if (job.isA(Job.ARAN1)) {
-            addhp += Randomizer.rand(44, 48);
+            addhp += Randomizer.rand(44, 48) + 5;
             int aids = Randomizer.rand(4, 8);
             addmp += aids + Math.floor(aids * 0.1);
         }
@@ -6438,11 +6450,11 @@ public class Character extends AbstractCharacterObject {
             getGuild().broadcast(PacketCreator.levelUpMessage(2, level, name), this.getId());
         }
 
-        if (level % 20 == 0) {
+        if (level % 10 == 0) {
             if (YamlConfig.config.server.USE_ADD_SLOTS_BY_LEVEL == true) {
                 if (!isGM()) {
                     for (byte i = 1; i < 5; i++) {
-                        gainSlots(i, 4, true);
+                        gainSlots(i, 8, true);
                     }
 
                     this.yellowMessage("You reached level " + level + ". Congratulations! As a token of your success, your inventory has been expanded a little bit.");
@@ -6511,10 +6523,25 @@ public class Character extends AbstractCharacterObject {
             return false;
         }
     }
+
     public void setPlayerRates() {
-        this.expRate *= GameConstants.getPlayerBonusExpRate(this.level / 20);
-        this.mesoRate *= GameConstants.getPlayerBonusMesoRate(this.level / 20);
-        this.dropRate *= GameConstants.getPlayerBonusDropRate(this.level / 20);
+//        if (){
+//        this.expRate *= GameConstants.getPlayerBonusExpRate(this.level / 20);
+//        this.mesoRate *= GameConstants.getPlayerBonusMesoRate(this.level / 20);
+//        this.dropRate *= GameConstants.getPlayerBonusDropRate(this.level / 20);
+//    }
+//        if (YamlConfig.config.server.USE_CUSTOM_KEYSET) {
+        if (getWorldServer().getProgExpToggle()){
+            this.expRate *= GameConstants.getPlayerBonusExpRate(this.level / 20);
+            this.mesoRate *= GameConstants.getPlayerBonusMesoRate(this.level / 20);
+            this.dropRate *= GameConstants.getPlayerBonusDropRate(this.level / 20);
+        } else {
+            this.expRate *= 1;
+            this.mesoRate *= GameConstants.getPlayerBonusMesoRate(this.level / 20);
+            this.dropRate *= GameConstants.getPlayerBonusDropRate(this.level / 20);
+        }
+
+
     }
 
     public void revertLastPlayerRates() {
@@ -7043,7 +7070,8 @@ public class Character extends AbstractCharacterObject {
             }
 
             // Teleport rocks
-            try (PreparedStatement ps = con.prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 15")) {
+            //try (PreparedStatement ps = con.prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 15")) { // original
+            try (PreparedStatement ps = con.prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 90")) {   // merogie - trockincrease
                 ps.setInt(1, charid);
 
                 try (ResultSet rs = ps.executeQuery()) {
@@ -7058,11 +7086,14 @@ public class Character extends AbstractCharacterObject {
                             reg++;
                         }
                     }
-                    while (vip < 10) {
+
+//                   while (vip < 10) { // original
+                    while (vip < 20) {  // merogie trockincrease
                         ret.viptrockmaps.add(MapId.NONE);
                         vip++;
                     }
-                    while (reg < 5) {
+//                    while (reg < 5) { // original
+                    while (reg < 10) { // merogie - trockincrease
                         ret.trockmaps.add(MapId.NONE);
                         reg++;
                     }
@@ -7304,7 +7335,7 @@ public class Character extends AbstractCharacterObject {
                         }
                     }
                 }
-                
+
                 ret.buddylist.loadFromDb(charid);
                 ret.storage = wserv.getAccountStorage(ret.accountid);
 
@@ -7315,7 +7346,7 @@ public class Character extends AbstractCharacterObject {
                     wserv.loadAccountStorage(ret.accountid);
                     ret.storage = wserv.getAccountStorage(ret.accountid);
                 }
-                
+
                 int startHp = ret.hp, startMp = ret.mp;
                 ret.reapplyLocalStats();
                 ret.changeHpMp(startHp, startMp, true);
@@ -8208,7 +8239,7 @@ public class Character extends AbstractCharacterObject {
                         ps.executeBatch();
                     }
                 }
-                
+
                 con.commit();
                 return true;
             } catch (Exception e) {
@@ -9211,6 +9242,21 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    // Slimy addition
+    public int sellAllItemsFromSlot(byte invTypeId, short pos) {
+        //player decides from which inventory items should be sold.
+        InventoryType type = InventoryType.getByType(invTypeId);
+
+        Inventory inv = getInventory(type);
+        inv.lockInventory();
+        try {
+            ItemInformationProvider ii = ItemInformationProvider.getInstance();
+            return (sellAllItemsFromPosition(ii, type, pos));
+        } finally {
+            inv.unlockInventory();
+        }
+    } // End
+
     public int sellAllItemsFromPosition(ItemInformationProvider ii, InventoryType type, short pos) {
         int mesoGain = 0;
 
@@ -10089,7 +10135,8 @@ public class Character extends AbstractCharacterObject {
     public int getTrockSize() {
         int ret = trockmaps.indexOf(MapId.NONE);
         if (ret == -1) {
-            ret = 5;
+//            ret = 5;  //original
+            ret = 10;   // merogie - trock increase
         }
 
         return ret;
@@ -10118,7 +10165,8 @@ public class Character extends AbstractCharacterObject {
         int ret = viptrockmaps.indexOf(MapId.NONE);
 
         if (ret == -1) {
-            ret = 10;
+    //        ret = 10; // original
+            ret = 20; // merogie - teleport rock increase
         }
 
         return ret;
@@ -10126,7 +10174,8 @@ public class Character extends AbstractCharacterObject {
 
     public void deleteFromVipTrocks(int map) {
         viptrockmaps.remove(Integer.valueOf(map));
-        while (viptrockmaps.size() < 10) {
+//        while (viptrockmaps.size() < 10) { // original
+        while (viptrockmaps.size() < 20) { // merogie - trock increase
             viptrockmaps.add(MapId.NONE);
         }
     }
@@ -10640,7 +10689,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10650,7 +10699,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10659,7 +10708,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10669,7 +10718,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10679,7 +10728,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10689,7 +10738,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10699,7 +10748,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10709,7 +10758,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10719,7 +10768,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10729,7 +10778,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;
@@ -10739,7 +10788,7 @@ public class Character extends AbstractCharacterObject {
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.executeUpdate();
-        } catch(SQLException e) { 
+        } catch(SQLException e) {
             e.printStackTrace();
             FilePrinter.printError(FilePrinter.CHANGE_CHARACTER_NAME, e, "Character ID : " + characterId);
             return false;

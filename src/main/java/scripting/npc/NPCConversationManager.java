@@ -23,9 +23,13 @@ package scripting.npc;
 
 import client.Character;
 import client.*;
+import client.inventory.Equip; // Slimy Add
+import client.inventory.Inventory;
+import client.inventory.InventoryType; // Slimy Add
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.Pet;
+import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
@@ -412,15 +416,31 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         sendNext("You have obtained a #b#t" + item.getId() + "##k.");
 
-        int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
-                MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.NEW_LEAF_CITY, MapId.NAUTILUS_HARBOR};
-        final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS && getNpc() != NpcId.GACHAPON_NLC) ?
-                (getNpc() - NpcId.GACHAPON_HENESYS) : getNpc() == NpcId.GACHAPON_NLC ? 8 : 9];
+        // Bug Fix Merogie + Slimy
+        int[] maps = {
+                MapId.HENESYS, //0
+                MapId.ELLINIA, //1
+                MapId.PERION,  //2
+                MapId.KERNING_CITY,  //3
+                MapId.SLEEPYWOOD,  //4
+                MapId.MUSHROOM_SHRINE, // 5
+                MapId.SHOWA_SPA_M,  //6
+                MapId.SHOWA_SPA_F, //7
+                MapId.LUDIBRIUM, // 8
+                MapId.NEW_LEAF_CITY, //9
+                MapId.EL_NATH, //10
+                MapId.NAUTILUS_HARBOR //11
+        };
+        final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ?
+                (getNpc() - NpcId.GACHAPON_HENESYS)
+                : 11];
+
         String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
 
         Gachapon.log(getPlayer(), item.getId(), map);
 
-        if (item.getTier() > 0) { //Uncommon and Rare
+        //if (item.getTier() > 0) { //Uncommon and Rare // original
+        if (item.getTier() > 1) { // Rare and above announced only -- 123
             Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.gachaponMessage(itemGained, map, getPlayer()));
         }
     }
@@ -1098,5 +1118,35 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         }
 
         return false;
+    }
+
+    public void removeItemNPC(short itemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        InventoryManipulator.removeFromSlot(this.getClient(), InventoryType.EQUIP, itemSlot, (short) 1, false); //remove the item
+    }
+
+    public void replaceBoomedUpgradeItem(short boomedItemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        int newItemId = eqpInv.getItem(boomedItemSlot).getItemId();
+
+        eqpInv.removeSlot(boomedItemSlot); //remove the item
+
+        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        short newItemSlot = eqpInv.getNextFreeSlot();
+        this.gainItem(newItemId, (short) 1, true);
+
+        //get the new item so we can change it
+        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
+
+        //change the stats and force update the item
+        newItem.setStr((short) ((newItem.getStr() != 0) ? newItem.getStr() + 5 : 0));
+        newItem.setDex((short) ((newItem.getDex() != 0) ? newItem.getDex() + 5 : 0));
+        newItem.setInt((short) ((newItem.getInt() != 0) ? newItem.getInt() + 5 : 0));
+        newItem.setLuk((short) ((newItem.getLuk() != 0) ? newItem.getLuk() + 5 : 0));
+        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + 5 : 0));
+        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + 5 : 0));
+        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + 5 : 0));
+        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + 5 : 0));
+        this.getPlayer().forceUpdateItem(newItem);
     }
 }

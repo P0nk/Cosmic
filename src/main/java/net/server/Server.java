@@ -433,15 +433,29 @@ public class Server {
         int questrate = YamlConfig.config.worlds.get(i).quest_rate;
         int travelrate = YamlConfig.config.worlds.get(i).travel_rate;
         int fishingrate = YamlConfig.config.worlds.get(i).fishing_rate;
-
+        float mobrate = YamlConfig.config.worlds.get(i).mob_rate;
+        int mobperspawnpoint = YamlConfig.config.worlds.get(i).max_mob_per_spawnpoint;
+        boolean progexptoggle = YamlConfig.config.worlds.get(i).use_progressive_exp;
         int flag = YamlConfig.config.worlds.get(i).flag;
         String event_message = YamlConfig.config.worlds.get(i).event_message;
         String why_am_i_recommended = YamlConfig.config.worlds.get(i).why_am_i_recommended;
 
-        World world = new World(i,
+        World world = new World(
+                i,
                 flag,
                 event_message,
-                exprate, droprate, bossdroprate, mesorate, questrate, travelrate, fishingrate);
+                exprate,
+                droprate,
+                bossdroprate,
+                mesorate,
+                questrate,
+                travelrate,
+                fishingrate,
+                mobrate,                      //Added by merogie
+                mobperspawnpoint,             //Added by merogie
+                progexptoggle
+        );
+
 
         Map<Integer, String> channelInfo = new HashMap<>();
         long bootTime = getCurrentTime();
@@ -719,14 +733,42 @@ public class Server {
         }
     }
 
+//    public List<Pair<String, Integer>> getWorldPlayerRanking(int worldid) {
+//        wldRLock.lock();
+//        try {
+//            return new ArrayList<>(playerRanking.get(!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? worldid : 0));
+//        } finally {
+//            wldRLock.unlock();
+//        }
+//    }
+
     public List<Pair<String, Integer>> getWorldPlayerRanking(int worldid) {
         wldRLock.lock();
         try {
-            return new ArrayList<>(playerRanking.get(!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? worldid : 0));
+            int key = YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ?  0 : worldid;
+
+            // Debugging output
+            System.out.println("Fetching ranking for world ID: " + key);
+
+            List<Pair<String, Integer>> rankingList = playerRanking.get(key);
+            // Debugging output
+            System.out.println("rankingList: " + rankingList);
+
+            if (rankingList == null || rankingList.isEmpty()) {
+                System.out.println("Ranking list is null or empty for world ID: " + key);
+                return new ArrayList<>();
+            }
+
+            System.out.println("Ranking list found for world ID: " + key + ", Size: " + rankingList.size());
+
+
+
+            return new ArrayList<>(rankingList);
         } finally {
             wldRLock.unlock();
         }
     }
+
 
     private void installWorldPlayerRanking(int worldid) {
         List<Pair<Integer, List<Pair<String, Integer>>>> ranking = loadPlayerRankingFromDB(worldid);

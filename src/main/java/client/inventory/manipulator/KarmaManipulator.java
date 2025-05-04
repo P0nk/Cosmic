@@ -40,7 +40,7 @@ public class KarmaManipulator {
         short flag = item.getFlag();
 
         if ((flag & karmaFlag) == karmaFlag) {
-            flag ^= karmaFlag;
+            flag &= ~karmaFlag;
             flag |= ItemConstants.UNTRADEABLE;
 
             item.setFlag(flag);

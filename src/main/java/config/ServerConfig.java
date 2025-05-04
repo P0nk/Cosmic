@@ -142,6 +142,10 @@ public class ServerConfig {
     public double EQUIP_EXP_RATE;
     public double PQ_BONUS_EXP_RATE;
 
+
+    // Party Exp / Leech Settings
+    public boolean LEECH_LIMITER;
+    public byte ENFORCED_MOB_LEVEL_RANGE;
     public byte EXP_SPLIT_LEVEL_INTERVAL;
     public byte EXP_SPLIT_LEECH_INTERVAL;
     public float EXP_SPLIT_MVP_MOD;

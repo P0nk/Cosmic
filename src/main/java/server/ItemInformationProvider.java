@@ -350,12 +350,15 @@ public class ItemInformationProvider {
         // thanks GMChuck for detecting player sensitive data being cached into getSlotMax
         if (ItemConstants.isThrowingStar(itemId)) {
             if (c.getPlayer().getJob().isA(Job.NIGHTWALKER1)) {
-                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 10;
+ //               ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 10;
+                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 100; //Merogie
             } else {
-                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 10;
+ //               ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 10;
+                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 100; // Merogie
             }
         } else if (ItemConstants.isBullet(itemId)) {
-            ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
+  //          ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
+            ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 100; // Merogie
         }
 
         return ret;
@@ -373,11 +376,13 @@ public class ItemInformationProvider {
             if (smEntry == null) {
                 if (ItemConstants.getInventoryType(itemId).getType() == InventoryType.EQUIP.getType()) {
                     ret = 1;
-                } else {
-                    ret = 100;
                 }
+                 else ret = 32000; // originally was default = 100
+            } else if (ItemConstants.isBullet(itemId)||ItemConstants.isThrowingStar(itemId)) {
+                ret =(short) (DataTool.getInt(smEntry));  // limit the throwing stars to default, but allow item stacking for other items up to 32k
             } else {
-                ret = (short) DataTool.getInt(smEntry);
+                ret = 32000;
+                // ret =(short) (DataTool.getInt(smEntry));
             }
         }
 
@@ -1769,7 +1774,11 @@ public class ItemInformationProvider {
          } catch (SQLException ex) {
             ex.printStackTrace();
          }*/
-        int tdex = chr.getDex(), tstr = chr.getStr(), tint = chr.getInt(), tluk = chr.getLuk(), fame = chr.getFame();
+        int     tdex = chr.getDex(),
+                tstr = chr.getStr(),
+                tint = chr.getInt(),
+                tluk = chr.getLuk(),
+                fame = chr.getFame();
         if (chr.getJob() != Job.SUPERGM || chr.getJob() != Job.GM) {
             for (Item item : inv.list()) {
                 Equip equip = (Equip) item;
@@ -1794,7 +1803,7 @@ public class ItemInformationProvider {
              Really hard check, and not really needed in this one
              Gm's should just be GM job, and players cannot change jobs.
              }*/
-            if (reqLevel > chr.getLevel()) {
+            if (reqLevel > chr.getLevel()) { // dont meet level requirement
                 continue;
             } else if (getEquipStats(equip.getItemId()).get("reqDEX") > tdex) {
                 continue;
@@ -2063,7 +2072,7 @@ public class ItemInformationProvider {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         int dropperid = rs.getInt("dropperid");
-                        itemid = getCrystalForLevel(LifeFactory.getMonsterLevel(dropperid));
+                        itemid = getCrystalForLevel(LifeFactory.getMonsterLevel(dropperid) - 1);
                     }
                 }
             }
