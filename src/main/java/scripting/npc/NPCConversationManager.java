@@ -23,9 +23,13 @@ package scripting.npc;
 
 import client.Character;
 import client.*;
+import client.inventory.Equip;
+import client.inventory.Inventory;
+import client.inventory.InventoryType;
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.Pet;
+import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
@@ -1098,5 +1102,35 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         }
 
         return false;
+    }
+
+    public void removeItemNPC(short itemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        InventoryManipulator.removeFromSlot(this.getClient(), InventoryType.EQUIP, itemSlot, (short) 1, false); //remove the item
+    }
+
+    public void replaceBoomedUpgradeItem(short boomedItemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        int newItemId = eqpInv.getItem(boomedItemSlot).getItemId();
+
+        eqpInv.removeSlot(boomedItemSlot); //remove the item
+
+        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        short newItemSlot = eqpInv.getNextFreeSlot();
+        this.gainItem(newItemId, (short) 1, true);
+
+        //get the new item so we can change it
+        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
+
+        //change the stats and force update the item
+        newItem.setStr((short) ((newItem.getStr() != 0) ? newItem.getStr() + 5 : 0));
+        newItem.setDex((short) ((newItem.getDex() != 0) ? newItem.getDex() + 5 : 0));
+        newItem.setInt((short) ((newItem.getInt() != 0) ? newItem.getInt() + 5 : 0));
+        newItem.setLuk((short) ((newItem.getLuk() != 0) ? newItem.getLuk() + 5 : 0));
+        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + 5 : 0));
+        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + 5 : 0));
+        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + 5 : 0));
+        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + 5 : 0));
+        this.getPlayer().forceUpdateItem(newItem);
     }
 }
