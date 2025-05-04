@@ -31,7 +31,7 @@ var em = null;
 
 function start() {
     status = -1;
-    state = (cm.getMapId() >= 103000800 && cm.getMapId() <= 103000805) ? 1 : 0;
+    state = (cm.getMapId() >= 103000800 && cm.getMapId() <= 103000805) ? 1 : 0; // if talking to lakelis inside Kerning PQ : 1 if outside PQ 0
     action(1, 0, 0);
 }
 

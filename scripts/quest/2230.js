@@ -87,12 +87,14 @@ function end(mode, type, selection) {
                 return;
             }
 
-            qm.sendNext("This snail will only be alive for #b5 hours#k. Shower it with love. Your love will be reciprocated in the end.");
+            qm.sendNext("This snail will only be alive for #b30 days#k. Shower it with love. Your love will be reciprocated in the end. It will help you pick up your items and mesos too with the magnet i give you.");
         } else if (status == 7) {
             if (canComplete) {
                 qm.gainItem(4032086, -1); // Mysterious Egg * -1
                 qm.forceCompleteQuest();
-                qm.gainItem(5000054, 1, false, true, 5 * 60 * 60 * 1000);  // rune snail (5hrs), missing expiration time detected thanks to cljnilsson
+      //          qm.gainItem(5000054, 1, false, true, 5 * 60 * 60 * 1000);  // rune snail (5hrs), missing expiration time detected thanks to
+                qm.gainItem(5000054, 1, false, true, 30 * 24 * 60 * 60 * 1000);  // rune snail (30 days)
+                qm.gainItem(1812000) // meso magnet
             }
 
             qm.dispose();
