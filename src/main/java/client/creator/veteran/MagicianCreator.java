@@ -71,7 +71,7 @@ public class MagicianCreator extends CharacterFactory {
             recipe.setRemainingSp(recipe.getRemainingSp() - improveSp);
 
             int toUseSp = 5;
-            Skill improveMpRec = SkillFactory.getSkill(Magician.IMPROVED_MP_RECOVERY);
+            Skill improveMpRec = SkillFactory.getSkill(2000000);
             recipe.addStartingSkillLevel(improveMpRec, toUseSp);
             improveSp -= toUseSp;
 

@@ -23,13 +23,12 @@ package scripting.npc;
 
 import client.Character;
 import client.*;
-import client.inventory.Equip;
+import client.inventory.Equip; // Slimy Add
 import client.inventory.Inventory;
-import client.inventory.InventoryType;
+import client.inventory.InventoryType; // Slimy Add
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.Pet;
-import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;

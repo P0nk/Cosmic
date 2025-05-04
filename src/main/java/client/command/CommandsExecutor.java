@@ -49,12 +49,24 @@ import client.command.commands.gm0.StatStrCommand;
 import client.command.commands.gm0.TimeCommand;
 import client.command.commands.gm0.ToggleExpCommand;
 import client.command.commands.gm0.UptimeCommand;
+import client.command.commands.gm0.NoobShopCommand;
+import client.command.commands.gm0.WhatDropsFromCommand;
+import client.command.commands.gm0.WhoDropsCommand;
+import client.command.commands.gm0.RollCommand;
+import client.command.commands.gm0.LootCommand;
+import client.command.commands.gm0.WorldChatCommand;
+import client.command.commands.gm0.UniverseChatCommand;
+import client.command.commands.gm0.SellItemsCommand;
+
+
 import client.command.commands.gm1.BossHpCommand;
 import client.command.commands.gm1.BuffMeCommand;
 import client.command.commands.gm1.GotoCommand;
 import client.command.commands.gm1.MobHpCommand;
-import client.command.commands.gm1.WhatDropsFromCommand;
-import client.command.commands.gm1.WhoDropsCommand;
+import client.command.commands.gm1.ScrollShopCommand;
+import client.command.commands.gm1.JeffShopCommand;
+import client.command.commands.gm1.MapleShopCommand;
+
 import client.command.commands.gm2.ApCommand;
 import client.command.commands.gm2.BombCommand;
 import client.command.commands.gm2.BuffCommand;
@@ -66,6 +78,7 @@ import client.command.commands.gm2.DcCommand;
 import client.command.commands.gm2.EmpowerMeCommand;
 import client.command.commands.gm2.GachaListCommand;
 import client.command.commands.gm2.GmShopCommand;
+import client.command.commands.gm2.TestShopCommand;
 import client.command.commands.gm2.HealCommand;
 import client.command.commands.gm2.HideCommand;
 import client.command.commands.gm2.IdCommand;
@@ -75,7 +88,6 @@ import client.command.commands.gm2.JailCommand;
 import client.command.commands.gm2.JobCommand;
 import client.command.commands.gm2.LevelCommand;
 import client.command.commands.gm2.LevelProCommand;
-import client.command.commands.gm2.LootCommand;
 import client.command.commands.gm2.MaxSkillCommand;
 import client.command.commands.gm2.MaxStatCommand;
 import client.command.commands.gm2.MobSkillCommand;
@@ -94,6 +106,7 @@ import client.command.commands.gm2.WarpAreaCommand;
 import client.command.commands.gm2.WarpCommand;
 import client.command.commands.gm2.WarpMapCommand;
 import client.command.commands.gm2.WhereaMiCommand;
+
 import client.command.commands.gm3.BanCommand;
 import client.command.commands.gm3.ChatCommand;
 import client.command.commands.gm3.CheckDmgCommand;
@@ -151,6 +164,8 @@ import client.command.commands.gm3.TimerCommand;
 import client.command.commands.gm3.TimerMapCommand;
 import client.command.commands.gm3.ToggleCouponCommand;
 import client.command.commands.gm3.UnBanCommand;
+import client.command.commands.gm3.Ban2Command;
+
 import client.command.commands.gm4.BossDropRateCommand;
 import client.command.commands.gm4.CakeCommand;
 import client.command.commands.gm4.DropRateCommand;
@@ -175,12 +190,17 @@ import client.command.commands.gm4.ServerMessageCommand;
 import client.command.commands.gm4.SetEqStatCommand;
 import client.command.commands.gm4.TravelRateCommand;
 import client.command.commands.gm4.ZakumCommand;
+import client.command.commands.gm4.MobRateCommand;
+import client.command.commands.gm4.MobpointRateCommand;
+import client.command.commands.gm4.SetItemStatCommand;
+
 import client.command.commands.gm5.DebugCommand;
 import client.command.commands.gm5.IpListCommand;
 import client.command.commands.gm5.SetCommand;
 import client.command.commands.gm5.ShowMoveLifeCommand;
 import client.command.commands.gm5.ShowPacketsCommand;
 import client.command.commands.gm5.ShowSessionsCommand;
+
 import client.command.commands.gm6.ClearQuestCacheCommand;
 import client.command.commands.gm6.ClearQuestCommand;
 import client.command.commands.gm6.DCAllCommand;
@@ -367,7 +387,14 @@ public class CommandsExecutor {
         addCommand("mylawn", MapOwnerClaimCommand.class);
         addCommand("bosshp", BossHpCommand.class);
         addCommand("mobhp", MobHpCommand.class);
-
+        addCommand("noobshop", 0, NoobShopCommand.class);
+        addCommand("whodrops", 0, WhoDropsCommand.class);
+        addCommand("whatdropsfrom", 0, WhatDropsFromCommand.class);
+        addCommand("roll", 0, RollCommand.class);
+        addCommand("loot", LootCommand.class);
+        addCommand("world", 0, WorldChatCommand.class);
+        addCommand("uni", 0, UniverseChatCommand.class);
+        addCommand("sell", 0, SellItemsCommand.class);
         commandsNameDesc.add(levelCommandsCursor);
     }
 
@@ -375,10 +402,12 @@ public class CommandsExecutor {
     private void registerLv1Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
 
-        addCommand("whatdropsfrom", 1, WhatDropsFromCommand.class);
-        addCommand("whodrops", 1, WhoDropsCommand.class);
+
         addCommand("buffme", 1, BuffMeCommand.class);
         addCommand("goto", 1, GotoCommand.class);
+        addCommand("jeffshop", 1, JeffShopCommand.class);
+        addCommand("mapleshop", 1, MapleShopCommand.class);
+        addCommand("scrollshop", 1, ScrollShopCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
@@ -405,6 +434,7 @@ public class CommandsExecutor {
         addCommand(new String[]{"warphere", "summon"}, 2, SummonCommand.class);
         addCommand(new String[]{"warpto", "reach", "follow"}, 2, ReachCommand.class);
         addCommand("gmshop", 2, GmShopCommand.class);
+        addCommand("testshop", 2, TestShopCommand.class);
         addCommand("heal", 2, HealCommand.class);
         addCommand("item", 2, ItemCommand.class);
         addCommand("drop", 2, ItemDropCommand.class);
@@ -422,7 +452,7 @@ public class CommandsExecutor {
         addCommand("unbug", 2, UnBugCommand.class);
         addCommand("id", 2, IdCommand.class);
         addCommand("gachalist", GachaListCommand.class);
-        addCommand("loot", LootCommand.class);
+
         addCommand("mobskill", MobSkillCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
@@ -490,6 +520,7 @@ public class CommandsExecutor {
         addCommand("timerall", 3, TimerAllCommand.class);
         addCommand("warpmap", 3, WarpMapCommand.class);
         addCommand("warparea", 3, WarpAreaCommand.class);
+        addCommand("ban2", 3, Ban2Command.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
@@ -521,7 +552,9 @@ public class CommandsExecutor {
         addCommand("pnpcremove", 4, PnpcRemoveCommand.class);
         addCommand("pmob", 4, PmobCommand.class);
         addCommand("pmobremove", 4, PmobRemoveCommand.class);
-
+        addCommand("mobrate", 4, MobRateCommand.class);
+        addCommand("mobpoint", 4, MobpointRateCommand.class);
+        addCommand("setitemstat", 4, SetItemStatCommand.class);
         commandsNameDesc.add(levelCommandsCursor);
     }
 

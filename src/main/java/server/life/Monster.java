@@ -533,7 +533,7 @@ public class Monster extends AbstractLoadedLife {
     }
 
     private void distributePlayerExperience(Character chr, float exp, float partyBonusMod, int totalPartyLevel, boolean highestPartyDamager, boolean whiteExpGain, boolean hasPartySharers) {
-        float playerExp = (YamlConfig.config.server.EXP_SPLIT_COMMON_MOD * chr.getLevel()) / totalPartyLevel;
+        float playerExp = (YamlConfig.config.server.EXP_SPLIT_COMMON_MOD * chr.getLevel()) / totalPartyLevel; //0.8 * 10/20 = 0.8*0.5= 0.4
         if (highestPartyDamager) {
             playerExp += YamlConfig.config.server.EXP_SPLIT_MVP_MOD;
         }
@@ -545,12 +545,26 @@ public class Monster extends AbstractLoadedLife {
         giveFamilyRep(chr.getFamilyEntry());
     }
 
+
+
     private void distributePartyExperience(Map<Character, Long> partyParticipation, float expPerDmg, Set<Character> underleveled, Map<Integer, Float> personalRatio, double sdevRatio) {
         IntervalBuilder leechInterval = new IntervalBuilder();
-        leechInterval.addInterval(this.getLevel() - YamlConfig.config.server.EXP_SPLIT_LEVEL_INTERVAL, this.getLevel() + YamlConfig.config.server.EXP_SPLIT_LEVEL_INTERVAL);
+
+        // Load configuration values for experience distribution
+        int expSplitLevelInterval = YamlConfig.config.server.EXP_SPLIT_LEVEL_INTERVAL;
+        int expSplitLeechInterval = YamlConfig.config.server.EXP_SPLIT_LEECH_INTERVAL;
+        int enforcedMobLevelRange = YamlConfig.config.server.ENFORCED_MOB_LEVEL_RANGE;
+        boolean leechLimiter = YamlConfig.config.server.LEECH_LIMITER;
+        boolean enforceMobLevelRange = YamlConfig.config.server.USE_ENFORCE_MOB_LEVEL_RANGE;
+
+        // Define the level range for experience distribution
+        leechInterval.addInterval(this.getLevel() - expSplitLevelInterval, this.getLevel() + expSplitLevelInterval);
 
         long maxDamage = 0, partyDamage = 0;
         Character participationMvp = null;
+        int highestContributorLevel = 0;
+
+        // Determine highest damage dealer and calculate total party damage
         for (Entry<Character, Long> e : partyParticipation.entrySet()) {
             long entryDamage = e.getValue();
             partyDamage += entryDamage;
@@ -560,44 +574,83 @@ public class Monster extends AbstractLoadedLife {
                 participationMvp = e.getKey();
             }
 
-            // thanks Thora for pointing out leech level limitation
             int chrLevel = e.getKey().getLevel();
-            leechInterval.addInterval(chrLevel - YamlConfig.config.server.EXP_SPLIT_LEECH_INTERVAL, chrLevel + YamlConfig.config.server.EXP_SPLIT_LEECH_INTERVAL);
+            if (chrLevel > highestContributorLevel) {
+                highestContributorLevel = chrLevel;
+            }
+
+            leechInterval.addInterval(chrLevel - expSplitLeechInterval, chrLevel + expSplitLeechInterval);
         }
 
         List<Character> expMembers = new LinkedList<>();
         int totalPartyLevel = 0;
+        List<Character> eligibleMembers = new LinkedList<>();
 
-        // thanks G h o s t, Alfred, Vcoc, BHB for poiting out a bug in detecting party members after membership transactions in a party took place
-        if (YamlConfig.config.server.USE_ENFORCE_MOB_LEVEL_RANGE) {
-            for (Character member : partyParticipation.keySet().iterator().next().getPartyMembersOnSameMap()) {
-                if (!leechInterval.inInterval(member.getLevel())) {
-                    underleveled.add(member);
-                    continue;
-                }
+        // Determine eligible party members for EXP
+        for (Character member : partyParticipation.keySet().iterator().next().getPartyMembersOnSameMap()) {
+            int memberLevel = member.getLevel();
 
-                totalPartyLevel += member.getLevel();
-                expMembers.add(member);
+            // Check if member meets the enforced mob level range
+            boolean withinMobLevelRange = true;
+            if (enforceMobLevelRange) {
+                withinMobLevelRange = memberLevel >= (this.getLevel() - enforcedMobLevelRange);
             }
-        } else {    // thanks Ari for noticing unused server flag after EXP system overhaul
-            for (Character member : partyParticipation.keySet().iterator().next().getPartyMembersOnSameMap()) {
-                totalPartyLevel += member.getLevel();
-                expMembers.add(member);
+
+            // Check if member meets the leeching level range
+            boolean withinLeechRange = memberLevel >= (highestContributorLevel - expSplitLeechInterval) && memberLevel <= (highestContributorLevel + expSplitLeechInterval);
+
+            // Apply leech limiter rules
+            boolean passesLeechLimiter = true;
+            if (leechLimiter) {
+                passesLeechLimiter =    (memberLevel >= this.getLevel()) ||
+                                        (memberLevel >= (this.getLevel() - expSplitLevelInterval) &&
+                                         memberLevel <= (this.getLevel() + expSplitLevelInterval) &&
+                                         memberLevel >= (highestContributorLevel - expSplitLeechInterval) &&
+                                         memberLevel <= (highestContributorLevel + expSplitLeechInterval));
             }
+
+            // Add eligible members or mark them as underleveled
+            if (withinMobLevelRange && passesLeechLimiter) {
+                eligibleMembers.add(member);
+            } else {
+                underleveled.add(member);
+            }
+        }
+
+        // Ensure the monster killer always gets EXP
+        if (participationMvp != null) {
+            expMembers.add(participationMvp);
+            totalPartyLevel += participationMvp.getLevel();
+        }
+
+        // Add eligible members to EXP distribution
+        for (Character member : eligibleMembers) {
+            if (member != participationMvp) {
+                expMembers.add(member);
+                totalPartyLevel += member.getLevel();
+            }
+        }
+
+        // If no eligible members, do not distribute EXP
+        if (expMembers.isEmpty()) {
+            return;
         }
 
         int membersSize = expMembers.size();
         float participationExp = partyDamage * expPerDmg;
 
-        // thanks Crypter for reporting an insufficiency on party exp bonuses
+        // Calculate party bonus modifier
         boolean hasPartySharers = membersSize > 1;
         float partyBonusMod = hasPartySharers ? 0.05f * membersSize : 0.0f;
 
+        // Distribute EXP to eligible members
         for (Character mc : expMembers) {
             distributePlayerExperience(mc, participationExp, partyBonusMod, totalPartyLevel, mc == participationMvp, isWhiteExpGain(mc, personalRatio, sdevRatio), hasPartySharers);
             giveFamilyRep(mc.getFamilyEntry());
         }
     }
+
+
 
     private void distributeExperience(int killerId) {
         if (isAlive()) {
@@ -1135,6 +1188,7 @@ public class Monster extends AbstractLoadedLife {
     }
 
     public boolean applyStatus(Character from, final MonsterStatusEffect status, boolean poison, long duration, boolean venom) {
+        final MapleMap map = from.getMap(); //Slimy Edits
         switch (getMonsterEffectiveness(status.getSkill().getElement())) {
             case IMMUNE:
             case STRONG:
@@ -1164,9 +1218,11 @@ public class Monster extends AbstractLoadedLife {
                 return false;
             }
         }
-        if (poison && hp.get() <= 1) {
+
+      if (poison && hp.get() <= 0) {
+////        if (poison && hp.get() <= 1) {
             return false;
-        }
+            }
 
         final Map<MonsterStatus, Integer> statis = status.getStati();
         if (stats.isBoss()) {
@@ -1220,13 +1276,21 @@ public class Monster extends AbstractLoadedLife {
 
         int animationTime;
         if (poison) {
+            int Int = from.getInt();
+            int MA = from.getTotalMagic();
             int poisonLevel = from.getSkillLevel(status.getSkill());
-            int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + 0.999));
+            int poisonDamage = Math.min((int) ((getMaxHp() / 3 ) + 1), (int) ((poisonLevel*3.333) * Math.pow(MA,2)/3000)); // Merogie & Slimy - 2
+            //int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + Int)); // Merogie -1
+   //        int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + 0.999));           // Original
+
             status.setValue(MonsterStatus.POISON, poisonDamage);
             animationTime = broadcastStatusEffect(status);
 
             overtimeAction = new DamageTask(poisonDamage, from, status, 0);
             overtimeDelay = 1000;
+            if (hp.get() <= 1) { // slimy edits
+                map.damageMonster(from, this, Integer.MAX_VALUE); // from is the player
+            }
         } else if (venom) {
             if (from.getJob() == Job.NIGHTLORD || from.getJob() == Job.SHADOWER || from.getJob().isA(Job.NIGHTWALKER3)) {
                 int poisonLevel, matk, jobid = from.getJob().getId();
@@ -1237,8 +1301,10 @@ public class Monster extends AbstractLoadedLife {
                 }
                 matk = SkillFactory.getSkill(skillid).getEffect(poisonLevel).getMatk();
                 int luk = from.getLuk();
-                int maxDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.2 * luk * matk));
-                int minDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.1 * luk * matk));
+ //               int maxDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.2 * luk * matk)); // Original
+                int maxDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.4 * luk * matk));  // Merogie
+ //               int minDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.1 * luk * matk)); // Original
+                int minDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.2 * luk * matk));  // Merogie
                 int gap = maxDmg - minDmg;
                 if (gap == 0) {
                     gap = 1;
@@ -1254,6 +1320,9 @@ public class Monster extends AbstractLoadedLife {
 
                 overtimeAction = new DamageTask(poisonDamage, from, status, 0);
                 overtimeDelay = 1000;
+                if (hp.get() <= 1) { // slimy edits
+                    map.damageMonster(from, this, Integer.MAX_VALUE); // from is the player
+                }
             } else {
                 return false;
             }
@@ -2197,4 +2266,41 @@ public class Monster extends AbstractLoadedLife {
 
         this.getMap().dismissRemoveAfter(this);
     }
+    // for dps dummy
+    private long dpsStartTime = 0;
+    private long lastDamageTime = 0;
+    private int totalDpsDamage = 0;
+
+    public long getDpsStartTime() { return dpsStartTime; }
+    public void setDpsStartTime(long time) { this.dpsStartTime = time; }
+
+    public long getLastDamageTime() { return lastDamageTime; }
+    public void setLastDamageTime(long time) { this.lastDamageTime = time; }
+
+    public int getTotalDpsDamage() { return totalDpsDamage; }
+    public void setTotalDpsDamage(int dmg) { this.totalDpsDamage = dmg; }
+    public void addDpsDamage(int dmg) { this.totalDpsDamage += dmg; }
+
+    // import java.util.concurrent.ScheduledFuture;
+
+    private ScheduledFuture<?> dpsTask = null;
+
+    public ScheduledFuture<?> getDpsTask() {
+        return dpsTask;
+    }
+
+    public void setDpsTask(ScheduledFuture<?> task) {
+        this.dpsTask = task;
+    }
+
+    public void resetDpsData() {
+        this.dpsStartTime = 0;
+        this.lastDamageTime = 0;
+        this.totalDpsDamage = 0;
+        if (dpsTask != null && !dpsTask.isCancelled()) {
+            dpsTask.cancel(false);
+            dpsTask = null;
+        }
+    }
+    // End dps dummy
 }

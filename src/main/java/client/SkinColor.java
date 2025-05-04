@@ -22,15 +22,14 @@
 package client;
 
 public enum SkinColor {
-    LIGHT(0),
-    TANNED(1),
-    DARK(2),
+    NORMAL(0),
+    DARK(1),
+    BLACK(2),
     PALE(3),
     BLUE(4),
     GREEN(5),
     WHITE(9),
-    PINK(10),
-    BROWN(11);
+    PINK(10);
 
     final int id;
 

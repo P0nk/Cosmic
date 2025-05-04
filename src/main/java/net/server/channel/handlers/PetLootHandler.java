@@ -23,14 +23,22 @@ package net.server.channel.handlers;
 
 import client.Character;
 import client.Client;
+import client.inventory.InventoryType;
 import client.inventory.Pet;
+import config.YamlConfig;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
+import server.CashShop;
 import server.maps.MapItem;
 import server.maps.MapObject;
+import server.maps.MapObjectType;
 import tools.PacketCreator;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+
+import static java.sql.DriverManager.println;
 
 /**
  * @author TheRamon
@@ -80,8 +88,41 @@ public final class PetLootHandler extends AbstractPacketHandler {
                     }
                 }
             }
-
-            chr.pickupItem(ob, petIndex);
+            // Added the below code
+            // Get list of map item
+            List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
+            final Set<Integer> petIgnore = chr.getExcludedItems(); // get list of item ignore
+            if (c.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() < 1 || c.getPlayer().getInventory(InventoryType.EQUIP).getNumFreeSlot() < 1 ||
+                    c.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() < 1) {
+                chr.showHint("Pet can't loot anymore as either my EQUIP, USE or ETC inventory is full.. Might wanna do something about that..", 300);
+                return;
+            }
+            for (MapObject item : items) { // loop thorugh map item
+                MapItem mapItem = (MapItem) item; // assign map item to mapItem variable
+                // Check loot details
+//                System.out.println("Item ID: " + mapItem.getItemId());
+//                System.out.println("Quest ID: " + mapItem.getQuest());
+//                System.out.println("Quest Status of Quest Item: " + c.getPlayer().getQuestStatus(mapItem.getQuest()));
+                boolean is_player_kill = mapItem.getOwnerId() == c.getPlayer().getId();
+                boolean is_party_kill = mapItem.getOwnerId() == c.getPlayer().getPartyId();
+                boolean common_or_meso_item = mapItem.getQuest() <= 0; // QuestID <=0 because mesos quest id is -1
+                boolean is_quest_item_and_active = c.getPlayer().getQuestStatus(mapItem.getQuest()) == 1;
+                if ((is_player_kill || is_party_kill) && (common_or_meso_item || is_quest_item_and_active)) {
+                    try {
+                        if (!petIgnore.contains(mapItem.getItemId())) { // !petIgnore.isEmpty() &&
+                            chr.pickupItem(mapItem, petIndex);
+//                            System.out.println("Looted!");
+//                            System.out.println();
+                        } else {
+                            c.sendPacket(PacketCreator.enableActions());
+                        }
+                    } catch (NullPointerException | ClassCastException e) {
+                        c.sendPacket(PacketCreator.enableActions());
+                    }
+                }
+//                System.out.println("Looted!");
+//                System.out.println();
+            } // up to here;
         } catch (NullPointerException | ClassCastException e) {
             c.sendPacket(PacketCreator.enableActions());
         }

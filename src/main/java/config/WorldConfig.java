@@ -13,4 +13,7 @@ public class WorldConfig {
     public int quest_rate = 1;
     public int travel_rate = 1;
     public int fishing_rate = 1;
+    public float mob_rate = 1;
+    public int max_mob_per_spawnpoint = 1;
+    public boolean use_progressive_exp = true;
 }

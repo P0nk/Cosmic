@@ -690,8 +690,11 @@ public class MapleMap {
                 } else {
                     if (ItemConstants.getInventoryType(de.itemId) == InventoryType.EQUIP) {
                         idrop = ii.randomizeStats((Equip) ii.getEquipById(de.itemId));
+                    } else if ((de.Maximum - de.Minimum) <= 0) { // merogie - for bound where randomizer get non-positive value to random
+                        idrop = new Item(de.itemId, (short) 0, (short) 1); // merogie
                     } else {
                         idrop = new Item(de.itemId, (short) 0, (short) (de.Maximum != 1 ? Randomizer.nextInt(de.Maximum - de.Minimum) + de.Minimum : 1));
+
                     }
                     spawnDrop(idrop, calcDropPos(pos, mob.getPosition()), mob, chr, droptype, de.questid, delay);
                 }
@@ -1288,6 +1291,33 @@ public class MapleMap {
         }
 
         boolean killed = monster.damage(chr, damage, false);
+        // === DPS Dummy Feature Start ===
+        if (monster.getId() == 9001007) { // Replace with your custom dummy mob ID
+            long now = System.currentTimeMillis();
+            if (monster.getDpsStartTime() == 0) {
+                chr.getMap().broadcastMessage(PacketCreator.serverNotice(6, "DPS Test Started"));
+                monster.setDpsStartTime(now);
+                monster.setLastDamageTime(now);
+                monster.setTotalDpsDamage(damage);
+                ScheduledFuture<?> task = TimerManager.getInstance().scheduleAtFixedRate(() -> {
+                    long last = monster.getLastDamageTime();
+                    long elapsed = System.currentTimeMillis() - monster.getDpsStartTime();
+                    String formattedDamage = String.format("%,d", monster.getTotalDpsDamage());
+                    String formattedDps = String.format("%,d", monster.getTotalDpsDamage() / (elapsed / 1000));
+                    if (System.currentTimeMillis() - last > 5000) {
+                        chr.getMap().broadcastMessage(PacketCreator.serverNotice(6, "DPS Test ended. Total Damage: " + formattedDamage + ", Time: " + (elapsed / 1000) + "s, DPS: " + formattedDps));
+                        monster.resetDpsData();
+                        return;
+                    }
+                    chr.getMap().broadcastMessage(PacketCreator.serverNotice(6, "DPS Test: " + formattedDamage + " dmg in " + (elapsed / 1000) + "s (" + formattedDps + " DPS)"));
+                }, 5000, 5000);
+                monster.setDpsTask(task); // Store task to cancel later
+            } else {
+                monster.setLastDamageTime(now);
+                monster.addDpsDamage(damage);
+            }
+        }
+        // === DPS Dummy Feature End ===
 
         selfDestruction selfDestr = monster.getStats().selfDestruction();
         if (selfDestr != null && selfDestr.getHp() > -1) {// should work ;p
@@ -1298,10 +1328,18 @@ public class MapleMap {
         }
         if (killed) {
             killMonster(monster, chr, true, delay);
+            int meso_normal = ((int) (Math.pow(monster.getLevel(), 1.2) + Math.pow(monster.getMaxHp(), 0.5) + monster.getPADamage())) * chr.getMesoRate();
+            // MesoUp buff applied
+            if (chr.getBuffedValue(BuffStat.MESOUP) != null) {
+                meso_normal = (int) (meso_normal * chr.getBuffedValue(BuffStat.MESOUP).doubleValue() / 100.0);
+            }
+//            if (monster.getId() = chr.getdailybountymonster() ) {
+//               int meso_bounty = Math.min(Math.max(500,meso_normal),4000);
+//                chr.gainMeso(meso_bounty);}
+            chr.gainMeso(meso_normal,false,false,false);
         }
         return true;
     }
-
     public void broadcastBalrogVictory(String leaderName) {
         getWorldServer().dropMessage(6, "[Victory] " + leaderName + "'s party has successfully defeated the Balrog! Praise to them, they finished with " + countAlivePlayers() + " players alive.");
     }
@@ -3529,13 +3567,16 @@ public class MapleMap {
         System.out.println("try " + monsterSpawn.size() + " - " + spawnedMonstersOnMap.get());
         System.out.println("----------------------------------");
         */
+        float maxMob = monsterSpawn.size() * getWorldServer().getMobrate();
 
         if (YamlConfig.config.server.USE_ENABLE_FULL_RESPAWN) {
-            return (monsterSpawn.size() - spawnedMonstersOnMap.get());
+      //      return (monsterSpawn.size() - spawnedMonstersOnMap.get()); // Original
+            return (int) Math.ceil(maxMob) - spawnedMonstersOnMap.get(); // Mob Rate Increase - Merogie
         }
 
-        int maxNumShouldSpawn = (int) Math.ceil(getCurrentSpawnRate(numPlayers) * monsterSpawn.size());
-        return maxNumShouldSpawn - spawnedMonstersOnMap.get();
+//        int maxNumShouldSpawn = (int) Math.ceil(getCurrentSpawnRate(numPlayers) * monsterSpawn.size()); // original
+//        return maxNumShouldSpawn - spawnedMonstersOnMap.get(); // original
+        return (int) Math.ceil(getCurrentSpawnRate(numPlayers) * maxMob) - spawnedMonstersOnMap.get();  // merogie
     }
 
     public void respawn() {
@@ -3561,7 +3602,9 @@ public class MapleMap {
             Collections.shuffle(randomSpawn);
             short spawned = 0;
             for (SpawnPoint spawnPoint : randomSpawn) {
-                if (spawnPoint.shouldSpawn()) {
+                if (spawnPoint.shouldSpawn(getWorldServer().getMobperspawnpoint())) { // merogie
+ //               if (spawnPoint.shouldSpawn()) { // original
+
                     spawnMonster(spawnPoint.getMonster());
                     spawned++;
 

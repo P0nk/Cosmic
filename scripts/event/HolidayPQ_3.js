@@ -26,7 +26,7 @@
 // GMS-like event string data thanks to iHealForLove
 
 var isPq = true;
-var minPlayers = 3, maxPlayers = 6;
+var minPlayers = 1, maxPlayers = 6;
 var minLevel = 41, maxLevel = 50;
 var entryMap = 889100021;
 var exitMap = 889100022;

@@ -72,6 +72,7 @@ import constants.skills.Page;
 import constants.skills.Paladin;
 import constants.skills.Ranger;
 import constants.skills.Rogue;
+import constants.skills.Bandit;
 import constants.skills.Shadower;
 import constants.skills.Sniper;
 import constants.skills.Spearman;
@@ -339,13 +340,18 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     } else if (attack.skill == FPArchMage.FIRE_DEMON) {
                         long duration = SECONDS.toMillis(SkillFactory.getSkill(FPArchMage.FIRE_DEMON).getEffect(player.getSkillLevel(SkillFactory.getSkill(FPArchMage.FIRE_DEMON))).getDuration());
-                        monster.setTempEffectiveness(Element.ICE, ElementalEffectiveness.WEAK, duration);
+                        //monster.setTempEffectiveness(Element.ICE, ElementalEffectiveness.WEAK, duration);// original
+                        monster.setTempEffectiveness(Element.FIRE, ElementalEffectiveness.WEAK, duration);// merogie
+
                     } else if (attack.skill == ILArchMage.ICE_DEMON) {
                         long duration = SECONDS.toMillis(SkillFactory.getSkill(ILArchMage.ICE_DEMON).getEffect(player.getSkillLevel(SkillFactory.getSkill(ILArchMage.ICE_DEMON))).getDuration());
-                        monster.setTempEffectiveness(Element.FIRE, ElementalEffectiveness.WEAK, duration);
+                        //monster.setTempEffectiveness(Element.FIRE, ElementalEffectiveness.WEAK, duration);// original
+                        monster.setTempEffectiveness(Element.ICE, ElementalEffectiveness.WEAK, duration);// merogie
+
                     } else if (attack.skill == Outlaw.HOMING_BEACON || attack.skill == Corsair.BULLSEYE) {
                         StatEffect beacon = SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(attack.skill));
                         beacon.applyBeaconBuff(player, monster.getObjectId());
+
                     } else if (attack.skill == Outlaw.FLAME_THROWER) {
                         if (!monster.isBoss()) {
                             Skill type = SkillFactory.getSkill(Outlaw.FLAME_THROWER);
@@ -500,12 +506,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     }
                     if (attack.skill == Paladin.HEAVENS_HAMMER) {
-                        if (!monster.isBoss()) {
-                            damageMonsterWithSkill(player, map, monster, monster.getHp() - 1, attack.skill, 1777);
-                        } else {
+                //        if (!monster.isBoss()) {
+                //            damageMonsterWithSkill(player, map, monster, monster.getHp() - 1, attack.skill, 1777); // Original
+                //            damageMonsterWithSkill(player, map, monster, monster.getHp(), attack.skill, 1777); // Merogie - Changed HH to instakill all mobs. removed -1
+                //        } else {
                             int HHDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Paladin.HEAVENS_HAMMER).getEffect(player.getSkillLevel(SkillFactory.getSkill(Paladin.HEAVENS_HAMMER))).getDamage() / 100));
                             damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (HHDmg / 5) + HHDmg * .8)), attack.skill, 1777);
-                        }
+                //        }
                     } else if (attack.skill == Aran.COMBO_TEMPEST) {
                         if (!monster.isBoss()) {
                             damageMonsterWithSkill(player, map, monster, monster.getHp(), attack.skill, 0);
@@ -836,6 +843,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 if (ret.skill == Buccaneer.BARRAGE || ret.skill == ThunderBreaker.BARRAGE) {
                     if (j > 3) {
                         hitDmgMax *= Math.pow(2, (j - 3));
+                        hitDmgMax *= Math.pow(2, (j - 3));
                     }
                 }
                 if (shadowPartner) {
@@ -847,8 +855,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 }
 
                 if (ret.skill == Marksman.SNIPE) {
-                    damage = 195000 + Randomizer.nextInt(5000);
-                    hitDmgMax = 200000;
+                    damage = 350000 + Randomizer.nextInt(50000);
+                    hitDmgMax = 5000;
                 } else if (ret.skill == Beginner.BAMBOO_RAIN || ret.skill == Noblesse.BAMBOO_RAIN || ret.skill == Evan.BAMBOO_THRUST || ret.skill == Legend.BAMBOO_THRUST) {
                     hitDmgMax = 82569000; // 30% of Max HP of strongest Dojo boss
                 }
@@ -868,10 +876,11 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 if (damage > maxWithCrit * 5) {
                     AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                 }
-
                 if (ret.skill == Marksman.SNIPE || (canCrit && damage > hitDmgMax)) {
                     // If the skill is a crit, inverse the damage to make it show up on clients.
-                    damage = -Integer.MAX_VALUE + damage - 1;
+       //                damage = -Integer.MAX_VALUE + damage - 1;
+//                    int damage2 = -Integer.MAX_VALUE + damage - 1;
+//                    damage = damage2;
                 }
 
                 if(effect != null) {
