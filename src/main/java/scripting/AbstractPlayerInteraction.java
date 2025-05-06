@@ -39,6 +39,7 @@ import net.server.world.PartyCharacter;
 import scripting.event.EventInstanceManager;
 import scripting.event.EventManager;
 import scripting.npc.NPCScriptManager;
+import server.CashShop;
 import server.ItemInformationProvider;
 import server.Marriage;
 import server.expeditions.Expedition;
@@ -74,6 +75,10 @@ public class AbstractPlayerInteraction {
 
     public Character getPlayer() {
         return c.getPlayer();
+    }
+
+    public CashShop getCashShop() {
+        return c.getPlayer().getCashShop();
     }
 
     public Character getChar() {

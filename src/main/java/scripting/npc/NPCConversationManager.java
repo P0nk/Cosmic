@@ -1133,4 +1133,33 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + 5 : 0));
         this.getPlayer().forceUpdateItem(newItem);
     }
+    public void rebirthItem(short ItemSlot, short hands ) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        int newItemId = eqpInv.getItem(ItemSlot).getItemId();
+
+        eqpInv.removeSlot(ItemSlot); //remove the item
+
+        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        short newItemSlot = eqpInv.getNextFreeSlot();
+        this.gainItem(newItemId, (short) 1, true);
+
+        //get the new item so we can change it
+        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
+
+        //Increment
+        int watk_matk_increment = 50 * (hands + 1);
+        int stat_increment = 50 * (hands + 1);
+
+        //change the stats and force update the item
+        newItem.setStr((short) ((newItem.getStr() != 0) ? newItem.getStr() + stat_increment : 0));
+        newItem.setDex((short) ((newItem.getDex() != 0) ? newItem.getDex() + stat_increment : 0));
+        newItem.setInt((short) ((newItem.getInt() != 0) ? newItem.getInt() + stat_increment : 0));
+        newItem.setLuk((short) ((newItem.getLuk() != 0) ? newItem.getLuk() + stat_increment : 0));
+        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + watk_matk_increment : 0));
+        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + watk_matk_increment : 0));
+        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + stat_increment : 0));
+        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + stat_increment : 0));
+        newItem.setHands((short) (hands + 1));
+        this.getPlayer().forceUpdateItem(newItem);
+    }
 }
