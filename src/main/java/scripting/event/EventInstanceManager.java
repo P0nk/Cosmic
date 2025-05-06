@@ -26,6 +26,7 @@ import client.Skill;
 import client.SkillFactory;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
+import constants.game.ExpTable; // Slimy adds
 import net.server.coordinator.world.EventRecallCoordinator;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
@@ -48,6 +49,7 @@ import server.maps.Reactor;
 import tools.PacketCreator;
 import tools.Pair;
 
+
 import javax.script.ScriptException;
 import java.awt.*;
 import java.util.List;
@@ -57,6 +59,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -172,6 +175,54 @@ public class EventInstanceManager {
                     mse.applyTo(player);
                 }
             }
+        }
+    }
+
+    // Slimy adds custom exp table
+    public void giveEventPlayersExpTier(List<Integer> thresholds, int mapId) {
+        // make sure our thresholds list is in ascending order
+        Collections.sort(thresholds);
+        int expToGive = 0;
+
+        for (Character mc : getPlayerList()) {
+            // filter by mapId if needed
+            if (mapId != -1 && mc.getMapId() != mapId) {
+                continue;
+            }
+
+            int lvl = mc.getLevel();
+
+            // check highest thresholds first
+            if (thresholds.size() >= 5 && lvl >= thresholds.get(4)) {
+                // level >= 120
+                expToGive = ExpTable.getExpNeededForLevel(lvl) / 10;
+            } else if (thresholds.size() >= 4 && lvl >= thresholds.get(3)) {
+                // level >= 100
+                expToGive = ExpTable.getExpNeededForLevel(lvl) / 5;
+            } else if (thresholds.size() >= 3 && lvl >= thresholds.get(2)) {
+                // level >= 90
+                expToGive = ExpTable.getExpNeededForLevel(lvl) / 3;
+            } else if (thresholds.size() >= 2 && lvl >= thresholds.get(1)) {
+                // level >= 80
+                expToGive = ExpTable.getExpNeededForLevel(lvl) / 2;
+            } else if (thresholds.size() >= 1 && lvl >= thresholds.get(0)) {
+                // level >= 70: bump them up one level instead of giving exp
+                expToGive = ExpTable.getExpNeededForLevel(lvl);
+            } else {
+                // below the first threshold: normal exp
+//                expToGive = gain * mc.getExpRate();
+            }
+
+            mc.gainExp(expToGive, true, true);
+        }
+    }
+    // End
+
+    public void giveEventPlayersCash(int gain) {
+        List<Character> players = getPlayerList();
+        int count  = players.size();
+        for (Character mc : getPlayerList()) {
+            mc.getCashShop().gainCash(1, gain * count); // nx multiplies by about of party members
         }
     }
 
