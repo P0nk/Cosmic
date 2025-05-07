@@ -79,7 +79,7 @@ function action(mode, type, selection) {
             cm.sendYesNo("Your item has reached it capabilities...I can make your items stronger but it will cost all your upgrades. \r\n" +
                          "Reseting your stats but giving your item Base stats a boost. \r\n" +
                          "It will cost you 1x #v" + rockOfTime + "#"+ "100k NX. Do you want to proceed?");
-        } else if (selectedItem.getHands() <= 2) {
+        } else if (selectedItem.getItemLevel() < 5 && selectedItem.getHands() <= 3) {
             var min_multiplier = 1.4
             var max_multiplier = 1.6
 
