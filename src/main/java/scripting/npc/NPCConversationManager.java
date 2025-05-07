@@ -36,6 +36,7 @@ import constants.id.MapId;
 import constants.id.NpcId;
 import constants.inventory.ItemConstants;
 import constants.string.LanguageConstants;
+import net.packet.Packet;
 import net.server.Server;
 import net.server.channel.Channel;
 import net.server.coordinator.matchchecker.MatchCheckerListenerFactory.MatchCheckerType;
@@ -67,6 +68,7 @@ import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.Pyramid;
 import server.partyquest.Pyramid.PyramidMode;
+import server.CashShop;
 import tools.PacketCreator;
 import tools.packets.WeddingPackets;
 
@@ -288,6 +290,16 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void gainExp(int gain) {
         getPlayer().gainExp(gain, true, true);
+    }
+
+    public void sendPacket(Packet packet) {
+        c.sendPacket(packet);
+    }
+
+    public void gainCash(int gain) {
+        getPlayer().getCashShop().gainCash(1, gain);
+        sendPacket(PacketCreator.showCash(getPlayer()));
+
     }
 
     @Override
@@ -1133,9 +1145,12 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + 5 : 0));
         this.getPlayer().forceUpdateItem(newItem);
     }
+
     public void rebirthItem(short ItemSlot, short hands ) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         int newItemId = eqpInv.getItem(ItemSlot).getItemId();
+        int newItemType = newItemId/10000;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         eqpInv.removeSlot(ItemSlot); //remove the item
 
@@ -1145,21 +1160,59 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         //get the new item so we can change it
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
+        int itemReqLevel = ii.getEquipLevelReq(newItemId);
+        int stat_increment = 0;
+        int watk_matk_increment = 0;
 
-        //Increment
-        int watk_matk_increment = 50 * (hands + 1);
-        int stat_increment = 50 * (hands + 1);
+        System.out.println("Item required level: " + itemReqLevel);
+        if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
+            if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
+                watk_matk_increment = (485 - newItem.getMatk())/3 * (hands + 1);
+                stat_increment = 50 * (hands + 1);
+            } else {
+                watk_matk_increment = (385 - newItem.getMatk())/3 * (hands + 1);
+                stat_increment = 50 * (hands + 1);
+            }
+        } else { // armours and accessories
+            //Increment
+            watk_matk_increment = 18 * (hands + 1);
+            stat_increment = 25 * (hands + 1);
+        }
 
         //change the stats and force update the item
         newItem.setStr((short) ((newItem.getStr() != 0) ? newItem.getStr() + stat_increment : 0));
         newItem.setDex((short) ((newItem.getDex() != 0) ? newItem.getDex() + stat_increment : 0));
         newItem.setInt((short) ((newItem.getInt() != 0) ? newItem.getInt() + stat_increment : 0));
         newItem.setLuk((short) ((newItem.getLuk() != 0) ? newItem.getLuk() + stat_increment : 0));
-        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + watk_matk_increment : 0));
-        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + watk_matk_increment : 0));
+        newItem.setWatk((short) (newItem.getWatk() + watk_matk_increment));
+        newItem.setMatk((short) (newItem.getMatk() + watk_matk_increment));
         newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + stat_increment : 0));
         newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + stat_increment : 0));
         newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
+
+    }
+
+    public static String getWeaponType(int itemId) {
+        int prefix = itemId / 10000;
+        switch (prefix) {
+            case 130: return "One-Handed Sword";
+            case 131: return "One-Handed Axe";
+            case 132: return "One-Handed Mace";
+            case 133: return "Dagger";
+            case 137: return "Wand";
+            case 138: return "Staff";
+            case 140: return "Two-Handed Sword";
+            case 141: return "Two-Handed Axe";
+            case 142: return "Two-Handed Mace";
+            case 143: return "Spear";
+            case 144: return "Pole Arm";
+            case 145: return "Bow";
+            case 146: return "Crossbow";
+            case 147: return "Claw";
+            case 148: return "Knuckle";
+            case 149: return "Gun";
+            default: return "Unknown";
+        }
     }
 }

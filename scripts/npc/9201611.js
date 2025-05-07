@@ -70,12 +70,16 @@ function action(mode, type, selection) {
             cm.sendOk("Invalid selection.");
             cm.dispose();
             return;
-        }  else if (selectedItem.getItemLevel() >= 5 && selectedItem.getHands() <= 2) {
+        } else if ((selectedItem.getItemId() == 1402180 || selectedItem.getItemId() == 1382235) && selectedItem.getItemLevel() >= 5) {
+            cm.sendOk("Item too OP... Impossible to rebirth.");
+            cm.dispose();
+            return;
+        } else if (selectedItem.getItemLevel() >= 5 && selectedItem.getHands() <= 2) {
             rebirth = true;
             cm.sendYesNo("Your item has reached it capabilities...I can make your items stronger but it will cost all your upgrades. \r\n" +
                          "Reseting your stats but giving your item Base stats a boost. \r\n" +
                          "It will cost you 1x #v" + rockOfTime + "#"+ "100k NX. Do you want to proceed?");
-        } else {
+        } else if (selectedItem.getHands() <= 2) {
             var min_multiplier = 1.4
             var max_multiplier = 1.6
 
@@ -134,6 +138,10 @@ function action(mode, type, selection) {
               cm.dispose();
               return;
             }
+        } else {
+            cm.sendOk("Item has reached max rebirth!");
+            cm.dispose();
+            return;
         }
 
     } else if (status === 3) {
@@ -221,7 +229,11 @@ function action(mode, type, selection) {
             cm.dispose();
             return;
         } else if (rebirth == true) {
-            if (selectedItem.getItemLevel() == 1 || !cm.haveItem(rockOfTime, 1)) {
+            if (selectedItem.getItemId() == 1402180 || selectedItem.getItemId() == 1382235) { // Just a double check
+                cm.sendOk("Hello! Your item is already so op, you can't rebirth it!");
+                cm.dispose();
+                return;
+            } else if (selectedItem.getItemLevel() == 1 || !cm.haveItem(rockOfTime, 1)) {
                 cm.sendOk("You do not have enough " + "#v" + rockOfTime + "#" + ".");
                 cm.dispose();
                 return;
