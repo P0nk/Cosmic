@@ -6,5 +6,5 @@ public interface MonsterListener {
 
     void monsterKilled(int aniTime);
     void monsterDamaged(Character from, int trueDmg);
-    void monsterHealed(int trueHeal);
+    void monsterHealed(long trueHeal); // slimy edits
 }

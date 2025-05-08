@@ -4053,7 +4053,7 @@ public class MapleMap {
             }
 
             @Override
-            public void monsterHealed(int trueHeal) {
+            public void monsterHealed(long trueHeal) { // slimy edits
                 ht.addHp(-trueHeal);
             }
         });
@@ -4074,7 +4074,7 @@ public class MapleMap {
                 }
 
                 @Override
-                public void monsterHealed(int trueHeal) {
+                public void monsterHealed(long trueHeal) { // slimy edits
                     ht.addHp(trueHeal);
                 }
             });

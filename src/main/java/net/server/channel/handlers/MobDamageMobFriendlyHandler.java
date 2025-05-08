@@ -49,7 +49,7 @@ public final class MobDamageMobFriendlyHandler extends AbstractPacketHandler {
             return;
         }
 
-        int damage = Randomizer.nextInt(((monster.getMaxHp() / 13 + monster.getPADamage() * 10)) * 2 + 500) / 10; // Formula planned by Beng.
+        int damage = Randomizer.nextInt((int) (((monster.getMaxHp() / 13 + monster.getPADamage() * 10)) * 2 + 500)) / 10; // Formula planned by Beng.
 
         if (monster.getHp() - damage < 1) {     // friendly dies
             switch (monster.getId()) {
@@ -85,7 +85,7 @@ public final class MobDamageMobFriendlyHandler extends AbstractPacketHandler {
         }
 
         monster.applyAndGetHpDamage(damage, false);
-        int remainingHp = monster.getHp();
+        long remainingHp = monster.getHp(); // slimy edits
         if (remainingHp <= 0) {
             remainingHp = 0;
             map.removeMapObject(monster);

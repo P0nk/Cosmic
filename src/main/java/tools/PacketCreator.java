@@ -1140,14 +1140,14 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * Gets a packet to spawn a special map object.
-     *
-     * @param summon
-     * @param skillLevel The level of the skill used.
-     * @param animated   Animated spawn?
-     * @return The spawn packet for the map object.
-     */
+//    /**
+//     * Gets a packet to spawn a special map object.
+//     *
+//     * @param summon
+//     * @param skillLevel The level of the skill used.
+//     * @param animated   Animated spawn?
+//     * @return The spawn packet for the map object.
+//     */
     public static Packet spawnSummon(Summon summon, boolean animated) {
         OutPacket p = OutPacket.create(SendOpcode.SPAWN_SPECIAL_MAPOBJECT);
         p.writeInt(summon.getOwner().getId());
@@ -1654,15 +1654,15 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * Gets a general chat packet.
-     *
-     * @param cidfrom The character ID who sent the chat.
-     * @param text    The text of the chat.
-     * @param whiteBG
-     * @param show
-     * @return The general chat packet.
-     */
+//    /**
+//     * Gets a general chat packet.
+//     *
+//     * @param cidfrom The character ID who sent the chat.
+//     * @param text    The text of the chat.
+//     * @param whiteBG
+//     * @param show
+//     * @return The general chat packet.
+//     */
     public static Packet getChatText(int cidfrom, String text, boolean gm, int show) {
         final OutPacket p = OutPacket.create(SendOpcode.CHATTEXT);
         p.writeInt(cidfrom);
@@ -2740,11 +2740,11 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * @param chr
-     * @param isSelf
-     * @return
-     */
+//    /**
+//     * @param chr
+//     * @param isSelf
+//     * @return
+//     */
     public static Packet charInfo(Character chr) {
         //3D 00 0A 43 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
         final OutPacket p = OutPacket.create(SendOpcode.CHAR_INFO);
@@ -2860,12 +2860,12 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * @param cid
-     * @param statups
-     * @param mount
-     * @return
-     */
+//    /**
+//     * @param cid
+//     * @param statups
+//     * @param mount
+//     * @return
+//     */
     public static Packet showMonsterRiding(int cid, Mount mount) { //Gtfo with this, this is just giveForeignBuff
         final OutPacket p = OutPacket.create(SendOpcode.GIVE_FOREIGN_BUFF);
         p.writeInt(cid);
@@ -2891,11 +2891,11 @@ public class PacketCreator {
              p.writeShort(0);
              p.writeByte(0);*/
 
-    /**
-     * @param c
-     * @param quest
-     * @return
-     */
+//    /**
+//     * @param c
+//     * @param quest
+//     * @return
+//     */
     public static Packet forfeitQuest(short quest) {
         final OutPacket p = OutPacket.create(SendOpcode.SHOW_STATUS_INFO);
         p.writeByte(1);
@@ -2904,11 +2904,11 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * @param c
-     * @param quest
-     * @return
-     */
+//    /**
+//     * @param c
+//     * @param quest
+//     * @return
+//     */
     public static Packet completeQuest(short quest, long time) {
         final OutPacket p = OutPacket.create(SendOpcode.SHOW_STATUS_INFO);
         p.writeByte(1);
@@ -2918,13 +2918,13 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * @param c
-     * @param quest
-     * @param npc
-     * @param progress
-     * @return
-     */
+//    /**
+//     * @param c
+//     * @param quest
+//     * @param npc
+//     * @param progress
+//     * @return
+//     */
 
     public static Packet updateQuestInfo(short quest, int npc) {
         final OutPacket p = OutPacket.create(SendOpcode.UPDATE_QUEST_INFO);
@@ -3262,12 +3262,12 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * @param c
-     * @param shop
-     * @param owner
-     * @return
-     */
+//    /**
+//     * @param c
+//     * @param shop
+//     * @param owner
+//     * @return
+//     */
     public static Packet getPlayerShop(PlayerShop shop, boolean owner) {
         final OutPacket p = OutPacket.create(SendOpcode.PLAYER_INTERACTION);
         p.writeByte(PlayerInteractionHandler.Action.ROOM.getCode());
@@ -4092,17 +4092,17 @@ public class PacketCreator {
         return damageMonster(oid, damage, 0, 0);
     }
 
-    public static Packet healMonster(int oid, int heal, int curhp, int maxhp) {
-        return damageMonster(oid, -heal, curhp, maxhp);
+    public static Packet healMonster(int oid, long heal, long curhp, long maxhp) { // slimy edits
+        return damageMonster(oid, (int) -heal, curhp, maxhp); // slimy edits
     }
 
-    private static Packet damageMonster(int oid, int damage, int curhp, int maxhp) {
+    private static Packet damageMonster(int oid, int damage, long curhp, long maxhp) { // slimy edits
         final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
         p.writeInt(oid);
         p.writeByte(0);
         p.writeInt(damage);
-        p.writeInt(curhp);
-        p.writeInt(maxhp);
+        p.writeInt((int) curhp); // slimy edits
+        p.writeInt((int) maxhp); // slimy edits
         return p;
     }
 
@@ -6759,13 +6759,23 @@ public class PacketCreator {
         return builder.toString();
     }
 
-    public static Packet MobDamageMobFriendly(Monster mob, int damage, int remainingHp) {
+    public static Packet MobDamageMobFriendly(Monster mob, int damage, long remainingHp) { // slimy edits
         final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
         p.writeInt(mob.getObjectId());
         p.writeByte(1); // direction ?
         p.writeInt(damage);
-        p.writeInt(remainingHp);
-        p.writeInt(mob.getMaxHp());
+//        p.writeInt(remainingHp); // Original
+//        p.writeInt(mob.getMaxHp()); // Original
+        // Slimy edits
+        if (mob.getMaxHp() > Integer.MAX_VALUE) {
+            long fixedMaxHP = (mob.getMaxHp() / 10000);
+            long fixedCurrHP = (remainingHp / 10000);
+            p.writeInt((int) fixedCurrHP);
+            p.writeInt((int) fixedMaxHP);
+        }
+        p.writeInt((int) remainingHp);
+        p.writeInt((int) mob.getMaxHp());
+        // =====
         return p;
     }
 
@@ -7364,12 +7374,12 @@ public class PacketCreator {
         return p;
     }
 
-    /**
-     * Sends a request to remove Mir<br>
-     *
-     * @param charid - Needs the specific Character ID
-     * @return The packet
-     */
+//    /**
+//     * Sends a request to remove Mir<br>
+//     *
+//     * @param charid - Needs the specific Character ID
+//     * @return The packet
+//     */
     public static Packet removeDragon(int chrId) {
         OutPacket p = OutPacket.create(SendOpcode.REMOVE_DRAGON);
         p.writeInt(chrId);

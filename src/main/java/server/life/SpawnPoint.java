@@ -108,7 +108,7 @@ public class SpawnPoint {
             public void monsterDamaged(Character from, int trueDmg) {}
 
             @Override
-            public void monsterHealed(int trueHeal) {}
+            public void monsterHealed(long trueHeal) {} // slimy edits
         });
         if (mobTime == 0) {
             nextPossibleSpawn = Server.getInstance().getCurrentTime() + mobInterval;

@@ -39,7 +39,8 @@ import java.util.Set;
  */
 public class MonsterStats {
     public boolean changeable;
-    public int exp, hp, mp, level, PADamage, PDDamage, MADamage, MDDamage, dropPeriod, cp, buffToGive = -1, removeAfter;
+    public int exp, mp, level, PADamage, PDDamage, MADamage, MDDamage, dropPeriod, cp, buffToGive = -1, removeAfter;
+    public Long hp; // slimy edits
     public boolean boss, undead, ffaLoot, isExplosiveReward, firstAttack, removeOnMiss;
     public String name;
     public Map<String, Integer> animationTimes = new HashMap<>();
@@ -70,11 +71,11 @@ public class MonsterStats {
         this.exp = exp;
     }
 
-    public int getHp() {
+    public Long getHp() {
         return hp;
     }
 
-    public void setHp(int hp) {
+    public void setHp(long hp) { // slimy edits
         this.hp = hp;
     }
 

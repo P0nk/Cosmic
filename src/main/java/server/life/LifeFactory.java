@@ -116,8 +116,38 @@ public class LifeFactory {
             // thanks resinate for noticing non-propagable infos such as revives getting retrieved
             attackInfos.addAll(linkStats.getRight());
         }
-
-        stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
+        int monsterLevel = DataTool.getIntConvert("level", monsterInfoData);
+        int maxHp = DataTool.getIntConvert("maxHP", monsterInfoData);
+        // Modify the experience and maxHP based on the monster's level
+//        if (monsterLevel >= 160  && maxHp > 30000000 && !stats.isBoss()) {
+//            stats.setHp(maxHp / 5);
+//        }
+        if (mid == 8840000) { // Von Leon
+            stats.setHp(15_000_000_000L);
+        }  else if (mid == 8880302 || mid == 8880301) {
+            stats.setHp(150_000_000_000L);
+        }
+//        else if (mid == 8850011 || mid == 8850012) {
+//            stats.setHp(3_000_000_000L);
+//        } else if (mid == 9001007) {
+//            stats.setHp(100_000_000_000_000_000L);
+//        } else if (mid >= 8850000 && mid <= 8850004) {
+//            stats.setHp(600_000_000);
+//        } else if(mid == 8880000) {
+//            stats.setHp(6_000_000_000L);
+//        } else if (mid == 8880002) {
+//            stats.setHp(10_000_000_000L);
+//        } else if (mid == 8880010) {
+//            stats.setHp(20_000_000_000L);
+//        } else if (mid == 8240098) {
+//            stats.setHp(10_000_000_000L);
+//        } else if (mid == 8240099) {
+//            stats.setHp(15_000_000_000L);
+//        }
+        else {
+            stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
+        }
+//        stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
         stats.setFriendly(DataTool.getIntConvert("damagedByMob", monsterInfoData, stats.isFriendly() ? 1 : 0) == 1);
         stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData));
         stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData));

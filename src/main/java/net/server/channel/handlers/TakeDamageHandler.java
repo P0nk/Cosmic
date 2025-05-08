@@ -174,12 +174,12 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
                         int id = jobid * 10000 + 1002;
                         Skill manaReflectSkill = SkillFactory.getSkill(id);
                         if (chr.isBuffFrom(BuffStat.MANA_REFLECTION, manaReflectSkill) && chr.getSkillLevel(manaReflectSkill) > 0 && manaReflectSkill.getEffect(chr.getSkillLevel(manaReflectSkill)).makeChanceResult()) {
-                            int bouncedamage = (damage * manaReflectSkill.getEffect(chr.getSkillLevel(manaReflectSkill)).getX() / 100);
-                            if (bouncedamage > attacker.getMaxHp() / 5) {
-                                bouncedamage = attacker.getMaxHp() / 5;
-                            }
-                            map.damageMonster(chr, attacker, bouncedamage);
-                            map.broadcastMessage(chr, PacketCreator.damageMonster(oid, bouncedamage), true);
+//                            int bouncedamage = (damage * manaReflectSkill.getEffect(chr.getSkillLevel(manaReflectSkill)).getX() / 100);
+//                            if (bouncedamage > attacker.getMaxHp() / 5) {
+//                                bouncedamage = attacker.getMaxHp() / 5;
+//                            }
+                            map.damageMonster(chr, attacker, 20);
+                            map.broadcastMessage(chr, PacketCreator.damageMonster(oid, 10), true);
                             chr.sendPacket(PacketCreator.showOwnBuffEffect(id, 5));
                             map.broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), id, 5), false);
                         }

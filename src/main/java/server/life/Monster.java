@@ -90,7 +90,7 @@ public class Monster extends AbstractLoadedLife {
 
     private ChangeableStats ostats = null;  //unused, v83 WZs offers no support for changeable stats.
     private MonsterStats stats;
-    private final AtomicInteger hp = new AtomicInteger(1);
+    private final AtomicLong hp = new AtomicLong(1); // slimy edits
     private final AtomicLong maxHpPlusHeal = new AtomicLong(1);
     private int mp;
     private WeakReference<Character> controller = new WeakReference<>(null);
@@ -235,11 +235,11 @@ public class Monster extends AbstractLoadedLife {
         return r;
     }
 
-    public int getHp() {
+    public long getHp() {
         return hp.get();
-    }
+    } // slimy edits
 
-    public synchronized void addHp(int hp) {
+    public synchronized void addHp(long hp) { // slimy edits
         if (this.hp.get() <= 0) {
             return;
         }
@@ -251,9 +251,9 @@ public class Monster extends AbstractLoadedLife {
         this.hp.set(hp);
     }
 
-    public int getMaxHp() {
+    public long getMaxHp() {
         return stats.getHp();
-    }
+    } // slimy edits
 
     public int getMp() {
         return mp;
@@ -351,24 +351,24 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    public synchronized Integer applyAndGetHpDamage(int delta, boolean stayAlive) {
-        int curHp = hp.get();
+    public synchronized long applyAndGetHpDamage(int delta, boolean stayAlive) { // slimy edits
+        long curHp = hp.get(); // slimy edits
         if (curHp <= 0) {       // this monster is already dead
-            return null;
+            return 0;
         }
 
         if (delta >= 0) {
             if (stayAlive) {
                 curHp--;
             }
-            int trueDamage = Math.min(curHp, delta);
+            long trueDamage = Math.min(curHp, delta); // slimy edits
 
             hp.addAndGet(-trueDamage);
             return trueDamage;
         } else {
-            int trueHeal = -delta;
-            int hp2Heal = curHp + trueHeal;
-            int maxHp = getMaxHp();
+            long trueHeal = -delta; // slimy edits
+            long hp2Heal = curHp + trueHeal; // slimy edits
+            long maxHp = getMaxHp(); // slimy edits
 
             if (hp2Heal > maxHp) {
                 trueHeal -= (hp2Heal - maxHp);
@@ -454,8 +454,8 @@ public class Monster extends AbstractLoadedLife {
      * @param stayAlive
      */
     private void applyDamage(Character from, int damage, boolean stayAlive, boolean fake) {
-        Integer trueDamage = applyAndGetHpDamage(damage, stayAlive);
-        if (trueDamage == null) {
+        long trueDamage = applyAndGetHpDamage(damage, stayAlive); // Slimy edits
+        if (trueDamage == 0) {
             return;
         }
 
@@ -464,7 +464,7 @@ public class Monster extends AbstractLoadedLife {
         }
 
         if (!fake) {
-            dispatchMonsterDamaged(from, trueDamage);
+            dispatchMonsterDamaged(from, (int) trueDamage);
         }
 
         if (!takenDamage.containsKey(from.getId())) {
@@ -481,8 +481,8 @@ public class Monster extends AbstractLoadedLife {
     }
 
     public void heal(int hp, int mp) {
-        Integer hpHealed = applyAndGetHpDamage(-hp, false);
-        if (hpHealed == null) {
+        long hpHealed = applyAndGetHpDamage(-hp, false); // slimy edits
+        if (hpHealed == 0) {
             return;
         }
 
@@ -1004,7 +1004,7 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    private void dispatchMonsterHealed(int trueHeal) {
+    private void dispatchMonsterHealed(long trueHeal) { // slimy edits
         MonsterListener[] listenersList;
         statiLock.lock();
         try {
@@ -1086,7 +1086,8 @@ public class Monster extends AbstractLoadedLife {
     }
 
     public Packet makeBossHPBarPacket() {
-        return PacketCreator.showBossHP(getId(), getHp(), getMaxHp(), getTagColor(), getTagBgColor());
+//        return PacketCreator.showBossHP(getId(), getHp(), getMaxHp(), getTagColor(), getTagBgColor()); // original
+        return PacketCreator.customShowBossHP((byte)0x05, getId(), getHp(), getMaxHp(), getTagColor(), getTagBgColor());
     }
 
     public boolean hasBossHPBar() {
@@ -1695,14 +1696,14 @@ public class Monster extends AbstractLoadedLife {
 
         @Override
         public void run() {
-            int curHp = hp.get();
+            long curHp = hp.get(); // slimy edits
             if (curHp <= 1) {
                 MobStatusService service = (MobStatusService) map.getChannelServer().getServiceAccess(ChannelServices.MOB_STATUS);
                 service.interruptMobStatus(map.getId(), status);
                 return;
             }
 
-            int damage = dealDamage;
+            long damage = dealDamage; // slimy edits
             if (damage >= curHp) {
                 damage = curHp - 1;
                 if (type == 1 || type == 2) {
@@ -1713,16 +1714,16 @@ public class Monster extends AbstractLoadedLife {
             if (damage > 0) {
                 lockMonster();
                 try {
-                    applyDamage(chr, damage, true, false);
+                    applyDamage(chr, (int) damage, true, false);
                 } finally {
                     unlockMonster();
                 }
 
                 if (type == 1) {
-                    map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), damage), getPosition());
+                    map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), (int) damage), getPosition());
                 } else if (type == 2) {
                     if (damage < dealDamage) {    // ninja ambush (type 2) is already displaying DOT to the caster
-                        map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), damage), getPosition());
+                        map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), (int) damage), getPosition());
                     }
                 }
             }
@@ -1817,7 +1818,7 @@ public class Monster extends AbstractLoadedLife {
         return ostats;
     }
 
-    public final int getMobMaxHp() {
+    public final long getMobMaxHp() { // slimy edits
         if (ostats != null) {
             return ostats.hp;
         }
