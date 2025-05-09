@@ -1167,10 +1167,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         System.out.println("Item required level: " + itemReqLevel);
         if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
             if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
-                watk_matk_increment = (485 - newItem.getMatk())/3 * (hands + 1);
+                watk_matk_increment = (550 - newItem.getMatk())/3 * (hands + 1);
                 stat_increment = 50 * (hands + 1);
             } else {
-                watk_matk_increment = (385 - newItem.getMatk())/3 * (hands + 1);
+                watk_matk_increment = (450 - newItem.getMatk())/3 * (hands + 1);
                 stat_increment = 50 * (hands + 1);
             }
         } else { // armours and accessories
