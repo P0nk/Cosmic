@@ -1146,8 +1146,9 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         this.getPlayer().forceUpdateItem(newItem);
     }
 
-    public void rebirthItem(short ItemSlot, short hands ) {
+    public void rebirthItem(short ItemSlot, short hands) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
         int newItemId = eqpInv.getItem(ItemSlot).getItemId();
         int newItemType = newItemId/10000;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
@@ -1164,30 +1165,40 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         int stat_increment = 0;
         int watk_matk_increment = 0;
 
-        System.out.println("Item required level: " + itemReqLevel);
+        short newStr = 0;
+        short newDex = 0;
+        short newInt = 0;
+        short newLuk = 0;
+        short newWatk = 0;
+        short newMatk = 0;
         if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
             if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
-                watk_matk_increment = (550 - newItem.getMatk())/3 * (hands + 1);
+                newMatk = (short) ((550 - newItem.getMatk())/3 * (hands + 1));
                 stat_increment = 50 * (hands + 1);
             } else {
-                watk_matk_increment = (450 - newItem.getMatk())/3 * (hands + 1);
+                newWatk = (short) ((450 - newItem.getMatk())/3 * (hands + 1));
                 stat_increment = 50 * (hands + 1);
             }
         } else { // armours and accessories
-            //Increment
-            watk_matk_increment = 18 * (hands + 1);
-            stat_increment = 25 * (hands + 1);
+            double carryOver = 0.25;
+            //Increment -- 20% of total stats
+            newStr = (short) (selectedItem.getStr() * carryOver);
+            newDex = (short) (selectedItem.getDex() * carryOver);
+            newInt = (short) (selectedItem.getInt() * carryOver);
+            newLuk = (short) (selectedItem.getLuk() * carryOver);
+            newWatk = (short) (selectedItem.getWatk() * carryOver);
+            newMatk = (short) (selectedItem.getMatk() * carryOver);
         }
 
         //change the stats and force update the item
-        newItem.setStr((short) ((newItem.getStr() != 0) ? newItem.getStr() + stat_increment : 0));
-        newItem.setDex((short) ((newItem.getDex() != 0) ? newItem.getDex() + stat_increment : 0));
-        newItem.setInt((short) ((newItem.getInt() != 0) ? newItem.getInt() + stat_increment : 0));
-        newItem.setLuk((short) ((newItem.getLuk() != 0) ? newItem.getLuk() + stat_increment : 0));
-        newItem.setWatk((short) (newItem.getWatk() + watk_matk_increment));
-        newItem.setMatk((short) (newItem.getMatk() + watk_matk_increment));
-        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + stat_increment : 0));
-        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + stat_increment : 0));
+        newItem.setStr((short) (newItem.getStr() + newStr));
+        newItem.setDex((short) (newItem.getDex() + newDex));
+        newItem.setInt((short) (newItem.getInt() + newInt));
+        newItem.setLuk((short) (newItem.getLuk() + newLuk));
+        newItem.setWatk((short) (newItem.getWatk() + newWatk));
+        newItem.setMatk((short) (newItem.getMatk() + newMatk));
+        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + 50 : 0));
+        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + 50 : 0));
         newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
 
