@@ -80,7 +80,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -170,6 +169,10 @@ public class Monster extends AbstractLoadedLife {
 
     public void setMap(MapleMap map) {
         this.map = map;
+    }
+
+    public MapleMap getMobMap() {
+        return this.map;
     }
 
     public int getParentMobOid() {
@@ -1277,15 +1280,23 @@ public class Monster extends AbstractLoadedLife {
 
         int animationTime;
         if (poison) {
-            int Int = from.getInt();
-            int MA = from.getTotalMagic();
-            int poisonLevel = from.getSkillLevel(status.getSkill());
-            int poisonDamage = Math.min((int) ((getMaxHp() / 3 ) + 1), (int) ((poisonLevel*3.333) * Math.pow(MA,2)/3000)); // Merogie & Slimy - 2
-            //int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + Int)); // Merogie -1
-   //        int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + 0.999));           // Original
+            int poisonDamage = 0;
+            // if mob is in the same map as character, poison mobs with custom formula, else do no poison damage
+            // Would be better to dispel poison status
+            if (this.map == from.getMap()) {
+                int Int = from.getInt();
+                int MA = from.getTotalMagic();
+                int poisonLevel = from.getSkillLevel(status.getSkill());
+                poisonDamage = Math.min((int) ((getMaxHp() / 3 ) + 1), (int) ((poisonLevel*3.333) * Math.pow((double) (MA + Int) /3,2)/3000)); // Merogie & Slimy - 2
+                //int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + Int)); // Merogie -1
+                //int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + 0.999)); // Original
+            } // End
+
 
             status.setValue(MonsterStatus.POISON, poisonDamage);
+//            System.out.println("Status " + status);
             animationTime = broadcastStatusEffect(status);
+//            System.out.println("animationTime " + animationTime);
 
             overtimeAction = new DamageTask(poisonDamage, from, status, 0);
             overtimeDelay = 1000;

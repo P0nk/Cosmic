@@ -1352,7 +1352,6 @@ public class MapleMap {
 //               int meso_bounty = Math.min(Math.max(500,meso_normal),4000);
 //                chr.gainMeso(meso_bounty);}
             chr.gainMeso((int) (meso_normal * mesosVariance),true,false,false);
-            System.out.println("Mesos: " + meso_normal + "\nVariance: " + mesosVariance);
         }
         return true;
     }
