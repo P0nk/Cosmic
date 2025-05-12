@@ -1327,7 +1327,7 @@ public class MapleMap {
             }
         }
         if (killed) {
-            int nx_chance = 5000; // chance to get nx from mob 5000 for 5%
+            int nx_chance = 10000; // chance to get nx from mob 5000 for 5%
             boolean nx_gain = (int) (Math.random() * 100000) <= nx_chance; // check success or failure to gain nx
 
             // formula for nx gain
@@ -1335,14 +1335,14 @@ public class MapleMap {
             int max_mob_hp = 600000000;
             int min_nx_gain = 5;
             int max_nx_gain = 30000;
+            double Variance = (double) (Math.random() * 0.2 - 0.1) + 1; // add a +- 10% mesos variance
             double ratio = (double) (monster.getMaxHp() - min_mob_hp) / (max_mob_hp-min_mob_hp);
             int nxAmount = (int) (min_nx_gain + (ratio * (max_nx_gain - min_nx_gain)) ); // formula for nx gain
             if (nx_gain) {
-                chr.getCashShop().gainCash(1, nxAmount); // gain nx
-                chr.sendPacket(PacketCreator.earnTitleMessage("Teto grants " + nxAmount + " NX")); // post a yellow message to show nx gained
+                chr.getCashShop().gainCash(1, (int) (nxAmount * Variance)); // gain nx
+                chr.sendPacket(PacketCreator.earnTitleMessage("Teto grants " + (int) (nxAmount * Variance) + " NX")); // post a yellow message to show nx gained
             }
             killMonster(monster, chr, true, delay);
-            double mesosVariance = (double) (Math.random() * 0.2 - 0.1) + 1; // add a +- 10% mesos variance
             int meso_normal = ((int) (Math.pow(monster.getLevel(), 1.2) + Math.pow(monster.getMaxHp(), 0.5) + monster.getPADamage())) * chr.getMesoRate();
             // MesoUp buff applied
             if (chr.getBuffedValue(BuffStat.MESOUP) != null) {
@@ -1351,7 +1351,7 @@ public class MapleMap {
 //            if (monster.getId() = chr.getdailybountymonster() ) {
 //               int meso_bounty = Math.min(Math.max(500,meso_normal),4000);
 //                chr.gainMeso(meso_bounty);}
-            chr.gainMeso((int) (meso_normal * mesosVariance),true,false,false);
+            chr.gainMeso((int) (meso_normal * Variance),true,false,false);
         }
         return true;
     }
