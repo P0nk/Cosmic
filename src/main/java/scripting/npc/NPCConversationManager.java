@@ -1153,7 +1153,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         int newItemType = newItemId/10000;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-        eqpInv.removeSlot(ItemSlot); //remove the item
+        removeItemNPC(ItemSlot); //remove the item
 
         //get the next free slot so we know where it's going to be placed by gainItem, for later modification
         short newItemSlot = eqpInv.getNextFreeSlot();
@@ -1172,12 +1172,24 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         short newWatk = 0;
         short newMatk = 0;
         if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
-            if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
-                newMatk = (short) ((550 - newItem.getMatk())/3 * (hands + 1));
-                stat_increment = 50 * (hands + 1);
+            if (hands < 3) {
+                if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
+                    newMatk = (short) ((550 - newItem.getMatk()) / 3 * (hands + 1));
+                } else {
+                    newWatk = (short) ((450 - newItem.getMatk()) / 3 * (hands + 1));
+                }
+                newStr = (short) (selectedItem.getStr() + 50);
+                newDex = (short) (selectedItem.getDex() + 50);
+                newInt = (short) (selectedItem.getInt() + 50);
+                newLuk = (short) (selectedItem.getLuk() + 50);
             } else {
-                newWatk = (short) ((450 - newItem.getMatk())/3 * (hands + 1));
-                stat_increment = 50 * (hands + 1);
+                double carryOver = 0.25;
+                newStr = (short) (selectedItem.getStr() * carryOver);
+                newDex = (short) (selectedItem.getDex() * carryOver);
+                newInt = (short) (selectedItem.getInt() * carryOver);
+                newLuk = (short) (selectedItem.getLuk() * carryOver);
+                newMatk = (short) (selectedItem.getMatk() * carryOver);
+                newWatk = (short) (selectedItem.getWatk() * carryOver);
             }
         } else { // armours and accessories
             double carryOver = 0.25;

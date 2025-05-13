@@ -13,14 +13,18 @@ var upgradeConfig = {
     4: { fee: 275000000, mats: [{ id: hTegg,      amt: 3 }] }
 };
 
+var totalUpgradeFee = 460000000;
+var totalRebirthMats = {};
+
 // Dialogue state
 var status       = 0;
 var selectedItem = null;
 var isRebirth    = false;
+var salvage      = false;
 
 function start() {
     status = 0;
-    cm.sendSimple("Hey, wanna upgrade?\r\n#b#L0#Yes, upgrade my item!#l");
+    cm.sendNext("Hey, what do you want?");
 }
 
 function action(mode, type, selection) {
@@ -29,18 +33,32 @@ function action(mode, type, selection) {
 
     switch (status) {
         case 1:
-            return showEquipList();
+            return choice();
         case 2:
-            return handleSelection(selection);
+            return showEquipList(selection);
         case 3:
-            return processConfirmation();
+        if (salvage) return salvageSelection(selection)
+        else return handleSelection(selection);
+        case 4:
+            return processConfirmation(salvage);
         default:
             return cm.dispose();
     }
 }
 
-// === STEP 1: List all equip items in your inventory ===
-function showEquipList() {
+// === STEP 1: List choice of action ===
+function choice() {
+    var selStr = "\r\n#b#L0#Upgrade my item!#l\r\n#b#L1#Salvage my item!#l";
+    cm.sendSimple(selStr);
+}
+
+// === STEP 2: List all equip items in your inventory ===
+function showEquipList(selection) {
+    if (selection == 0) {
+        salvage = false;
+    } else if (selection == 1) {
+        salvage = true;
+    }
     var inv      = cm.getInventory(1);
     var limit    = inv.getSlotLimit();
     var lines    = [];
@@ -60,7 +78,7 @@ function showEquipList() {
     }
 
     if (!lines.length) {
-        cm.sendOk("You have no equippable items to upgrade.");
+        cm.sendOk("You have no equippable items to select.");
         return cm.dispose();
     }
 
@@ -71,7 +89,7 @@ function showEquipList() {
     );
 }
 
-// === STEP 2: Player picks an item ===
+// === STEP 3.1: Player picks an item to Upgrade ===
 function handleSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
     if (!selectedItem) {
@@ -87,7 +105,7 @@ function handleSelection(slot) {
         isRebirth = true;
         return cm.sendYesNo(
             "Your item has reached its max upgrades. I can reset it with a base stat boost.\r\n"
-          + "Cost: 1×#v" + rockOfTime + "# + 100k NX. Proceed?"
+          + "Cost: 1x#v" + rockOfTime + "# + 100k NX. Proceed?"
         );
     }
 
@@ -138,10 +156,106 @@ function handleSelection(slot) {
     cm.dispose();
 }
 
-// === STEP 3: Player confirms upgrade or rebirth ===
-function processConfirmation() {
-    if (isRebirth) return doRebirth();
+// === STEP 3.2: Player picks an item to Salvage ===
+function getTotals(uptoLevel) {
+  let totalFee = 0;
+  const totalMats = {};    // { materialId: totalAmt, … }
+
+  // loop from 1 → uptoLevel
+  for (let lvl = 1; lvl <= uptoLevel; lvl++) {
+    const step = upgradeConfig[lvl-1];
+    if (!step) continue;   // in case some levels are missing
+
+    // add the fee
+    totalFee += step.fee;
+
+    // accumulate each material
+    step.mats.forEach(({ id, amt }) => {
+      totalMats[id] = (totalMats[id] || 0) + amt;
+    });
+  }
+
+  return { totalFee, totalMats };
+}
+
+function salvageSelection(slot) {
+    selectedItem = cm.getInventory(1).getItem(slot);
+    if (!selectedItem) {
+        cm.sendOk("Invalid selection.");
+        return cm.dispose();
+    }
+    // nothing to salvage if level 1 and hands = 0
+    if (selectedItem.getItemLevel() === 1 && selectedItem.getHands() === 0) {
+        cm.sendOk("Clean item selected, nothing to salvage.");
+        return cm.dispose();
+    }
+
+    const lvl        = selectedItem.getItemLevel();
+    const hands      = selectedItem.getHands();
+    const { totalFee, totalMats } = getTotals(lvl);
+
+    // 1) Initialize with guaranteed returns per hand
+    const matsToReturn = {};
+    matsToReturn[zakDiamond] = 4 * hands;
+    matsToReturn[hTegg]      = 4 * hands;
+
+    // 2) Merge in all mats used up through this level
+    Object.keys(totalMats).forEach(id => {
+        const used = totalMats[id] || 0;
+        matsToReturn[id] = (matsToReturn[id] || 0) + used;
+    });
+
+    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
+    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
+
+    // 4) Build confirmation message
+    let msg = "We will refund you " + format(refundMesos) + "\r\n";
+    Object.entries(matsToReturn).forEach(([id, amt]) => {
+        msg += amt + "x #v" + id + "#\r\n";
+    });
+    if (hands > 0) {
+        msg += hands + "x #v" + rockOfTime + "#\r\n";
+    }
+    msg += "Are you sure you want to salvage this equip?";
+
+    cm.sendYesNo(msg);
+}
+
+// === STEP 4: Player confirms upgrade or rebirth ===
+function processConfirmation(salvage) {
+    if (salvage) return salvageItem()
+    else if (isRebirth) return doRebirth();
     return doUpgrade();
+}
+
+function salvageItem() {
+    var lvl        = selectedItem.getItemLevel();
+    var hands      = selectedItem.getHands();
+    var { totalFee, totalMats } = getTotals(lvl);
+
+    // 1) Initialize with guaranteed returns per hand
+    var matsToReturn = {};
+    matsToReturn[zakDiamond] = 4 * hands-1;
+    matsToReturn[hTegg]      = 4 * hands;
+
+    // 2) Merge in all mats used up through this level
+    Object.keys(totalMats).forEach(id => {
+        const used = totalMats[id] || 0;
+        matsToReturn[id] = (matsToReturn[id] || 0) + used;
+    });
+
+    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
+    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
+
+    // 4) Build confirmation message
+    var returnstr = "I have salvaged your items, please check."
+    cm.gainMeso(refundMesos)
+    Object.entries(matsToReturn).forEach(([id, amt]) => {
+        cm.gainItem(parseInt(id), amt);
+    });
+    cm.gainItem(rockOfTime, hands);
+    cm.removeItemNPC(selectedItem.getPosition());
+    return cm.dispose();
 }
 
 function doUpgrade() {
