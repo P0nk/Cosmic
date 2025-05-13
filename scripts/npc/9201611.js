@@ -284,11 +284,14 @@ function doUpgrade() {
     if (success) {
         applyNewStats();
         cm.sendOk("By the blessing from Carbo, your item has been upgraded successfully!");
+        cm.scrollPass(cm.getPlayer().getId());
     } else if (boom) {
         cm.removeItemNPC(selectedItem.getPosition());
         cm.sendOk("Oh no! Your item was destroyed in the attempt.");
+        cm.scrollFail(cm.getPlayer().getId());
     } else {
         cm.sendOk("Upgrade failed. Better luck next time.");
+        cm.scrollFail(cm.getPlayer().getId());
     }
 
     return cm.dispose();
@@ -304,6 +307,7 @@ function doRebirth() {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
         cm.gainItem(rockOfTime, -1);
         cm.gainCash(-100000);
+        cm.scrollPass(cm.getPlayer().getId());
         cm.sendOk("Your item has been reborn. Go get stronger!");
     }
     return cm.dispose();

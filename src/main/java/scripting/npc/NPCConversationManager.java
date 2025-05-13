@@ -68,7 +68,6 @@ import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.Pyramid;
 import server.partyquest.Pyramid.PyramidMode;
-import server.CashShop;
 import tools.PacketCreator;
 import tools.packets.WeddingPackets;
 
@@ -1237,5 +1236,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             case 149: return "Gun";
             default: return "Unknown";
         }
+    }
+
+    public void scrollPass(int chr) {
+        sendPacket(PacketCreator.getScrollEffect(chr, Equip.ScrollResult.SUCCESS, false, false));
+    }
+
+    public void scrollFail(int chr) {
+        sendPacket(PacketCreator.getScrollEffect(chr, Equip.ScrollResult.FAIL, false, false));
     }
 }
