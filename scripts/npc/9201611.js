@@ -235,7 +235,7 @@ function salvageItem() {
 
     // 1) Initialize with guaranteed returns per hand
     var matsToReturn = {};
-    matsToReturn[zakDiamond] = 4 * hands-1;
+    matsToReturn[zakDiamond] = 4 * hands;
     matsToReturn[hTegg]      = 4 * hands;
 
     // 2) Merge in all mats used up through this level
