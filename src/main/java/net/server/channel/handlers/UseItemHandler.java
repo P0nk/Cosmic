@@ -78,12 +78,17 @@ public final class UseItemHandler extends AbstractPacketHandler {
                 return;
             } else if (itemId == ItemId.HP_CAP_INCREASE) {
                 Character player = c.getPlayer();
-                player.updateMaxHp(player.getMaxHp() + 500);
-                remove(c, slot);
-                return;
+                if (player.getLevel() < 120) {
+                    player.yellowMessage("You need to be level 120 to use this item!");
+                    return;
+                } else {
+                    player.updateMaxHp(player.getMaxHp() + 200);
+                    remove(c, slot);
+                    return;
+                }
             } else if (itemId == ItemId.MP_CAP_INCREASE) {
                 Character player = c.getPlayer();
-                player.updateMaxMp(player.getMaxMp() + 500);
+                player.updateMaxMp(player.getMaxMp() + 200);
                 remove(c, slot);
                 return;
             }
