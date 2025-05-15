@@ -108,13 +108,13 @@ public class GotoCommand extends Command {
         } else {
             gotomaps = GameConstants.GOTO_TOWNS;
         }
-
         if (gotomaps.containsKey(params[0])) {
             MapleMap target = c.getChannelServer().getMapFactory().getMap(gotomaps.get(params[0]));
 
             // expedition issue with this command detected thanks to Masterrulax
             Portal targetPortal = target.getRandomPlayerSpawnpoint();
-            player.saveLocationOnWarp();
+//            player.saveLocationOnWarp(); // Original
+            player.saveLocation("FREE_MARKET"); // slimy edits
             player.changeMap(target, targetPortal);
         } else {
             // detailed info on goto available areas suggested thanks to Vcoc

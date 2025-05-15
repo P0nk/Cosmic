@@ -302,7 +302,7 @@ function doRebirth() {
     if (!cm.haveItem(rockOfTime, 1)) {
         cm.sendOk("You need 1x#v" + rockOfTime + "# to rebirth.");
     } else if (cm.getCashShop().getCash(1) < 100000) {
-        cm.sendOk("You need 100k NX to rebirth.");
+        cm.sendOk("You need 100k NX to rebirth your Item.");
     } else {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
         cm.gainItem(rockOfTime, -1);

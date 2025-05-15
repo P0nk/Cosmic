@@ -1803,6 +1803,7 @@ public class ItemInformationProvider {
              Really hard check, and not really needed in this one
              Gm's should just be GM job, and players cannot change jobs.
              }*/
+//            Original
             if (reqLevel > chr.getLevel()) { // dont meet level requirement
                 continue;
             } else if (getEquipStats(equip.getItemId()).get("reqDEX") > tdex) {
