@@ -74,13 +74,21 @@ public final class CharSelectedHandler extends AbstractPacketHandler {
             return;
         }
 
-        if (c.hasBannedMac() || c.hasBannedHWID()) {
+        if (c.hasBannedHWID()) {
+            System.out.println("hasBannedHWID");
+            SessionCoordinator.getInstance().closeSession(c, true);
+            return;
+        }
+
+        if (c.hasBannedMac()) {
+            System.out.println("hasBannedMac");
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
         }
 
         Server server = Server.getInstance();
         if (!server.haveCharacterEntry(c.getAccID(), charId)) {
+            System.out.println("haveCharacterEntry");
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
         }
@@ -88,12 +96,14 @@ public final class CharSelectedHandler extends AbstractPacketHandler {
         c.setWorld(server.getCharacterWorld(charId));
         World wserv = c.getWorldServer();
         if (wserv == null || wserv.isWorldCapacityFull()) {
+            System.out.println("haveCharacterEntry");
             c.sendPacket(PacketCreator.getAfterLoginError(10));
             return;
         }
 
         String[] socket = server.getInetSocket(c, c.getWorld(), c.getChannel());
         if (socket == null) {
+            System.out.println("socket == null");
             c.sendPacket(PacketCreator.getAfterLoginError(10));
             return;
         }
@@ -102,8 +112,10 @@ public final class CharSelectedHandler extends AbstractPacketHandler {
         c.setCharacterOnSessionTransitionState(charId);
 
         try {
+            System.out.println("Try Statement");
             c.sendPacket(PacketCreator.getServerIP(InetAddress.getByName(socket[0]), Integer.parseInt(socket[1]), charId));
         } catch (UnknownHostException | NumberFormatException e) {
+            System.out.println("Catch Statement");
             e.printStackTrace();
         }
     }
