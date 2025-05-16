@@ -1176,10 +1176,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 } else {
                     newWatk = (short) ((450 - newItem.getMatk()) / 3 * (hands + 1));
                 }
-                newStr = (short) (newItem.getStr() + 50);
-                newDex = (short) (newItem.getDex() + 50);
-                newInt = (short) (newItem.getInt() + 50);
-                newLuk = (short) (newItem.getLuk() + 50);
+                newStr = (short) (newItem.getStr() + 50 * (hands + 1));
+                newDex = (short) (newItem.getDex() + 50 * (hands + 1));
+                newInt = (short) (newItem.getInt() + 50 * (hands + 1));
+                newLuk = (short) (newItem.getLuk() + 50 * (hands + 1));
             } else {
                 double carryOver = 0.25;
                 newStr = (short) (selectedItem.getStr() * carryOver);
