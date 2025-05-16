@@ -48,7 +48,13 @@ public class CharSelectedWithPicHandler extends AbstractPacketHandler {
         c.updateMacs(macs);
         c.updateHwid(hwid);
 
-        if (c.hasBannedMac() || c.hasBannedHWID()) {
+        if (c.hasBannedMac()) {
+            System.out.println("Pin hasBannedMac");
+            SessionCoordinator.getInstance().closeSession(c, true);
+            return;
+        }
+
+        if (c.hasBannedHWID()) {
             System.out.println("Pin hasBannedHWID");
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
