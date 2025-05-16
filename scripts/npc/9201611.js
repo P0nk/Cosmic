@@ -105,7 +105,7 @@ function handleSelection(slot) {
         isRebirth = true;
         return cm.sendYesNo(
             "Your item has reached its max upgrades. I can reset it with a base stat boost.\r\n"
-          + "Cost: 1x#v" + rockOfTime + "# + 100k NX. Proceed?"
+          + "Cost: 1x#v" + rockOfTime + "# + 250k NX. Proceed?"
         );
     }
 
@@ -301,12 +301,12 @@ function doRebirth() {
     // Check resources
     if (!cm.haveItem(rockOfTime, 1)) {
         cm.sendOk("You need 1x#v" + rockOfTime + "# to rebirth.");
-    } else if (cm.getCashShop().getCash(1) < 100000) {
-        cm.sendOk("You need 100k NX to rebirth your Item.");
+    } else if (cm.getCashShop().getCash(1) < 250000) {
+        cm.sendOk("You need 250k NX to rebirth your item.");
     } else {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
         cm.gainItem(rockOfTime, -1);
-        cm.gainCash(-100000);
+        cm.gainCash(-250000);
         cm.scrollPass(cm.getPlayer().getId());
         cm.sendOk("Your item has been reborn. Go get stronger!");
     }
