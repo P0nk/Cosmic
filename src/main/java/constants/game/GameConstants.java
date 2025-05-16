@@ -478,7 +478,7 @@ public class GameConstants {
                 return 120;   // 3rd job
 
             default:
-                return (job.getId() / 1000 == 1) ? 120 : 200;   // 4th job: cygnus is 120, rest is 200
+                return (job.getId() / 1000 == 1) ? 120 : 255;   // 4th job: cygnus is 120, rest is 200
         }
     }
 
