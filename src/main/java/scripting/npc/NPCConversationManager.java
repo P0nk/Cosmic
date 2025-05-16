@@ -1161,8 +1161,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         //get the new item so we can change it
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
         int itemReqLevel = ii.getEquipLevelReq(newItemId);
-        int stat_increment = 0;
-        int watk_matk_increment = 0;
 
         short newStr = 0;
         short newDex = 0;
@@ -1170,6 +1168,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         short newLuk = 0;
         short newWatk = 0;
         short newMatk = 0;
+        System.out.println(newItemType);
         if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
             if (hands < 3) {
                 if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
@@ -1177,10 +1176,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 } else {
                     newWatk = (short) ((450 - newItem.getMatk()) / 3 * (hands + 1));
                 }
-                newStr = (short) (selectedItem.getStr() + 50);
-                newDex = (short) (selectedItem.getDex() + 50);
-                newInt = (short) (selectedItem.getInt() + 50);
-                newLuk = (short) (selectedItem.getLuk() + 50);
+                newStr = (short) (newItem.getStr() + 50);
+                newDex = (short) (newItem.getDex() + 50);
+                newInt = (short) (newItem.getInt() + 50);
+                newLuk = (short) (newItem.getLuk() + 50);
             } else {
                 double carryOver = 0.25;
                 newStr = (short) (selectedItem.getStr() * carryOver);

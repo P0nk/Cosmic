@@ -22,6 +22,8 @@ var selectedItem = null;
 var isRebirth    = false;
 var salvage      = false;
 
+var newStats
+
 function start() {
     status = 0;
     cm.sendNext("Hey, what do you want?");
@@ -40,7 +42,7 @@ function action(mode, type, selection) {
         if (salvage) return salvageSelection(selection)
         else return handleSelection(selection);
         case 4:
-            return processConfirmation(salvage);
+            return processConfirmation(salvage, newStats);
         default:
             return cm.dispose();
     }
@@ -128,7 +130,7 @@ function handleSelection(slot) {
         cm.gainMeso(-previewFee);
 
         // Calculate tentative new stats
-        var newStats = calcNewStats(selectedItem);
+        newStats = calcNewStats(selectedItem);
         var mat      = cfg.mats[0].id;
         var amt      = cfg.mats[0].amt;
         var warning  = (lvl === 4)
@@ -222,10 +224,10 @@ function salvageSelection(slot) {
 }
 
 // === STEP 4: Player confirms upgrade or rebirth ===
-function processConfirmation(salvage) {
+function processConfirmation(salvage, newStats) {
     if (salvage) return salvageItem()
     else if (isRebirth) return doRebirth();
-    return doUpgrade();
+    return doUpgrade(newStats);
 }
 
 function salvageItem() {
@@ -258,7 +260,7 @@ function salvageItem() {
     return cm.dispose();
 }
 
-function doUpgrade() {
+function doUpgrade(newStats) {
     var lvl  = selectedItem.getItemLevel();
     var cfg  = upgradeConfig[lvl];
     var mat  = cfg.mats[0].id;
@@ -282,7 +284,7 @@ function doUpgrade() {
     var boom        = (!success && Math.random() < boomChance);
 
     if (success) {
-        applyNewStats();
+        applyNewStats(newStats);
         cm.sendOk("By the blessing from Carbo, your item has been upgraded successfully!");
         cm.scrollPass(cm.getPlayer().getId());
     } else if (boom) {
@@ -331,8 +333,8 @@ function calcNewStats(item) {
     };
 }
 
-function applyNewStats() {
-    var s = calcNewStats(selectedItem);
+function applyNewStats(newStats) {
+    var s = newStats;
     selectedItem.setStr(s.str);
     selectedItem.setDex(s.dex);
     selectedItem.setInt(s.int);
