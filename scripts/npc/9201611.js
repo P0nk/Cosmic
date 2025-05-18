@@ -309,12 +309,12 @@ function doRebirth() {
     // Check resources
     if (!cm.haveItem(rockOfTime, 1)) {
         cm.sendOk("You need 1x#v" + rockOfTime + "# to rebirth.");
-    } else if (cm.getCashShop().getCash(1) < 250000) {
-        cm.sendOk("You need 250k NX to rebirth your item.");
+    } else if (cm.getCashShop().getCash(1) < 350000) {
+        cm.sendOk("You need 350k NX to rebirth your item.");
     } else {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
         cm.gainItem(rockOfTime, -1);
-        cm.gainCash(-250000);
+        cm.gainCash(-350000);
         cm.scrollPass(cm.getPlayer().getId());
         cm.sendOk("Your item has been reborn. Go get stronger!");
     }
