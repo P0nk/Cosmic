@@ -94,8 +94,8 @@ function showEquipList(selection) {
 // === STEP 3.1: Player picks an item to Upgrade ===
 function handleSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
-    if (Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId()).contains("Reverse") ||
-        Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId()).contains("Timeless")) {
+    if (cm.getItemName(slot).includes("Reverse") ||
+        cm.getItemName(slot).includes("Reverse")) {
             cm.sendOk("You cannot upgrade or salvage any Reverse or Timeless equips!");
             return cm.dispose();
         }
