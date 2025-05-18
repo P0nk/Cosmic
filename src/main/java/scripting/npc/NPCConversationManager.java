@@ -1244,4 +1244,11 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public void scrollFail(int chr) {
         sendPacket(PacketCreator.getScrollEffect(chr, Equip.ScrollResult.FAIL, false, false));
     }
+
+    public String getItemName(short ItemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
+        int ItemId = eqpInv.getItem(ItemSlot).getItemId();
+        return ItemInformationProvider.getInstance().getName(ItemId);
+    }
 }
