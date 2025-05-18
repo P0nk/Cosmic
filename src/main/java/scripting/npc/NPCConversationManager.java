@@ -1174,7 +1174,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
                     newMatk = (short) ((550 - newItem.getMatk()) / 3 * (hands + 1));
                 } else {
-                    newWatk = (short) ((450 - newItem.getMatk()) / 3 * (hands + 1));
+                    newWatk = (short) ((450 - newItem.getWatk()) / 3 * (hands + 1));
                 }
                 newStr = (short) (newItem.getStr() + 50 * (hands + 1));
                 newDex = (short) (newItem.getDex() + 50 * (hands + 1));
@@ -1201,14 +1201,14 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         }
 
         //change the stats and force update the item
-        newItem.setStr((short) (newItem.getStr() + newStr));
-        newItem.setDex((short) (newItem.getDex() + newDex));
-        newItem.setInt((short) (newItem.getInt() + newInt));
-        newItem.setLuk((short) (newItem.getLuk() + newLuk));
-        newItem.setWatk((short) (newItem.getWatk() + newWatk));
-        newItem.setMatk((short) (newItem.getMatk() + newMatk));
-        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + 50 : 0));
-        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + 50 : 0));
+        newItem.setStr(newStr);
+        newItem.setDex(newDex);
+        newItem.setInt(newInt);
+        newItem.setLuk(newLuk);
+        newItem.setWatk(newWatk);
+        newItem.setMatk(newMatk);
+        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 50 * (hands + 1)) : 0));
+        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 50 * (hands + 1)) : 0));
         newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
 
