@@ -250,6 +250,8 @@ public class Character extends AbstractCharacterObject {
     private final AtomicInteger meso = new AtomicInteger();
     private final AtomicInteger chair = new AtomicInteger(-1);
     private long totalExpGained = 0;
+    private long expTrackingStartTime = 0;
+    private ScheduledFuture<?> expTrackingTask = null;
     private int merchantmeso;
     private BuddyList buddylist;
     private EventInstanceManager eventInstance = null;
@@ -11193,5 +11195,29 @@ public class Character extends AbstractCharacterObject {
 
     public void setChasing(boolean chasing) {
         this.chasing = chasing;
+    }
+
+    public void startExpTracking() {
+        if (expTrackingTask != null) {
+            expTrackingTask.cancel(false);
+        }
+        
+        totalExpGained = 0;
+        expTrackingStartTime = System.currentTimeMillis();
+        
+        expTrackingTask = TimerManager.getInstance().schedule(() -> {
+            if (client != null) {
+                dropMessage(5, "Total EXP gained in 60s: " + totalExpGained);
+                totalExpGained = 0;
+                expTrackingStartTime = 0;
+                expTrackingTask = null;
+            }
+        }, YamlConfig.config.server.EXP_TRACKING_DURATION);
+    }
+
+    public void addExpGain(long exp) {
+        if (expTrackingTask != null) {
+            totalExpGained += exp;
+        }
     }
 }

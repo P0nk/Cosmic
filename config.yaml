@@ -315,6 +315,7 @@ server:
     NAME_CHANGE_COOLDOWN: 2592000000      # (30*24*60*60*1000) Cooldown for name changes, default (GMS) is 30 days.
     WORLD_TRANSFER_COOLDOWN: 2592000000  # (30*24*60*60*1000) Cooldown for world tranfers, default is same as name change (30 days).
     INSTANT_NAME_CHANGE: false              #Whether or not to wait for server restart to apply name changes. Does on reconnect otherwise (requires queries on every login).
+    EXP_TRACKING_DURATION: 6000          # set to 6 for testing
 
     #Dangling Items/Locks Configuration
     ITEM_EXPIRE_TIME: 180000    # (3 * 60 * 1000) Time before items start disappearing. Recommended to be set up to 3 minutes.
