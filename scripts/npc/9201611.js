@@ -239,8 +239,6 @@ function salvageItem() {
     var hands      = selectedItem.getHands();
     var { totalFee, totalMats } = getTotals(lvl);
 
-    if selectedItem.getName()
-
     // 1) Initialize with guaranteed returns per hand
     var matsToReturn = {};
     matsToReturn[zakDiamond] = 4 * hands;
