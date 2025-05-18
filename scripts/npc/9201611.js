@@ -94,6 +94,10 @@ function showEquipList(selection) {
 // === STEP 3.1: Player picks an item to Upgrade ===
 function handleSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
+    if (getItemName(slot).contains("Reverse") || getItemName(slot).contains("Timeless")) {
+            cm.sendOk("You cannot upgrade or salvage any Reverse or Timeless equips!");
+            return cm.dispose();
+        }
     if (!selectedItem) {
         cm.sendOk("Invalid selection.");
         return cm.dispose();
@@ -234,6 +238,8 @@ function salvageItem() {
     var lvl        = selectedItem.getItemLevel();
     var hands      = selectedItem.getHands();
     var { totalFee, totalMats } = getTotals(lvl);
+
+    if selectedItem.getName()
 
     // 1) Initialize with guaranteed returns per hand
     var matsToReturn = {};
