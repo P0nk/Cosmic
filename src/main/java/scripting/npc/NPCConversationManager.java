@@ -1210,8 +1210,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 50 * (hands + 1)) : 0));
         newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 50 * (hands + 1)) : 0));
         newItem.setHands((short) (hands + 1));
-        newItem.setRebirths((short) (selectedItem.getRebirths() + 1));
-        System.out.println(newItem.getRebirths());
         this.getPlayer().forceUpdateItem(newItem);
 
     }
