@@ -89,7 +89,7 @@ public class Monster extends AbstractLoadedLife {
 
     private ChangeableStats ostats = null;  //unused, v83 WZs offers no support for changeable stats.
     private MonsterStats stats;
-    private final AtomicLong hp = new AtomicLong(1); // slimy edits
+    public final AtomicLong hp = new AtomicLong(1); // slimy edits
     private final AtomicLong maxHpPlusHeal = new AtomicLong(1);
     private int mp;
     private WeakReference<Character> controller = new WeakReference<>(null);

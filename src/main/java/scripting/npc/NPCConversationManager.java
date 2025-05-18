@@ -1255,8 +1255,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setDex(newDex);
         newItem.setInt(newInt);
         newItem.setLuk(newLuk);
-        newItem.setWatk(newWatk);
-        newItem.setMatk(newMatk);
+        newItem.setWatk((short) (selectedItem.getWatk() + newWatk));
+        newItem.setMatk((short) (selectedItem.getMatk() + newMatk));
         newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 50 * (hands + 1)) : 0));
         newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 50 * (hands + 1)) : 0));
         newItem.setHands((short) (hands + 1));
@@ -1293,5 +1293,12 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void scrollFail(int chr) {
         sendPacket(PacketCreator.getScrollEffect(chr, Equip.ScrollResult.FAIL, false, false));
+    }
+
+    public String getItemName(short ItemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
+        int ItemId = eqpInv.getItem(ItemSlot).getItemId();
+        return ItemInformationProvider.getInstance().getName(ItemId);
     }
 }

@@ -27,9 +27,13 @@ import client.Client;
 import client.Job;
 import client.Skill;
 import client.SkillFactory;
+import client.inventory.Equip; // Slimy adds
+import client.inventory.InventoryType;
+import client.inventory.Item;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
+import constants.skills.Buccaneer;
 import constants.skills.Crusader;
 import constants.skills.DawnWarrior;
 import constants.skills.DragonKnight;
@@ -37,6 +41,7 @@ import constants.skills.Hero;
 import constants.skills.NightWalker;
 import constants.skills.Rogue;
 import constants.skills.Bandit;
+import constants.skills.Warrior;
 import constants.skills.WindArcher;
 import net.packet.InPacket;
 import server.StatEffect;
@@ -46,6 +51,7 @@ import tools.Pair;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random; // Slimy adds
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -82,6 +88,31 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
         chr.getMap().broadcastMessage(chr, PacketCreator.closeRangeAttack(chr, attack.skill, attack.skilllevel,
                 attack.stance, attack.numAttackedAndDamage, attack.targets, attack.speed, attack.direction,
                 attack.display), false, true);
+
+        // Check hands of weapon to add special effects -- Slimy adds
+        Item weapon_item = chr.getInventory(InventoryType.EQUIPPED).getItem((short) -11); // -11 for weapon slot
+        if (weapon_item != null) {
+            Equip weapon = (Equip) weapon_item;
+            int hands = ((Equip) weapon_item).getHands(); // works
+            if (hands >= 3 && !chr.getJob().isA(Job.WARRIOR)) { // Weapon rebrithed 3 times and is not warrior
+                int skillLevel = 10;
+                if (chr.getBuffedValue(BuffStat.SPEED_INFUSION) == null) { // only cast infusion is not buffed and not warrior branch
+                    System.out.println("Casting Speed Infusion...");
+                    Skill procSkill = SkillFactory.getSkill(Buccaneer.SPEED_INFUSION);
+                    procSkill.getEffect(skillLevel).applyTo(chr);
+                    chr.getClient().sendPacket(PacketCreator.showOwnBuffEffect(3121002, 2)); // visual effect
+                    chr.getMap().broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), 3121002, 2), false);
+                }
+//                final Random rnd = new Random();
+//                int maxhp = chr.getMaxHp();
+//                boolean chance = rnd.nextInt(100) < 10; // 10% chance of casting
+//                if (chance) {
+//                    System.out.println("Proc Healing\n");
+//                    chr.addHP((int) (maxhp * 0.1));
+//                }
+            }
+        }
+
         int numFinisherOrbs = 0;
         Integer comboBuff = chr.getBuffedValue(BuffStat.COMBO);
         if (GameConstants.isFinisherSkill(attack.skill)) {

@@ -94,6 +94,12 @@ function showEquipList(selection) {
 // === STEP 3.1: Player picks an item to Upgrade ===
 function handleSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
+//     if (cm.getItemName(selectedItem.getItemId()).contains("Reverse") || cm.getItemName(selectedItem.getItemId()).contains("Timeless")) {
+//             console.log('Test')
+//             cm.sendOk("You cannot upgrade or salvage any Reverse or Timeless equips!");
+//             return cm.dispose();
+//         }
+
     if (!selectedItem) {
         cm.sendOk("Invalid selection.");
         return cm.dispose();
@@ -303,12 +309,12 @@ function doRebirth() {
     // Check resources
     if (!cm.haveItem(rockOfTime, 1)) {
         cm.sendOk("You need 1x#v" + rockOfTime + "# to rebirth.");
-    } else if (cm.getCashShop().getCash(1) < 250000) {
-        cm.sendOk("You need 250k NX to rebirth your item.");
+    } else if (cm.getCashShop().getCash(1) < 350000) {
+        cm.sendOk("You need 350k NX to rebirth your item.");
     } else {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
         cm.gainItem(rockOfTime, -1);
-        cm.gainCash(-250000);
+        cm.gainCash(-350000);
         cm.scrollPass(cm.getPlayer().getId());
         cm.sendOk("Your item has been reborn. Go get stronger!");
     }
