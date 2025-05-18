@@ -76,19 +76,49 @@ public final class UseItemHandler extends AbstractPacketHandler {
                     remove(c, slot);
                 }
                 return;
-            } else if (itemId == ItemId.HP_CAP_INCREASE) {
+            } else if (itemId == ItemId.HP_CAP_INCREASE_1) {
                 Character player = c.getPlayer();
                 if (player.getLevel() < 120) {
                     player.yellowMessage("You need to be level 120 to use this item!");
                     return;
                 } else {
-                    player.updateMaxHp(player.getMaxHp() + 200);
+                    player.updateMaxHp(player.getMaxHp() + 100);
                     remove(c, slot);
                     return;
                 }
-            } else if (itemId == ItemId.MP_CAP_INCREASE) {
+            } else if (itemId == ItemId.MP_CAP_INCREASE_1) {
                 Character player = c.getPlayer();
-                player.updateMaxMp(player.getMaxMp() + 200);
+                player.updateMaxMp(player.getMaxMp() + 100);
+                remove(c, slot);
+                return;
+            } else if (itemId == ItemId.HP_CAP_INCREASE_2) {
+                Character player = c.getPlayer();
+                if (player.getLevel() < 150) {
+                    player.yellowMessage("You need to be level 150 to use this item!");
+                    return;
+                } else {
+                    player.updateMaxHp(player.getMaxHp() + 300);
+                    remove(c, slot);
+                    return;
+                }
+            } else if (itemId == ItemId.MP_CAP_INCREASE_2) {
+                Character player = c.getPlayer();
+                player.updateMaxMp(player.getMaxMp() + 300);
+                remove(c, slot);
+                return;
+            }else if (itemId == ItemId.HP_CAP_INCREASE_3) {
+                Character player = c.getPlayer();
+                if (player.getLevel() < 180) {
+                    player.yellowMessage("You need to be level 180 to use this item!");
+                    return;
+                } else {
+                    player.updateMaxHp(player.getMaxHp() +500);
+                    remove(c, slot);
+                    return;
+                }
+            } else if (itemId == ItemId.MP_CAP_INCREASE_3) {
+                Character player = c.getPlayer();
+                player.updateMaxMp(player.getMaxMp() + 500);
                 remove(c, slot);
                 return;
             }

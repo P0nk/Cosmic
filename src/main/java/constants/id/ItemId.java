@@ -19,9 +19,12 @@ public class ItemId {
     public static final int BUMMER_EFFECT = 4290001;
     public static final int ARPQ_SHIELD = 2022269;
     public static final int ROARING_TIGER_MESSENGER = 5390006;
-    public static final int HP_CAP_INCREASE = 2002031;
-    public static final int MP_CAP_INCREASE = 2002032;
-
+    public static final int HP_CAP_INCREASE_1 = 2002031;
+    public static final int MP_CAP_INCREASE_1 = 2002032;
+    public static final int HP_CAP_INCREASE_2 = 2002033;
+    public static final int MP_CAP_INCREASE_2 = 2002034;
+    public static final int HP_CAP_INCREASE_3 = 2002035;
+    public static final int MP_CAP_INCREASE_3 = 2002036;
     public static boolean isExpIncrease(int itemId) {
         return itemId >= 2022450 && itemId <= 2022452;
     }
