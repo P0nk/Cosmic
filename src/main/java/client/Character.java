@@ -11216,7 +11216,7 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void addExpTracked(long exp) {
-        log.info("track EXP: " + exp);
+        // log.info("track EXP: " + exp);
         if (expTrackingTask != null) {
             expTracked += exp;
         }

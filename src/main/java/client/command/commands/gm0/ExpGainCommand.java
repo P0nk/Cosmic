@@ -7,7 +7,7 @@ import config.YamlConfig;
 
 public class ExpGainCommand extends Command {
     {
-        setDescription("Start tracking EXP gain for 60 seconds");
+        setDescription("Start tracking EXP gain");
     }
 
     @Override
