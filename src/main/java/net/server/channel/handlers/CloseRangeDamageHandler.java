@@ -97,7 +97,7 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
             if (hands >= 3 && !chr.getJob().isA(Job.WARRIOR)) { // Weapon rebrithed 3 times and is not warrior
                 int skillLevel = 10;
                 if (chr.getBuffedValue(BuffStat.SPEED_INFUSION) == null) { // only cast infusion is not buffed and not warrior branch
-                    System.out.println("Buffing...");
+                    System.out.println("Casting Speed Infusion...");
                     Skill procSkill = SkillFactory.getSkill(Buccaneer.SPEED_INFUSION);
                     procSkill.getEffect(skillLevel).applyTo(chr);
                     chr.getClient().sendPacket(PacketCreator.showOwnBuffEffect(3121002, 2)); // visual effect
