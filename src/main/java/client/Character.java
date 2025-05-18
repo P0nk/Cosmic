@@ -250,7 +250,7 @@ public class Character extends AbstractCharacterObject {
     private final AtomicInteger meso = new AtomicInteger();
     private final AtomicInteger chair = new AtomicInteger(-1);
     private long totalExpGained = 0;
-    private long expTrackingStartTime = 0;
+    private long expTracked = 0;
     private ScheduledFuture<?> expTrackingTask = null;
     private int merchantmeso;
     private BuddyList buddylist;
@@ -3161,6 +3161,7 @@ public class Character extends AbstractCharacterObject {
             }
             updateSingleStat(Stat.EXP, exp.addAndGet((int) total));
             totalExpGained += total;
+            addExpTracked(total);
             if (show) {
                 announceExpGain(gain, equip, party, inChat, white);
             }
@@ -11202,22 +11203,22 @@ public class Character extends AbstractCharacterObject {
             expTrackingTask.cancel(false);
         }
         
-        totalExpGained = 0;
-        expTrackingStartTime = System.currentTimeMillis();
+        int duration = YamlConfig.config.server.EXP_TRACKING_DURATION;
+        expTracked = 0;
         
         expTrackingTask = TimerManager.getInstance().schedule(() -> {
             if (client != null) {
-                dropMessage(5, "Total EXP gained in 60s: " + totalExpGained);
-                totalExpGained = 0;
-                expTrackingStartTime = 0;
+                dropMessage(5, "Total EXP gained in " + duration / 1000 + "s: " + expTracked);
+                expTracked = 0;
                 expTrackingTask = null;
             }
-        }, YamlConfig.config.server.EXP_TRACKING_DURATION);
+        }, duration);
     }
 
-    public void addExpGain(long exp) {
+    public void addExpTracked(long exp) {
+        log.info("track EXP: " + exp);
         if (expTrackingTask != null) {
-            totalExpGained += exp;
+            expTracked += exp;
         }
     }
 }

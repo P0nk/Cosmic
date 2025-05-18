@@ -3,6 +3,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import config.YamlConfig;
 
 public class ExpGainCommand extends Command {
     {
@@ -17,6 +18,7 @@ public class ExpGainCommand extends Command {
         }
 
         chr.startExpTracking();
-        chr.dropMessage(5, "Start Tracking Exp Gain For 60s");
+        int duration = YamlConfig.config.server.EXP_TRACKING_DURATION / 1000;
+        chr.dropMessage(5, "Start Tracking Exp Gain For " + duration + " seconds");
     }
 } 
