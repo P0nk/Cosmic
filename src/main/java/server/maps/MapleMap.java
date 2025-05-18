@@ -1307,6 +1307,7 @@ public class MapleMap {
                     if (System.currentTimeMillis() - last > 5000) {
                         chr.getMap().broadcastMessage(PacketCreator.serverNotice(6, "DPS Test ended. Total Damage: " + formattedDamage + ", Time: " + (elapsed / 1000) + "s, DPS: " + formattedDps));
                         monster.resetDpsData();
+                        monster.hp.set(999_999_999_999_999L);
                         return;
                     }
                     chr.getMap().broadcastMessage(PacketCreator.serverNotice(6, "DPS Test: " + formattedDamage + " dmg in " + (elapsed / 1000) + "s (" + formattedDps + " DPS)"));
