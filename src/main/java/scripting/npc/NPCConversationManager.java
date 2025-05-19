@@ -75,6 +75,10 @@ import java.awt.*;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -222,6 +226,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void sendGetText(String text) {
         getClient().sendPacket(PacketCreator.getNPCTalkText(npc, text, ""));
+    }
+
+    public void sendGetText(String text, String def) {
+        getClient().sendPacket(PacketCreator.getNPCTalkText(npc, text, def));
     }
 
     /*
@@ -438,6 +446,48 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         if (item.getTier() > 0) { //Uncommon and Rare
             Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.gachaponMessage(itemGained, map, getPlayer()));
         }
+    }
+
+    /**
+     * Custom code by Liquid
+     * @param amount
+     */
+    public void doGachaponWithDelay(int amount) {
+        final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        final AtomicInteger count = new AtomicInteger(0);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            if (count.incrementAndGet() > amount || c.getPlayer() == null) {
+                scheduler.shutdown();
+                return;
+            }
+
+            //Remove it ticket from inventory
+            this.gainItem(5220000, (short) -1);
+
+            GachaponItem item = Gachapon.getInstance().process(npc);
+            Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true);
+
+            int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
+                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.NEW_LEAF_CITY, MapId.NAUTILUS_HARBOR};
+            final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS && getNpc() != NpcId.GACHAPON_NLC) ?
+                    (getNpc() - NpcId.GACHAPON_HENESYS) : getNpc() == NpcId.GACHAPON_NLC ? 8 : 9];
+            String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
+
+            Gachapon.log(getPlayer(), item.getId(), map);
+
+            if (item.getTier() > 0) {
+                Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.gachaponMessage(itemGained, map, getPlayer()));
+            }
+
+        }, 0, 200, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean hasEnoughSlotsForGachapon(int count) {
+        return c.getPlayer().getInventory(InventoryType.EQUIP).getNumFreeSlot() >= count &&  // EQUIP
+                c.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() >= count &&  // USE
+                c.getPlayer().getInventory(InventoryType.SETUP).getNumFreeSlot() >= count &&  // SETUP
+                c.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() >= count;    // ETC
     }
 
     public void upgradeAlliance() {
