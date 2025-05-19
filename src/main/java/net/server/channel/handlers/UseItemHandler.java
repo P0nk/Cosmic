@@ -82,7 +82,7 @@ public final class UseItemHandler extends AbstractPacketHandler {
                 if (player.getLevel() < 120) {
                     player.yellowMessage("You need to be level 120 to use this item!");
                     return;
-                } else if (maxHP < 15000) {
+                } else if (maxHP >= 15000) {
                     player.yellowMessage("You already have more than 15k HP, use Medium Searing rune of Slimy to get to 22.5k HP");
                     return;
                 } else {
@@ -100,7 +100,7 @@ public final class UseItemHandler extends AbstractPacketHandler {
                 if (player.getLevel() < 150) {
                     player.yellowMessage("You need to be level 150 to use this item!");
                     return;
-                } else if (maxHP < 22500) {
+                } else if (maxHP >= 22500) {
                     player.yellowMessage("You already have more than 22.5k HP, use Greater Searing rune of Slimy to get to 30k HP");
                     return;
                 } else {
