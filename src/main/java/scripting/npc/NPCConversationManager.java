@@ -1226,10 +1226,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 } else {
                     newWatk = (short) ((450 - newItem.getWatk()) / 3 * (hands + 1));
                 }
-                newStr = (short) (newItem.getStr() + 50 * (hands + 1));
-                newDex = (short) (newItem.getDex() + 50 * (hands + 1));
-                newInt = (short) (newItem.getInt() + 50 * (hands + 1));
-                newLuk = (short) (newItem.getLuk() + 50 * (hands + 1));
+                newStr = (short) (newItem.getStr() + 60 * (hands + 1));
+                newDex = (short) (newItem.getDex() + 60 * (hands + 1));
+                newInt = (short) (newItem.getInt() + 60 * (hands + 1));
+                newLuk = (short) (newItem.getLuk() + 60 * (hands + 1));
             } else {
                 double carryOver = 0.25;
                 newStr = (short) (selectedItem.getStr() * carryOver);
@@ -1257,8 +1257,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setLuk(newLuk);
         newItem.setWatk((short) (newItem.getWatk() + newWatk));
         newItem.setMatk((short) (newItem.getMatk() + newMatk));
-        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 50 * (hands + 1)) : 0));
-        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 50 * (hands + 1)) : 0));
+        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 60 * (hands + 1)) : 0));
+        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 60 * (hands + 1)) : 0));
         newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
 

@@ -62,7 +62,9 @@ public class Shop {
         rechargeableItems.add(ItemId.BLAZE_CAPSULE);
         rechargeableItems.add(ItemId.GLAZE_CAPSULE);
         rechargeableItems.add(ItemId.BALANCED_FURY);
-        rechargeableItems.remove(ItemId.DEVIL_RAIN_THROWING_STAR); // doesn't exist
+        rechargeableItems.remove(ItemId.DEVIL_RAIN_THROWING_STAR); // doesn't exist merogie -required else crash.
+        rechargeableItems.add(ItemId.DONOR_STEELY_THROWING_STAR); // merogie -- added to allow recharge
+        //rechargeableItems.add(ItemId.Bugged2_THROWING_STAR); // doesn't exist
         for (int bulletId : ItemId.allBulletIds()) {
             rechargeableItems.add(bulletId);
         }

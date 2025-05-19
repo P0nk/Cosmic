@@ -94,12 +94,11 @@ function showEquipList(selection) {
 // === STEP 3.1: Player picks an item to Upgrade ===
 function handleSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
-//     if (cm.getItemName(selectedItem.getItemId()).contains("Reverse") || cm.getItemName(selectedItem.getItemId()).contains("Timeless")) {
-//             console.log('Test')
-//             cm.sendOk("You cannot upgrade or salvage any Reverse or Timeless equips!");
-//             return cm.dispose();
-//         }
-
+    if (cm.getItemName(slot).includes("Reverse") ||
+        cm.getItemName(slot).includes("Timeless")) {
+            cm.sendOk("You cannot upgrade or salvage any Reverse or Timeless equips!");
+            return cm.dispose();
+        }
     if (!selectedItem) {
         cm.sendOk("Invalid selection.");
         return cm.dispose();
@@ -306,6 +305,11 @@ function doUpgrade(newStats) {
 }
 
 function doRebirth() {
+    if (selectedItem.getItemId() == 1402180 || selectedItem.getItemId() == 1382235) { // Just a double check
+        cm.sendOk("Hello! Your item is already so op, you can't rebirth it!");
+        cm.dispose();
+        return;
+    }
     // Check resources
     if (!cm.haveItem(rockOfTime, 1)) {
         cm.sendOk("You need 1x#v" + rockOfTime + "# to rebirth.");

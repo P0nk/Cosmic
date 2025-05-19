@@ -80,6 +80,8 @@ public class ItemId {
     private static final int THROWING_STAR_MIN = SUBI_THROWING_STARS;
     private static final int THROWING_STAR_MAX = 2070016;
     public static final int DEVIL_RAIN_THROWING_STAR = 2070014;
+    public static final int DONOR_STEELY_THROWING_STAR = 2070017;
+
 
     public static int[] allThrowingStarIds() {
         return IntStream.range(THROWING_STAR_MIN, THROWING_STAR_MAX + 1).toArray();
