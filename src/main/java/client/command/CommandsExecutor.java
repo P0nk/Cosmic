@@ -57,7 +57,7 @@ import client.command.commands.gm0.LootCommand;
 import client.command.commands.gm0.WorldChatCommand;
 import client.command.commands.gm0.UniverseChatCommand;
 import client.command.commands.gm0.SellItemsCommand;
-
+import client.command.commands.gm0.ExpGainCommand;
 
 import client.command.commands.gm1.BossHpCommand;
 import client.command.commands.gm1.BuffMeCommand;
@@ -395,6 +395,7 @@ public class CommandsExecutor {
         addCommand("world", 0, WorldChatCommand.class);
         addCommand("uni", 0, UniverseChatCommand.class);
         addCommand("sell", 0, SellItemsCommand.class);
+        addCommand("exp", 0, ExpGainCommand.class);
         commandsNameDesc.add(levelCommandsCursor);
     }
 
