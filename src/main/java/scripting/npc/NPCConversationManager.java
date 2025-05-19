@@ -469,9 +469,9 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true);
 
             int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
-                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.NEW_LEAF_CITY, MapId.NAUTILUS_HARBOR};
-            final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS && getNpc() != NpcId.GACHAPON_NLC) ?
-                    (getNpc() - NpcId.GACHAPON_HENESYS) : getNpc() == NpcId.GACHAPON_NLC ? 8 : 9];
+                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.EL_NATH, MapId.NEW_LEAF_CITY, MapId.NAUTILUS_HARBOR};
+            final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ?
+                                   (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
             String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
 
             Gachapon.log(getPlayer(), item.getId(), map);
@@ -1172,6 +1172,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void replaceBoomedUpgradeItem(short boomedItemSlot) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(boomedItemSlot).getItemId();
 
         eqpInv.removeSlot(boomedItemSlot); //remove the item
@@ -1198,6 +1199,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public void rebirthItem(short ItemSlot, short hands) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
+
+        // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(ItemSlot).getItemId();
         int newItemType = newItemId/10000;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
@@ -1221,6 +1224,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         System.out.println(newItemType);
         if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
             if (hands < 3) {
+                // checks if is mage weapon or attack weapon
                 if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
                     newMatk = (short) ((550 - newItem.getMatk()) / 3 * (hands + 1));
                 } else {
