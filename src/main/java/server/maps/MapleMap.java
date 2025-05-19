@@ -1336,9 +1336,10 @@ public class MapleMap {
             int max_mob_hp = 600000000;
             int min_nx_gain = 5;
             int max_nx_gain = 30000;
+
             double Variance = (double) (Math.random() * 0.2 - 0.1) + 1; // add a +- 10% mesos variance
             double ratio = (double) (monster.getMaxHp() - min_mob_hp) / (max_mob_hp-min_mob_hp);
-            int nxAmount = (int) (min_nx_gain + (ratio * (max_nx_gain - min_nx_gain)) ); // formula for nx gain
+            int nxAmount = Math.min((int) Math.max((min_nx_gain + (ratio * (max_nx_gain - min_nx_gain)) ), monster.getLevel()), 12000); // formula for nx gain
             if (nx_gain) {
                 chr.getCashShop().gainCash(1, (int) (nxAmount * Variance)); // gain nx
                 chr.sendPacket(PacketCreator.earnTitleMessage("Teto grants " + (int) (nxAmount * Variance) + " NX")); // post a yellow message to show nx gained
@@ -1357,19 +1358,19 @@ public class MapleMap {
         return true;
     }
     public void broadcastBalrogVictory(String leaderName) {
-        getWorldServer().dropMessage(6, "[Victory] " + leaderName + "'s party has successfully defeated the Balrog! Praise to them, they finished with " + countAlivePlayers() + " players alive.");
+//        getWorldServer().dropMessage(6, "[Victory] " + leaderName + "'s party has successfully defeated the Balrog! Praise to them, they finished with " + countAlivePlayers() + " players alive.");
     }
 
     public void broadcastHorntailVictory() {
-        getWorldServer().dropMessage(6, "[Victory] To the crew that have finally conquered Horned Tail after numerous attempts, I salute thee! You are the true heroes of Leafre!!");
+//        getWorldServer().dropMessage(6, "[Victory] To the crew that have finally conquered Horned Tail after numerous attempts, I salute thee! You are the true heroes of Leafre!!");
     }
 
     public void broadcastZakumVictory() {
-        getWorldServer().dropMessage(6, "[Victory] At last, the tree of evil that for so long overwhelmed Ossyria has fallen. To the crew that managed to finally conquer Zakum, after numerous attempts, victory! You are the true heroes of Ossyria!!");
+//        getWorldServer().dropMessage(6, "[Victory] At last, the tree of evil that for so long overwhelmed Ossyria has fallen. To the crew that managed to finally conquer Zakum, after numerous attempts, victory! You are the true heroes of Ossyria!!");
     }
 
     public void broadcastPinkBeanVictory(int channel) {
-        getWorldServer().dropMessage(6, "[Victory] In a swift stroke of sorts, the crew that has attempted Pink Bean at channel " + channel + " has ultimately defeated it. The Temple of Time shines radiantly once again, the day finally coming back, as the crew that managed to finally conquer it returns victoriously from the battlefield!!");
+//        getWorldServer().dropMessage(6, "[Victory] In a swift stroke of sorts, the crew that has attempted Pink Bean at channel " + channel + " has ultimately defeated it. The Temple of Time shines radiantly once again, the day finally coming back, as the crew that managed to finally conquer it returns victoriously from the battlefield!!");
     }
 
     private boolean removeKilledMonsterObject(Monster monster) {
