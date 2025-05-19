@@ -201,7 +201,7 @@ public class Expedition {
             broadcastExped(PacketCreator.serverNotice(6, "[Expedition] The expedition has started! Good luck, brave heroes!"));
         }
         startTime = System.currentTimeMillis();
-        Server.getInstance().broadcastGMMessage(startMap.getWorld(), PacketCreator.serverNotice(6, "[Expedition] " + type.toString() + " Expedition started with leader: " + leader.getName()));
+//        Server.getInstance().broadcastGMMessage(startMap.getWorld(), PacketCreator.serverNotice(6, "[Expedition] " + type.toString() + " Expedition started with leader: " + leader.getName()));
     }
 
     public String addMember(Character player) {
