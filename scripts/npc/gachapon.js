@@ -24,6 +24,7 @@
 	Extra NPC info.
  */
 
+var ticketCount = 0;
 var status;
 var ticketId = 5220000;
 var mapName = ["Henesys", "Ellinia", "Perion", "Kerning City", "Sleepywood", "Mushroom Shrine", "Showa Spa (M)", "Showa Spa (F)", "Ludibrium", "New Leaf City", "El Nath", "Nautilus"];
@@ -36,6 +37,7 @@ function start() {
     action(1, 0, 0);
 }
 
+
 function action(mode, type, selection) {
     if (mode < 0) {
         cm.dispose();
@@ -45,20 +47,38 @@ function action(mode, type, selection) {
         } else {
             status--;
         }
+
         if (status == 0 && mode == 1) {
             if (cm.haveItem(ticketId)) {
-                cm.sendYesNo("You may use the " + curMapName + " Gachapon. Would you like to use your Gachapon ticket?");
+                cm.sendGetText("How many Gachapon tickets would you like to use?", "1");
             } else {
                 cm.sendSimple("Welcome to the " + curMapName + " Gachapon. How may I help you?\r\n\r\n#L0#What is Gachapon?#l\r\n#L1#Where can you buy Gachapon tickets?#l");
             }
+
         } else if (status == 1 && cm.haveItem(ticketId)) {
-            if (cm.canHold(1302000) && cm.canHold(2000000) && cm.canHold(3010001) && cm.canHold(4000000)) { // One free slot in every inventory.
-                cm.gainItem(ticketId, -1);
-                cm.doGachapon();
-            } else {
-                cm.sendOk("Please have at least one slot in your #rEQUIP, USE, SET-UP, #kand #rETC#k inventories free.");
+            // Parse and validate input
+            var ticketCount = parseInt(cm.getText());
+
+            if (isNaN(ticketCount) || ticketCount <= 0) {
+                cm.sendOk("Please enter a valid number of tickets.");
+                cm.dispose();
+                return;
             }
-            cm.dispose();
+
+            if (!cm.haveItem(ticketId, ticketCount)) {
+                cm.sendOk("You don't have enough Gachapon tickets.");
+                cm.dispose();
+                return;
+            }
+
+            if (cm.hasEnoughSlotsForGachapon(ticketCount)) {
+                cm.doGachaponWithDelay(ticketCount);
+                cm.dispose();
+            } else {
+                cm.sendOk("You need at least " + ticketCount + " free slots in each of your #rEQUIP, USE, SET-UP,#k and #rETC#k inventories to use Gachapon.");
+                cm.dispose();
+            }
+
         } else if (status == 1) {
             if (selection == 0) {
                 cm.sendNext("Play Gachapon to earn rare scrolls, equipment, chairs, mastery books, and other cool items! All you need is a #bGachapon Ticket#k to be the winner of a random mix of items.");

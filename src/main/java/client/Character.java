@@ -250,6 +250,8 @@ public class Character extends AbstractCharacterObject {
     private final AtomicInteger meso = new AtomicInteger();
     private final AtomicInteger chair = new AtomicInteger(-1);
     private long totalExpGained = 0;
+    private long expTracked = 0;
+    private ScheduledFuture<?> expTrackingTask = null;
     private int merchantmeso;
     private BuddyList buddylist;
     private EventInstanceManager eventInstance = null;
@@ -3159,6 +3161,7 @@ public class Character extends AbstractCharacterObject {
             }
             updateSingleStat(Stat.EXP, exp.addAndGet((int) total));
             totalExpGained += total;
+            addExpTracked(total);
             if (show) {
                 announceExpGain(gain, equip, party, inChat, white);
             }
@@ -11193,5 +11196,29 @@ public class Character extends AbstractCharacterObject {
 
     public void setChasing(boolean chasing) {
         this.chasing = chasing;
+    }
+
+    public void startExpTracking() {
+        if (expTrackingTask != null) {
+            expTrackingTask.cancel(false);
+        }
+        
+        int duration = YamlConfig.config.server.EXP_TRACKING_DURATION;
+        expTracked = 0;
+        
+        expTrackingTask = TimerManager.getInstance().schedule(() -> {
+            if (client != null) {
+                dropMessage(5, "Total EXP gained in " + duration / 1000 + "s: " + expTracked);
+                expTracked = 0;
+                expTrackingTask = null;
+            }
+        }, duration);
+    }
+
+    public void addExpTracked(long exp) {
+        // log.info("track EXP: " + exp);
+        if (expTrackingTask != null) {
+            expTracked += exp;
+        }
     }
 }
