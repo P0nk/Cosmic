@@ -51,6 +51,7 @@ public final class UseItemHandler extends AbstractPacketHandler {
         p.readInt();
         short slot = p.readShort();
         int itemId = p.readInt();
+        int maxHP = c.getPlayer().getMaxHp();
         Item toUse = chr.getInventory(InventoryType.USE).getItem(slot);
         if (toUse != null && toUse.getQuantity() > 0 && toUse.getItemId() == itemId) {
             if (itemId == ItemId.ALL_CURE_POTION) {
@@ -76,19 +77,55 @@ public final class UseItemHandler extends AbstractPacketHandler {
                     remove(c, slot);
                 }
                 return;
-            } else if (itemId == ItemId.HP_CAP_INCREASE) {
+            } else if (itemId == ItemId.HP_CAP_INCREASE_1) {
                 Character player = c.getPlayer();
                 if (player.getLevel() < 120) {
                     player.yellowMessage("You need to be level 120 to use this item!");
                     return;
+                } else if (maxHP < 15000) {
+                    player.yellowMessage("You already have more than 15k HP, use Medium Searing rune of Slimy to get to 22.5k HP");
+                    return;
                 } else {
-                    player.updateMaxHp(player.getMaxHp() + 200);
+                    player.updateMaxHp(player.getMaxHp() + 100);
                     remove(c, slot);
                     return;
                 }
-            } else if (itemId == ItemId.MP_CAP_INCREASE) {
+            } else if (itemId == ItemId.MP_CAP_INCREASE_1) {
                 Character player = c.getPlayer();
-                player.updateMaxMp(player.getMaxMp() + 200);
+                player.updateMaxMp(player.getMaxMp() + 100);
+                remove(c, slot);
+                return;
+            } else if (itemId == ItemId.HP_CAP_INCREASE_2) {
+                Character player = c.getPlayer();
+                if (player.getLevel() < 150) {
+                    player.yellowMessage("You need to be level 150 to use this item!");
+                    return;
+                } else if (maxHP < 22500) {
+                    player.yellowMessage("You already have more than 22.5k HP, use Greater Searing rune of Slimy to get to 30k HP");
+                    return;
+                } else {
+                    player.updateMaxHp(player.getMaxHp() + 300);
+                    remove(c, slot);
+                    return;
+                }
+            } else if (itemId == ItemId.MP_CAP_INCREASE_2) {
+                Character player = c.getPlayer();
+                player.updateMaxMp(player.getMaxMp() + 300);
+                remove(c, slot);
+                return;
+            }else if (itemId == ItemId.HP_CAP_INCREASE_3) {
+                Character player = c.getPlayer();
+                if (player.getLevel() < 180) {
+                    player.yellowMessage("You need to be level 180 to use this item!");
+                    return;
+                } else {
+                    player.updateMaxHp(player.getMaxHp() + 500);
+                    remove(c, slot);
+                    return;
+                }
+            } else if (itemId == ItemId.MP_CAP_INCREASE_3) {
+                Character player = c.getPlayer();
+                player.updateMaxMp(player.getMaxMp() + 500);
                 remove(c, slot);
                 return;
             }
