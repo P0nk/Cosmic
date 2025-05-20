@@ -24,6 +24,10 @@
     Zakum Entrance
 */
 
+var baseid = 211042300;
+var dungeonid = 280030100;
+var dungeons = 6;
+
 function enter(pi) {
     if (!(pi.isQuestStarted(100200) || pi.isQuestCompleted(100200))) {
         pi.getPlayer().dropMessage(5, "You need approval from the masters to battle. You may not attempt the boss right now.");
@@ -40,13 +44,42 @@ function enter(pi) {
         return false;
     }
 
-    var react = pi.getMap().getReactorById(2118002);
-    if (react != null && react.getState() > 0) {
-        pi.getPlayer().dropMessage(5, "The entrance is currently blocked.");
-        return false;
-    }
+    // var react = pi.getMap().getReactorById(2118002);
+    // if (react != null && react.getState() > 0) {
+    //     pi.getPlayer().dropMessage(5, "The entrance is currently blocked.");
+    //     return false;
+    // }
 
     pi.playPortalSound();
-    pi.warp(211042400, "west00");
-    return true;
+
+    if (pi.getMapId() == baseid) {
+        if (pi.getParty() != null) {
+            if (pi.isLeader()) {
+                for (var i = 0; i < dungeons; i++) {
+                    if (pi.startDungeonInstance(dungeonid + i)) {
+                        pi.playPortalSound();
+                        pi.warpParty(dungeonid + i);
+                        return true;
+                    }
+                }
+            } else {
+                pi.playerMessage(5, "Only solo or party leaders are supposed to enter the Mini-Dungeon.");
+                return false;
+            }
+        } else {
+            for (var i = 0; i < dungeons; i++) {
+                if (pi.startDungeonInstance(dungeonid + i)) {
+                    pi.playPortalSound();
+                    pi.warp(dungeonid + i);
+                    return true;
+                }
+            }
+        }
+        pi.playerMessage(5, "All of the Mini-Dungeons are in use right now, please try again later.");
+        return false;
+    } else {
+        pi.playPortalSound();
+        pi.warp(baseid);
+        return true;
+    }
 }

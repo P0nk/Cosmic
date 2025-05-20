@@ -31,7 +31,7 @@
  */
 
 function start() {
-    if (cm.getMapId() == 280030000) {
+    if (cm.getMapId() === 280030000 || (cm.getMapId() >= 280030100 && cm.getMapId() <= 280030130)) {
         if (!cm.getEventInstance().isEventCleared()) {
             cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
         } else {

@@ -31,7 +31,8 @@ public enum MiniDungeonInfo {
 
     //http://bbb.hidden-street.net/search_finder/mini%20dungeon
 
-    CAVE_OF_MUSHROOMS(MapId.ANT_TUNNEL_2, MapId.CAVE_OF_MUSHROOMS_BASE, 30), // Horny Mushroom, Zombie Mushroom
+    ZAKUM(MapId.DOOR_TO_ZAKUM, MapId.ZAKUM_ALTAR, 5), // Zakum
+    CAVE_OF_MUSHROOMS(MapId.ANT_TUNNEL_2, MapId.CAVE_OF_MUSHROOMS_BASE, 5), // Horny Mushroom, Zombie Mushroom
     GOLEM_CASTLE_RUINS(MapId.SLEEPY_DUNGEON_4, MapId.GOLEMS_CASTLE_RUINS_BASE, 34), // Stone Golem, Mixed Golem
     HILL_OF_SANDSTORMS(MapId.SAHEL_2, MapId.HILL_OF_SANDSTORMS_BASE, 30), // Sand Rat
     HENESYS_PIG_FARM(MapId.RAIN_FOREST_EAST_OF_HENESYS, MapId.HENESYS_PIG_FARM_BASE, 30), // Pig, Ribbon Pig
