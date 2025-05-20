@@ -21,6 +21,7 @@ var status       = 0;
 var selectedItem = null;
 var isRebirth    = false;
 var salvage      = false;
+var betterRoll   = false;
 
 var newStats
 
@@ -50,7 +51,7 @@ function action(mode, type, selection) {
 
 // === STEP 1: List choice of action ===
 function choice() {
-    var selStr = "\r\n#b#L0#Upgrade my item!#l\r\n#b#L1#Salvage my item!#l";
+    var selStr = "\r\n#b#L0#Upgrade my item! (Original)#l\r\n#b#L1#Upgrade my item! (Expensive)#l\r\n#b#L2#Salvage my item!#l";
     cm.sendSimple(selStr);
 }
 
@@ -58,7 +59,13 @@ function choice() {
 function showEquipList(selection) {
     if (selection == 0) {
         salvage = false;
+        betterRoll = false;
     } else if (selection == 1) {
+        betterRoll = true;
+        previewFee = 60000000 // 60m to preview
+        salvage = false;
+    } else if (selection == 1) {
+        betterRoll = false;
         salvage = true;
     }
     var inv      = cm.getInventory(1);
@@ -86,13 +93,14 @@ function showEquipList(selection) {
 
     cm.sendSimple(
         "Select the item you want to upgrade. "
-      + "It costs " + format(previewFee) + " mesos to preview each upgrade.\r\n"
+      + "It costs " + format(previewFee) + " to preview each upgrade.\r\n"
       + lines.join("\r\n")
     );
 }
 
 // === STEP 3.1: Player picks an item to Upgrade ===
 function handleSelection(slot) {
+    // All the conditional Checks
     selectedItem = cm.getInventory(1).getItem(slot);
     if (cm.getItemName(slot).includes("Reverse") ||
         cm.getItemName(slot).includes("Timeless")) {
@@ -103,6 +111,12 @@ function handleSelection(slot) {
         cm.sendOk("Invalid selection.");
         return cm.dispose();
     }
+    if (betterRoll) {
+        newStats = calcBetterNewStats(selectedItem);
+    } else {
+        newStats = calcNewStats(selectedItem);
+    }
+
 
     var lvl   = selectedItem.getItemLevel();
     var hands = selectedItem.getHands();
@@ -112,7 +126,7 @@ function handleSelection(slot) {
         isRebirth = true;
         return cm.sendYesNo(
             "Your item has reached its max upgrades. I can reset it with a base stat boost.\r\n"
-          + "Cost: 1x#v" + rockOfTime + "# + 250k NX. Proceed?"
+          + "Cost: 1x#v" + rockOfTime + "# + 350k NX. Proceed?"
         );
     }
 
@@ -135,7 +149,7 @@ function handleSelection(slot) {
         cm.gainMeso(-previewFee);
 
         // Calculate tentative new stats
-        newStats = calcNewStats(selectedItem);
+
         var mat      = cfg.mats[0].id;
         var amt      = cfg.mats[0].amt;
         var warning  = (lvl === 4)
@@ -152,7 +166,7 @@ function handleSelection(slot) {
             "MATK: " + selectedItem.getMatk() + " to " + newStats.matk,
             "WDEF: " + selectedItem.getWdef() + " to " + newStats.wdef,
             "MDEF: " + selectedItem.getMdef() + " to " + newStats.mdef,
-            "Cost: " + format(cfg.fee) + " mesos + " + amt + "x#v" + mat + "#"
+            "Cost: " + format(cfg.fee) + " + " + amt + "x#v" + mat + "#"
         ].join("\r\n");
 
         return cm.sendYesNo(msg + warning);
@@ -310,7 +324,7 @@ function doRebirth() {
         cm.dispose();
         return;
     }
-    // Check resources
+    // Check materials
     if (!cm.haveItem(rockOfTime, 1)) {
         cm.sendOk("You need 1x#v" + rockOfTime + "# to rebirth.");
     } else if (cm.getCashShop().getCash(1) < 350000) {
@@ -329,6 +343,23 @@ function doRebirth() {
 function calcNewStats(item) {
     // Main stats 40–60% increase, defs 10–20%
     var mm = () => 1.4 + Math.random() * 0.2;
+    var dm = () => 1.1 + Math.random() * 0.1;
+    return {
+        str:  Math.floor(item.getStr()  * mm()),
+        dex:  Math.floor(item.getDex()  * mm()),
+        int:  Math.floor(item.getInt()  * mm()),
+        luk:  Math.floor(item.getLuk()  * mm()),
+        watk: Math.floor(item.getWatk() * mm()),
+        matk: Math.floor(item.getMatk() * mm()),
+        wdef: Math.floor(item.getWdef() * dm()),
+        mdef: Math.floor(item.getMdef() * dm()),
+        lvl:  item.getItemLevel() + 1
+    };
+}
+
+function calcBetterNewStats(item) {
+    // Main stats 55–60% increase, defs 10–20%
+    var mm = () => 1.55 + Math.random() * 0.05;
     var dm = () => 1.1 + Math.random() * 0.1;
     return {
         str:  Math.floor(item.getStr()  * mm()),
