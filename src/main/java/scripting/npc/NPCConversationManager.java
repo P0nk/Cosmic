@@ -469,7 +469,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true);
 
             int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
-                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.EL_NATH, MapId.NEW_LEAF_CITY, MapId.NAUTILUS_HARBOR};
+                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.NEW_LEAF_CITY, MapId.EL_NATH, MapId.NAUTILUS_HARBOR};
             final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ?
                                    (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
             String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
