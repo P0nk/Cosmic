@@ -9,7 +9,7 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout>
-                    <Pattern>${standard-pattern}</Pattern>
+                    <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg [%class.%method:%line]%n</pattern>
             </PatternLayout>
         </Console>
 
