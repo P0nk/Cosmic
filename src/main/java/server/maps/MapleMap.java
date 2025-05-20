@@ -1342,7 +1342,7 @@ public class MapleMap {
             int nxAmount = Math.min((int) Math.max((min_nx_gain + (ratio * (max_nx_gain - min_nx_gain)) ), monster.getLevel()), 12000); // formula for nx gain
             if (nx_gain) {
                 chr.getCashShop().gainCash(1, (int) (nxAmount * Variance)); // gain nx
-                chr.sendPacket(PacketCreator.earnTitleMessage("Teto grants " + (int) (nxAmount * Variance) + " NX")); // post a yellow message to show nx gained
+                chr.sendPacket(PacketCreator.earnTitleMessage("Immortal Teto grants " + (int) (nxAmount * Variance) + " NX")); // post a yellow message to show nx gained
             }
             killMonster(monster, chr, true, delay);
             int meso_normal = ((int) (Math.pow(monster.getLevel(), 1.2) + Math.pow(monster.getMaxHp(), 0.5) + monster.getPADamage())) * chr.getMesoRate();
