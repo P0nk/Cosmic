@@ -106,6 +106,7 @@ import client.command.commands.gm2.WarpAreaCommand;
 import client.command.commands.gm2.WarpCommand;
 import client.command.commands.gm2.WarpMapCommand;
 import client.command.commands.gm2.WhereaMiCommand;
+import client.command.commands.gm2.EavesdropCommand;
 
 import client.command.commands.gm3.BanCommand;
 import client.command.commands.gm3.ChatCommand;
@@ -455,6 +456,8 @@ public class CommandsExecutor {
         addCommand("gachalist", GachaListCommand.class);
 
         addCommand("mobskill", MobSkillCommand.class);
+
+        addCommand("eavesdrop", 2, EavesdropCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }

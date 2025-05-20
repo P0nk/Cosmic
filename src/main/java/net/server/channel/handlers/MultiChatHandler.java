@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ChatLogger;
 import tools.PacketCreator;
+import net.server.channel.Channel;
 
 public final class MultiChatHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(MultiChatHandler.class);
@@ -66,6 +67,15 @@ public final class MultiChatHandler extends AbstractPacketHandler {
         } else if (type == 2 && player.getGuildId() > 0) {
             Server.getInstance().guildChat(player.getGuildId(), player.getName(), player.getId(), chattext);
             ChatLogger.log(c, "Guild", chattext);
+            
+            // Send to eavesdropping GMs
+            for (Channel ch : Server.getInstance().getChannelsFromWorld(player.getWorld())) {
+                for (Character chr : ch.getPlayerStorage().getAllCharacters()) {
+                    if (chr.isGM() && chr.isEavesdroppingGuild(player.getGuildId())) {
+                        chr.sendPacket(PacketCreator.multiChat("[Eavesdrop] " + player.getName(), chattext, 2));
+                    }
+                }
+            }
         } else if (type == 3 && player.getGuild() != null) {
             int allianceId = player.getGuild().getAllianceId();
             if (allianceId > 0) {
