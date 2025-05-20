@@ -358,7 +358,7 @@ public class ItemInformationProvider {
             }
         } else if (ItemConstants.isBullet(itemId)) {
   //          ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
-            ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 100; // Merogie
+            ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 200; // Merogie
         }
 
         return ret;
