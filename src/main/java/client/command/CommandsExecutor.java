@@ -71,6 +71,7 @@ import client.command.commands.gm2.ApCommand;
 import client.command.commands.gm2.BombCommand;
 import client.command.commands.gm2.BuffCommand;
 import client.command.commands.gm2.BuffMapCommand;
+import client.command.commands.gm2.BuffWorldCommand;
 import client.command.commands.gm2.ClearDropsCommand;
 import client.command.commands.gm2.ClearSavedLocationsCommand;
 import client.command.commands.gm2.ClearSlotCommand;
@@ -425,6 +426,7 @@ public class CommandsExecutor {
         addCommand("ap", 2, ApCommand.class);
         addCommand("empowerme", 2, EmpowerMeCommand.class);
         addCommand("buffmap", 2, BuffMapCommand.class);
+        addCommand("buffworld", 2, BuffWorldCommand.class);
         addCommand("buff", 2, BuffCommand.class);
         addCommand("bomb", 2, BombCommand.class);
         addCommand("dc", 2, DcCommand.class);
