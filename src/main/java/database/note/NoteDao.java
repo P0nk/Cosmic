@@ -27,7 +27,7 @@ public class NoteDao {
             throw new DaoException("Failed to save note: %s".formatted(note.toString()), e);
         }
     }
-
+  
     public List<Note> findAllByTo(String to) {
         try (Handle handle = DatabaseConnection.getHandle()) {
             return handle.createQuery("""
@@ -40,6 +40,9 @@ public class NoteDao {
                     .list();
         } catch (JdbiException e) {
             throw new DaoException("Failed to find notes sent to: %s".formatted(to), e);
+        } catch (Exception e) {
+            System.out.println("I suspect here might be a problem causing DC when login but not sure."); // nasi
+            return List.of();
         }
     }
 

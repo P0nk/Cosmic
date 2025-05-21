@@ -189,6 +189,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.HashSet;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -2032,7 +2033,7 @@ public class Character extends AbstractCharacterObject {
                                 this.getMap().pickItemDrop(pickupPacket, mapitem);
                             } else if (ItemId.isNxCard(mapitem.getItemId())) {
                                 // Add NX to account, show effect and make item disappear
-                                int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250; // Tom: Multiplied NX Card by 10x.
+                                int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250; // Merogie : Multiplied NX Card by 10x.
                                 this.getCashShop().gainCash(1, nxGain);
 
                                 if (YamlConfig.config.server.USE_ANNOUNCE_NX_COUPON_LOOT) {
@@ -5320,12 +5321,29 @@ public class Character extends AbstractCharacterObject {
         return GameConstants.getJobMaxLevel(job);
     }
 
-//    public int getMaxLevel() {
+    //    public int getMaxLevel() {
 //        if (!YamlConfig.config.server.USE_ENFORCE_JOB_LEVEL_RANGE || isGmJob()||job == 0) {
 //            return getMaxClassLevel();
 //        }
 //
 //        return GameConstants.getJobMaxLevel(job);
+
+
+    public void startEavesdroppingGuild(int guildId) {
+        eavesdroppingGuilds.add(guildId);
+    }
+
+    public void stopEavesdroppingGuild(int guildId) {
+        eavesdroppingGuilds.remove(guildId);
+    }
+
+    public boolean isEavesdroppingGuild(int guildId) {
+        return eavesdroppingGuilds.contains(guildId);
+    }
+
+    public Set<Integer> getEavesdroppingGuilds() {
+        return eavesdroppingGuilds;
+    }
 //    }
 
     public int getMeso() {
@@ -11220,5 +11238,19 @@ public class Character extends AbstractCharacterObject {
         if (expTrackingTask != null) {
             expTracked += exp;
         }
+    }
+
+    private Set<Integer> eavesdroppingGuilds = new HashSet<>();
+
+    public void startEavesdropping(int guildId) {
+        eavesdroppingGuilds.add(guildId);
+    }
+
+    public void stopEavesdropping(int guildId) {
+        eavesdroppingGuilds.remove(guildId);
+    }
+
+    public boolean isEavesdropping(int guildId) {
+        return eavesdroppingGuilds.contains(guildId);
     }
 }
