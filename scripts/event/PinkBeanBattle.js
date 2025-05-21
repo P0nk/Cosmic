@@ -90,8 +90,8 @@ function setEventRewards(eim) {
 }
 
 function afterSetup(eim) {
-    eim.dropMessage(5, "The first wave will start within 15 seconds, prepare yourselves.");
-    eim.schedule("startWave", 15 * 1000);
+    eim.dropMessage(5, "The first wave will start, prepare yourselves.");
+    eim.schedule("startWave", 1 * 1000);
 }
 
 function setup(channel) {
@@ -271,8 +271,8 @@ function monsterKilled(mob, eim) {
                 stage++;
                 eim.setIntProperty("stage", stage);
 
-                eim.dropMessage(5, "The next wave will start within 15 seconds, prepare yourselves.");
-                eim.schedule("startWave", 15 * 1000);
+                eim.dropMessage(5, "The next wave will start, prepare yourselves.");
+                eim.schedule("startWave", 1 * 1000);
             }
         }
     }
