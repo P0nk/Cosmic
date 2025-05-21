@@ -1240,8 +1240,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 newDex = (short) (selectedItem.getDex() * carryOver);
                 newInt = (short) (selectedItem.getInt() * carryOver);
                 newLuk = (short) (selectedItem.getLuk() * carryOver);
-                newMatk = (short) (selectedItem.getMatk() * carryOver);
-                newWatk = (short) (selectedItem.getWatk() * carryOver);
+                newMatk = (short) (50 * (hands + 1));
+                newWatk = (short) (50 * (hands + 1));
             }
         } else { // armours and accessories
             double carryOver = 0.25;
