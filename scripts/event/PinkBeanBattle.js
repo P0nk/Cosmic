@@ -91,7 +91,8 @@ function setEventRewards(eim) {
 
 function afterSetup(eim) {
     eim.dropMessage(5, "The first wave will start, prepare yourselves.");
-    eim.schedule("startWave", 1 * 1000);
+    eim.removeMonsters(270050100);
+    startWave(eim)
 }
 
 function setup(channel) {
@@ -232,7 +233,6 @@ function noJrBossesLeft(map) {
 function spawnJrBoss(mobObj, gotKilled) {
     if (gotKilled) {
         spawnid = mobObj.getId() + 17;
-
     } else {
         mobObj.getMap().killMonster(mobObj.getId());
         spawnid = mobObj.getId() - 17;
@@ -272,18 +272,46 @@ function monsterKilled(mob, eim) {
                 eim.setIntProperty("stage", stage);
 
                 eim.dropMessage(5, "The next wave will start, prepare yourselves.");
-                eim.schedule("startWave", 1 * 1000);
+                startWave(eim)
             }
         }
     }
 }
 
 function startWave(eim) {
-    var mapObj = eim.getMapInstance(270050100);
-    var stage = eim.getProperty("stage");
+    const LifeFactory = Java.type('server.life.LifeFactory');
+    const Point = Java.type('java.awt.Point');
 
+    var mapObj = eim.getMapInstance(270050100);
+    if (!mapObj) {
+        eim.dropMessage(5, "Map not ready, retrying...");
+        eim.schedule("startWave", 2000);
+        return;
+    }
+
+    var stage = parseInt(eim.getProperty("stage"));
+    var spawnPositions = [
+        new Point(5, -42), // All Jr bosses from WZ use this same spot
+        new Point(5, -42), // All Jr bosses from WZ use this same spot
+        new Point(5, -42), // All Jr bosses from WZ use this same spot
+        new Point(5, -42), // All Jr bosses from WZ use this same spot
+        new Point(5, -42), // All Jr bosses from WZ use this same spot
+    ];
+
+    var spawnedMobs = [];
+
+    // Spawn base mobs at different positions for Jr bosses
     for (var i = 1; i <= stage; i++) {
-        spawnJrBoss(mapObj.getMonsterById(8820019 + (i % 5)), false);
+        var baseMobId = 8820019 + (i % 5);
+        var baseMob = LifeFactory.getMonster(baseMobId);
+        var spawnPos = spawnPositions[(i - 1) % spawnPositions.length];
+        mapObj.spawnMonsterOnGroundBelow(baseMob, spawnPos);
+        spawnedMobs.push(baseMob);
+    }
+
+    // Evolve base mobs into Jr bosses
+    for (var i = 0; i < spawnedMobs.length; i++) {
+        spawnJrBoss(spawnedMobs[i], false);
     }
 }
 
