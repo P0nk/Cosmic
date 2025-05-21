@@ -2281,7 +2281,7 @@ public class Monster extends AbstractLoadedLife {
     // for dps dummy
     private long dpsStartTime = 0;
     private long lastDamageTime = 0;
-    private int totalDpsDamage = 0;
+    private long totalDpsDamage = 0;
 
     public long getDpsStartTime() { return dpsStartTime; }
     public void setDpsStartTime(long time) { this.dpsStartTime = time; }
@@ -2289,9 +2289,9 @@ public class Monster extends AbstractLoadedLife {
     public long getLastDamageTime() { return lastDamageTime; }
     public void setLastDamageTime(long time) { this.lastDamageTime = time; }
 
-    public int getTotalDpsDamage() { return totalDpsDamage; }
-    public void setTotalDpsDamage(int dmg) { this.totalDpsDamage = dmg; }
-    public void addDpsDamage(int dmg) { this.totalDpsDamage += dmg; }
+    public long getTotalDpsDamage() { return totalDpsDamage; }
+    public void setTotalDpsDamage(long dmg) { this.totalDpsDamage = dmg; }
+    public void addDpsDamage(long dmg) { this.totalDpsDamage += dmg; }
 
     // import java.util.concurrent.ScheduledFuture;
 
