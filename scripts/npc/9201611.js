@@ -24,6 +24,7 @@ var salvage      = false;
 var betterRoll   = false;
 
 var newStats
+var bugSelection = false;
 
 function start() {
     status = 0;
@@ -40,10 +41,11 @@ function action(mode, type, selection) {
         case 2:
             return showEquipList(selection);
         case 3:
-        if (salvage) return salvageSelection(selection)
-        else return handleSelection(selection);
+            if (salvage) return salvageSelection(selection)
+            else if (bugSelection) return buggedSelection(selection)
+            else return handleSelection(selection);
         case 4:
-            return processConfirmation(salvage, newStats);
+            return processConfirmation(salvage, bugSelection, newStats);
         default:
             return cm.dispose();
     }
@@ -51,7 +53,10 @@ function action(mode, type, selection) {
 
 // === STEP 1: List choice of action ===
 function choice() {
-    var selStr = "\r\n#b#L0#Upgrade my item! (Original)#l\r\n#b#L1#Upgrade my item! (Expensive)#l\r\n#b#L2#Salvage my item!#l";
+    var selStr = "\r\n#b#L0#Upgrade my item! (Original)#l" +
+                 "\r\n#b#L1#Upgrade my item! (Expensive)#l" +
+                 "\r\n#b#L2#Salvage my item!#l" +
+                 "\r\n#b#L3#Turn in a bugged item!#l";
     cm.sendSimple(selStr);
 }
 
@@ -62,11 +67,15 @@ function showEquipList(selection) {
         betterRoll = false;
     } else if (selection == 1) {
         betterRoll = true;
-        previewFee = 60000000 // 60m to preview
+        previewFee = 100000000 // 60m to preview
         salvage = false;
-    } else if (selection == 1) {
+    } else if (selection == 2) {
         betterRoll = false;
         salvage = true;
+    } else if (selection == 3) {
+        betterRoll = false;
+        salvage = false;
+        bugSelection = true;
     }
     var inv      = cm.getInventory(1);
     var limit    = inv.getSlotLimit();
@@ -242,11 +251,34 @@ function salvageSelection(slot) {
     cm.sendYesNo(msg);
 }
 
+// === STEP 3.3: Player submitting a bugged item ===
+function buggedSelection(slot) {
+    selectedItem = cm.getInventory(1).getItem(slot);
+    msg = "Thanks for submitting your bugged items. I will return you an item that is at the same rebirth and same upgrade level, with an average roll of 1.5x." +
+          "This Item will be removed:" +
+          "\r\n#L" + slot + "#" + // show slot number
+          "#v" + selectedItem.getItemId() + "# " + // show item icon
+          Packages.server.ItemInformationProvider.getInstance().getName(selectedItem.getItemId()); + // Item name
+          " (Lv " + selectedItem.getItemLevel() + ")" + // Item level
+          "#l\r\nAre you sure?"
+    cm.sendSimple(msg)
+}
+
 // === STEP 4: Player confirms upgrade or rebirth ===
-function processConfirmation(salvage, newStats) {
+function processConfirmation(salvage, bugSelection, newStats) {
     if (salvage) return salvageItem()
     else if (isRebirth) return doRebirth();
+    else if (bugSelection) return doBugHandler();
     return doUpgrade(newStats);
+}
+
+function doBugHandler() {
+    var lvl        = selectedItem.getItemLevel();
+    var hands      = selectedItem.getHands();
+    cm.bugItemHandler(selectedItem.getPosition())
+    cm.sendOk('Check your new item.')
+    return cm.dispose()
+
 }
 
 function salvageItem() {
@@ -275,6 +307,7 @@ function salvageItem() {
         cm.gainItem(parseInt(id), amt);
     });
     cm.gainItem(rockOfTime, hands);
+    cm.gainCash(350000 * hands * 0.6);
     cm.removeItemNPC(selectedItem.getPosition());
     return cm.dispose();
 }

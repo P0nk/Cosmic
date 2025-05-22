@@ -860,6 +860,14 @@ public class EventInstanceManager {
         }
     }
 
+    public void removeMonsters(int mapid) {
+        var map = getMapFactory().getMap(mapid);
+        var monsters = map.getMonsters();
+        for (int i = 0; i < monsters.size(); i++) {
+            monsters.remove(i);
+        }
+    }
+
     public boolean isLeader(Character chr) {
         return (chr.getParty().getLeaderId() == chr.getId());
     }
