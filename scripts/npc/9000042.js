@@ -8,6 +8,7 @@
 var selectedItem;
 var newStats = {};
 var itemInfo = Packages.server.ItemInformationProvider.getInstance(); // Load item names
+var mesosgain = 0;
 
 function start() {
     status = 0;
@@ -30,7 +31,7 @@ function action(mode, type, selection) {
         // list equip in inventory
         for (var i = 0; i <= inventory.getSlotLimit(); i++) {
             var item = inventory.getItem(i);
-            if (item !== null) {
+            if (item !== null && (item.getItemLevel()==1 && item.getHands()==0)) {
                 // items.push(item);
                 // itemList += "#L" + i + "#" + item + "#l\r\n";
                 // var itemName = itemInfo.getName(item.getItemId());
@@ -56,13 +57,22 @@ function action(mode, type, selection) {
             cm.dispose();
             return;
         } else {
-            console.log(selectedItem.getPosition())
-            mesosgain = cm.getPlayer().sellAllItemsFromSlot(1, selectedItem.getPosition()); // 1 - Equip Inventory
+            var inventory = cm.getInventory(1); // Get equip inventory
+            var startPosition = selectedItem.getPosition(); // get selected items position as starting position
+            for (var i = startPosition; i <= inventory.getSlotLimit(); i++) { // loop through the inventory from starting position
+//                console.log('Test:' + i)
+                var item = inventory.getItem(i);
+                if (item !== null && (item.getItemLevel()==1 && item.getHands()==0)) { // checks if upgraded or rebirthed
+//                    console.log('Item can be sold! Slot:' + i)
+                    mesosgain += cm.SellItemSlot(i); // 1 - Equip Inventory
+//                    console.log('Sold Item at slot:' + i)
+                }
+            }
             cm.sendOk("Transaction complete! You received #r" + mesosgain + " mesos#k from this action.");
+//            cm.gainMeso(mesosgain);
 //            cm.getPlayer().dropMessage(6, "Transaction complete! You received " + mesosgain.toLocaleString("en-US") + " from this action.");
             cm.dispose();
             return;
         }
-
     }
 }
