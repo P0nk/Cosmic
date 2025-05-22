@@ -430,15 +430,19 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     public void doGachapon() {
+        doGachapon(false);
+    };
+
+    public void doGachapon(boolean isSilent) {
         GachaponItem item = Gachapon.getInstance().process(npc);
         Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true); // For normal potions, make it give 100.
 
         sendNext("You have obtained a #b#t" + item.getId() + "##k.");
 
         int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
-                MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.NEW_LEAF_CITY, MapId.NAUTILUS_HARBOR};
-        final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS && getNpc() != NpcId.GACHAPON_NLC) ?
-                (getNpc() - NpcId.GACHAPON_HENESYS) : getNpc() == NpcId.GACHAPON_NLC ? 8 : 9];
+                MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.NEW_LEAF_CITY, MapId.EL_NATH, MapId.NAUTILUS_HARBOR};
+        final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ?
+                (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
         String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
 
         Gachapon.log(getPlayer(), item.getId(), map);
