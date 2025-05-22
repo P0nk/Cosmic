@@ -17,7 +17,7 @@ public class SetItemStatCommand extends Command {
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
         if (params.length < 1) {
-            player.yellowMessage("Syntax: !seteqstat <str> <dex> <int> <luk> <watk> <matk> ");
+            player.yellowMessage("Syntax: !seteqstat <str> <dex> <int> <luk> <watk> <matk> <hands>");
             return;
         }
 
@@ -27,6 +27,7 @@ public class SetItemStatCommand extends Command {
         short newLuk = (short) Math.max(0, Integer.parseInt(params[3]));
         short newWatk = (short) Math.max(0, Integer.parseInt(params[4]));
         short newMatk = (short) Math.max(0, Integer.parseInt(params[5]));
+        short newHands = (short) Math.max(0, Integer.parseInt(params[6]));
         Inventory equip = player.getInventory(InventoryType.EQUIP);
 
         for (byte i = 1; i <= equip.getSlotLimit(); i++) {
@@ -43,6 +44,7 @@ public class SetItemStatCommand extends Command {
                 eq.setInt(newInt);
                 eq.setStr(newStr);
                 eq.setLuk(newLuk);
+                eq.setHands(newHands);
 
                 short flag = eq.getFlag();
                 flag |= ItemConstants.UNTRADEABLE;

@@ -329,9 +329,14 @@ public class CashShop {
 
     public void gainCash(int type, int cash) {
         switch (type) {
-            case NX_CREDIT -> nxCredit += cash;
-            case MAPLE_POINT -> maplePoint += cash;
-            case NX_PREPAID -> nxPrepaid += cash;
+            case NX_CREDIT ->
+                nxCredit = Math.min(nxCredit + cash, Integer.MAX_VALUE);
+
+            case MAPLE_POINT ->
+                maplePoint = Math.min(maplePoint + cash, Integer.MAX_VALUE);
+
+            case NX_PREPAID ->
+                nxPrepaid = Math.min(nxPrepaid + cash, Integer.MAX_VALUE);
         }
     }
 
