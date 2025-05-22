@@ -1221,7 +1221,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         short newLuk = 0;
         short newWatk = 0;
         short newMatk = 0;
-        System.out.println(newItemType);
         if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
             if (hands < 3) {
                 // checks if is mage weapon or attack weapon
@@ -1268,6 +1267,43 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     }
 
+    public void bugItemHandler(short ItemSlot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
+
+        // get a clean item from the selected item ID
+        int newItemId = eqpInv.getItem(ItemSlot).getItemId();
+        int newItemType = newItemId/10000;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+
+        removeItemNPC(ItemSlot); //remove the item
+
+        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        short newItemSlot = eqpInv.getNextFreeSlot();
+        this.gainItem(newItemId, (short) 1, true);
+
+        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
+        int itemReqLevel = ii.getEquipLevelReq(newItemId);
+
+        short newWatk = (short) ((newItem.getWatk() + 50 * selectedItem.getHands()) * (Math.pow(1.5, selectedItem.getItemLevel()-1)));
+        short newMatk = (short) ((newItem.getMatk() + 50 * selectedItem.getHands()) * (Math.pow(1.5, selectedItem.getItemLevel()-1)));
+
+        short newStr = (short) (selectedItem.getStr() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
+        short newDex = (short) (selectedItem.getDex() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
+        short newInt = (short) (selectedItem.getInt() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
+        short newLuk = (short) (selectedItem.getLuk() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
+
+        newItem.setStr(newStr);
+        newItem.setDex(newDex);
+        newItem.setInt(newInt);
+        newItem.setLuk(newLuk);
+        newItem.setWatk(newWatk);
+        newItem.setMatk(newMatk);
+        newItem.setHands(selectedItem.getHands());
+        newItem.setItemLevel(selectedItem.getItemLevel());
+        this.getPlayer().forceUpdateItem(newItem);
+    }
+
     public static String getWeaponType(int itemId) {
         int prefix = itemId / 10000;
         switch (prefix) {
@@ -1304,5 +1340,15 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
         int ItemId = eqpInv.getItem(ItemSlot).getItemId();
         return ItemInformationProvider.getInstance().getName(ItemId);
+    }
+
+    // For sell command, to sell 1 item at a time
+    public int SellItemSlot (short slot) {
+//        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        var mesosgain = 0;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        int mesos = getPlayer().standaloneSell(getClient(), ii, InventoryType.EQUIP, slot, (short) 1);
+        System.out.println("Sold Item at: " + slot + " for " + mesos);
+        return mesos;
     }
 }

@@ -9297,7 +9297,7 @@ public class Character extends AbstractCharacterObject {
         return (mesoGain);
     }
 
-    private int standaloneSell(Client c, ItemInformationProvider ii, InventoryType type, short slot, short quantity) {
+    public int standaloneSell(Client c, ItemInformationProvider ii, InventoryType type, short slot, short quantity) {
         if (quantity == 0xFFFF || quantity == 0) {
             quantity = 1;
         }
