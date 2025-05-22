@@ -338,6 +338,7 @@ public class CashShop {
             case NX_PREPAID ->
                 nxPrepaid = Math.min(nxPrepaid + cash, Integer.MAX_VALUE);
         }
+
     }
 
     public void gainCash(int type, CashItem buyItem, int world) {
