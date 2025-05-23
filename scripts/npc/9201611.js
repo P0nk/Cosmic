@@ -99,12 +99,23 @@ function showEquipList(selection) {
         cm.sendOk("You have no equippable items to select.");
         return cm.dispose();
     }
-
-    cm.sendSimple(
-        "Select the item you want to upgrade. "
-      + "It costs " + format(previewFee) + " to preview each upgrade.\r\n"
-      + lines.join("\r\n")
-    );
+    if (salvage) {
+        cm.sendSimple(
+                "Select the item you want to salvage:\r\n"
+              + lines.join("\r\n")
+            );
+    } else if (bugSelection) {
+        cm.sendSimple(
+                "Select the item that is bugged:\r\n"
+              + lines.join("\r\n")
+            );
+    } else {
+        cm.sendSimple(
+            "Select the item you want to upgrade. "
+          + "It costs " + format(previewFee) + " to preview each upgrade.\r\n"
+          + lines.join("\r\n")
+        );
+    }
 }
 
 // === STEP 3.1: Player picks an item to Upgrade ===
