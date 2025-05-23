@@ -187,6 +187,7 @@ public class MapId {
     // Mini dungeon
     public static final int ANT_TUNNEL_2 = 105050100;
     public static final int CAVE_OF_MUSHROOMS_BASE = 105050101;
+    public static final int ZAKUM_ALTAR = 280030100;
     public static final int SLEEPY_DUNGEON_4 = 105040304;
     public static final int GOLEMS_CASTLE_RUINS_BASE = 105040320;
     public static final int SAHEL_2 = 260020600;
