@@ -83,6 +83,7 @@ public class EventInstanceManager {
     private long eventTime = 0;
     private Expedition expedition = null;
     private final List<Integer> mapIds = new LinkedList<>();
+    private int clearCount = 0;
 
     private final Lock readLock;
     private final Lock writeLock;
@@ -1462,5 +1463,13 @@ public class EventInstanceManager {
         }
 
         return true;
+    }
+
+    public void increaseClearCount(){
+        this.clearCount++;
+    }
+
+    public int getClearCount(){
+        return this.clearCount;
     }
 }
