@@ -857,7 +857,15 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 }
 
                 if (ret.skill == Marksman.SNIPE) {
-                    damage = 350000 + Randomizer.nextInt(50000);
+                    float damage_mult = (float) Math.max(Math.random(),0.25) * 2;
+                    damage = (int) ((chr.getLevel() * 100000 + chr.getTotalWatk() * 1000 + chr.getTotalDex() * 500 + chr.getTotalStr() * 100) * (damage_mult));
+//                    System.out.println("character level damage: " + chr.getLevel() * 100000);
+//                    System.out.println("character watk damage: " +chr.getTotalWatk() * 1000 );
+//                    System.out.println("character totaldex damage: " +chr.getTotalDex() * 500);
+//                    System.out.println("character totalstr damage: " +chr.getTotalStr() * 100);
+//                    System.out.println("damagemult : " + damage_mult * 100);
+
+                    // damage = 1000000000;
                     hitDmgMax = 5000;
                 } else if (ret.skill == Beginner.BAMBOO_RAIN || ret.skill == Noblesse.BAMBOO_RAIN || ret.skill == Evan.BAMBOO_THRUST || ret.skill == Legend.BAMBOO_THRUST) {
                     hitDmgMax = 82569000; // 30% of Max HP of strongest Dojo boss
