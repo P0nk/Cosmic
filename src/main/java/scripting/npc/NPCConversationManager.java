@@ -1352,7 +1352,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         var mesosgain = 0;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         int mesos = getPlayer().standaloneSell(getClient(), ii, InventoryType.EQUIP, slot, (short) 1);
-        System.out.println("Sold Item at: " + slot + " for " + mesos);
+//        System.out.println("Sold Item at: " + slot + " for " + mesos);
         return mesos;
     }
 }

@@ -324,7 +324,6 @@ public class CashShop {
             case NX_PREPAID -> nxPrepaid;
             default -> 0;
         };
-
     }
 
     public void gainCash(int type, int cash) {
