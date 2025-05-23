@@ -231,3 +231,5 @@ function allMonstersDead(eim) {}
 function cancelSchedule() {}
 
 function dispose(eim) {}
+
+//i fixed fire demon
