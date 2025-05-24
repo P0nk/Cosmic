@@ -59,11 +59,14 @@ function action(mode, type, selection) {
         map = player.getMap();
         players = map.countPlayers();
         channel = player.getClient().getChannelServer()
+        mmd = channel.getMiniDungeon(map.getId());
         if(players <= 1 || player.isPartyLeader()) {
+            mmd.close();
             channel.removeMiniDungeon(mapId);
             map.clearMapObjects();
             map.warpEveryone(211042300, 0);
         } else {
+            mmd.unregisterPlayer(player);
             cm.warp(211042300, 0);
         }
         cm.dispose();
