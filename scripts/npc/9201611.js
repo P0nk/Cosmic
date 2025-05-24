@@ -393,7 +393,7 @@ function doRebirth() {
 function calcNewStats(item, itemId) {
     // Main stats 40–60% increase, defs 10–20%
     if (parseInt(itemId/10000) < 130) {
-        var mm = () => 1.3 + Math.random() * 0.125;
+        var mm = () => 1.4 + Math.random() * 0.2;
     } else {
         var mm = () => 1.4 + Math.random() * 0.2;
     }
@@ -414,7 +414,7 @@ function calcNewStats(item, itemId) {
 function calcBetterNewStats(item, itemId) {
     // Main stats 55–60% increase, defs 10–20%
     if (parseInt(itemId/10000) < 130) {
-        var mm = 1.3 + Math.random() * 0.125;
+        var mm = 1.4 + Math.random() * 0.2;
     } else {
         var mm = 1.4 + Math.random() * 0.2;
     }

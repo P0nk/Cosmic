@@ -1249,14 +1249,14 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 addWatk = (short) (selectedItem.getWatk() * carryOver);
             }
         } else { // armours and accessories
-            double carryOver = 0.15;
+            double carryOver = 0.25;
             //Increment -- 15% of total stats
             addStr = (short) (selectedItem.getStr() * carryOver);
             addDex = (short) (selectedItem.getDex() * carryOver);
             addInt = (short) (selectedItem.getInt() * carryOver);
             addLuk = (short) (selectedItem.getLuk() * carryOver);
-            addWatk = (short) Math.min(300 - newItem.getWatk(), (selectedItem.getWatk() * carryOver)); // hard cap the gain such that the new Watk does not exceed 300
-            addMatk = (short) Math.min(300 - newItem.getMatk(), (selectedItem.getMatk() * carryOver)); // hard cap the gain such that the new Matk does not exceed 300
+            addWatk = (short) (selectedItem.getWatk() * carryOver); // hard cap the gain such that the new Watk does not exceed 300
+            addMatk = (short) (selectedItem.getMatk() * carryOver); // hard cap the gain such that the new Matk does not exceed 300
         }
 
         //change the stats and force update the item
