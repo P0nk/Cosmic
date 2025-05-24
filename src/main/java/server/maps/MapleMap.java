@@ -4054,7 +4054,11 @@ public class MapleMap {
         return true;
     }
 
-    public void spawnHorntailOnGroundBelow(final Point targetPoint) {   // ayy lmao
+    public void spawnHorntailOnGroundBelow(final Point targetPoint) {
+        this.spawnHorntailOnGroundBelow(targetPoint, 0);
+    }
+
+    public void spawnHorntailOnGroundBelow(final Point targetPoint, double addedHPModifier) {   // ayy lmao
         Monster htIntro = LifeFactory.getMonster(MobId.SUMMON_HORNTAIL);
         spawnMonsterOnGroundBelow(htIntro, targetPoint);    // htintro spawn animation converting into horntail detected thanks to Arnah
 
@@ -4074,11 +4078,19 @@ public class MapleMap {
                 ht.addHp(-trueHeal);
             }
         });
+
         spawnMonsterOnGroundBelow(ht, targetPoint);
 
         for (int mobId = MobId.HORNTAIL_HEAD_A; mobId <= MobId.HORNTAIL_TAIL; mobId++) {
             Monster m = LifeFactory.getMonster(mobId);
             m.setParentMobOid(htIntro.getObjectId());
+
+            if(addedHPModifier > 0) {
+                var hp = m.getHp();
+                var addedHP = (long)(hp * addedHPModifier);
+                m.addHp(addedHP);
+                System.out.println(m.getHp());
+            }
 
             m.addListener(new MonsterListener() {
                 @Override
