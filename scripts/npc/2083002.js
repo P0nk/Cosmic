@@ -36,20 +36,12 @@ function action(mode, type, selection) {
         return;
     }
 
-    var mapId = cm.getPlayer().getMapId();
-
-    // Handle non-Horntail maps (just leave)
-    if (mapId !== 240060200) {
-        // Warp out to appropriate map (adjust if needed)
-        cm.warp(240050400);
-        cm.dispose();
-        return;
-    }
-
-    if (selection === 0) {
-        // Leave the map immediately, no party checks
-        cm.warp(240050400);
-        cm.dispose();
+    if (selection === 0 || selection === -1) {
+        if (cm.getMapId() > 240050400) {
+            cm.warp(240050600);
+        } else {
+            cm.warp(240040700, "out00");
+        }
     } else if (selection === 1) {
         horntailAlive = cm.getPlayer().getMap().getMonsterById(8810018) !== null;
         if (horntailAlive) {
