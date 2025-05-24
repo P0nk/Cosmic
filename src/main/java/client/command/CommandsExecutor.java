@@ -143,6 +143,7 @@ import client.command.commands.gm3.MuteMapCommand;
 import client.command.commands.gm3.NightCommand;
 import client.command.commands.gm3.NoticeCommand;
 import client.command.commands.gm3.NpcCommand;
+import client.command.commands.gm3.OnlineThreeCommand;
 import client.command.commands.gm3.OnlineTwoCommand;
 import client.command.commands.gm3.OpenPortalCommand;
 import client.command.commands.gm3.PeCommand;
@@ -508,6 +509,7 @@ public class CommandsExecutor {
         addCommand("startmapevent", 3, StartMapEventCommand.class);
         addCommand("stopmapevent", 3, StopMapEventCommand.class);
         addCommand("online2", 3, OnlineTwoCommand.class);
+        addCommand("online3", 3, OnlineThreeCommand.class);
         addCommand("ban", 3, BanCommand.class);
         addCommand("unban", 3, UnBanCommand.class);
         addCommand("healmap", 3, HealMapCommand.class);
