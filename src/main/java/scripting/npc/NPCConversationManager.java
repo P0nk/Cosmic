@@ -1219,51 +1219,53 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
         int itemReqLevel = ii.getEquipLevelReq(newItemId);
 
-        short newStr = 0;
-        short newDex = 0;
-        short newInt = 0;
-        short newLuk = 0;
-        short newWatk = 0;
-        short newMatk = 0;
-        if (itemReqLevel >= 150 && newItemType >= 130) { // check if item required level is 150 and is a weapon
+        short addStr = 0;
+        short addDex = 0;
+        short addInt = 0;
+        short addLuk = 0;
+        short addWatk = 0;
+        short addMatk = 0;
+        if (newItemType >= 130) { // check if item required level is 150 and is a weapon
             if (hands < 3) {
+                itemReqLevel = Math.min(itemReqLevel, 150); // locks the itemReqLevel to max 150 for watk/matk calculation
                 // checks if is mage weapon or attack weapon
                 if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
-                    newMatk = (short) ((550 - newItem.getMatk()) / 3 * (hands + 1));
+                    addMatk = (short) Math.min(550, ((((itemReqLevel + 100) * 3) - newItem.getMatk()) / 3 * (hands + 1)));
                 } else {
-                    newWatk = (short) ((450 - newItem.getWatk()) / 3 * (hands + 1));
+                    addWatk = (short) Math.min(450, (((itemReqLevel * 3) - newItem.getWatk()) / 3 * (hands + 1)));
                 }
-                newStr = (short) (newItem.getStr() + 60 * (hands + 1));
-                newDex = (short) (newItem.getDex() + 60 * (hands + 1));
-                newInt = (short) (newItem.getInt() + 60 * (hands + 1));
-                newLuk = (short) (newItem.getLuk() + 60 * (hands + 1));
-            } else {
-                double carryOver = 0.25;
-                newStr = (short) (selectedItem.getStr() * carryOver);
-                newDex = (short) (selectedItem.getDex() * carryOver);
-                newInt = (short) (selectedItem.getInt() * carryOver);
-                newLuk = (short) (selectedItem.getLuk() * carryOver);
-                newMatk = (short) (50 * (hands + 1));
-                newWatk = (short) (50 * (hands + 1));
+                addStr = (short) (newItem.getStr() + itemReqLevel/3 * (hands + 1));
+                addDex = (short) (newItem.getDex() + itemReqLevel/3 * (hands + 1));
+                addInt = (short) (newItem.getInt() + itemReqLevel/3 * (hands + 1));
+                addLuk = (short) (newItem.getLuk() + itemReqLevel/3 * (hands + 1));
+            } else { // if rebirth is greater than 3 (Unused/for future)
+                System.out.println("Rebirth 4 and above check [in NPCConversationManager/rebirthItem");
+                double carryOver = 0.15;
+                addStr = (short) (selectedItem.getStr() * carryOver);
+                addDex = (short) (selectedItem.getDex() * carryOver);
+                addInt = (short) (selectedItem.getInt() * carryOver);
+                addLuk = (short) (selectedItem.getLuk() * carryOver);
+                addMatk = (short) (selectedItem.getMatk() * carryOver);
+                addWatk = (short) (selectedItem.getWatk() * carryOver);
             }
         } else { // armours and accessories
-            double carryOver = 0.25;
-            //Increment -- 20% of total stats
-            newStr = (short) (selectedItem.getStr() * carryOver);
-            newDex = (short) (selectedItem.getDex() * carryOver);
-            newInt = (short) (selectedItem.getInt() * carryOver);
-            newLuk = (short) (selectedItem.getLuk() * carryOver);
-            newWatk = (short) (selectedItem.getWatk() * carryOver);
-            newMatk = (short) (selectedItem.getMatk() * carryOver);
+            double carryOver = 0.15;
+            //Increment -- 15% of total stats
+            addStr = (short) (selectedItem.getStr() * carryOver);
+            addDex = (short) (selectedItem.getDex() * carryOver);
+            addInt = (short) (selectedItem.getInt() * carryOver);
+            addLuk = (short) (selectedItem.getLuk() * carryOver);
+            addWatk = (short) Math.min(300 - newItem.getWatk(), (selectedItem.getWatk() * carryOver)); // hard cap the gain such that the new Watk does not exceed 300
+            addMatk = (short) Math.min(300 - newItem.getMatk(), (selectedItem.getMatk() * carryOver)); // hard cap the gain such that the new Matk does not exceed 300
         }
 
         //change the stats and force update the item
-        newItem.setStr(newStr);
-        newItem.setDex(newDex);
-        newItem.setInt(newInt);
-        newItem.setLuk(newLuk);
-        newItem.setWatk((short) (newItem.getWatk() + newWatk));
-        newItem.setMatk((short) (newItem.getMatk() + newMatk));
+        newItem.setStr((newItem.getStr() != 0) ? (short) (newItem.getStr() + addStr) : 0);
+        newItem.setDex((newItem.getDex() != 0) ? (short) (newItem.getDex() + addDex) : 0);
+        newItem.setInt((newItem.getInt() != 0) ? (short) (newItem.getInt() + addInt) : 0);
+        newItem.setLuk((newItem.getLuk() != 0) ? (short) (newItem.getLuk() + addLuk) : 0);
+        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + addWatk: 0));
+        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + addMatk : 0));
         newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 60 * (hands + 1)) : 0));
         newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 60 * (hands + 1)) : 0));
         newItem.setHands((short) (hands + 1));
@@ -1278,6 +1280,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(ItemSlot).getItemId();
         int newItemType = newItemId/10000;
+        int hands = selectedItem.getHands();
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         removeItemNPC(ItemSlot); //remove the item
@@ -1289,20 +1292,38 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
         int itemReqLevel = ii.getEquipLevelReq(newItemId);
 
-        short newWatk = (short) ((newItem.getWatk() + 50 * selectedItem.getHands()) * (Math.pow(1.5, selectedItem.getItemLevel()-1)));
-        short newMatk = (short) ((newItem.getMatk() + 50 * selectedItem.getHands()) * (Math.pow(1.5, selectedItem.getItemLevel()-1)));
+        short newStr = 0;
+        short newDex = 0;
+        short newInt = 0;
+        short newLuk = 0;
+        short addWatk = 0;
+        short addMatk = 0;
 
-        short newStr = (short) (selectedItem.getStr() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
-        short newDex = (short) (selectedItem.getDex() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
-        short newInt = (short) (selectedItem.getInt() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
-        short newLuk = (short) (selectedItem.getLuk() * Math.pow(1.5, selectedItem.getItemLevel()-1) * Math.pow(0.25, selectedItem.getHands()));
+        if (newItemType >= 130) {
+            newStr = (short) (newItem.getStr() + 60 * hands);
+            newDex = (short) (newItem.getDex() + 60 * hands);
+            newInt = (short) (newItem.getInt() + 60 * hands);
+            newLuk = (short) (newItem.getLuk() + 60 * hands);
+            addWatk = (short) (Math.min(550, (((itemReqLevel * 3)) - newItem.getWatk()) / 3 * (hands)));
+            addMatk = (short) (Math.min(550, ((((itemReqLevel + 100) * 3) - newItem.getMatk()) / 3 * (hands))));
+        } else {
+            newStr = (short) (selectedItem.getStr() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
+            newDex = (short) (selectedItem.getDex() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
+            newInt = (short) (selectedItem.getInt() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
+            newLuk = (short) (selectedItem.getLuk() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
+            addWatk = (short) Math.min(2000 - newItem.getWatk(), (selectedItem.getWatk() * Math.pow(0.15, selectedItem.getHands()))); // hard cap the gain such that the new Watk does not exceed 2000
+            addMatk = (short) Math.min(2000 - newItem.getMatk(), (selectedItem.getMatk() * Math.pow(0.15, selectedItem.getHands()))); // hard cap the gain such that the new Matk does not exceed 2000
+        }
+
+        addWatk = (short) Math.min(addWatk, 2000);
+        addMatk = (short) Math.min(addMatk, 2000);
 
         newItem.setStr(newStr);
         newItem.setDex(newDex);
         newItem.setInt(newInt);
         newItem.setLuk(newLuk);
-        newItem.setWatk(newWatk);
-        newItem.setMatk(newMatk);
+        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + addWatk : 0));
+        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + addMatk : 0));
         newItem.setHands(selectedItem.getHands());
         newItem.setItemLevel(selectedItem.getItemLevel());
         this.getPlayer().forceUpdateItem(newItem);
@@ -1354,5 +1375,9 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         int mesos = getPlayer().standaloneSell(getClient(), ii, InventoryType.EQUIP, slot, (short) 1);
 //        System.out.println("Sold Item at: " + slot + " for " + mesos);
         return mesos;
+    }
+
+    public void openShop(Client c, String[] params) {
+        ShopFactory.getInstance().getShop(1343).sendShop(c);
     }
 }

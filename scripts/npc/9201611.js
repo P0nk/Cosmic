@@ -23,8 +23,9 @@ var isRebirth    = false;
 var salvage      = false;
 var betterRoll   = false;
 
-var newStats
+var newStats;
 var bugSelection = false;
+var ii;
 
 function start() {
     status = 0;
@@ -53,10 +54,10 @@ function action(mode, type, selection) {
 
 // === STEP 1: List choice of action ===
 function choice() {
-    var selStr = "\r\n#b#L0#Upgrade my item! (Original)#l" +
-                 "\r\n#b#L1#Upgrade my item! (Expensive)#l" +
-                 "\r\n#b#L2#Salvage my item!#l" +
-                 "\r\n#b#L3#Turn in a bugged item!#l";
+    var selStr = "\r\n#b#L0#Regular upgrades#l" +
+                 "\r\n#b#L1#Premium upgrades#l" +
+                 "\r\n#b#L2#Salvage my item!#l";
+//                 "\r\n#b#L3#Turn in a bugged item!#l";
     cm.sendSimple(selStr);
 }
 
@@ -67,7 +68,6 @@ function showEquipList(selection) {
         betterRoll = false;
     } else if (selection == 1) {
         betterRoll = true;
-        previewFee = 100000000 // 60m to preview
         salvage = false;
     } else if (selection == 2) {
         betterRoll = false;
@@ -112,7 +112,7 @@ function showEquipList(selection) {
     } else {
         cm.sendSimple(
             "Select the item you want to upgrade. "
-          + "It costs " + format(previewFee) + " to preview each upgrade.\r\n"
+          + "It costs Item required level / 2 to preview each upgrade.\r\n"
           + lines.join("\r\n")
         );
     }
@@ -122,6 +122,7 @@ function showEquipList(selection) {
 function handleSelection(slot) {
     // All the conditional Checks
     selectedItem = cm.getInventory(1).getItem(slot);
+    ii = Packages.server.ItemInformationProvider.getInstance().getEquipLevelReq(selectedItem.getItemId())
     if (cm.getItemName(slot).includes("Reverse") ||
         cm.getItemName(slot).includes("Timeless")) {
             cm.sendOk("You cannot upgrade or salvage any Reverse or Timeless equips!");
@@ -132,12 +133,12 @@ function handleSelection(slot) {
         return cm.dispose();
     }
     if (betterRoll) {
-        newStats = calcBetterNewStats(selectedItem);
+        newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId());
     } else {
-        newStats = calcNewStats(selectedItem);
+        newStats = calcNewStats(selectedItem, selectedItem.getItemId());
     }
 
-
+    previewFee = (betterRoll ? ii/2 * 1000000 : ii/2 * 100000) // cost of better rol is 10x more
     var lvl   = selectedItem.getItemLevel();
     var hands = selectedItem.getHands();
 
@@ -159,10 +160,15 @@ function handleSelection(slot) {
         }
 
         if (cm.getMeso() < previewFee + cfg.fee) {
-            cm.sendOk("You need at least "
-                + format(previewFee + cfg.fee)
-                + " mesos to preview and perform this upgrade.");
-            return cm.dispose();
+            if (cm.haveItem(4001253, 1)) {
+                cm.gainItem(4001253, -1)
+                cm.gainMeso(1000000000)
+            } else {
+                cm.sendOk("You need at least "
+                    + format(previewFee + cfg.fee)
+                    + " mesos to preview and perform this upgrade.");
+                return cm.dispose();
+            }
         }
 
         // Deduct preview fee
@@ -384,9 +390,13 @@ function doRebirth() {
 }
 
 // === Helpers ===
-function calcNewStats(item) {
+function calcNewStats(item, itemId) {
     // Main stats 40–60% increase, defs 10–20%
-    var mm = () => 1.4 + Math.random() * 0.2;
+    if (parseInt(itemId/10000) < 130) {
+        var mm = () => 1.3 + Math.random() * 0.125;
+    } else {
+        var mm = () => 1.4 + Math.random() * 0.2;
+    }
     var dm = () => 1.1 + Math.random() * 0.1;
     return {
         str:  Math.floor(item.getStr()  * mm()),
@@ -401,17 +411,22 @@ function calcNewStats(item) {
     };
 }
 
-function calcBetterNewStats(item) {
+function calcBetterNewStats(item, itemId) {
     // Main stats 55–60% increase, defs 10–20%
-    var mm = () => 1.55 + Math.random() * 0.05;
+    if (parseInt(itemId/10000) < 130) {
+        var mm = 1.3 + Math.random() * 0.125;
+    } else {
+        var mm = 1.4 + Math.random() * 0.2;
+    }
+//    var mm = 1.4 + Math.random() * 0.2;
     var dm = () => 1.1 + Math.random() * 0.1;
     return {
-        str:  Math.floor(item.getStr()  * mm()),
-        dex:  Math.floor(item.getDex()  * mm()),
-        int:  Math.floor(item.getInt()  * mm()),
-        luk:  Math.floor(item.getLuk()  * mm()),
-        watk: Math.floor(item.getWatk() * mm()),
-        matk: Math.floor(item.getMatk() * mm()),
+        str:  Math.floor(item.getStr()  * mm),
+        dex:  Math.floor(item.getDex()  * mm),
+        int:  Math.floor(item.getInt()  * mm),
+        luk:  Math.floor(item.getLuk()  * mm),
+        watk: Math.floor(item.getWatk() * mm),
+        matk: Math.floor(item.getMatk() * mm),
         wdef: Math.floor(item.getWdef() * dm()),
         mdef: Math.floor(item.getMdef() * dm()),
         lvl:  item.getItemLevel() + 1
