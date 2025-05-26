@@ -1322,8 +1322,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setDex(newDex);
         newItem.setInt(newInt);
         newItem.setLuk(newLuk);
-        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + addWatk : 0));
-        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + addMatk : 0));
+        newItem.setWatk((short) (newItem.getWatk() + addWatk));
+        newItem.setMatk((short) (newItem.getMatk() + addMatk));
         newItem.setHands(selectedItem.getHands());
         newItem.setItemLevel(selectedItem.getItemLevel());
         this.getPlayer().forceUpdateItem(newItem);
