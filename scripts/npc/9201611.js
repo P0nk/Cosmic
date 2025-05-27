@@ -29,7 +29,7 @@ var ii;
 
 function start() {
     status = 0;
-    cm.sendNext("Hey, what do you want?");
+    cm.sendNext("Hello! I'm Slimy's Subordinate! I facilitate Weapon Upgrading and Rebirths, what do you want to do today?");
 }
 
 function action(mode, type, selection) {
@@ -151,7 +151,7 @@ function handleSelection(slot) {
         );
     }
 
-    // Regular upgrade: level 1–4, hands ≤3
+    // Regular upgrade: level 1–4, hands ≤=3
     if (lvl >= 1 && lvl <= 4 && hands <= 3) {
         var cfg = upgradeConfig[lvl];
         if (!cfg) {

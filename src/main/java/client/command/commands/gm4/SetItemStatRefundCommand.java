@@ -59,7 +59,8 @@ public class SetItemStatRefundCommand extends Command {
                 eq.setAcc(newAccuracy);
 
                 short flag = eq.getFlag();
-               // flag |= ItemConstants.UNTRADEABLE;
+//                flag |= ItemConstants.UNTRADEABLE;
+                flag &= ~ItemConstants.UNTRADEABLE; // makes items tradeable
                 eq.setFlag(flag);
 
                 player.forceUpdateItem(eq);
