@@ -17,7 +17,7 @@ public class SetItemStatRefundCommand extends Command {
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
         if (params.length < 1) {
-            player.yellowMessage("Syntax: !setitemstat <str> <dex> <int> <luk> <watk> <matk> <hands> <wdef> <mdef> <speed> <jump> <avoid> <acc>");
+            player.yellowMessage("Syntax: !setitemstatrefund <str> <dex> <int> <luk> <watk> <matk> <hands> <wdef> <mdef> <speed> <jump> <avoid> <acc>");
             return;
         }
 
