@@ -8,7 +8,7 @@ import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import constants.inventory.ItemConstants;
 
-public class SetItemStatCommand extends Command {
+public class SetItemStatRefundCommand extends Command {
     {
         setDescription("Set stats of all equips in inventory.");
     }
@@ -37,7 +37,7 @@ public class SetItemStatCommand extends Command {
         Inventory equip = player.getInventory(InventoryType.EQUIP);
 
         for (byte i = 1; i <= equip.getSlotLimit(); i++) {
-    //        byte i = 1;
+            //        byte i = 1;
             try {
                 Equip eq = (Equip) equip.getItem(i);
                 if (eq == null) {
@@ -59,7 +59,7 @@ public class SetItemStatCommand extends Command {
                 eq.setAcc(newAccuracy);
 
                 short flag = eq.getFlag();
-                flag |= ItemConstants.UNTRADEABLE;
+               // flag |= ItemConstants.UNTRADEABLE;
                 eq.setFlag(flag);
 
                 player.forceUpdateItem(eq);
