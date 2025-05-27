@@ -102,12 +102,9 @@ function action(mode, type, selection) {
         for (var i = 0; i < skills.length; i++) {
             selStr += "#b#L" + i + "#" + skills[i].name + "#l\r\n";
         }
-        console.log(selStr);
         cm.sendSimple(selStr);
     }
     else if (status == 4) {
-        console.log(selection);
-
         selectedSkill = selection;
         var skill = skills[selectedSkill];
         var costStr = "Aah, you want to earn the skill #b" + skill.name + "#k huh? Well bring me the following items:\r\n";
