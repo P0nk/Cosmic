@@ -419,7 +419,8 @@ function calcBetterNewStats(item, itemId) {
         var mm = 1.4 + Math.random() * 0.2;
     }
 //    var mm = 1.4 + Math.random() * 0.2;
-    var dm = () => 1.1 + Math.random() * 0.1;
+//    var dm = () => 1.1 + Math.random() * 0.1;
+    var dm = 1.1 + Math.random() * 0.1;
     return {
         str:  Math.floor(item.getStr()  * mm),
         dex:  Math.floor(item.getDex()  * mm),
@@ -427,8 +428,8 @@ function calcBetterNewStats(item, itemId) {
         luk:  Math.floor(item.getLuk()  * mm),
         watk: Math.floor(item.getWatk() * mm),
         matk: Math.floor(item.getMatk() * mm),
-        wdef: Math.floor(item.getWdef() * dm()),
-        mdef: Math.floor(item.getMdef() * dm()),
+        wdef: Math.floor(item.getWdef() * dm),
+        mdef: Math.floor(item.getMdef() * dm),
         lvl:  item.getItemLevel() + 1
     };
 }
