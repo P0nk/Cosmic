@@ -343,7 +343,7 @@ function clearPQ(eim) {
 //    eim.giveEventPlayersExp(expGain); // Original
 //    eim.giveEventPlayersExpTier(expGain); Original
     eim.giveEventPlayersExpTier([55,70,80,95,120], -1);
-    eim.giveEventPlayersCash(1000);
+    eim.giveEventPlayersCash(2000);
 
     eim.warpEventTeam(925100600);
 }

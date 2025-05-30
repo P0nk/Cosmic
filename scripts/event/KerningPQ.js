@@ -225,6 +225,9 @@ function giveRandomEventReward(eim, player) {
 function clearPQ(eim) {
     eim.stopEventTimer();
     eim.setEventCleared();
+    // Custom exp by tiers - 100%, 50%, 30%, 20%, 10%
+    eim.giveEventPlayersExpTier([21,30,40,55,60], -1);
+    eim.giveEventPlayersCash(1000);
 }
 
 function monsterKilled(mob, eim) {}
