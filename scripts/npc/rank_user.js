@@ -195,6 +195,8 @@ const npcLogic = {
     }
 };
 
+npcLogic["LiquidBera"] = { ...npcLogic["Liquid"] };
+
 // Example of NPC logic. Increase steps by number, and it will work automatically
 // npcLogic["Bob"] = {
 //     init() {
