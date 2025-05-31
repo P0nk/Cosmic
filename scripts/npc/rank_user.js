@@ -116,7 +116,7 @@ function action(mode, type, selection) {
 }
 
 const npcLogic = {
-    "Solidified": {
+    "Liquid": {
         skills: skills,
         skillSelection: -1,
 
