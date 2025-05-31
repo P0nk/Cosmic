@@ -48,6 +48,7 @@ import client.command.commands.gm0.StatLukCommand;
 import client.command.commands.gm0.StatStrCommand;
 import client.command.commands.gm0.TimeCommand;
 import client.command.commands.gm0.ToggleExpCommand;
+import client.command.commands.gm0.UnlockedBuffsCommand;
 import client.command.commands.gm0.UptimeCommand;
 import client.command.commands.gm0.NoobShopCommand;
 import client.command.commands.gm0.WhatDropsFromCommand;
@@ -400,6 +401,8 @@ public class CommandsExecutor {
         addCommand("uni", 0, UniverseChatCommand.class);
         addCommand("sell", 0, SellItemsCommand.class);
         addCommand("exp", 0, ExpGainCommand.class);
+        addCommand("powerup",  UnlockedBuffsCommand.class);
+
         commandsNameDesc.add(levelCommandsCursor);
     }
 

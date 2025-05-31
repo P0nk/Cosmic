@@ -507,7 +507,7 @@ public class Character extends AbstractCharacterObject {
             ret.trockmaps.add(MapId.NONE);
         }
 
-       // for (int i = 0; i < 10; i++) {   // original
+        // for (int i = 0; i < 10; i++) {   // original
         for (int i = 0; i < 20; i++) {   // merogie - trock increase
             ret.viptrockmaps.add(MapId.NONE);
         }
@@ -3182,12 +3182,12 @@ public class Character extends AbstractCharacterObject {
 
                 if (YamlConfig.config.server.USE_EXP_GAIN_LOG) {
                     ExpLogRecord expLogRecord = new ExpLogger.ExpLogRecord(
-                        getWorldServer().getExpRate(),
-                        expCoupon,
-                        totalExpGained,
-                        exp.get(),
-                        new Timestamp(lastExpGainTime),
-                        id
+                            getWorldServer().getExpRate(),
+                            expCoupon,
+                            totalExpGained,
+                            exp.get(),
+                            new Timestamp(lastExpGainTime),
+                            id
                     );
                     ExpLogger.putExpLogRecord(expLogRecord);
                 }
@@ -6557,7 +6557,7 @@ public class Character extends AbstractCharacterObject {
 //        this.dropRate *= GameConstants.getPlayerBonusDropRate(this.level / 20);
 //    }
 //        if (YamlConfig.config.server.USE_CUSTOM_KEYSET) {
-        if (getWorldServer().getProgExpToggle()){
+        if (getWorldServer().getProgExpToggle()) {
             this.expRate *= GameConstants.getPlayerBonusExpRate(this.level / 20);
             this.mesoRate *= GameConstants.getPlayerBonusMesoRate(this.level / 20);
             this.dropRate *= GameConstants.getPlayerBonusDropRate(this.level / 20);
@@ -7368,7 +7368,7 @@ public class Character extends AbstractCharacterObject {
                 /* Double-check storage incase player is first time on server
                  * The storage won't exist so nothing to load
                  */
-                if(ret.storage == null) {
+                if (ret.storage == null) {
                     wserv.loadAccountStorage(ret.accountid);
                     ret.storage = wserv.getAccountStorage(ret.accountid);
                 }
@@ -10013,7 +10013,8 @@ public class Character extends AbstractCharacterObject {
     }
 
     @Override
-    public void setObjectId(int id) {}
+    public void setObjectId(int id) {
+    }
 
     @Override
     public String toString() {
@@ -10191,7 +10192,7 @@ public class Character extends AbstractCharacterObject {
         int ret = viptrockmaps.indexOf(MapId.NONE);
 
         if (ret == -1) {
-    //        ret = 10; // original
+            //        ret = 10; // original
             ret = 20; // merogie - teleport rock increase
         }
 
@@ -11225,10 +11226,10 @@ public class Character extends AbstractCharacterObject {
         if (expTrackingTask != null) {
             expTrackingTask.cancel(false);
         }
-        
+
         int duration = YamlConfig.config.server.EXP_TRACKING_DURATION;
         expTracked = 0;
-        
+
         expTrackingTask = TimerManager.getInstance().schedule(() -> {
             if (client != null) {
                 dropMessage(5, "Total EXP gained in " + duration / 1000 + "s: " + expTracked);
@@ -11257,5 +11258,89 @@ public class Character extends AbstractCharacterObject {
 
     public boolean isEavesdropping(int guildId) {
         return eavesdroppingGuilds.contains(guildId);
+    }
+
+    public List<Integer> getUnlockedBuffs() {
+        int characterId = this.getId();
+        List<Integer> unlocked = new ArrayList<>();
+
+        //print
+
+        System.out.println(characterId);
+
+        String query = "SELECT skillid FROM unlocked_buffs WHERE playerid = ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+
+            ps.setInt(1, characterId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    unlocked.add(rs.getInt("skillid"));
+                }
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace(); // or use a logger in production
+        }
+
+        System.out.println(characterId);
+
+        return unlocked; // will return empty list if none found
+    }
+
+    public void updateUnlockedSkills(int skillIdentifier) {
+        int characterId = this.getId();
+
+        String checkQuery = "SELECT 1 FROM unlocked_buffs WHERE playerid = ? AND skillid = ?";
+        String insertQuery = "INSERT INTO unlocked_buffs (playerid, skillid) VALUES (?, ?)";
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+            // Check if the skill is already unlocked for this player
+            try (PreparedStatement psCheck = con.prepareStatement(checkQuery)) {
+                psCheck.setInt(1, characterId);
+                psCheck.setInt(2, skillIdentifier);
+                try (ResultSet rs = psCheck.executeQuery()) {
+                    if (rs.next()) {
+                        // Skill already unlocked, no insert needed
+                        return;
+                    }
+                }
+            }
+
+            // Insert the new unlocked skill
+            try (PreparedStatement psInsert = con.prepareStatement(insertQuery)) {
+                psInsert.setInt(1, characterId);
+                psInsert.setInt(2, skillIdentifier);
+                psInsert.executeUpdate();
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace(); // or use logger for better error handling
+        }
+    }
+
+    public boolean hasUnlockedSkill(int skillIdentifier) {
+        int characterId = this.getId();
+        String query = "SELECT 1 FROM unlocked_buffs WHERE playerid = ? AND skillid = ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setInt(1, characterId);
+            ps.setInt(2, skillIdentifier);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    // Found a matching record -> skill is unlocked
+                    return true;
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        // No matching record found -> skill not unlocked
+        return false;
     }
 }
