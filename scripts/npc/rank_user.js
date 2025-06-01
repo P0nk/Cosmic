@@ -58,8 +58,9 @@ var skills = [
         costItems: [
             { itemId: 4001253, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
             { itemId: 4000371, quantity: 10000 }, // Speed Limit Sign - A piece of metal indicating speed limitation warning.
-            { itemId: 2002001, quantity: 99999 }, // Speed Potion
-            { itemId: 2002010, quantity: 99999 }, // Speed Pill.
+            { itemId: 2002001, quantity: 32000 }, // Speed Potion
+            { itemId: 2002010, quantity: 32000 }, // Speed Pill.
+            { itemId: 2040706, quantity: 1337 }, // Scroll for Shoes for Speed.
         ]
     }
 ];
