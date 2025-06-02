@@ -123,9 +123,9 @@ public class LifeFactory {
 //            stats.setHp(maxHp / 5);
 //        }
         if (mid == 8840000) { // Von Leon
-            stats.setHp(15_000_000_000L);
+            stats.setHp(45_000_000_000L);
         } else if (mid == 8880302 || mid == 8880301) { // Will
-            stats.setHp(150_000_000_000L);
+            stats.setHp(1_000_000_000_000L);
         } else if (mid == 9001007 ) {
             stats.setHp(999_999_999_999_999L);
         }
