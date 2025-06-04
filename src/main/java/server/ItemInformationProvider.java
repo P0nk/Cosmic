@@ -1096,6 +1096,9 @@ public class ItemInformationProvider {
                     case ItemId.CHAOS_SCROll_60:
                         prop = 100.0f;
                         break;
+                    case ItemId.CHAOS_SCROll_GOODNESS_60:
+                        prop = 100.0f;
+                        break;
                 }
 
                 if (assertGM || rollSuccessChance(prop)) {
@@ -1117,13 +1120,14 @@ public class ItemInformationProvider {
                                 nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() + 1));
                             }
                             break;
+                        case ItemId.CHAOS_SCROll_GOODNESS_60:
+                            scrollEquipWithChaos(nEquip, YamlConfig.config.server.CHSCROLL_STAT_RANGE, true);
+                            break;
                         case ItemId.CHAOS_SCROll_60:
                         case ItemId.LIAR_TREE_SAP:
                         case ItemId.MAPLE_SYRUP:
                             scrollEquipWithChaos(nEquip, YamlConfig.config.server.CHSCROLL_STAT_RANGE, false);
                             break;
-                        case ItemId.CHAOS_SCROll_GOODNESS_60:
-                            scrollEquipWithChaos(nEquip, YamlConfig.config.server.CHSCROLL_STAT_RANGE, true);
 
                         default:
                             improveEquipStats(nEquip, stats);
