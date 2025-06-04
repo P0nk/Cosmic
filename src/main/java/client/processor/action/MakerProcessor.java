@@ -435,11 +435,11 @@ public class MakerProcessor {
             ItemInformationProvider.improveEquipStats(eqp, stats);
 
             for (Short sh : randStat) {
-                ii.scrollOptionEquipWithChaos(eqp, sh, false);
+                ii.scrollOptionEquipWithChaos(eqp, sh, false, false);
             }
 
             for (Short sh : randOption) {
-                ii.scrollOptionEquipWithChaos(eqp, sh, true);
+                ii.scrollOptionEquipWithChaos(eqp, sh, true, false);
             }
         }
 

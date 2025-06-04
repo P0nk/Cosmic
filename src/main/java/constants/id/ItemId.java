@@ -156,6 +156,7 @@ public class ItemId {
     public static final int VEGAS_SPELL_10 = 5610000;
     public static final int VEGAS_SPELL_60 = 5610001;
     public static final int CHAOS_SCROll_60 = 2049100;
+    public static final int CHAOS_SCROll_GOODNESS_60 = 2049115;
     public static final int LIAR_TREE_SAP = 2049101;
     public static final int MAPLE_SYRUP = 2049102;
     public static final int WHITE_SCROLL = 2340000;
