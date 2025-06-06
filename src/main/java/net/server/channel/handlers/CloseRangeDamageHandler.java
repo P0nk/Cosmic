@@ -90,19 +90,19 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
                 attack.display), false, true);
 
         // Check hands of weapon to add special effects -- Slimy adds
-        Item weapon_item = chr.getInventory(InventoryType.EQUIPPED).getItem((short) -11); // -11 for weapon slot
-        if (weapon_item != null) {
-            Equip weapon = (Equip) weapon_item;
-            int hands = ((Equip) weapon_item).getHands(); // works
-            if (hands >= 3 && !chr.getJob().isA(Job.WARRIOR)) { // Weapon rebrithed 3 times and is not warrior
-                int skillLevel = 10;
-                if (chr.getBuffedValue(BuffStat.SPEED_INFUSION) == null) { // only cast infusion is not buffed and not warrior branch
-                    System.out.println("Casting Speed Infusion...");
-                    Skill procSkill = SkillFactory.getSkill(Buccaneer.SPEED_INFUSION);
-                    procSkill.getEffect(skillLevel).applyTo(chr);
-                    chr.getClient().sendPacket(PacketCreator.showOwnBuffEffect(3121002, 2)); // visual effect
-                    chr.getMap().broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), 3121002, 2), false);
-                }
+//        Item weapon_item = chr.getInventory(InventoryType.EQUIPPED).getItem((short) -11); // -11 for weapon slot
+//        if (weapon_item != null) {
+//            Equip weapon = (Equip) weapon_item;
+//            int hands = ((Equip) weapon_item).getHands(); // works
+//            if (hands >= 3 && !chr.getJob().isA(Job.WARRIOR)) { // Weapon rebrithed 3 times and is not warrior
+//                int skillLevel = 10;
+//                if (chr.getBuffedValue(BuffStat.SPEED_INFUSION) == null) { // only cast infusion is not buffed and not warrior branch
+//                    System.out.println("Casting Speed Infusion...");
+//                    Skill procSkill = SkillFactory.getSkill(Buccaneer.SPEED_INFUSION);
+//                    procSkill.getEffect(skillLevel).applyTo(chr);
+//                    chr.getClient().sendPacket(PacketCreator.showOwnBuffEffect(3121002, 2)); // visual effect
+//                    chr.getMap().broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), 3121002, 2), false);
+//                }
 //                final Random rnd = new Random();
 //                int maxhp = chr.getMaxHp();
 //                boolean chance = rnd.nextInt(100) < 10; // 10% chance of casting
@@ -110,8 +110,8 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
 //                    System.out.println("Proc Healing\n");
 //                    chr.addHP((int) (maxhp * 0.1));
 //                }
-            }
-        }
+//            }
+//        }
 
         int numFinisherOrbs = 0;
         Integer comboBuff = chr.getBuffedValue(BuffStat.COMBO);

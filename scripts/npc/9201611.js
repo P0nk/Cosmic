@@ -4,7 +4,7 @@ var zakDiamond   = 4032133;
 var hTegg        = 4001094;
 var rockOfTime   = 4021010;
 var previewFee   = 2500000;
-var boomProtectScroll = 2002037;
+var boomProtectScroll = 3020003;
 
 // For levels 1–4, define upgrade cost and required materials
 var upgradeConfig = {
@@ -163,7 +163,7 @@ function handleSelection(slot) {
         if (cm.getMeso() < previewFee + cfg.fee) {
             if (cm.haveItem(3020002, 1)) {
                 cm.gainItem(3020002, -1)
-                cm.gainMeso(1000000000)
+                cm.gainMeso(1000000000);
             } else {
                 cm.sendOk("You need at least "
                     + format(previewFee + cfg.fee)
@@ -348,7 +348,7 @@ function doUpgrade(newStats) {
 
     // Success roll
     var successRate = 1 - 0.1 * (lvl - 1);
-    var boomChance  = (lvl === 4 ? 0.01 : 0);
+    var boomChance  = (lvl === 4 ? 0.005 : 0);
     var roll        = Math.random();
     var success     = (roll < successRate);
     var boom        = (!success && Math.random() < boomChance);
@@ -363,7 +363,7 @@ function doUpgrade(newStats) {
             cm.gainItem(boomProtectScroll, -1)
         } else {
             cm.removeItemNPC(selectedItem.getPosition());
-            cm.sendOk("BOOM SHAKA LAKA! BOOM BOOM BOOM~~ You item has exploded into fireworks by Merogie!");
+            cm.sendOk("BOOM SHAKA LAKA! BOOM BOOM BOOM~~ Your item has exploded into fireworks by Merogie!");
             cm.scrollFail(cm.getPlayer().getId());
         }
     } else {
