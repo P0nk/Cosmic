@@ -34,6 +34,6 @@ public class Corsair {
     public static final int BATTLESHIP_CANNON = 5221007;
     public static final int BATTLESHIP_TORPEDO = 5221008;
     public static final int HYPNOTIZE = 5221009;
-    public static final int SPEED_INFUSION = 5221010;
+    public static final int PIRATES_RAGE = 5221010;
     public static final int BULLSEYE = 5220011;
 }
