@@ -336,6 +336,7 @@ const Irrigation = {
         }
     }
 };
+const IrrigationBera = {...Irrigation}; // Clone of Irrigation
 /***********************************************************************************************************************
  ********************************************* END Irrigation LOGIC ****************************************************
  **********************************************************************************************************************/
@@ -345,3 +346,4 @@ const npcLogic = {};
 npcLogic["Liquid"] = Liquid;
 npcLogic["LiquidBera"] = LiquidBera;
 npcLogic["Irrigation"] = Irrigation;
+npcLogic["IrrigationBera"] = IrrigationBera;
