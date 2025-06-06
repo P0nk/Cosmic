@@ -68,10 +68,14 @@ import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.Pyramid;
 import server.partyquest.Pyramid.PyramidMode;
+import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.packets.WeddingPackets;
 
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
@@ -1206,7 +1210,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(ItemSlot).getItemId();
-        int newItemType = newItemId/10000;
+        int newItemType = newItemId / 10000;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         removeItemNPC(ItemSlot); //remove the item
@@ -1236,10 +1240,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                     addWatk = (short) Math.min(450, (((itemReqLevel * 3) - newItem.getWatk()) / 3 * (hands + 1)));
                 }
 
-                addStr = (short) (newItem.getStr() + itemReqLevel/3 * (hands + 1));
-                addDex = (short) (newItem.getDex() + itemReqLevel/3 * (hands + 1));
-                addInt = (short) (newItem.getInt() + itemReqLevel/3 * (hands + 1));
-                addLuk = (short) (newItem.getLuk() + itemReqLevel/3 * (hands + 1));
+                addStr = (short) (newItem.getStr() + itemReqLevel / 3 * (hands + 1));
+                addDex = (short) (newItem.getDex() + itemReqLevel / 3 * (hands + 1));
+                addInt = (short) (newItem.getInt() + itemReqLevel / 3 * (hands + 1));
+                addLuk = (short) (newItem.getLuk() + itemReqLevel / 3 * (hands + 1));
 
             } else { // if rebirth is greater than 3 (Unused/for future)
                 System.out.println("Rebirth 4 and above check [in NPCConversationManager/rebirthItem");
@@ -1272,8 +1276,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setLuk((short) (newItem.getLuk() + addLuk));
         newItem.setWatk((short) (newItem.getWatk() + addWatk));
         newItem.setMatk((short) (newItem.getMatk() + addMatk));
-        newItem.setWdef((short) ((selectedItem.getWdef() != 0) ? newItem.getWdef() + ( 60 * (hands + 1)) : 0));
-        newItem.setMdef((short) ((selectedItem.getMdef() != 0) ? newItem.getMdef() + ( 60 * (hands + 1)) : 0));
+        newItem.setWdef((short) ((selectedItem.getWdef() != 0) ? newItem.getWdef() + (60 * (hands + 1)) : 0));
+        newItem.setMdef((short) ((selectedItem.getMdef() != 0) ? newItem.getMdef() + (60 * (hands + 1)) : 0));
         newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
 
@@ -1298,7 +1302,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(ItemSlot).getItemId();
-        int newItemType = newItemId/10000;
+        int newItemType = newItemId / 10000;
         int hands = selectedItem.getHands();
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
@@ -1351,23 +1355,40 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public static String getWeaponType(int itemId) {
         int prefix = itemId / 10000;
         switch (prefix) {
-            case 130: return "One-Handed Sword";
-            case 131: return "One-Handed Axe";
-            case 132: return "One-Handed Mace";
-            case 133: return "Dagger";
-            case 137: return "Wand";
-            case 138: return "Staff";
-            case 140: return "Two-Handed Sword";
-            case 141: return "Two-Handed Axe";
-            case 142: return "Two-Handed Mace";
-            case 143: return "Spear";
-            case 144: return "Pole Arm";
-            case 145: return "Bow";
-            case 146: return "Crossbow";
-            case 147: return "Claw";
-            case 148: return "Knuckle";
-            case 149: return "Gun";
-            default: return "Unknown";
+            case 130:
+                return "One-Handed Sword";
+            case 131:
+                return "One-Handed Axe";
+            case 132:
+                return "One-Handed Mace";
+            case 133:
+                return "Dagger";
+            case 137:
+                return "Wand";
+            case 138:
+                return "Staff";
+            case 140:
+                return "Two-Handed Sword";
+            case 141:
+                return "Two-Handed Axe";
+            case 142:
+                return "Two-Handed Mace";
+            case 143:
+                return "Spear";
+            case 144:
+                return "Pole Arm";
+            case 145:
+                return "Bow";
+            case 146:
+                return "Crossbow";
+            case 147:
+                return "Claw";
+            case 148:
+                return "Knuckle";
+            case 149:
+                return "Gun";
+            default:
+                return "Unknown";
         }
     }
 
@@ -1387,7 +1408,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     // For sell command, to sell 1 item at a time
-    public int SellItemSlot (short slot) {
+    public int SellItemSlot(short slot) {
 //        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         var mesosgain = 0;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
@@ -1399,4 +1420,87 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public void openShop(Client c, String[] params) {
         ShopFactory.getInstance().getShop(1343).sendShop(c);
     }
+
+    public int getBuffProgress(String buffId) {
+        int progress = 0;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT progress FROM buff_donations WHERE buff_type_id = ?")) {
+            ps.setString(1, buffId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    progress = rs.getInt("progress");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return progress;
+    }
+
+    public int updateBuffProgress(String buffId, int amount) {
+        int newProgress = 0;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+
+            // Insert row if it doesn't exist
+            try (PreparedStatement insertIfMissing = con.prepareStatement(
+                    "INSERT INTO buff_donations (buff_type_id, progress) VALUES (?, 0) ON DUPLICATE KEY UPDATE buff_type_id = buff_type_id")) {
+                insertIfMissing.setString(1, buffId);
+                insertIfMissing.executeUpdate();
+            }
+
+            // Update progress
+            try (PreparedStatement update = con.prepareStatement(
+                    "UPDATE buff_donations SET progress = progress + ? WHERE buff_type_id = ?")) {
+                update.setInt(1, amount);
+                update.setString(2, buffId);
+                update.executeUpdate();
+            }
+
+            // Retrieve new progress
+            try (PreparedStatement select = con.prepareStatement(
+                    "SELECT progress FROM buff_donations WHERE buff_type_id = ?")) {
+                select.setString(1, buffId);
+                try (ResultSet rs = select.executeQuery()) {
+                    if (rs.next()) {
+                        newProgress = rs.getInt("progress");
+                    }
+                }
+            }
+
+            con.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return newProgress;
+    }
+
+    public void resetBuffProgress(String buffId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE buff_donations SET progress = 0 WHERE buff_type_id = ?")) {
+            ps.setString(1, buffId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void applyGlobalBuff(List<Integer> skillIds) {
+        for (Channel ch : Server.getInstance().getChannelsFromWorld(getPlayer().getWorld())) {
+            for (Character chr : ch.getPlayerStorage().getAllCharacters()) {
+                for (int skillId : skillIds) {
+                    Skill skill = SkillFactory.getSkill(skillId);
+                    if (skill != null) {
+                        skill.getEffect(skill.getMaxLevel()).applyTo(chr, true);
+                    }
+                }
+            }
+        }
+    }
+
+    public void broadcastWorldMessage(int type, String message) {
+        Server.getInstance().broadcastMessage(getPlayer().getWorld(),
+                PacketCreator.serverNotice(type, message));
+    }
+
 }
