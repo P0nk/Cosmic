@@ -1287,7 +1287,7 @@ public class Monster extends AbstractLoadedLife {
                 int Int = from.getInt();
                 int MA = from.getTotalMagic();
                 int poisonLevel = from.getSkillLevel(status.getSkill());
-                poisonDamage = Math.min((int) ((getMaxHp() / 3 ) + 1), (int) ((poisonLevel*3.333) * Math.pow((double) (MA + Int) /3,2)/3000)); // Merogie & Slimy - 2
+                poisonDamage = Math.min((int) ((getMaxHp() / 3 ) + 1), (int) ((poisonLevel*3.333) * Math.pow((double) (MA + Int) /3,2)/1000)); // Merogie & Slimy - 2
                 //int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + Int)); // Merogie -1
                 //int poisonDamage = Math.min(Short.MAX_VALUE, (int) (getMaxHp() / (70.0 - poisonLevel) + 0.999)); // Original
             } // End
@@ -1314,9 +1314,9 @@ public class Monster extends AbstractLoadedLife {
                 matk = SkillFactory.getSkill(skillid).getEffect(poisonLevel).getMatk();
                 int luk = from.getLuk();
  //               int maxDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.2 * luk * matk)); // Original
-                int maxDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.4 * luk * matk));  // Merogie
+                int maxDmg = (int) Math.ceil(Math.min(6666666, 0.4 * luk * matk));  // Merogie
  //               int minDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.1 * luk * matk)); // Original
-                int minDmg = (int) Math.ceil(Math.min(Short.MAX_VALUE, 0.2 * luk * matk));  // Merogie
+                int minDmg = (int) Math.ceil(Math.min(6666666, 0.2 * luk * matk));  // Merogie
                 int gap = maxDmg - minDmg;
                 if (gap == 0) {
                     gap = 1;

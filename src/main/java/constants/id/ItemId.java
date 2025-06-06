@@ -81,10 +81,21 @@ public class ItemId {
     private static final int THROWING_STAR_MAX = 2070016;
     public static final int DEVIL_RAIN_THROWING_STAR = 2070014;
     public static final int DONOR_STEELY_THROWING_STAR = 2070017;
+    public static final int DEVIL_RAIN_THROWING_STAR_2 = 2070114;
+    public static final int BEGINNER_THROWING_STAR_2 = 2070113;
 
+    public static final int THROWING_STAR_MIN_1 = 2070000;
+    public static final int THROWING_STAR_MAX_1 = 2070016;
+
+    public static final int THROWING_STAR_MIN_2 = 2070100;
+    public static final int THROWING_STAR_MAX_2 = 2070116;
 
     public static int[] allThrowingStarIds() {
-        return IntStream.range(THROWING_STAR_MIN, THROWING_STAR_MAX + 1).toArray();
+//        return IntStream.range(THROWING_STAR_MIN, THROWING_STAR_MAX + 1).toArray();
+                    return IntStream.concat(
+                    IntStream.rangeClosed(THROWING_STAR_MIN_1, THROWING_STAR_MAX_1 + 1),
+                    IntStream.rangeClosed(THROWING_STAR_MIN_2, THROWING_STAR_MAX_2 + 1)
+            ).toArray();
     }
 
     // Bullet

@@ -668,7 +668,7 @@ public class StatEffect {
                     statups.add(new Pair<>(BuffStat.DASH2, ret.x));
                     statups.add(new Pair<>(BuffStat.DASH, ret.y));
                     break;
-                case Corsair.SPEED_INFUSION:
+//                case Corsair.SPEED_INFUSION:
                 case Buccaneer.SPEED_INFUSION:
                 case ThunderBreaker.SPEED_INFUSION:
                     statups.add(new Pair<>(BuffStat.SPEED_INFUSION, x));
@@ -1702,6 +1702,7 @@ public class StatEffect {
             case NightLord.HEROS_WILL:
             case Shadower.HEROS_WILL:
             case Buccaneer.PIRATES_RAGE:
+            case Corsair.PIRATES_RAGE:
             case Aran.HEROS_WILL:
                 return true;
 
@@ -1733,7 +1734,10 @@ public class StatEffect {
     }
 
     private boolean isInfusion() {
-        return skill && (sourceid == Buccaneer.SPEED_INFUSION || sourceid == Corsair.SPEED_INFUSION || sourceid == ThunderBreaker.SPEED_INFUSION);
+        return skill && (
+                sourceid == Buccaneer.SPEED_INFUSION ||
+   //             sourceid == Corsair.SPEED_INFUSION ||
+                        sourceid == ThunderBreaker.SPEED_INFUSION);
     }
 
     private boolean isCygnusFA() {

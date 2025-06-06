@@ -198,6 +198,7 @@ import client.command.commands.gm4.MobRateCommand;
 import client.command.commands.gm4.MobpointRateCommand;
 import client.command.commands.gm4.SetItemStatCommand;
 import client.command.commands.gm4.SetItemStatRefundCommand;
+import client.command.commands.gm4.GiveItemCommand;
 
 import client.command.commands.gm5.DebugCommand;
 import client.command.commands.gm5.IpListCommand;
@@ -568,6 +569,7 @@ public class CommandsExecutor {
         addCommand("mobpoint", 4, MobpointRateCommand.class);
         addCommand("setitemstat", 4, SetItemStatCommand.class);
         addCommand("setitemstatrefund", 4, SetItemStatRefundCommand.class);
+        addCommand("giveitem", 4, SetItemStatRefundCommand.class);
         commandsNameDesc.add(levelCommandsCursor);
     }
 

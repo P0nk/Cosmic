@@ -161,9 +161,9 @@ function handleSelection(slot) {
         }
 
         if (cm.getMeso() < previewFee + cfg.fee) {
-            if (cm.haveItem(4001253, 1)) {
-                cm.gainItem(4001253, -1)
-                cm.gainMeso(1000000000)
+            if (cm.haveItem(3020002, 1)) {
+                cm.gainItem(3020002, -1)
+                cm.gainMeso(1000000000);
             } else {
                 cm.sendOk("You need at least "
                     + format(previewFee + cfg.fee)
@@ -363,7 +363,7 @@ function doUpgrade(newStats) {
             cm.gainItem(boomProtectScroll, -1)
         } else {
             cm.removeItemNPC(selectedItem.getPosition());
-            cm.sendOk("BOOM SHAKA LAKA! BOOM BOOM BOOM~~ You item has exploded into fireworks by Merogie!");
+            cm.sendOk("BOOM SHAKA LAKA! BOOM BOOM BOOM~~ Your item has exploded into fireworks by Merogie!");
             cm.scrollFail(cm.getPlayer().getId());
         }
     } else {

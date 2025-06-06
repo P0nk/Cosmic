@@ -185,7 +185,8 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
                     short bulletConsume = bulletCount;
 
                     if (effect != null && effect.getBulletConsume() != 0) {
-                        bulletConsume = (byte) (effect.getBulletConsume() * (hasShadowPartner ? 2 : 1));
+    //                    bulletConsume = (byte) (effect.getBulletConsume() * (hasShadowPartner ? 2 : 1));
+                        bulletConsume = (byte) (effect.getBulletConsume() * (hasShadowPartner ? 3 : 1));
                     }
 
                     if (slot < 0) {

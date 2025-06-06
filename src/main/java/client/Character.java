@@ -3253,15 +3253,15 @@ public class Character extends AbstractCharacterObject {
 
     public void gainMeso(int gain, boolean show, boolean enableActions, boolean inChat) {
         long nextMeso;
-        int billionCoin = 4001253;
+        int billionCoin = 3020002;
         petLock.lock();
         try {
             nextMeso = (long) meso.get() + gain;  // thanks Thora for pointing integer overflow here
 //            System.out.println(nextMeso);
             if (nextMeso > Integer.MAX_VALUE) { // if mesos looted exceeds 2.147b
-                gain = -1200000000 + gain; // remove 1.2b from player (auto convert)
+                gain = -1100000000 + gain; // remove 1.1 from player (auto convert)
                 this.getAbstractPlayerInteraction().gainItem(billionCoin, (short) 1, true); // gain a billion coin
-                sendPacket(PacketCreator.getShowMesoGain(-1200000000, true));
+                sendPacket(PacketCreator.getShowMesoGain(-1100000000, true));
 //                gain -= (nextMeso - Integer.MAX_VALUE);
             } else if (nextMeso < 0) {
                 gain = -meso.get();

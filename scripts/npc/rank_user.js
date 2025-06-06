@@ -1,67 +1,67 @@
 var status = -1;
 var currentHandler = null;
-const BILLION_COIN_ID = 4001253; // Item ID for "Billion Coin"
+const BILLION_COIN_ID = 3020002; // Item ID for "Billion Coin"
 
 var skills = [
     {
         id: 4101004,
         name: "Haste | MAX",
         costItems: [
-            {itemId: BILLION_COIN_ID, quantity: 1}
+            { itemId: 4001253, quantity: 1 } // 1 billionCoin, you can adjust if needed
         ]
     },
     {
         id: 4111001,
         name: "Meso Up | 15",
         costItems: [
-            {itemId: BILLION_COIN_ID, quantity: 2}, // 2 billion coins - confirm this is item id or currency
-            {itemId: 4020000, quantity: 300}, // Garnet Ore
-            {itemId: 4020001, quantity: 300}, // Amethyst Ore
-            {itemId: 4020002, quantity: 300}, // AquaMarine Ore
-            {itemId: 4020003, quantity: 300}, // Emerald Ore
-            {itemId: 4020004, quantity: 300}, // Opal Ore
-            {itemId: 4020005, quantity: 300}, // Sapphire Ore
-            {itemId: 4020006, quantity: 300}, // Topaz Ore
-            {itemId: 4020007, quantity: 300}  // Diamond Ore
+            { itemId: BILLION_COIN_ID, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
+            { itemId: 4020000, quantity: 300 }, // Garnet Ore
+            { itemId: 4020001, quantity: 300 }, // Amethyst Ore
+            { itemId: 4020002, quantity: 300 }, // AquaMarine Ore
+            { itemId: 4020003, quantity: 300 }, // Emerald Ore
+            { itemId: 4020004, quantity: 300 }, // Opal Ore
+            { itemId: 4020005, quantity: 300 }, // Sapphire Ore
+            { itemId: 4020006, quantity: 300 }, // Topaz Ore
+            { itemId: 4020007, quantity: 300 }  // Diamond Ore
         ]
     },
     {
         id: 2311003,
         name: "Holy Symbol | 15",
         costItems: [
-            {itemId: BILLION_COIN_ID, quantity: 2},
-            {itemId: 4000001, quantity: 1500}, // Orange Mushroom Cap - A cap removed from a mushroom
-            {itemId: 4000009, quantity: 1500}, // Blue Mushroom Cap - A cap removed from a mushroom
-            {itemId: 4000012, quantity: 1500}, // Green Mushroom Cap - A cap removed from a mushroom
-            {itemId: 4000015, quantity: 1500}, // Horny Mushroom Cap - A cap removed from a mushroom
-            {itemId: 4000500, quantity: 1500}, // Poison Mushroom Cap - A cap from the Poison Mushroom. It contains potent poison.
-            {itemId: 4000008, quantity: 1500}, // Charm of the Undead - A charm taken out of an undead monster.
-            {itemId: 4000040, quantity: 1}, // Mushmom Spore - A spore from Mushmom, a humongous mushroom
+            { itemId: BILLION_COIN_ID, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
+            { itemId: 4000001, quantity: 1500 }, // Orange Mushroom Cap - A cap removed from a mushroom
+            { itemId: 4000009, quantity: 1500 }, // Blue Mushroom Cap - A cap removed from a mushroom
+            { itemId: 4000012, quantity: 1500 }, // Green Mushroom Cap - A cap removed from a mushroom
+            { itemId: 4000015, quantity: 1500 }, // Horny Mushroom Cap - A cap removed from a mushroom
+            { itemId: 4000500, quantity: 1500 }, // Poison Mushroom Cap - A cap from the Poison Mushroom. It contains potent poison.
+            { itemId: 4000008, quantity: 1500 }, // Charm of the Undead - A charm taken out of an undead monster.
+            { itemId: 4000040, quantity: 1 }, // Mushmom Spore - A spore from Mushmom, a humongous mushroom
         ]
     },
     {
         id: 3121002, // placeholder id for Meso Up, you can change as needed
         name: "Sharp eyes | 20",
         costItems: [
-            {itemId: BILLION_COIN_ID, quantity: 3}, // 3 billion coins - confirm this is item id or currency
-            {itemId: 4000007, quantity: 3000}, // Evil Eye Tail - A tail removed from a lizard
-            {itemId: 4000013, quantity: 3000}, // Curse Eye Tail - A tail removed from a lizard
-            {itemId: 4000023, quantity: 3000}, // Cold Eye Tail - A tail removed from a lizard
-            {itemId: 4000076, quantity: 3000}, // Fly-Eye Wing - A wing removed from Fly-Eye. Spiky and very dirty.
-            {itemId: 4000027, quantity: 3000}, // Wild Kargo Eye - An eye removed from Wild Kargo
-            {itemId: 1032008, quantity: 1}, // Cat's Eye - Earring
-            {itemId: 4001017, quantity: 3}, // Eye of Fire
+            { itemId: BILLION_COIN_ID, quantity: 3 }, // 3 billion coins - confirm this is item id or currency
+            { itemId: 4000007, quantity: 3000 }, // Evil Eye Tail - A tail removed from a lizard
+            { itemId: 4000013, quantity: 3000 }, // Curse Eye Tail - A tail removed from a lizard
+            { itemId: 4000023, quantity: 3000 }, // Cold Eye Tail - A tail removed from a lizard
+            { itemId: 4000076, quantity: 3000 }, // Fly-Eye Wing - A wing removed from Fly-Eye. Spiky and very dirty.
+            { itemId: 4000027, quantity: 3000 }, // Wild Kargo Eye - An eye removed from Wild Kargo
+            { itemId: 1032008, quantity: 1 }, // Cat's Eye - Earring
+            { itemId: 4001017, quantity: 3 }, // Eye of Fire
         ]
     },
     {
         id: 5121009, // placeholder id for Meso Up, you can change as needed
         name: "Speed infusion | MAX",
         costItems: [
-            {itemId: BILLION_COIN_ID, quantity: 2},
-            {itemId: 4000371, quantity: 10000}, // Speed Limit Sign - A piece of metal indicating speed limitation warning.
-            {itemId: 2002001, quantity: 32000}, // Speed Potion
-            {itemId: 2002010, quantity: 32000}, // Speed Pill.
-            {itemId: 2040706, quantity: 1337}, // Scroll for Shoes for Speed.
+            { itemId: BILLION_COIN_ID, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
+            { itemId: 4000371, quantity: 10000 }, // Speed Limit Sign - A piece of metal indicating speed limitation warning.
+            { itemId: 2002001, quantity: 32000 }, // Speed Potion
+            { itemId: 2002010, quantity: 32000 }, // Speed Pill.
+            { itemId: 2040706, quantity: 1337 }, // Scroll for Shoes for Speed.
         ]
     }
 ];

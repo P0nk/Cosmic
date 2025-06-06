@@ -851,8 +851,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 if (shadowPartner) {
                     // For shadow partner, the second half of the hits only do 50% damage. So calc that
                     // in for the crit effects.
-                    if (j >= ret.numDamage / 2) {
-                        hitDmgMax *= 0.5;
+                    if (j >= ret.numDamage * 2 / 3) {
+ //                       hitDmgMax *= 0.5;
+                          hitDmgMax *= 0.333;
                     }
                 }
 
@@ -861,7 +862,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     damage = (int) ((chr.getLevel() * 100000 + chr.getTotalWatk() * 1000 + chr.getTotalDex() * 500 + chr.getTotalStr() * 100) * (damage_mult));
 //                    System.out.println("character level damage: " + chr.getLevel() * 100000);
 //                    System.out.println("character watk damage: " +chr.getTotalWatk() * 1000 );
-//                    System.out.println("character totaldex damage: " +chr.getTotalDex() * 500);
+//                    System.out.println("character totaldex damage: " +chr.getTotalDexfa() * 500);
 //                    System.out.println("character totalstr damage: " +chr.getTotalStr() * 100);
 //                    System.out.println("damagemult : " + damage_mult * 100);
 
@@ -874,7 +875,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 long maxWithCrit = hitDmgMax;
                 if (canCrit) // They can crit, so up the max.
                 {
-                    maxWithCrit *= 2;
+                    maxWithCrit *= 3.5;
                 }
 
                 // Warn if the damage is over 1.5x what we calculated above.
@@ -896,7 +897,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 if(effect != null) {
                     int maxattack = Math.max(effect.getBulletCount(), effect.getAttackCount());
                     if (shadowPartner) {
-                        maxattack = maxattack * 2;
+                        maxattack = maxattack * 3;
                     }
                     if (ret.numDamage > maxattack) {
                         AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Too many lines: " + ret.numDamage + " Max lines: " + maxattack + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
