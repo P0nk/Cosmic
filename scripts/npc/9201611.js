@@ -4,7 +4,7 @@ var zakDiamond   = 4032133;
 var hTegg        = 4001094;
 var rockOfTime   = 4021010;
 var previewFee   = 2500000;
-var boomProtectScroll = 2002037;
+var boomProtectScroll = 3020003;
 
 // For levels 1–4, define upgrade cost and required materials
 var upgradeConfig = {
