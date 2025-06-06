@@ -5417,7 +5417,7 @@ public class PacketCreator {
 
     public static Packet givePirateBuff(List<Pair<BuffStat, Integer>> statups, int buffid, int duration) {
         OutPacket p = OutPacket.create(SendOpcode.GIVE_BUFF);
-        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION || buffid == Corsair.SPEED_INFUSION;
+        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION || buffid == Buccaneer.PIRATES_RAGE;
         writeLongMask(p, statups);
         p.writeShort(0);
         for (Pair<BuffStat, Integer> stat : statups) {
@@ -5432,7 +5432,7 @@ public class PacketCreator {
 
     public static Packet giveForeignPirateBuff(int cid, int buffid, int time, List<Pair<BuffStat, Integer>> statups) {
         OutPacket p = OutPacket.create(SendOpcode.GIVE_FOREIGN_BUFF);
-        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION || buffid == Corsair.SPEED_INFUSION;
+        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION || buffid == Buccaneer.PIRATES_RAGE;
         p.writeInt(cid);
         writeLongMask(p, statups);
         p.writeShort(0);
