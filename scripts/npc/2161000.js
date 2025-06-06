@@ -20,13 +20,13 @@ var expedMap = "Audience Room";
 var list = "What would you like to do?#b\r\n\r\n#L1#View current Expedition members#l\r\n#L2#Start the fight!#l\r\n#L3#Stop the expedition.#l";
 
 function start() {
-    if (cm.isQuestStarted(3171) || cm.isQuestCompleted(3171)) {
+//    if (cm.isQuestStarted(3171) || cm.isQuestCompleted(3171)) {
         action(1, 0, 0);
-    } else {
-        cm.sendOk("You must start or finish the quest #rDefeat the Lion King#k before attempting to defeat Von Leon in the Audience Room.");
-        cm.dispose();
-        return;
-    }
+//    } else {
+//        cm.sendOk("You must start or finish the quest #rDefeat the Lion King#k before attempting to defeat Von Leon in the Audience Room.");
+//        cm.dispose();
+//        return;
+//    }
 }
 
 function action(mode, type, selection) {
