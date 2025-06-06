@@ -6,14 +6,14 @@ var skills = [
         id: 4101004,
         name: "Haste | MAX",
         costItems: [
-            { itemId: 4001253, quantity: 1 } // 1 billionCoin, you can adjust if needed
+            { itemId: 3020002, quantity: 1 } // 1 billionCoin, you can adjust if needed
         ]
     },
     {
         id: 4111001,
         name: "Meso Up | 15",
         costItems: [
-            { itemId: 4001253, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
+            { itemId: 3020002, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
             { itemId: 4020000, quantity: 300 }, // Garnet Ore
             { itemId: 4020001, quantity: 300 }, // Amethyst Ore
             { itemId: 4020002, quantity: 300 }, // AquaMarine Ore
@@ -28,7 +28,7 @@ var skills = [
         id: 2311003,
         name: "Holy Symbol | 15",
         costItems: [
-            { itemId: 4001253, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
+            { itemId: 3020002, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
             { itemId: 4000001, quantity: 1500 }, // Orange Mushroom Cap - A cap removed from a mushroom
             { itemId: 4000009, quantity: 1500 }, // Blue Mushroom Cap - A cap removed from a mushroom
             { itemId: 4000012, quantity: 1500 }, // Green Mushroom Cap - A cap removed from a mushroom
@@ -42,7 +42,7 @@ var skills = [
         id: 3121002, // placeholder id for Meso Up, you can change as needed
         name: "Sharp eyes | 20",
         costItems: [
-            { itemId: 4001253, quantity: 3 }, // 3 billion coins - confirm this is item id or currency
+            { itemId: 3020002, quantity: 3 }, // 3 billion coins - confirm this is item id or currency
             { itemId: 4000007, quantity: 3000 }, // Evil Eye Tail - A tail removed from a lizard
             { itemId: 4000013, quantity: 3000 }, // Curse Eye Tail - A tail removed from a lizard
             { itemId: 4000023, quantity: 3000 }, // Cold Eye Tail - A tail removed from a lizard
@@ -56,7 +56,7 @@ var skills = [
         id: 5121009, // placeholder id for Meso Up, you can change as needed
         name: "Speed infusion | MAX",
         costItems: [
-            { itemId: 4001253, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
+            { itemId: 3020002, quantity: 2 }, // 2 billion coins - confirm this is item id or currency
             { itemId: 4000371, quantity: 10000 }, // Speed Limit Sign - A piece of metal indicating speed limitation warning.
             { itemId: 2002001, quantity: 32000 }, // Speed Potion
             { itemId: 2002010, quantity: 32000 }, // Speed Pill.

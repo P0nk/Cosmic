@@ -161,8 +161,8 @@ function handleSelection(slot) {
         }
 
         if (cm.getMeso() < previewFee + cfg.fee) {
-            if (cm.haveItem(4001253, 1)) {
-                cm.gainItem(4001253, -1)
+            if (cm.haveItem(3020002, 1)) {
+                cm.gainItem(3020002, -1)
                 cm.gainMeso(1000000000)
             } else {
                 cm.sendOk("You need at least "
