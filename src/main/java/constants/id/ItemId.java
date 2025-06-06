@@ -82,7 +82,7 @@ public class ItemId {
     public static final int DEVIL_RAIN_THROWING_STAR = 2070014;
     public static final int DONOR_STEELY_THROWING_STAR = 2070017;
     public static final int DEVIL_RAIN_THROWING_STAR_2 = 2070114;
-    public static final int BEGINNER_THROWING_STAR_2 = 2070113;
+    public static final int BEGINNER_THROWING_STAR_2 = 2070115;
 
     public static final int THROWING_STAR_MIN_1 = 2070000;
     public static final int THROWING_STAR_MAX_1 = 2070016;
