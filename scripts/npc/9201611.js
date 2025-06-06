@@ -348,7 +348,7 @@ function doUpgrade(newStats) {
 
     // Success roll
     var successRate = 1 - 0.1 * (lvl - 1);
-    var boomChance  = (lvl === 4 ? 0.01 : 0);
+    var boomChance  = (lvl === 4 ? 0.005 : 0);
     var roll        = Math.random();
     var success     = (roll < successRate);
     var boom        = (!success && Math.random() < boomChance);
