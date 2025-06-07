@@ -76,6 +76,7 @@ public class ItemId {
     public static final int SUBI_THROWING_STARS = 2070000;
     public static final int HWABI_THROWING_STARS = 2070007;
     public static final int BALANCED_FURY = 2070018;
+    public static final int BALANCED_FURY_2 = 2070118;
     public static final int CRYSTAL_ILBI_THROWING_STARS = 2070016;
     private static final int THROWING_STAR_MIN = SUBI_THROWING_STARS;
     private static final int THROWING_STAR_MAX = 2070016;
@@ -85,10 +86,10 @@ public class ItemId {
     public static final int BEGINNER_THROWING_STAR_2 = 2070115;
 
     public static final int THROWING_STAR_MIN_1 = 2070000;
-    public static final int THROWING_STAR_MAX_1 = 2070016;
+    public static final int THROWING_STAR_MAX_1 = 2070017;
 
     public static final int THROWING_STAR_MIN_2 = 2070100;
-    public static final int THROWING_STAR_MAX_2 = 2070116;
+    public static final int THROWING_STAR_MAX_2 = 2070117;
 
     public static int[] allThrowingStarIds() {
 //        return IntStream.range(THROWING_STAR_MIN, THROWING_STAR_MAX + 1).toArray();
