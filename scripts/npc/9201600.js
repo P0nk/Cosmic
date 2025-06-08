@@ -39,6 +39,7 @@ function action(mode, type, selection) {
     status++;
 
     if (status === 1) {
+        currentMapId = cm.getMapId();
         switch (selection) {
             case 0: // If selected Teleport to Map option
                 mapList = cm.getSavedMaps(accountId);
@@ -60,6 +61,7 @@ function action(mode, type, selection) {
                     cm.sendOk("You've reached your saved map limit (" + limit + "). Increase your limit to save more maps.");
                     return cm.dispose();
                 }
+                currentMapId = cm.getMapId();
                 cm.saveCurrentMap(accountId, currentMapId)
                 cm.sendOk("Saved current map: " + cm.getMapName(currentMapId));
                 cm.dispose();
