@@ -7,7 +7,7 @@ var skills = [
         id: 4101004,
         name: "Haste | MAX",
         costItems: [
-            { itemId: 4001253, quantity: 1 } // 1 billionCoin, you can adjust if needed
+            { itemId: BILLION_COIN_ID, quantity: 1 } // 1 billionCoin, you can adjust if needed
         ]
     },
     {
