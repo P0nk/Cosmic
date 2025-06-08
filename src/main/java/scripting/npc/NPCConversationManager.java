@@ -1503,4 +1503,103 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 PacketCreator.serverNotice(type, message));
     }
 
+    // ============================== For Custom TP NPC ==============================
+    public int getAccountIdByCharacterName(String characterName) {
+        int accountId = -1;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT accountid FROM cosmic.characters WHERE name = ?")) {
+
+            ps.setString(1, characterName);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    accountId = rs.getInt("accountid");
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return accountId;
+    }
+
+    public List<Integer> getSavedMaps(int accountId) {
+        List<Integer> maps = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT DISTINCT mapid FROM cosmic.tp_locations WHERE accountid = ?")) {
+            ps.setInt(1, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    maps.add(rs.getInt("mapid"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return maps;
+    }
+
+    public boolean saveCurrentMap(int accountId, int mapId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("INSERT INTO cosmic.tp_locations (accountid, mapid) VALUES (?, ?)")) {
+            ps.setInt(1, accountId);
+            ps.setInt(2, mapId);
+            ps.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public int getMapLimit(int accountId) {
+        int limit = 50;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT tplimit FROM cosmic.tp_limits WHERE accountid = ?")) {
+            ps.setInt(1, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    limit = rs.getInt("tplimit");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return limit;
+    }
+    public void increaseMapLimit(int accountId, int increment) {
+        int currentLimit = getMapLimit(accountId);
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO cosmic.tp_limits (accountid, tplimit) VALUES (?, ?) " +
+                             "ON DUPLICATE KEY UPDATE tplimit = tplimit + ?")) {
+            ps.setInt(1, accountId);
+            ps.setInt(2, currentLimit + increment); // Default insert value
+            ps.setInt(3, increment);      // Increment value for update
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    public void removeSavedMap(int accountId, int mapId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM cosmic.tp_locations WHERE accountid = ? AND mapid = ?")) {
+            ps.setInt(1, accountId);
+            ps.setInt(2, mapId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getMapName(int mapId) {
+        String map = getMap().getMapName();
+        return map;
+    }
+
+    public void sendCashNoti(String text) {
+        getPlayer().sendPacket(PacketCreator.earnTitleMessage(text));
+    }
 }

@@ -46,6 +46,7 @@ import client.command.commands.gm0.StatDexCommand;
 import client.command.commands.gm0.StatIntCommand;
 import client.command.commands.gm0.StatLukCommand;
 import client.command.commands.gm0.StatStrCommand;
+import client.command.commands.gm0.TPCommand;
 import client.command.commands.gm0.TimeCommand;
 import client.command.commands.gm0.ToggleExpCommand;
 import client.command.commands.gm0.UnlockedBuffsCommand;
@@ -403,6 +404,7 @@ public class CommandsExecutor {
         addCommand("sell", 0, SellItemsCommand.class);
         addCommand("exp", 0, ExpGainCommand.class);
         addCommand("powerup",  UnlockedBuffsCommand.class);
+        addCommand("tp",  TPCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
