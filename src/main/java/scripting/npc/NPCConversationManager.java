@@ -1553,7 +1553,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return false;
     }
     public int getMapLimit(int accountId) {
-        int limit = 50;
+        int limit = 10;
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT tplimit FROM cosmic.tp_limits WHERE accountid = ?")) {
