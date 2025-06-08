@@ -100,7 +100,7 @@ function action(mode, type, selection) {
         var newMap = parseInt(Math.floor(mapList[selection] / 100000000)); // 9
         var curMap = parseInt(Math.floor(currentMapId / 100000000)); // 1
 //        console.log("NewMap: " + newMap + " Current Map: " + curMap + " Cost: " +parseInt(Math.abs(newMap - curMap)));
-        var usedRocks = (parseInt(Math.abs(newMap - curMap)) == 0 ? 1 : parseInt(Math.abs(newMap - curMap)));
+        var usedRocks = (parseInt(Math.abs(newMap - curMap)) == 0 ? 1 : parseInt(Math.abs(newMap - curMap)) + 1);
         if (!cm.haveItem(VIPTpRock, usedRocks)) {
             cm.sendOk("You need a #v" + VIPTpRock + "# to teleport.");
         } else if (mapList[selection]) {
