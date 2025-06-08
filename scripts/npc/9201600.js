@@ -12,7 +12,7 @@ var VIPTpRockCost = 1000;
 var currentMapId;
 var blacklist = [280030000,280030100,280030101,280030102,280030103,280030104,280030105, // Zakum maps
                  240060000,240060100,240060200, // Horntail maps
-                 270050100,
+                 270050100, // Pinkbean
                  211070100] // Von Leon maps
 
 function start() {
@@ -61,7 +61,7 @@ function action(mode, type, selection) {
                     cm.sendOk("You've reached your saved map limit (" + limit + "). Increase your limit to save more maps.");
                     return cm.dispose();
                 }
-                currentMapId = cm.getMapId();
+                currentMapId = cm.getMapId(); // required else some maps wont print out the map name
                 cm.saveCurrentMap(accountId, currentMapId)
                 cm.sendOk("Saved current map: " + cm.getMapName(currentMapId));
                 cm.dispose();
