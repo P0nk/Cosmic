@@ -7,7 +7,7 @@ var skills = [
         id: 4101004,
         name: "Haste | MAX",
         costItems: [
-            { itemId: 4001253, quantity: 1 } // 1 billionCoin, you can adjust if needed
+            { itemId: BILLION_COIN_ID, quantity: 1 } // 1 billionCoin, you can adjust if needed
         ]
     },
     {
@@ -214,7 +214,7 @@ const BUFF_OPTIONS = {
         id: 'super_buff',
         name: "Super World Buff",
         cost: 25,
-        skills: [2311003, 2301004, 1301007, 4101004, 2001002, 1005, 2301003, 5121009, 1111002, 4111001, 4111002, 4211003, 4211005, 1321000, 2321004, 3121002],
+        skills: [2311003, 2301004, 1301007, 4101004, 2001002, 1005, 2301003, 5121009, 4111001, 4211003, 4211005, 1321000, 2321004, 3121002],
     }
 };
 
@@ -248,7 +248,7 @@ function proceedToDonationDetails() {
 }
 
 
-const Irrigation = {
+const WORLDBUFFNPC = {
     selectedBuffKey: null,
 
     step0() {
@@ -336,7 +336,7 @@ const Irrigation = {
         }
     }
 };
-const IrrigationBera = {...Irrigation}; // Clone of Irrigation
+const WORLDBUFFNPCBERA = {...WORLDBUFFNPC};
 /***********************************************************************************************************************
  ********************************************* END Irrigation LOGIC ****************************************************
  **********************************************************************************************************************/
@@ -345,5 +345,5 @@ const npcLogic = {};
 
 npcLogic["Liquid"] = Liquid;
 npcLogic["LiquidBera"] = LiquidBera;
-npcLogic["Irrigation"] = Irrigation;
-npcLogic["IrrigationBera"] = IrrigationBera;
+npcLogic["WBuffScania"] = WORLDBUFFNPC;
+npcLogic["WBuffBera"] = WORLDBUFFNPCBERA;
