@@ -248,7 +248,7 @@ function proceedToDonationDetails() {
 }
 
 
-const Irrigation = {
+const WORLDBUFFNPC = {
     selectedBuffKey: null,
 
     step0() {
@@ -336,7 +336,7 @@ const Irrigation = {
         }
     }
 };
-const IrrigationBera = {...Irrigation}; // Clone of Irrigation
+const WORLDBUFFNPCBERA = {...WORLDBUFFNPC};
 /***********************************************************************************************************************
  ********************************************* END Irrigation LOGIC ****************************************************
  **********************************************************************************************************************/
@@ -345,5 +345,5 @@ const npcLogic = {};
 
 npcLogic["Liquid"] = Liquid;
 npcLogic["LiquidBera"] = LiquidBera;
-npcLogic["Irrigation"] = Irrigation;
-npcLogic["IrrigationBera"] = IrrigationBera;
+npcLogic["WBuffScania"] = WORLDBUFFNPC;
+npcLogic["WBuffBera"] = WORLDBUFFNPCBERA;
