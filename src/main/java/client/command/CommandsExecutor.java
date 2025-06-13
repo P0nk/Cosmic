@@ -121,6 +121,7 @@ import client.command.commands.gm3.ExpedsCommand;
 import client.command.commands.gm3.FaceCommand;
 import client.command.commands.gm3.FameCommand;
 import client.command.commands.gm3.FlyCommand;
+import client.command.commands.gm3.GetMapleWp;
 import client.command.commands.gm3.GiveMesosCommand;
 import client.command.commands.gm3.GiveNxCommand;
 import client.command.commands.gm3.GiveRpCommand;
@@ -536,6 +537,7 @@ public class CommandsExecutor {
         addCommand("warpmap", 3, WarpMapCommand.class);
         addCommand("warparea", 3, WarpAreaCommand.class);
         addCommand("ban2", 3, Ban2Command.class);
+        addCommand("getmaplewp", 3, GetMapleWp.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
