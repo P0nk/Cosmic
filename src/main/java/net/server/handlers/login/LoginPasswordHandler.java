@@ -45,6 +45,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Objects;
 
 public final class LoginPasswordHandler implements PacketHandler {
 
@@ -69,8 +70,36 @@ public final class LoginPasswordHandler implements PacketHandler {
 
         String login = p.readString();
         String pwd = p.readString();
-        c.setAccountName(login);
 
+        System.out.println(pwd);
+        if (Objects.equals(pwd, "unstuck")) {
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement getAccountId = con.prepareStatement("SELECT id FROM accounts WHERE name = ?")) {
+                System.out.println("Query Account name");
+                getAccountId.setString(1, login);
+                try (ResultSet rs = getAccountId.executeQuery()) {
+                    if (rs.next()) {
+                        int accountId = rs.getInt("id");
+
+                        try (PreparedStatement updateMap = con.prepareStatement(
+                                "UPDATE characters SET map = 100000000 WHERE accountid = ?")) {
+                            updateMap.setInt(1, accountId);
+                            int affected = updateMap.executeUpdate();
+                            System.out.println("Unstuck " + affected + " character(s) for account: " + login);
+                        }
+
+                    } else {
+                        System.out.println("Account not found for username: " + login);
+                    }
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        c.setAccountName(login);
         p.skip(6);   // localhost masked the initial part with zeroes...
         byte[] hwidNibbles = p.readBytes(4);
         Hwid hwid = new Hwid(HexTool.toCompactHexString(hwidNibbles));
