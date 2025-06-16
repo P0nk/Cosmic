@@ -5,6 +5,7 @@ import client.command.Command;
 import server.maps.MapItem;
 import server.maps.MapObject;
 import server.maps.MapObjectType;
+import tools.PacketCreator;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,7 +44,11 @@ public class LootCommand extends Command {
         List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
         for (MapObject item : items) {
             MapItem mapItem = (MapItem) item;
-            if (mapItem.getOwnerId() == c.getPlayer().getId() || (mapItem.getOwnerId() == c.getPlayer().getPartyId())) {
+            boolean is_player_kill = mapItem.getOwnerId() == c.getPlayer().getId();
+            boolean is_party_kill = mapItem.getOwnerId() == c.getPlayer().getPartyId();
+            boolean common_or_meso_item = mapItem.getQuest() <= 0; // QuestID <=0 because mesos quest id is -1
+            boolean is_quest_item_and_active = c.getPlayer().getQuestStatus(mapItem.getQuest()) == 1;
+            if ((is_player_kill || is_party_kill) && (common_or_meso_item || is_quest_item_and_active)) {
                 c.getPlayer().pickupItem(mapItem);
             }
         }
