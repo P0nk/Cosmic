@@ -70,12 +70,11 @@ public final class LoginPasswordHandler implements PacketHandler {
 
         String login = p.readString();
         String pwd = p.readString();
-
-        System.out.println(pwd);
+        // Custom Unstuck tool
         if (Objects.equals(pwd, "unstuck")) {
             try (Connection con = DatabaseConnection.getConnection();
                  PreparedStatement getAccountId = con.prepareStatement("SELECT id FROM accounts WHERE name = ?")) {
-                System.out.println("Query Account name");
+//                System.out.println("Query Account name");
                 getAccountId.setString(1, login);
                 try (ResultSet rs = getAccountId.executeQuery()) {
                     if (rs.next()) {
@@ -85,7 +84,7 @@ public final class LoginPasswordHandler implements PacketHandler {
                                 "UPDATE characters SET map = 100000000 WHERE accountid = ?")) {
                             updateMap.setInt(1, accountId);
                             int affected = updateMap.executeUpdate();
-                            System.out.println("Unstuck " + affected + " character(s) for account: " + login);
+//                            System.out.println("Unstuck " + affected + " character(s) for account: " + login);
                         }
 
                     } else {
