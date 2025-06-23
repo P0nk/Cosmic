@@ -78,17 +78,11 @@ function showApplicableScrolls(equipInvSlotNum) {
     equipId = equipSelected.getItemId();
     equipName = Packages.server.ItemInformationProvider.getInstance().getName(equipId);
 
-    var armorType = Packages.server.ItemInformationProvider.getInstance().getArmorType(equipSelected.getItemId());
-    if (armorType === "") {
-        cm.sendOk("Invalid selection. Only armor can be auto-scrolled right now");
-        return cm.dispose();
-    }
-
     var inv = cm.getInventory(useInv);
     var lines = [];
 
     // Retrieve scroll id's valid for the selected armor
-    let validScrolls = Packages.server.ItemInformationProvider.getInstance().getScrollsByArmorType(armorType);
+    let validScrolls = Packages.server.ItemInformationProvider.getInstance().getScrollsByItemId(equipId);
     for (var scroll = 0; scroll < validScrolls.length; scroll++) {
 
         for (var useSlot = 1; useSlot <= inv.getSlotLimit(); useSlot++) {

@@ -27,7 +27,6 @@ import client.Job;
 import client.Skill;
 import client.SkillFactory;
 import client.autoban.AutobanFactory;
-import client.inventory.ArmorType;
 import client.inventory.Equip;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
@@ -103,7 +102,6 @@ public class ItemInformationProvider {
     protected Map<Integer, Integer> equipLevelReqCache = new HashMap<>();
     protected Map<Integer, Integer> equipMaxLevelCache = new HashMap<>();
     protected Map<Integer, List<Integer>> scrollReqsCache = new HashMap<>();
-    protected Map<String, List<Integer>> scrollsByArmorType = new HashMap<>();
     protected Map<Integer, Integer> wholePriceCache = new HashMap<>();
     protected Map<Integer, Double> unitPriceCache = new HashMap<>();
     protected Map<Integer, Integer> projectileWatkCache = new HashMap<>();
@@ -628,433 +626,7 @@ public class ItemInformationProvider {
         return type[cat - 30];
     }
 
-    /*
-     * Item ID prefixes:
-     *   100****: Helmet
-     *   101****: Face Accessory
-     *   102****: Eye Accessory
-     *   103****: Earring
-     *   104****: Topwear
-     *   105****: Overall
-     *   106****: Bottomwear
-     *   107****: Shoes
-     *   108****: Gloves
-     *   109****: Shield
-     *   110****: Cape
-     *   111****: Ring
-     *   112****: Pendant
-     *   113****: Belt
-     *   180****: Pet Equip
-     * */
-    public String getArmorType(int itemId) {
-        int category = (itemId / 10000) % 100;
 
-
-        String[] armorType = {
-                ArmorType.HELMET, // 100
-                ArmorType.FACE_ACCESSORY, // 101
-                ArmorType.EYE_ACCESSORY, // 102
-                ArmorType.EARRING, // 103
-                ArmorType.TOPWEAR, // 104
-                ArmorType.OVERALL, // 105
-                ArmorType.BOTTOMWEAR, // 106
-                ArmorType.SHOES, // 107
-                ArmorType.GLOVES, // 108
-                ArmorType.SHIELD, // 109
-                ArmorType.CAPE, // 110
-                ArmorType.RING, // 111
-                ArmorType.PENDANT, // 112
-                ArmorType.BELT, // 113
-        };
-        /*
-        * case 130: //1h sword
-        case 131: //1h axe
-        case 132: //1h bw
-        case 140: //2h sword
-        case 141: //2h axe
-        case 142: //2h bw
-        case 143: //spear
-        case 144: //polearm
-        case 137: //wand
-        case 138: //staff
-        case 145: //bow
-        case 146: //xbow
-        case 148: //knuckle
-        case 149: //pistol
-        case 133: //dagger
-        case 147: //claw 1472055 - Maple Skanda
-        * */
-        if (category == 80) {
-            return ArmorType.PET_EQUIP;
-        } else if (category >= 0 && category <= 13) {
-            return armorType[category];
-        }
-        return "";
-    }
-
-
-    public List<Integer> getScrollsByArmorType(String armorType) {
-        // Check cache first
-        if (scrollsByArmorType.containsKey(armorType)) {
-            return scrollsByArmorType.get(armorType);
-        }
-
-        List<Integer> ret = new ArrayList<>();
-        switch (armorType) {
-            case ArmorType.HELMET -> {
-                ret.add(2040000); // Scroll for Helmet for DEF - Improves the helmet's weapon def.\nSuccess rate:100%, weapon def. +1
-                ret.add(2040001); // Scroll for Helmet for DEF - Improves helmet def.\nSuccess rate:60%, weapon def.+2, magic def., +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040002); // Scroll for Helmet for DEF - Improves helmet def.\nSuccess Rate:10%, weapon def.+5, magic def.+3, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040003); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:100%, MaxHP+5
-                ret.add(2040004); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:60%, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040005); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040006); // Scroll for Helmet for DEF - Improves helmet def.\nSuccess rate:100%, weapon def.+5, magic def.+3, accuracy+1
-                ret.add(2040007); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:100%, MaxHP+30
-                ret.add(2040016); // Scroll for Helmet for Accuracy - Improves the helmet's accuracy option.\nSuccess Rate 10%, Dex+2, Accuracy +4. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040017); // Scroll for Helmet for Accuracy - Improves the helmet's accuracy option.\nSuccess Rate 60%, Dex+1, Accuracy +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040018); // Scroll for Helmet for Accuracy - Improves the helmet's accuracy option.\nSuccess Rate 100%, Accuracy +1
-                ret.add(2040019); // Scroll for Helmet for DEF - Improves Weapon Defense on a Helmet.\nSuccess rate: 65%, Weapon Def. +2, Magic Def. +1
-                ret.add(2040020); // Scroll for Helmet for DEF - Improves Weapon Defense on a Helmet.\nSuccess rate: 15%, Weapon Def.+5, Magic Def.+3, Accuracy+1
-                ret.add(2040021); // Scroll for Helmet for MaxHP - Improves MaxHP on a Helmet.\nSuccess rate: 65%, MaxHP +10
-                ret.add(2040022); // Scroll for Helmet for MaxHP - Improves MaxHP on a Helmet.\nSuccess rate: 15%, MaxHP +30
-                ret.add(2040023); // Scroll for Rudolph's Horn 60% - Increases the weapon attack and magic attack of Rudolph's Horn.\nSuccess rate:60%, attack +1, magic att. +1
-                ret.add(2040024); // Scroll for Helmet for INT 100% - Improves INT on headwear..Success rate 100%, INT+1
-                ret.add(2040025); // Scroll for Helmet for INT 60% - Improves INT on headwear.\nSuccess rate 60%, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040026); // Scroll for Helmet for INT 10% - Improves INT on headwear.\nSuccess rate 10%, INT+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040027); // Scroll for Helmet for DEX 100% - Improves DEX on headwear..Success rate 100%, DEX+1
-                ret.add(2040029); // Scroll for Helmet for DEX 60% - Improves DEX on headwear.\nSuccess rate 60%, DEX+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040031); // Scroll for Helmet for DEX 10% - Improves DEX on headwear.\nSuccess rate 10%, DEX+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040041); // Scroll for Helmet for DEF 100% - Improves helmet def.\nSuccess rate:100%, weapon def.+2, magic def., +3
-                ret.add(2040042); // Scroll for Helmet for HP 100% - Improves MaxHP on hats.\nSuccess rate:100%, MaxHP+15
-                ret.add(2040043); // Scroll for Helmet for DEX 65% - Improves DEX on Helmets.\nSuccess Rate 65%, DEX+2
-                ret.add(2040044); // Scroll for Helmet for DEX 15% - Improves DEX on Helmets.\nSuccess Rate 15%, DEX+3
-                ret.add(2040045); // Scroll for Helmet for DEF 50% - Improves helmet def.\nSuccess Rate:50%, weapon def.+5, magic def.+4
-                ret.add(2040046); // Scroll for Helmet for HP 50% - Improves MaxHP on hats.\nSuccess rate:50%, MaxHP+35
-            }
-            case ArmorType.FACE_ACCESSORY -> {
-                ret.add(2040100); // Scroll for Face Accessory for HP - Improves MaxHP on face accessories.\nSuccess rate:10%, MaxHP +30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040101); // Scroll for Face Accessory for HP - Improves MaxHP on face accessories.\nSuccess rate:60%, MaxHP +15. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040102); // Scroll for Face Accessory for HP - Improves MaxHP on face accessories.\nSuccess rate:100%, MaxHP +5
-                ret.add(2040105); // Scroll for Face Accessory for Avoidability - Improves avoidability on face accessories.\nSuccess rate:10%, Avoidability +2, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040106); // Scroll for Face Accessory for Avoidability - Improves avoidability on face accessories.\nSuccess rate:60%, Avoidability +1, DEX +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040107); // Scroll for Face Accessory for Avoidability - Improves avoidability on face accessories.\nSuccess rate:100%, Avoidability +1
-
-            }
-            case ArmorType.EYE_ACCESSORY -> {
-                ret.add(2040200); // Scroll for Eye Accessory for Accuracy - Improves accuracy on eye accessories.\nSuccess rate:10%, Accuracy +3, DEX +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040201); // Scroll for Eye Accessory for Accuracy - Improves accuracy on eye accessories.\nSuccess rate:60%, Accuracy +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040202); // Scroll for Eye Accessory for Accuracy - Improves accuracy on eye accessories.\nSuccess rate:100%, Accuracy +1
-                ret.add(2040205); // Scroll for Eye Accessory for INT - Improves INT on eye accessories.\nSuccess rate:10%, INT +3, Magic Def. +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040206); // Scroll for Eye Accessory for INT - Improves INT on eye accessories.\nSuccess rate:60%, INT +1, Magic Def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040207); // Scroll for Eye Accessory for INT - Improves INT on eye accessories.\nSuccess rate:100%, INT +1
-            }
-            case ArmorType.EARRING -> {
-                ret.add(2040300); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:100%, magic attack+1
-                ret.add(2040301); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:60%, magic attack +2, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040302); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:10%, magic attack +5, INT+3, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040303); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:30%, magic attack +5, INT+3, magic def. +1
-                ret.add(2040310); // Scroll for Earring for DEF - Improves DEF on earrings.\nSuccess Rate 10%, weapon defense+3, magic defense+3, Accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040311); // Scroll for Earring for DEF - Improves DEF on earrings.\nSuccess Rate 60%, weapon defense+1, magic defense+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040312); // Scroll for Earring for DEF - Improves DEF on earringsnSuccess Rate 100%, weapon defense+1
-                ret.add(2040313); // Scroll for Earring for INT - Improves INT on Earrings.\nSuccess rate: 65%, Magic Attack +2, INT+1
-                ret.add(2040314); // Scroll for Earring for INT - Improves INT on Earrings.\nSuccess rate:15%, Magic Attack +5, INT +3, Magic Def. +1
-                ret.add(2040316); // Scroll for Earring for DEX 100% - Improves DEX on earrings..\nSuccess rate:100%, DEX+1
-                ret.add(2040317); // Scroll for Earring for DEX 60% - Improves DEX on earrings.\nSuccess rate:60%, DEX+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040318); // Scroll for Earring for DEX 10% - Improves DEX on earrings.\nSuccess rate:10%, DEX+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040319); // Scroll for Earring for LUK 100% - Improves LUK on earrings..\nSuccess rate:100%, LUK+1
-                ret.add(2040321); // Scroll for Earring for LUK 60% - Improves LUK on earrings.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040323); // Scroll for Earring for LUK 10% - Improves LUK on earrings.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040324); // Scroll for Earring for HP 100% - Improves HP on earrings..\nSuccess rate:100%, MaxHP+5
-                ret.add(2040326); // Scroll for Earring for HP 60% - Improves HP on earrings.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040328); // Scroll for Earring for HP 10% - Improves HP on earrings.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040329); // Scroll for Earring for DEX 10% - Improves DEX on earrings. nSuccess rate: 10%, Dex +3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040330); // Scroll for Earring for INT 10% - Improves INT on earrings. nSuccess rate: 10%, Magic ATT +5, INT +3, Magic Defense +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040331); // Scroll for Earring for LUK 10% - Improves LUK on earrings. nSuccess rate: 10%, LUK +3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040333); // Scroll for Earring for INT 50% - Improves INT on ear accessory.\nSuccess rate:50%, magic attack +5, INT+3, magic def. +2
-                ret.add(2040334); // Scroll for Earring for INT 100% - Improves INT on ear accessory.\nSuccess rate:100%, magic attack +2, INT+2
-                ret.add(2040335); // Scroll for Earring for DEX 65% - Improves DEX on Earrings.\nSuccess Rate: 65%, DEX+2
-                ret.add(2040336); // Scroll for Earring for DEX 15% - Improves DEX on Earrings.\nSuccess Rate: 15%, DEX+3
-                ret.add(2040337); // Scroll for Earring for LUK 65% - Improves LUK on Earrings.\nSuccess Rate: 65%, LUK+2
-                ret.add(2040338); // Scroll for Earring for LUK 15% - Improves LUK on Earrings.\nSuccess Rate: 15%, LUK+3
-                ret.add(2040339); // Scroll for Earring for HP 65% - Improves HP on Earrings.\nSuccess Rate: 65%, MaxHP+15
-                ret.add(2040340); // Scroll for Earring for HP 15% - Improves HP on Earrings.\nSuccess Rate: 15%, MaxHP+30
-            }
-            case ArmorType.TOPWEAR -> {
-                ret.add(2040400); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:100%, weapon def.+1
-                ret.add(2040401); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:60%, weapon def.+2, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040402); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:10%, weapon def. +5, magic def. +3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040403); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:100%, weapon def. +5, magic def. +3, MaxHP+10
-                ret.add(2040412); // Scroll for Topwear for LUK - Improves LUK on the topwear.\nSuccess Rate 10%, LUK+3, avoidability+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040413); // Scroll for Topwear for LUK - Improves LUK on the topwear.\nSuccess Rate 60%, LUK+2, avoidability+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040414); // Scroll for Topwear for LUK - Improves LUK on the topwear.\nSuccess Rate 100%, LUK+1
-                ret.add(2040415); // Scroll for Topwear for DEF - Improves Weapon Def. on Topwear.\nSuccess rate: 65%, Weapon Def. +2, Magic Def. +1
-                ret.add(2040416); // Scroll for Topwear for DEF - Improves Weapon Def. on Topwear.\nSuccess rate: 15%, Weapon Def. +5, Magic Def. +3, MaxHP +10
-                ret.add(2040417); // Scroll for Topwear for STR 100% - Improves strength on topwear..Success rate 100%, STR+1
-                ret.add(2040418); // Scroll for Topwear for STR 60% - Improves strength on topwear.\nSuccess rate 60%, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040419); // Scroll for Topwear for STR 10% - Improves strength on topwear.\nSuccess rate 10%, STR+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040420); // Scroll for Topwear for HP 100% - Improves HP on topwear..Success rate 100%, MaxHP + 5
-                ret.add(2040421); // Scroll for Topwear for HP 60% - Improves HP on topwear.\nSuccess rate 60%, MaxHP + 15. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040422); // Scroll for Topwear for HP 10% - Improves HP on topwear.\nSuccess rate 10%, MaxHP + 30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040423); // Scroll for Topwear for LUK 100% - Improves luck on topwear..\nSuccess rate:100%, LUK+1
-                ret.add(2040425); // Scroll for Topwear for LUK 60% - Improves luck on topwear.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040427); // Scroll for Topwear for LUK 10% - Improves luck on topwear.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040429); // Scroll for Topwear for DEF 50% - Improves weapon def. on topwear.\nSuccess rate:50%, weapon def. +5, magic def. +4
-                ret.add(2040430); // Scroll for Topwear for DEF 100% - Improves weapon def. on topwear.\nSuccess rate:100%, weapon def.+2, magic def.+3
-                ret.add(2040431); // Scroll for Topwear for STR 65% - Improves STR on Topwear.\nSuccess Rate 65%, STR+2
-                ret.add(2040432); // Scroll for Topwear for STR 15% - Improves STR on Topwear.\nSuccess Rate 15%, STR+3
-                ret.add(2040433); // Scroll for Topwear for HP 65% - Improves HP on Topwear.\nSuccess Rate 65%, MaxHP + 15
-                ret.add(2040434); // Scroll for Topwear for HP 15% - Improves HP on Topwear.\nSuccess Rate 15%, MaxHP + 30
-                ret.add(2040435); // Scroll for Topwear for LUK 65% - Improves LUK on Topwear.\nSuccess Rate: 65%, LUK+2
-                ret.add(2040436); // Scroll for Topwear for LUK 15% - Improves LUK on Topwear.\nSuccess Rate: 15%, LUK+3
-            }
-            case ArmorType.OVERALL -> {
-                ret.add(2040500); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:100%, DEX+1
-                ret.add(2040501); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:60%, DEX+2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040502); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:10%, DEX+5, accuracy+3, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040503); // Scroll for Overall Armor for DEF - Improves weapon def. on the overall armor.\nSuccess rate:100%, weapon def.+1
-                ret.add(2040504); // Scroll for Overall Armor for DEF - Improves def. on the overall armor.\nSuccess rate:60%, weapon def.+2, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040505); // Scroll for Overall Armor for DEF - Improves def. on the overall armor.\nSuccess rate:10%, wepon def. +5, magic def. +3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040506); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:100%, DEX+5, accuracy+3, speed+1
-                ret.add(2040507); // Scroll for Overall Armor for DEF - Improves weapon def. on the overall armor.\nSuccess rate:30%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2040512); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate: 100%, INT + 1
-                ret.add(2040513); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate: 60%, INT + 2, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040514); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate: 10%, INT + 5, magic def. + 3, MaxMP + 10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040515); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate: 100%, LUK + 1
-                ret.add(2040516); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate: 60%, LUK + 2, avoidability + 1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040517); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate: 10%, LUK + 5, avoidability + 3, accuracy + 1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040522); // Scroll for Overall Armor for DEX - Improves DEX on Overall Armor.\nSuccess rate: 65%, DEX +2, Accuracy +1
-                ret.add(2040523); // Scroll for Overall Armor for DEX - Improves DEX on Overall Armor.\nSuccess rate: 15%, DEX +5, Accuracy+3, Speed +1
-                ret.add(2040524); // Overall Armor Scroll for DEF - Improves Weapon Def. on Overall Armor.\nSuccess rate: 65%, Weapon Def. +2, Magic Def. +1
-                ret.add(2040525); // Overall Armor Scroll for DEF - Improves Weapon Def. on Overall Armor.\nSuccess rate: 15%, Weapon Def. +5, Magic Def. +3, MaxHP +10
-                ret.add(2040526); // Scroll for Overall Armor for INT - Improves INT on the Overall Armor.\nSuccess rate: 65%, INT +2, Magic Def. +1
-                ret.add(2040527); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate:15%, INT+5, magic def.+3, MaxMP+10
-                ret.add(2040528); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate:65%, LUK+2, avoidability+1
-                ret.add(2040529); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate:15%, LUK+5, avoidability+3, accuracy+1
-                ret.add(2040530); // Scroll for Overall for STR 100% - Improves strength on overalls..\nSuccess rate:100%, STR+1
-                ret.add(2040532); // Scroll for Overall for STR 60% - Improves strength on overalls.\nSuccess rate:60%, STR+2, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040534); // Scroll for Overall for STR 10% - Improves strength on overalls.\nSuccess rate:10%, STR+5, weapon def.+3, MaxHP+5. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040538); // Scroll for Overall Armor for DEX 100% - Improves dexterity on the overall armor.\nSuccess rate:100%, DEX+2, accuracy+3
-                ret.add(2040539); // Scroll for Overall Armor for DEF 100% - Improves def. on the overall armor.\nSuccess rate:100%, weapon def.+2, magic def.+3
-                ret.add(2040540); // Scroll for Overall Armor for STR 65% - Improves STR on Overall Armor.\nSuccess Rate: 65%, STR+2, Weapon Attack+1
-                ret.add(2040541); // Scroll for Overall Armor for STR 15% - Improves STR on Overall Armor.\nSuccess Rate: 15%, STR+5, Weapon Attack+3, MaxHP+5
-                ret.add(2040542); // Scroll for Overall Armor for DEX 50% - Improves dexterity on the overall armor.\nSuccess rate:50%, DEX+5, avoidability+1, speed+1
-                ret.add(2040543); // Scroll for Overall Armor for DEF 50% - Improves def. on the overall armor.\nSuccess rate:50%, wepon def. +5, magic def. +4
-            }
-            case ArmorType.BOTTOMWEAR -> {
-                ret.add(2040600); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear. nSuccess rate:100%, weapon def. +1
-                ret.add(2040601); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear.\nSuccess rate:60%, weapon def. +2, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040602); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear.\nSuccess rate:10%, weapon def.+5, magic def.+3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040603); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear.\nSuccess rate:100%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2040612); // Scroll for Bottomwear for DEX - Improves dexterity on the bottomwear.\nSuccess Rate 10%, DEX+3, speed+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040613); // Scroll for Bottomwear for DEX - Improves dexterity on the bottomwear.\nSuccess Rate 60%, DEX+2, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040614); // Scroll for Bottomwear for DEX - Improves dexterity on the bottomwear.\nSuccess Rate 100%, DEX+1
-                ret.add(2040615); // Scroll for Bottomwear for DEF - Improves weapon def. on bottomwear.\nSuccess rate:65%, weapon def.+2, magic def.+1
-                ret.add(2040616); // Scroll for Bottomwear for DEF - Improves weapon def. on bottomwear.\nSuccess rate:15%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2040617); // Scroll for Bottomwear for Jump 100% - Improves jumping abilities on bottomwears..\nSuccess rate:100%, jump+1
-                ret.add(2040618); // Scroll for Bottomwear for Jump 60% - Improves jumping abilities on bottomwears.\nSuccess rate:60%, jump+2, avoidability+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040619); // Scroll for Bottomwear for Jump 10% - Improves jumping abilities on bottomwears..\nSuccess rate:10%, jump+4, avoidability+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040620); // Scroll for Bottomwear for HP 100% - Improves HP on bottomwears..\nSuccess rate:100%, MaxHP+5
-                ret.add(2040621); // Scroll for Bottomwear for HP 60% - Improves HP on bottomwears.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040622); // Scroll for Bottomwear for HP 10% - Improves HP on bottomwears.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040623); // Scroll for Bottomwear for DEX 100% - Improves dexterity on bottomwears..\nSuccess rate:100%, DEX+1
-                ret.add(2040625); // Scroll for Bottomwear for DEX 60% - Improves dexterity on bottomwears.\nSuccess rate:60%, DEX+2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040627); // Scroll for Bottomwear for DEX 10% - Improves dexterity on bottomwears.\nSuccess rate:10%, DEX+3, accuracy+2, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040629); // Scroll for Bottomwear for DEF 50% - Improves weapon def. on the bottomwear.\nSuccess rate:50%, weapon def.+5, magic def.+4
-                ret.add(2040630); // Scroll for Bottomwear for DEF 100% - Improves weapon def. on the bottomwear.\nSuccess rate:100%, weapon def. +2, magic def. +3
-                ret.add(2040631); // Scroll for Bottomwear for Jump 65% - Improves Jump on Bottomwear.\nSuccess Rate: 65%, Jump+2, Avoidability+1
-                ret.add(2040632); // Scroll for Bottomwear for Jump 15% - Improves Jump on Bottomwear.\nSuccess Rate: 15%, Jump+4, Avoidability+2
-                ret.add(2040633); // Scroll for Bottomwear for HP 65% - Improves HP on Bottomwear.\nSuccess Rate: 65%, MaxHP+15
-                ret.add(2040634); // Scroll for Bottomwear for HP 15% - Improves HP on Bottomwear.\nSuccess Rate: 15%, MaxHP+30
-                ret.add(2040635); // Scroll for Bottomwear for DEX 65% - Improves DEX on Bottomwear.\nSuccess Rate: 65%, DEX+2, Accuracy+1
-                ret.add(2040636); // Scroll for Bottomwear for DEX 15% - Improves DEX on Bottomwear.\nSuccess Rate: 15%, DEX+3, Accuracy+2, Speed+1
-            }
-            case ArmorType.SHOES -> {
-                ret.add(2040700); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:100%, Avoidability+1
-                ret.add(2040701); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:60%, Avoidability +2, Accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040702); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:10%, Avoidability +5, accuracy +3, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040703); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:100%, jump +1
-                ret.add(2040704); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate: 60%, jump +2, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040705); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:10%, jump+5, DEX+3, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040706); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:100%, speed+1
-                ret.add(2040707); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:60%, speed+2
-                ret.add(2040708); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:10%, speed+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040709); // Scroll for Shoes for DEX - Improves DEX on shoes.\nSuccess rate:100%, avoidability+5, accuracy+3, speed+1
-                ret.add(2040710); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:100%, jump+5, DEX+3, speed+1
-                ret.add(2040711); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:100%, speed+3
-                ret.add(2040718); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:65%, avoidability+2, accuracy+1
-                ret.add(2040719); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:15%, avoidability+5, accuracy+3, speed+1
-                ret.add(2040720); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:65%, jump+2, DEX+1
-                ret.add(2040721); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:15%, jump+5, DEX+3, speed+1
-                ret.add(2040722); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:65%, speed+2
-                ret.add(2040723); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:15%, speed+3
-                ret.add(2040727); // Scroll for Spikes on Shoes 10% - Adds traction to the shoes, which prevents the shoes from slipping on slippery surface.\nSuccess rate:10%, Does not affect the number of upgrades available. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040740); // Scroll for Shoes for DEX 100% - Improves dexterity on shoes.\nSuccess rate:100%, Avoidability +2, Accuracy+3
-                ret.add(2040741); // Scroll for Shoes for Jump 100% - Improves jump on shoes.\nSuccess rate: 100%, jump +2, DEX+2
-                ret.add(2040742); // Scroll for Shoes for Speed 100% - Improves speed on shoes.\nSuccess rate:100%, speed+2
-                ret.add(2040755); // Scroll for Shoes for DEX 50% - Improves dexterity on shoes.\nSuccess rate:50%, Avoidability +3, accuracy +3, speed+2
-                ret.add(2040756); // Scroll for Shoes for Jump 50% - Improves jump on shoes.\nSuccess rate:50%, jump+6, speed+1
-                ret.add(2040757); // Scroll for Shoes for Speed 50% - Improves speed on shoes.\nSuccess rate:50%, speed+3, jump+1
-                ret.add(2040758); // Scroll for Shoes for ATT - Improves attack on shoes.\nSuccess rate: 100%. Weapon Attack +1
-                ret.add(2040759); // Scroll for Shoes for ATT - Improves attack on shoes.\nSuccess rate: 60%. Weapon Attack +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040760); // Scroll for Shoes for ATT - Improves attack on shoes.\nSuccess rate: 10%, Weapon Attack +3. The success rate of this scroll can be enhanced by Vega's Spell.
-            }
-            case ArmorType.GLOVES -> {
-                ret.add(2040800); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:100%, accurcacy +1
-                ret.add(2040801); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate: 60%, accuracy+2, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040802); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:10%, accuracy+5, DEX+3, avoidability+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040803); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:100%, weapon att. +1
-                ret.add(2040804); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate 60%, weapon att. +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040805); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:10%, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040806); // Scroll for Gloves for DEX - Improves DEX on the glove.\nSuccess rate:100%, accuracy+5, DEX+3, avoidability+1
-                ret.add(2040807); // Scroll for Gloves for ATT - Improves weapon att. on the glove.\nSuccess rate:100%, weapon att.+3
-                ret.add(2040816); // Scroll for Gloves for Magic Att. - Improves magic attack on the glove.\nSuccess Rate 10%, magic defense+1, magic attack+3, INT+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040817); // Scroll for Gloves for Magic Att. - Improves magic attack on the glove.\nSuccess Rate 60%, magic attack+1, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040818); // Scroll for Gloves for Magic Att. - Improves magic attack on the glove.\nSuccess Rate 100%, magic attack+1
-                ret.add(2040819); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:65%, accuracy+2, DEX+1
-                ret.add(2040820); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:15%, accuracy+5, DEX+3, avoidability+1
-                ret.add(2040821); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:65%, weapon attack+2
-                ret.add(2040822); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:15%, weapon attack+3
-                ret.add(2040823); // Scroll for Gloves for HP 100% - Improves HP on gloves..\nSuccess rate:100%, MaxHP+5
-                ret.add(2040824); // Scroll for Gloves for HP 60% - Improves HP on gloves.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040825); // Scroll for Gloves for HP 10% - Improves HP on gloves.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040826); // Scroll for Gloves for ATT 60% - Improves ATT on Gloves.\nSuccess rate: 60%, Weapons ATT +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040829); // Scroll for Gloves for DEX 100% - Improves dexterity on gloves.\nSuccess rate: 100%, accuracy+2, DEX+2
-                ret.add(2040830); // Scroll for Gloves for ATT 100% - Improves attack on gloves.\nSuccess rate 100%, weapon att. +2
-                ret.add(2040831); // Scroll for Gloves for HP 65% - Improves HP on Gloves.\nSuccess Rate: 65%, MaxHP+15
-                ret.add(2040832); // Scroll for Gloves for HP 15% - Improves HP on Gloves.\nSuccess Rate: 15%, MaxHP+30
-                ret.add(2040833); // Scroll for Gloves for DEX 50% - Improves dexterity on gloves.\nSuccess rate:50%, accuracy+3, DEX+3, avoidability+2
-                ret.add(2040834); // Scroll for Gloves for ATT 50% - Improves attack on gloves.\nSuccess rate:50%, weapon att.+3
-            }
-            case ArmorType.SHIELD -> {
-                ret.add(2040900); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate:100%, weapon def. +1
-                ret.add(2040901); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate:60%, weapon def.+2, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040902); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate 10%, weapon def.+5, magic def.+3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040903); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate 100%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2040910); // Scroll for Shield for DEF - Improves weapon defense on the shield.\nSuccess rate:65%, weapon def.+2, magic def.+1
-                ret.add(2040911); // Scroll for Shield for DEF - Improves weapon defense on the shield.\nSuccess rate:15%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2040914); // Scroll for Shield for Weapon Att. - Improves weapon attack on the shield.\nSuccess Rate 60%, W. attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040915); // Scroll for Shield for Weapon Att. - Improves weapon attack on the shield.\nSuccess Rate 10%, W. attack+3, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040918); // Scroll for Shield for Magic Att. - Improves magic attack on the shield.\nSuccess Rate 100%, magic attack+1
-                ret.add(2040919); // Scroll for Shield for Magic Att. - Improves magic attack on the shield.\nSuccess Rate 60%, magic attack+2, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040920); // Scroll for Shield for Magic Att. - Improves magic attack on the shield.\nSuccess Rate 10%, magic attack+3, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040923); // Scroll for Shield for LUK 100% - Improves LUK on shields..\nSuccess rate:100%, LUK+1
-                ret.add(2040924); // Scroll for Shield for LUK 60% - Improves LUK on shields.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040925); // Scroll for Shield for LUK 10% - Improves LUK on shields.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040926); // Scroll for Shield for HP 100% - Improves HP on shields..\nSuccess rate:100%, MaxHP+5
-                ret.add(2040927); // Scroll for Shield for HP 60% - Improves HP on shields.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040928); // Scroll for Shield for HP 10% - Improves HP on shields.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040929); // Scroll for Shield for STR 100% - Improves strength on shields..\nSuccess rate:100%, STR+1
-                ret.add(2040931); // Scroll for Shield for STR 60% - Improves strength on shields.\nSuccess rate:60%, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040933); // Scroll for Shield for STR 10% - Improves strength on shields.\nSuccess rate:10%, STR+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2040936); // Scroll for Shield for DEF 100% - Improves weapon def. on the shield.\nSuccess rate:100%, weapon def.+2, magic def.+3
-                ret.add(2040937); // Scroll for Shield for LUK 65% - Improves LUK on Shields.\nSuccess Rate: 65%, LUK+2
-                ret.add(2040938); // Scroll for Shield for LUK 15% - Improves LUK on Shields.\nSuccess Rate: 15%, LUK+3
-                ret.add(2040939); // Scroll for Shield for HP 65% - Improves HP on Shields.\nSuccess Rate: 65%, MaxHP+15
-                ret.add(2040940); // Scroll for Shield for HP 15% - Improves HP on Shields.\nSuccess Rate: 15%, MaxHP+30
-                ret.add(2040941); // Scroll for Shield for STR 65% - Improves STR on Shields.\nSuccess Rate: 65%, STR+2
-                ret.add(2040942); // Scroll for Shield for STR 15% - Improves STR on Shields.\nSuccess Rate: 15%, STR+3
-                ret.add(2040943); // Scroll for Shield for DEF 50% - Improves weapon def. on the shield.\nSuccess rate 50%, weapon def.+5, magic def.+4
-            }
-            case ArmorType.CAPE -> {
-                ret.add(2041000); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:100%, magic def. +1
-                ret.add(2041001); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:60%, magic def.+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041002); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:10%, magic def. +5, weapon def. +3, MaxMP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041003); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:100%, weapon def.+1
-                ret.add(2041004); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:60%, weapon def.+3, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041005); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:10%, weapon def. +5, magic def.+3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041006); // Scroll for Cape for HP - Improves MaxHP on the cape.\nSuccess rate:100%, MaxHP+5
-                ret.add(2041007); // Scroll for Cape for HP - Improves MaxHP on the cape.\nSuccess rate:60%, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041008); // Scroll for Cape for HP - Improves MaxHP on the cape.\nSuccess rate:10%, MaxHP+20. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041009); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:100%, MaxMP+5
-                ret.add(2041010); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:60%, MaxMP+10. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041011); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:10%, MaxMP+20. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041012); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:100%, STR+1
-                ret.add(2041013); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:60%, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041014); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:10%, STR+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041015); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:100%, INT+1
-                ret.add(2041016); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:60%, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041017); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:10%, INT+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041018); // Scroll for Cape for DEX - Improves DEX on the cape.\nSuccess rate:100%, DEX+1
-                ret.add(2041019); // Scroll for Cape for DEX - Improves DEX on the cape.\nSuccess rate:60%, DEX+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041020); // Scroll for Cape for DEX - Improves DEX on the cape.\nSuccess rate:10%, DEX+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041021); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:100%, LUK+1
-                ret.add(2041022); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041023); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041024); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:100%, magic def.+5, weapon def.+3, MaxMP+10
-                ret.add(2041025); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:100%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2041042); // Scroll for Cape for Magic DEF - Improves magic defense on the cape.\nSuccess rate:65%, magic def.+3, weapon def.+1
-                ret.add(2041043); // Scroll for Cape for Magic DEF - Improves magic defense on the cape.\nSuccess rate:15%, magic def.+5, weapon def.+3, MaxMP+10
-                ret.add(2041044); // Scroll for Cape for Weapon DEF - Improves weapon defense on the cape.\nSuccess rate:65%, weapon def.+3, magic def.+1
-                ret.add(2041045); // Scroll for Cape for Weapon DEF - Improves weapon defense on the cape.\nSuccess rate:15%, weapon def.+5, magic def.+3, MaxHP+10
-                ret.add(2041046); // Scroll for Cape for MaxHP - Improves MaxHP on the cape.\nSuccess rate:65%, MaxHP+10
-                ret.add(2041047); // Scroll for Cape for MaxHP - Improves MaxHP on the cape.\nSuccess rate:15%, MaxHP+20
-                ret.add(2041048); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:65%, MaxMP+10
-                ret.add(2041049); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:15%, MaxMP+20
-                ret.add(2041050); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:65%, STR+2
-                ret.add(2041051); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:15%, STR+3
-                ret.add(2041052); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:65%, INT+2
-                ret.add(2041053); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:15%, INT+3
-                ret.add(2041054); // Scroll for Cape for DEX - Improves dexterity on the cape.\nSuccess rate:65%, DEX+2
-                ret.add(2041055); // Scroll for Cape for DEX - Improves dexterity on the cape.\nSuccess rate:15%, DEX+3
-                ret.add(2041056); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:65%, LUK+2
-                ret.add(2041057); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:15%, LUK+3
-                ret.add(2041058); // Scroll for Cape for Cold Protection 10% - Includes the effect of protection from cold weather on the cape.\nSuccess rate: 10%. Does not affect the number of upgrades available. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041066); // Scroll for Cape for Magic DEF 100% - Improves magic def. on the cape.\nSuccess rate:100%, magic def.+3, weapon def.+2
-                ret.add(2041067); // Scroll for Cape for Weapon DEF 100% - Improves weapon def. on the cape.\nSuccess rate:100%, weapon def.+3, magic def. +2
-                ret.add(2041068); // Scroll for Cape for Magic Def. 50% - Improves magic def. on the cape.\nSuccess rate:50%, magic def. +5, weapon def. +4
-                ret.add(2041069); // Scroll for Cape for Weapon Def. 50% - Improves weapon def. on the cape.\nSuccess rate:50%, weapon def. +5, magic def.+4
-            }
-            case ArmorType.RING -> {
-                ret.add(2041100); // Scroll for Ring for STR 100% - Improves STR on Rings. nSuccess rate: 100%, STR +1
-                ret.add(2041101); // Scroll for Rings for STR 60% - Improves STR on Rings.\nSuccess rate: 60%, STR +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041102); // Scroll for Rings for STR 10% - Improves STR on Rings.\nSuccess rate: 10%, STR +3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041103); // Scroll for Rings for INT 100% - Improves INT on Rings. nSuccess rate: 100%, INT +1
-                ret.add(2041104); // Scroll for Rings for INT 60% - Improves INT on Rings.\nSuccess rate: 60%, INT +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041105); // Scroll for Rings for INT 10% - Improves INT on Rings.\nSuccess rate: 10%, INT +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041106); // Scroll for Rings for DEX 100% - Improves DEX on Rings. nSuccess rate: 100%, DEX +1
-                ret.add(2041107); // Scroll for Rings for DEX 60% - Improves DEX on Rings.\nSuccess rate: 100%, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041108); // Scroll for Rings for DEX 10% - Improves DEX on Rings.\nSuccess rate: 10%, DEX +3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041109); // Scroll for Rings for LUK 100% - Improves LUK on Rings. nSuccess rate: 100%, LUK +1
-                ret.add(2041110); // Scroll for Rings for LUK 60% - Improves LUK on Rings.\nSuccess rate: 60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041111); // Scroll for Rings for LUK 10% - Improves LUK on Rings.\nSuccess rate: 10%, LUK +3. The success rate of this scroll can be enhanced by Vega's Spell.
-            }
-            case ArmorType.BELT -> {
-                ret.add(2041300); // Scroll for Belts for STR 100% - Improves STR on Belts. nSuccess rate: 100%, STR +1
-                ret.add(2041301); // Scroll for Belts for STR 60% - Improves STR on Belts.\nSuccess rate: 60%, STR +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041302); // Scroll for Belts for STR 10% - Improves STR on Belts.\nSuccess rate: 10%, STR +3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041303); // Scroll for Belts for INT 100% - Improves INT on Belts. nSuccess rate: 100%, INT +1
-                ret.add(2041304); // Scroll for Belts for INT 60% - Improves INT on Belts.\nSuccess rate: 60%, INT +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041305); // Scroll for Belts for INT 10% - Improves INT on Belts.\nSuccess rate: 10%, INT +3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041306); // Scroll for Belts for DEX 100% - Improves DEX on Belts. nSuccess rate: 100%, DEX +1
-                ret.add(2041307); // Scroll for Belts for DEX 60% - Improves DEX on Belts.\nSuccess rate: 60%, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041308); // Scroll for Belts for DEX 10% - Improves DEX on Belts.\nSuccess rate: 10%, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041309); // Scroll for Belts for LUK 100% - Improves LUK on Belts. nSuccess rate: 100%, LUK +1
-                ret.add(2041310); // Scroll for Belts for LUK 60% - Improves LUK on Belts.\nSuccess rate: 60%, LUK +2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2041311); // Scroll for Belts for LUK 10% - Improves LUK on Belts.\nSuccess rate: 10%, LUK +3. The success rate of this scroll can be enhanced by Vega's Spell.
-            }
-            case ArmorType.PET_EQUIP -> {
-                ret.add(2048000); // Scroll for Pet Equip. for Speed - Improves speed on pet equip.\nSuccess rate:100%, speed+1
-                ret.add(2048001); // Scroll for Pet Equip. for Speed - Improves speed on pet equip.\nSuccess rate:60%, moving speed+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048002); // Scroll for Pet Equip. for Speed - Improves speed on pet equip.\nSuccess rate:10%, moving speed+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048003); // Scroll for Pet Equip. for Jump - Improves jump on pet equip.\nSuccess rate:100%, jump+1
-                ret.add(2048004); // Scroll for Pet Equip. for Jump - Improves jump on pet equip.\nSuccess rate:60%, jump+2. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048005); // Scroll for Pet Equip. for Jump - Improves jump on pet equip.\nSuccess rate:10%, jump+3. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048006); // Scroll for Pet Equip. for Speed - Improves speed on Pet Equip. nSuccess rate:65%, speed+2
-                ret.add(2048007); // Scroll for Pet Equip. for Speed - Improves speed on Pet Equip. nSuccess rate:15%, speed+3
-                ret.add(2048008); // Scroll for Pet Equip. for Jump - Improves jump on Pet equip. nSuccess rate:65%, jump+2
-                ret.add(2048009); // Scroll for Pet Equip. for Jump - Improves jump on Pet equip. nSuccess rate:15%, jump+3
-                ret.add(2048010); // Scroll for Pet Equip. for STR 60% - Improves strength on pet equipments.\nSuccess rate:60%, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048011); // Scroll for Pet Equip. for INT 60% - Improves intelligence on pet equipments.\nSuccess rate:60%, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048012); // Scroll for Pet Equip. for DEX 60% - Improves dexterity on pet equipments.\nSuccess rate:60%, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
-                ret.add(2048013); // Scroll for Pet Equip. for LUK 60% - Improves luck on pet equipments.\nSuccess rate:60%, LUK+1. The success rate of this scroll can be enhanced by Vega's Spell.
-            }
-        }
-
-        // Add to cache
-        scrollsByArmorType.put(armorType, ret);
-
-        return scrollsByArmorType.get(armorType);
-    }
 
     private static double testYourLuck(double prop, int dices) {   // revamped testYourLuck author: David A.
         return Math.pow(1.0 - prop, dices);
@@ -2779,5 +2351,621 @@ public class ItemInformationProvider {
         }
 
     }
-}
 
+    // Scroll cache
+    private final Map<Integer, List<Integer>> scrollsByEquipCategory = new HashMap<>();
+
+    // Armor categories
+    public static final int CATEGORY_HELMET = 100;
+    public static final int CATEGORY_FACE_ACCESSORY = 101;
+    public static final int CATEGORY_EYE_ACCESSORY = 102;
+    public static final int CATEGORY_EARRING = 103;
+    public static final int CATEGORY_TOPWEAR = 104;
+    public static final int CATEGORY_OVERALL = 105;
+    public static final int CATEGORY_BOTTOMWEAR = 106;
+    public static final int CATEGORY_SHOES = 107;
+    public static final int CATEGORY_GLOVES = 108;
+    public static final int CATEGORY_SHIELD = 109;
+    public static final int CATEGORY_CAPE = 110;
+    public static final int CATEGORY_RING = 111;
+    public static final int CATEGORY_PENDANT = 112;
+    public static final int CATEGORY_BELT = 113;
+    public static final int CATEGORY_PET_EQUIP = 180;
+
+    // Weapon categories
+    public static final int CATEGORY_1H_SWORD = 130;
+    public static final int CATEGORY_1H_AXE = 131;
+    public static final int CATEGORY_1H_BW = 132;
+    public static final int CATEGORY_DAGGER = 133;
+    public static final int CATEGORY_WAND = 137;
+    public static final int CATEGORY_STAFF = 138;
+    public static final int CATEGORY_2H_SWORD = 140;
+    public static final int CATEGORY_2H_AXE = 141;
+    public static final int CATEGORY_2H_BW = 142;
+    public static final int CATEGORY_SPEAR = 143;
+    public static final int CATEGORY_POLEARM = 144;
+    public static final int CATEGORY_BOW = 145;
+    public static final int CATEGORY_CROSSBOW = 146;
+    public static final int CATEGORY_CLAW = 147;
+    public static final int CATEGORY_KNUCKLE = 148;
+    public static final int CATEGORY_PISTOL = 149;
+
+    public List<Integer> getScrollsByItemId(int itemId) {
+
+        int equipCategory = (itemId / 10000);
+
+        // Check cache first
+        if (scrollsByEquipCategory.containsKey(equipCategory)) {
+            return scrollsByEquipCategory.get(equipCategory);
+        }
+
+        List<Integer> ret = new ArrayList<>();
+        switch (equipCategory) {
+            case CATEGORY_HELMET -> {
+                ret.add(2040000); // Scroll for Helmet for DEF - Improves the helmet's weapon def.\nSuccess rate:100%, weapon def. +1
+                ret.add(2040001); // Scroll for Helmet for DEF - Improves helmet def.\nSuccess rate:60%, weapon def.+2, magic def., +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040002); // Scroll for Helmet for DEF - Improves helmet def.\nSuccess Rate:10%, weapon def.+5, magic def.+3, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040003); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:100%, MaxHP+5
+                ret.add(2040004); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:60%, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040005); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040006); // Scroll for Helmet for DEF - Improves helmet def.\nSuccess rate:100%, weapon def.+5, magic def.+3, accuracy+1
+                ret.add(2040007); // Scroll for Helmet for HP - Improves MaxHP on hats.\nSuccess rate:100%, MaxHP+30
+                ret.add(2040016); // Scroll for Helmet for Accuracy - Improves the helmet's accuracy option.\nSuccess Rate 10%, Dex+2, Accuracy +4. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040017); // Scroll for Helmet for Accuracy - Improves the helmet's accuracy option.\nSuccess Rate 60%, Dex+1, Accuracy +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040018); // Scroll for Helmet for Accuracy - Improves the helmet's accuracy option.\nSuccess Rate 100%, Accuracy +1
+                ret.add(2040019); // Scroll for Helmet for DEF - Improves Weapon Defense on a Helmet.\nSuccess rate: 65%, Weapon Def. +2, Magic Def. +1
+                ret.add(2040020); // Scroll for Helmet for DEF - Improves Weapon Defense on a Helmet.\nSuccess rate: 15%, Weapon Def.+5, Magic Def.+3, Accuracy+1
+                ret.add(2040021); // Scroll for Helmet for MaxHP - Improves MaxHP on a Helmet.\nSuccess rate: 65%, MaxHP +10
+                ret.add(2040022); // Scroll for Helmet for MaxHP - Improves MaxHP on a Helmet.\nSuccess rate: 15%, MaxHP +30
+                ret.add(2040023); // Scroll for Rudolph's Horn 60% - Increases the weapon attack and magic attack of Rudolph's Horn.\nSuccess rate:60%, attack +1, magic att. +1
+                ret.add(2040024); // Scroll for Helmet for INT 100% - Improves INT on headwear..Success rate 100%, INT+1
+                ret.add(2040025); // Scroll for Helmet for INT 60% - Improves INT on headwear.\nSuccess rate 60%, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040026); // Scroll for Helmet for INT 10% - Improves INT on headwear.\nSuccess rate 10%, INT+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040027); // Scroll for Helmet for DEX 100% - Improves DEX on headwear..Success rate 100%, DEX+1
+                ret.add(2040029); // Scroll for Helmet for DEX 60% - Improves DEX on headwear.\nSuccess rate 60%, DEX+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040031); // Scroll for Helmet for DEX 10% - Improves DEX on headwear.\nSuccess rate 10%, DEX+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040041); // Scroll for Helmet for DEF 100% - Improves helmet def.\nSuccess rate:100%, weapon def.+2, magic def., +3
+                ret.add(2040042); // Scroll for Helmet for HP 100% - Improves MaxHP on hats.\nSuccess rate:100%, MaxHP+15
+                ret.add(2040043); // Scroll for Helmet for DEX 65% - Improves DEX on Helmets.\nSuccess Rate 65%, DEX+2
+                ret.add(2040044); // Scroll for Helmet for DEX 15% - Improves DEX on Helmets.\nSuccess Rate 15%, DEX+3
+                ret.add(2040045); // Scroll for Helmet for DEF 50% - Improves helmet def.\nSuccess Rate:50%, weapon def.+5, magic def.+4
+                ret.add(2040046); // Scroll for Helmet for HP 50% - Improves MaxHP on hats.\nSuccess rate:50%, MaxHP+35
+            }
+            case CATEGORY_FACE_ACCESSORY -> {
+                ret.add(2040100); // Scroll for Face Accessory for HP - Improves MaxHP on face accessories.\nSuccess rate:10%, MaxHP +30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040101); // Scroll for Face Accessory for HP - Improves MaxHP on face accessories.\nSuccess rate:60%, MaxHP +15. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040102); // Scroll for Face Accessory for HP - Improves MaxHP on face accessories.\nSuccess rate:100%, MaxHP +5
+                ret.add(2040105); // Scroll for Face Accessory for Avoidability - Improves avoidability on face accessories.\nSuccess rate:10%, Avoidability +2, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040106); // Scroll for Face Accessory for Avoidability - Improves avoidability on face accessories.\nSuccess rate:60%, Avoidability +1, DEX +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040107); // Scroll for Face Accessory for Avoidability - Improves avoidability on face accessories.\nSuccess rate:100%, Avoidability +1
+
+            }
+            case CATEGORY_EYE_ACCESSORY -> {
+                ret.add(2040200); // Scroll for Eye Accessory for Accuracy - Improves accuracy on eye accessories.\nSuccess rate:10%, Accuracy +3, DEX +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040201); // Scroll for Eye Accessory for Accuracy - Improves accuracy on eye accessories.\nSuccess rate:60%, Accuracy +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040202); // Scroll for Eye Accessory for Accuracy - Improves accuracy on eye accessories.\nSuccess rate:100%, Accuracy +1
+                ret.add(2040205); // Scroll for Eye Accessory for INT - Improves INT on eye accessories.\nSuccess rate:10%, INT +3, Magic Def. +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040206); // Scroll for Eye Accessory for INT - Improves INT on eye accessories.\nSuccess rate:60%, INT +1, Magic Def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040207); // Scroll for Eye Accessory for INT - Improves INT on eye accessories.\nSuccess rate:100%, INT +1
+            }
+            case CATEGORY_EARRING -> {
+                ret.add(2040300); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:100%, magic attack+1
+                ret.add(2040301); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:60%, magic attack +2, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040302); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:10%, magic attack +5, INT+3, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040303); // Scroll for Earring for INT - Improves INT on ear accessory.\nSuccess rate:30%, magic attack +5, INT+3, magic def. +1
+                ret.add(2040310); // Scroll for Earring for DEF - Improves DEF on earrings.\nSuccess Rate 10%, weapon defense+3, magic defense+3, Accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040311); // Scroll for Earring for DEF - Improves DEF on earrings.\nSuccess Rate 60%, weapon defense+1, magic defense+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040312); // Scroll for Earring for DEF - Improves DEF on earringsnSuccess Rate 100%, weapon defense+1
+                ret.add(2040313); // Scroll for Earring for INT - Improves INT on Earrings.\nSuccess rate: 65%, Magic Attack +2, INT+1
+                ret.add(2040314); // Scroll for Earring for INT - Improves INT on Earrings.\nSuccess rate:15%, Magic Attack +5, INT +3, Magic Def. +1
+                ret.add(2040316); // Scroll for Earring for DEX 100% - Improves DEX on earrings..\nSuccess rate:100%, DEX+1
+                ret.add(2040317); // Scroll for Earring for DEX 60% - Improves DEX on earrings.\nSuccess rate:60%, DEX+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040318); // Scroll for Earring for DEX 10% - Improves DEX on earrings.\nSuccess rate:10%, DEX+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040319); // Scroll for Earring for LUK 100% - Improves LUK on earrings..\nSuccess rate:100%, LUK+1
+                ret.add(2040321); // Scroll for Earring for LUK 60% - Improves LUK on earrings.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040323); // Scroll for Earring for LUK 10% - Improves LUK on earrings.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040324); // Scroll for Earring for HP 100% - Improves HP on earrings..\nSuccess rate:100%, MaxHP+5
+                ret.add(2040326); // Scroll for Earring for HP 60% - Improves HP on earrings.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040328); // Scroll for Earring for HP 10% - Improves HP on earrings.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040329); // Scroll for Earring for DEX 10% - Improves DEX on earrings. nSuccess rate: 10%, Dex +3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040330); // Scroll for Earring for INT 10% - Improves INT on earrings. nSuccess rate: 10%, Magic ATT +5, INT +3, Magic Defense +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040331); // Scroll for Earring for LUK 10% - Improves LUK on earrings. nSuccess rate: 10%, LUK +3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040333); // Scroll for Earring for INT 50% - Improves INT on ear accessory.\nSuccess rate:50%, magic attack +5, INT+3, magic def. +2
+                ret.add(2040334); // Scroll for Earring for INT 100% - Improves INT on ear accessory.\nSuccess rate:100%, magic attack +2, INT+2
+                ret.add(2040335); // Scroll for Earring for DEX 65% - Improves DEX on Earrings.\nSuccess Rate: 65%, DEX+2
+                ret.add(2040336); // Scroll for Earring for DEX 15% - Improves DEX on Earrings.\nSuccess Rate: 15%, DEX+3
+                ret.add(2040337); // Scroll for Earring for LUK 65% - Improves LUK on Earrings.\nSuccess Rate: 65%, LUK+2
+                ret.add(2040338); // Scroll for Earring for LUK 15% - Improves LUK on Earrings.\nSuccess Rate: 15%, LUK+3
+                ret.add(2040339); // Scroll for Earring for HP 65% - Improves HP on Earrings.\nSuccess Rate: 65%, MaxHP+15
+                ret.add(2040340); // Scroll for Earring for HP 15% - Improves HP on Earrings.\nSuccess Rate: 15%, MaxHP+30
+            }
+            case CATEGORY_TOPWEAR -> {
+                ret.add(2040400); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:100%, weapon def.+1
+                ret.add(2040401); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:60%, weapon def.+2, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040402); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:10%, weapon def. +5, magic def. +3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040403); // Scroll for Topwear for DEF - Improves weapon def. on topwear.\nSuccess rate:100%, weapon def. +5, magic def. +3, MaxHP+10
+                ret.add(2040412); // Scroll for Topwear for LUK - Improves LUK on the topwear.\nSuccess Rate 10%, LUK+3, avoidability+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040413); // Scroll for Topwear for LUK - Improves LUK on the topwear.\nSuccess Rate 60%, LUK+2, avoidability+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040414); // Scroll for Topwear for LUK - Improves LUK on the topwear.\nSuccess Rate 100%, LUK+1
+                ret.add(2040415); // Scroll for Topwear for DEF - Improves Weapon Def. on Topwear.\nSuccess rate: 65%, Weapon Def. +2, Magic Def. +1
+                ret.add(2040416); // Scroll for Topwear for DEF - Improves Weapon Def. on Topwear.\nSuccess rate: 15%, Weapon Def. +5, Magic Def. +3, MaxHP +10
+                ret.add(2040417); // Scroll for Topwear for STR 100% - Improves strength on topwear..Success rate 100%, STR+1
+                ret.add(2040418); // Scroll for Topwear for STR 60% - Improves strength on topwear.\nSuccess rate 60%, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040419); // Scroll for Topwear for STR 10% - Improves strength on topwear.\nSuccess rate 10%, STR+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040420); // Scroll for Topwear for HP 100% - Improves HP on topwear..Success rate 100%, MaxHP + 5
+                ret.add(2040421); // Scroll for Topwear for HP 60% - Improves HP on topwear.\nSuccess rate 60%, MaxHP + 15. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040422); // Scroll for Topwear for HP 10% - Improves HP on topwear.\nSuccess rate 10%, MaxHP + 30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040423); // Scroll for Topwear for LUK 100% - Improves luck on topwear..\nSuccess rate:100%, LUK+1
+                ret.add(2040425); // Scroll for Topwear for LUK 60% - Improves luck on topwear.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040427); // Scroll for Topwear for LUK 10% - Improves luck on topwear.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040429); // Scroll for Topwear for DEF 50% - Improves weapon def. on topwear.\nSuccess rate:50%, weapon def. +5, magic def. +4
+                ret.add(2040430); // Scroll for Topwear for DEF 100% - Improves weapon def. on topwear.\nSuccess rate:100%, weapon def.+2, magic def.+3
+                ret.add(2040431); // Scroll for Topwear for STR 65% - Improves STR on Topwear.\nSuccess Rate 65%, STR+2
+                ret.add(2040432); // Scroll for Topwear for STR 15% - Improves STR on Topwear.\nSuccess Rate 15%, STR+3
+                ret.add(2040433); // Scroll for Topwear for HP 65% - Improves HP on Topwear.\nSuccess Rate 65%, MaxHP + 15
+                ret.add(2040434); // Scroll for Topwear for HP 15% - Improves HP on Topwear.\nSuccess Rate 15%, MaxHP + 30
+                ret.add(2040435); // Scroll for Topwear for LUK 65% - Improves LUK on Topwear.\nSuccess Rate: 65%, LUK+2
+                ret.add(2040436); // Scroll for Topwear for LUK 15% - Improves LUK on Topwear.\nSuccess Rate: 15%, LUK+3
+            }
+            case CATEGORY_OVERALL -> {
+                ret.add(2040500); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:100%, DEX+1
+                ret.add(2040501); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:60%, DEX+2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040502); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:10%, DEX+5, accuracy+3, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040503); // Scroll for Overall Armor for DEF - Improves weapon def. on the overall armor.\nSuccess rate:100%, weapon def.+1
+                ret.add(2040504); // Scroll for Overall Armor for DEF - Improves def. on the overall armor.\nSuccess rate:60%, weapon def.+2, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040505); // Scroll for Overall Armor for DEF - Improves def. on the overall armor.\nSuccess rate:10%, wepon def. +5, magic def. +3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040506); // Scroll for Overall Armor for DEX - Improves dexterity on the overall armor.\nSuccess rate:100%, DEX+5, accuracy+3, speed+1
+                ret.add(2040507); // Scroll for Overall Armor for DEF - Improves weapon def. on the overall armor.\nSuccess rate:30%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2040512); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate: 100%, INT + 1
+                ret.add(2040513); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate: 60%, INT + 2, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040514); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate: 10%, INT + 5, magic def. + 3, MaxMP + 10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040515); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate: 100%, LUK + 1
+                ret.add(2040516); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate: 60%, LUK + 2, avoidability + 1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040517); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate: 10%, LUK + 5, avoidability + 3, accuracy + 1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040522); // Scroll for Overall Armor for DEX - Improves DEX on Overall Armor.\nSuccess rate: 65%, DEX +2, Accuracy +1
+                ret.add(2040523); // Scroll for Overall Armor for DEX - Improves DEX on Overall Armor.\nSuccess rate: 15%, DEX +5, Accuracy+3, Speed +1
+                ret.add(2040524); // Overall Armor Scroll for DEF - Improves Weapon Def. on Overall Armor.\nSuccess rate: 65%, Weapon Def. +2, Magic Def. +1
+                ret.add(2040525); // Overall Armor Scroll for DEF - Improves Weapon Def. on Overall Armor.\nSuccess rate: 15%, Weapon Def. +5, Magic Def. +3, MaxHP +10
+                ret.add(2040526); // Scroll for Overall Armor for INT - Improves INT on the Overall Armor.\nSuccess rate: 65%, INT +2, Magic Def. +1
+                ret.add(2040527); // Scroll for Overall Armor for INT - Improves INT on the overall armor.\nSuccess rate:15%, INT+5, magic def.+3, MaxMP+10
+                ret.add(2040528); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate:65%, LUK+2, avoidability+1
+                ret.add(2040529); // Scroll for Overall Armor for LUK - Improves LUK on the overall armor.\nSuccess rate:15%, LUK+5, avoidability+3, accuracy+1
+                ret.add(2040530); // Scroll for Overall for STR 100% - Improves strength on overalls..\nSuccess rate:100%, STR+1
+                ret.add(2040532); // Scroll for Overall for STR 60% - Improves strength on overalls.\nSuccess rate:60%, STR+2, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040534); // Scroll for Overall for STR 10% - Improves strength on overalls.\nSuccess rate:10%, STR+5, weapon def.+3, MaxHP+5. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040538); // Scroll for Overall Armor for DEX 100% - Improves dexterity on the overall armor.\nSuccess rate:100%, DEX+2, accuracy+3
+                ret.add(2040539); // Scroll for Overall Armor for DEF 100% - Improves def. on the overall armor.\nSuccess rate:100%, weapon def.+2, magic def.+3
+                ret.add(2040540); // Scroll for Overall Armor for STR 65% - Improves STR on Overall Armor.\nSuccess Rate: 65%, STR+2, Weapon Attack+1
+                ret.add(2040541); // Scroll for Overall Armor for STR 15% - Improves STR on Overall Armor.\nSuccess Rate: 15%, STR+5, Weapon Attack+3, MaxHP+5
+                ret.add(2040542); // Scroll for Overall Armor for DEX 50% - Improves dexterity on the overall armor.\nSuccess rate:50%, DEX+5, avoidability+1, speed+1
+                ret.add(2040543); // Scroll for Overall Armor for DEF 50% - Improves def. on the overall armor.\nSuccess rate:50%, wepon def. +5, magic def. +4
+            }
+            case CATEGORY_BOTTOMWEAR -> {
+                ret.add(2040600); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear. nSuccess rate:100%, weapon def. +1
+                ret.add(2040601); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear.\nSuccess rate:60%, weapon def. +2, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040602); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear.\nSuccess rate:10%, weapon def.+5, magic def.+3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040603); // Scroll for Bottomwear for DEF - Improves weapon def. on the bottomwear.\nSuccess rate:100%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2040612); // Scroll for Bottomwear for DEX - Improves dexterity on the bottomwear.\nSuccess Rate 10%, DEX+3, speed+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040613); // Scroll for Bottomwear for DEX - Improves dexterity on the bottomwear.\nSuccess Rate 60%, DEX+2, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040614); // Scroll for Bottomwear for DEX - Improves dexterity on the bottomwear.\nSuccess Rate 100%, DEX+1
+                ret.add(2040615); // Scroll for Bottomwear for DEF - Improves weapon def. on bottomwear.\nSuccess rate:65%, weapon def.+2, magic def.+1
+                ret.add(2040616); // Scroll for Bottomwear for DEF - Improves weapon def. on bottomwear.\nSuccess rate:15%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2040617); // Scroll for Bottomwear for Jump 100% - Improves jumping abilities on bottomwears..\nSuccess rate:100%, jump+1
+                ret.add(2040618); // Scroll for Bottomwear for Jump 60% - Improves jumping abilities on bottomwears.\nSuccess rate:60%, jump+2, avoidability+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040619); // Scroll for Bottomwear for Jump 10% - Improves jumping abilities on bottomwears..\nSuccess rate:10%, jump+4, avoidability+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040620); // Scroll for Bottomwear for HP 100% - Improves HP on bottomwears..\nSuccess rate:100%, MaxHP+5
+                ret.add(2040621); // Scroll for Bottomwear for HP 60% - Improves HP on bottomwears.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040622); // Scroll for Bottomwear for HP 10% - Improves HP on bottomwears.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040623); // Scroll for Bottomwear for DEX 100% - Improves dexterity on bottomwears..\nSuccess rate:100%, DEX+1
+                ret.add(2040625); // Scroll for Bottomwear for DEX 60% - Improves dexterity on bottomwears.\nSuccess rate:60%, DEX+2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040627); // Scroll for Bottomwear for DEX 10% - Improves dexterity on bottomwears.\nSuccess rate:10%, DEX+3, accuracy+2, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040629); // Scroll for Bottomwear for DEF 50% - Improves weapon def. on the bottomwear.\nSuccess rate:50%, weapon def.+5, magic def.+4
+                ret.add(2040630); // Scroll for Bottomwear for DEF 100% - Improves weapon def. on the bottomwear.\nSuccess rate:100%, weapon def. +2, magic def. +3
+                ret.add(2040631); // Scroll for Bottomwear for Jump 65% - Improves Jump on Bottomwear.\nSuccess Rate: 65%, Jump+2, Avoidability+1
+                ret.add(2040632); // Scroll for Bottomwear for Jump 15% - Improves Jump on Bottomwear.\nSuccess Rate: 15%, Jump+4, Avoidability+2
+                ret.add(2040633); // Scroll for Bottomwear for HP 65% - Improves HP on Bottomwear.\nSuccess Rate: 65%, MaxHP+15
+                ret.add(2040634); // Scroll for Bottomwear for HP 15% - Improves HP on Bottomwear.\nSuccess Rate: 15%, MaxHP+30
+                ret.add(2040635); // Scroll for Bottomwear for DEX 65% - Improves DEX on Bottomwear.\nSuccess Rate: 65%, DEX+2, Accuracy+1
+                ret.add(2040636); // Scroll for Bottomwear for DEX 15% - Improves DEX on Bottomwear.\nSuccess Rate: 15%, DEX+3, Accuracy+2, Speed+1
+            }
+            case CATEGORY_SHOES -> {
+                ret.add(2040700); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:100%, Avoidability+1
+                ret.add(2040701); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:60%, Avoidability +2, Accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040702); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:10%, Avoidability +5, accuracy +3, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040703); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:100%, jump +1
+                ret.add(2040704); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate: 60%, jump +2, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040705); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:10%, jump+5, DEX+3, speed+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040706); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:100%, speed+1
+                ret.add(2040707); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:60%, speed+2
+                ret.add(2040708); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:10%, speed+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040709); // Scroll for Shoes for DEX - Improves DEX on shoes.\nSuccess rate:100%, avoidability+5, accuracy+3, speed+1
+                ret.add(2040710); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:100%, jump+5, DEX+3, speed+1
+                ret.add(2040711); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:100%, speed+3
+                ret.add(2040718); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:65%, avoidability+2, accuracy+1
+                ret.add(2040719); // Scroll for Shoes for DEX - Improves dexterity on shoes.\nSuccess rate:15%, avoidability+5, accuracy+3, speed+1
+                ret.add(2040720); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:65%, jump+2, DEX+1
+                ret.add(2040721); // Scroll for Shoes for Jump - Improves jump on shoes.\nSuccess rate:15%, jump+5, DEX+3, speed+1
+                ret.add(2040722); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:65%, speed+2
+                ret.add(2040723); // Scroll for Shoes for Speed - Improves speed on shoes.\nSuccess rate:15%, speed+3
+                ret.add(2040727); // Scroll for Spikes on Shoes 10% - Adds traction to the shoes, which prevents the shoes from slipping on slippery surface.\nSuccess rate:10%, Does not affect the number of upgrades available. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040740); // Scroll for Shoes for DEX 100% - Improves dexterity on shoes.\nSuccess rate:100%, Avoidability +2, Accuracy+3
+                ret.add(2040741); // Scroll for Shoes for Jump 100% - Improves jump on shoes.\nSuccess rate: 100%, jump +2, DEX+2
+                ret.add(2040742); // Scroll for Shoes for Speed 100% - Improves speed on shoes.\nSuccess rate:100%, speed+2
+                ret.add(2040755); // Scroll for Shoes for DEX 50% - Improves dexterity on shoes.\nSuccess rate:50%, Avoidability +3, accuracy +3, speed+2
+                ret.add(2040756); // Scroll for Shoes for Jump 50% - Improves jump on shoes.\nSuccess rate:50%, jump+6, speed+1
+                ret.add(2040757); // Scroll for Shoes for Speed 50% - Improves speed on shoes.\nSuccess rate:50%, speed+3, jump+1
+                ret.add(2040758); // Scroll for Shoes for ATT - Improves attack on shoes.\nSuccess rate: 100%. Weapon Attack +1
+                ret.add(2040759); // Scroll for Shoes for ATT - Improves attack on shoes.\nSuccess rate: 60%. Weapon Attack +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040760); // Scroll for Shoes for ATT - Improves attack on shoes.\nSuccess rate: 10%, Weapon Attack +3. The success rate of this scroll can be enhanced by Vega's Spell.
+            }
+            case CATEGORY_GLOVES -> {
+                ret.add(2040800); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:100%, accurcacy +1
+                ret.add(2040801); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate: 60%, accuracy+2, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040802); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:10%, accuracy+5, DEX+3, avoidability+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040803); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:100%, weapon att. +1
+                ret.add(2040804); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate 60%, weapon att. +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040805); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:10%, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040806); // Scroll for Gloves for DEX - Improves DEX on the glove.\nSuccess rate:100%, accuracy+5, DEX+3, avoidability+1
+                ret.add(2040807); // Scroll for Gloves for ATT - Improves weapon att. on the glove.\nSuccess rate:100%, weapon att.+3
+                ret.add(2040816); // Scroll for Gloves for Magic Att. - Improves magic attack on the glove.\nSuccess Rate 10%, magic defense+1, magic attack+3, INT+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040817); // Scroll for Gloves for Magic Att. - Improves magic attack on the glove.\nSuccess Rate 60%, magic attack+1, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040818); // Scroll for Gloves for Magic Att. - Improves magic attack on the glove.\nSuccess Rate 100%, magic attack+1
+                ret.add(2040819); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:65%, accuracy+2, DEX+1
+                ret.add(2040820); // Scroll for Gloves for DEX - Improves dexterity on gloves.\nSuccess rate:15%, accuracy+5, DEX+3, avoidability+1
+                ret.add(2040821); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:65%, weapon attack+2
+                ret.add(2040822); // Scroll for Gloves for ATT - Improves attack on gloves.\nSuccess rate:15%, weapon attack+3
+                ret.add(2040823); // Scroll for Gloves for HP 100% - Improves HP on gloves..\nSuccess rate:100%, MaxHP+5
+                ret.add(2040824); // Scroll for Gloves for HP 60% - Improves HP on gloves.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040825); // Scroll for Gloves for HP 10% - Improves HP on gloves.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040826); // Scroll for Gloves for ATT 60% - Improves ATT on Gloves.\nSuccess rate: 60%, Weapons ATT +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040829); // Scroll for Gloves for DEX 100% - Improves dexterity on gloves.\nSuccess rate: 100%, accuracy+2, DEX+2
+                ret.add(2040830); // Scroll for Gloves for ATT 100% - Improves attack on gloves.\nSuccess rate 100%, weapon att. +2
+                ret.add(2040831); // Scroll for Gloves for HP 65% - Improves HP on Gloves.\nSuccess Rate: 65%, MaxHP+15
+                ret.add(2040832); // Scroll for Gloves for HP 15% - Improves HP on Gloves.\nSuccess Rate: 15%, MaxHP+30
+                ret.add(2040833); // Scroll for Gloves for DEX 50% - Improves dexterity on gloves.\nSuccess rate:50%, accuracy+3, DEX+3, avoidability+2
+                ret.add(2040834); // Scroll for Gloves for ATT 50% - Improves attack on gloves.\nSuccess rate:50%, weapon att.+3
+            }
+            case CATEGORY_SHIELD -> {
+                ret.add(2040900); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate:100%, weapon def. +1
+                ret.add(2040901); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate:60%, weapon def.+2, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040902); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate 10%, weapon def.+5, magic def.+3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040903); // Scroll for Shield for DEF - Improves weapon def. on the shield.\nSuccess rate 100%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2040910); // Scroll for Shield for DEF - Improves weapon defense on the shield.\nSuccess rate:65%, weapon def.+2, magic def.+1
+                ret.add(2040911); // Scroll for Shield for DEF - Improves weapon defense on the shield.\nSuccess rate:15%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2040914); // Scroll for Shield for Weapon Att. - Improves weapon attack on the shield.\nSuccess Rate 60%, W. attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040915); // Scroll for Shield for Weapon Att. - Improves weapon attack on the shield.\nSuccess Rate 10%, W. attack+3, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040918); // Scroll for Shield for Magic Att. - Improves magic attack on the shield.\nSuccess Rate 100%, magic attack+1
+                ret.add(2040919); // Scroll for Shield for Magic Att. - Improves magic attack on the shield.\nSuccess Rate 60%, magic attack+2, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040920); // Scroll for Shield for Magic Att. - Improves magic attack on the shield.\nSuccess Rate 10%, magic attack+3, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040923); // Scroll for Shield for LUK 100% - Improves LUK on shields..\nSuccess rate:100%, LUK+1
+                ret.add(2040924); // Scroll for Shield for LUK 60% - Improves LUK on shields.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040925); // Scroll for Shield for LUK 10% - Improves LUK on shields.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040926); // Scroll for Shield for HP 100% - Improves HP on shields..\nSuccess rate:100%, MaxHP+5
+                ret.add(2040927); // Scroll for Shield for HP 60% - Improves HP on shields.\nSuccess rate:60%, MaxHP+15. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040928); // Scroll for Shield for HP 10% - Improves HP on shields.\nSuccess rate:10%, MaxHP+30. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040929); // Scroll for Shield for STR 100% - Improves strength on shields..\nSuccess rate:100%, STR+1
+                ret.add(2040931); // Scroll for Shield for STR 60% - Improves strength on shields.\nSuccess rate:60%, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040933); // Scroll for Shield for STR 10% - Improves strength on shields.\nSuccess rate:10%, STR+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2040936); // Scroll for Shield for DEF 100% - Improves weapon def. on the shield.\nSuccess rate:100%, weapon def.+2, magic def.+3
+                ret.add(2040937); // Scroll for Shield for LUK 65% - Improves LUK on Shields.\nSuccess Rate: 65%, LUK+2
+                ret.add(2040938); // Scroll for Shield for LUK 15% - Improves LUK on Shields.\nSuccess Rate: 15%, LUK+3
+                ret.add(2040939); // Scroll for Shield for HP 65% - Improves HP on Shields.\nSuccess Rate: 65%, MaxHP+15
+                ret.add(2040940); // Scroll for Shield for HP 15% - Improves HP on Shields.\nSuccess Rate: 15%, MaxHP+30
+                ret.add(2040941); // Scroll for Shield for STR 65% - Improves STR on Shields.\nSuccess Rate: 65%, STR+2
+                ret.add(2040942); // Scroll for Shield for STR 15% - Improves STR on Shields.\nSuccess Rate: 15%, STR+3
+                ret.add(2040943); // Scroll for Shield for DEF 50% - Improves weapon def. on the shield.\nSuccess rate 50%, weapon def.+5, magic def.+4
+            }
+            case CATEGORY_CAPE -> {
+                ret.add(2041000); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:100%, magic def. +1
+                ret.add(2041001); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:60%, magic def.+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041002); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:10%, magic def. +5, weapon def. +3, MaxMP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041003); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:100%, weapon def.+1
+                ret.add(2041004); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:60%, weapon def.+3, magic def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041005); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:10%, weapon def. +5, magic def.+3, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041006); // Scroll for Cape for HP - Improves MaxHP on the cape.\nSuccess rate:100%, MaxHP+5
+                ret.add(2041007); // Scroll for Cape for HP - Improves MaxHP on the cape.\nSuccess rate:60%, MaxHP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041008); // Scroll for Cape for HP - Improves MaxHP on the cape.\nSuccess rate:10%, MaxHP+20. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041009); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:100%, MaxMP+5
+                ret.add(2041010); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:60%, MaxMP+10. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041011); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:10%, MaxMP+20. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041012); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:100%, STR+1
+                ret.add(2041013); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:60%, STR+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041014); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:10%, STR+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041015); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:100%, INT+1
+                ret.add(2041016); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:60%, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041017); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:10%, INT+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041018); // Scroll for Cape for DEX - Improves DEX on the cape.\nSuccess rate:100%, DEX+1
+                ret.add(2041019); // Scroll for Cape for DEX - Improves DEX on the cape.\nSuccess rate:60%, DEX+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041020); // Scroll for Cape for DEX - Improves DEX on the cape.\nSuccess rate:10%, DEX+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041021); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:100%, LUK+1
+                ret.add(2041022); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041023); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:10%, LUK+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041024); // Scroll for Cape for Magic Def. - Improves magic def. on the cape.\nSuccess rate:100%, magic def.+5, weapon def.+3, MaxMP+10
+                ret.add(2041025); // Scroll for Cape for Weapon Def. - Improves weapon def. on the cape.\nSuccess rate:100%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2041042); // Scroll for Cape for Magic DEF - Improves magic defense on the cape.\nSuccess rate:65%, magic def.+3, weapon def.+1
+                ret.add(2041043); // Scroll for Cape for Magic DEF - Improves magic defense on the cape.\nSuccess rate:15%, magic def.+5, weapon def.+3, MaxMP+10
+                ret.add(2041044); // Scroll for Cape for Weapon DEF - Improves weapon defense on the cape.\nSuccess rate:65%, weapon def.+3, magic def.+1
+                ret.add(2041045); // Scroll for Cape for Weapon DEF - Improves weapon defense on the cape.\nSuccess rate:15%, weapon def.+5, magic def.+3, MaxHP+10
+                ret.add(2041046); // Scroll for Cape for MaxHP - Improves MaxHP on the cape.\nSuccess rate:65%, MaxHP+10
+                ret.add(2041047); // Scroll for Cape for MaxHP - Improves MaxHP on the cape.\nSuccess rate:15%, MaxHP+20
+                ret.add(2041048); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:65%, MaxMP+10
+                ret.add(2041049); // Scroll for Cape for MP - Improves MaxMP on the cape.\nSuccess rate:15%, MaxMP+20
+                ret.add(2041050); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:65%, STR+2
+                ret.add(2041051); // Scroll for Cape for STR - Improves STR on the cape.\nSuccess rate:15%, STR+3
+                ret.add(2041052); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:65%, INT+2
+                ret.add(2041053); // Scroll for Cape for INT - Improves INT on the cape.\nSuccess rate:15%, INT+3
+                ret.add(2041054); // Scroll for Cape for DEX - Improves dexterity on the cape.\nSuccess rate:65%, DEX+2
+                ret.add(2041055); // Scroll for Cape for DEX - Improves dexterity on the cape.\nSuccess rate:15%, DEX+3
+                ret.add(2041056); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:65%, LUK+2
+                ret.add(2041057); // Scroll for Cape for LUK - Improves LUK on the cape.\nSuccess rate:15%, LUK+3
+                ret.add(2041058); // Scroll for Cape for Cold Protection 10% - Includes the effect of protection from cold weather on the cape.\nSuccess rate: 10%. Does not affect the number of upgrades available. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041066); // Scroll for Cape for Magic DEF 100% - Improves magic def. on the cape.\nSuccess rate:100%, magic def.+3, weapon def.+2
+                ret.add(2041067); // Scroll for Cape for Weapon DEF 100% - Improves weapon def. on the cape.\nSuccess rate:100%, weapon def.+3, magic def. +2
+                ret.add(2041068); // Scroll for Cape for Magic Def. 50% - Improves magic def. on the cape.\nSuccess rate:50%, magic def. +5, weapon def. +4
+                ret.add(2041069); // Scroll for Cape for Weapon Def. 50% - Improves weapon def. on the cape.\nSuccess rate:50%, weapon def. +5, magic def.+4
+            }
+            case CATEGORY_RING -> {
+                ret.add(2041100); // Scroll for Ring for STR 100% - Improves STR on Rings. nSuccess rate: 100%, STR +1
+                ret.add(2041101); // Scroll for Rings for STR 60% - Improves STR on Rings.\nSuccess rate: 60%, STR +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041102); // Scroll for Rings for STR 10% - Improves STR on Rings.\nSuccess rate: 10%, STR +3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041103); // Scroll for Rings for INT 100% - Improves INT on Rings. nSuccess rate: 100%, INT +1
+                ret.add(2041104); // Scroll for Rings for INT 60% - Improves INT on Rings.\nSuccess rate: 60%, INT +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041105); // Scroll for Rings for INT 10% - Improves INT on Rings.\nSuccess rate: 10%, INT +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041106); // Scroll for Rings for DEX 100% - Improves DEX on Rings. nSuccess rate: 100%, DEX +1
+                ret.add(2041107); // Scroll for Rings for DEX 60% - Improves DEX on Rings.\nSuccess rate: 100%, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041108); // Scroll for Rings for DEX 10% - Improves DEX on Rings.\nSuccess rate: 10%, DEX +3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041109); // Scroll for Rings for LUK 100% - Improves LUK on Rings. nSuccess rate: 100%, LUK +1
+                ret.add(2041110); // Scroll for Rings for LUK 60% - Improves LUK on Rings.\nSuccess rate: 60%, LUK+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041111); // Scroll for Rings for LUK 10% - Improves LUK on Rings.\nSuccess rate: 10%, LUK +3. The success rate of this scroll can be enhanced by Vega's Spell.
+            }
+            case CATEGORY_PENDANT -> {
+                // No pendant scrolls
+            }
+            case CATEGORY_BELT -> {
+                ret.add(2041300); // Scroll for Belts for STR 100% - Improves STR on Belts. nSuccess rate: 100%, STR +1
+                ret.add(2041301); // Scroll for Belts for STR 60% - Improves STR on Belts.\nSuccess rate: 60%, STR +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041302); // Scroll for Belts for STR 10% - Improves STR on Belts.\nSuccess rate: 10%, STR +3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041303); // Scroll for Belts for INT 100% - Improves INT on Belts. nSuccess rate: 100%, INT +1
+                ret.add(2041304); // Scroll for Belts for INT 60% - Improves INT on Belts.\nSuccess rate: 60%, INT +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041305); // Scroll for Belts for INT 10% - Improves INT on Belts.\nSuccess rate: 10%, INT +3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041306); // Scroll for Belts for DEX 100% - Improves DEX on Belts. nSuccess rate: 100%, DEX +1
+                ret.add(2041307); // Scroll for Belts for DEX 60% - Improves DEX on Belts.\nSuccess rate: 60%, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041308); // Scroll for Belts for DEX 10% - Improves DEX on Belts.\nSuccess rate: 10%, DEX +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041309); // Scroll for Belts for LUK 100% - Improves LUK on Belts. nSuccess rate: 100%, LUK +1
+                ret.add(2041310); // Scroll for Belts for LUK 60% - Improves LUK on Belts.\nSuccess rate: 60%, LUK +2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2041311); // Scroll for Belts for LUK 10% - Improves LUK on Belts.\nSuccess rate: 10%, LUK +3. The success rate of this scroll can be enhanced by Vega's Spell.
+            }
+            case CATEGORY_PET_EQUIP -> {
+                ret.add(2048000); // Scroll for Pet Equip. for Speed - Improves speed on pet equip.\nSuccess rate:100%, speed+1
+                ret.add(2048001); // Scroll for Pet Equip. for Speed - Improves speed on pet equip.\nSuccess rate:60%, moving speed+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048002); // Scroll for Pet Equip. for Speed - Improves speed on pet equip.\nSuccess rate:10%, moving speed+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048003); // Scroll for Pet Equip. for Jump - Improves jump on pet equip.\nSuccess rate:100%, jump+1
+                ret.add(2048004); // Scroll for Pet Equip. for Jump - Improves jump on pet equip.\nSuccess rate:60%, jump+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048005); // Scroll for Pet Equip. for Jump - Improves jump on pet equip.\nSuccess rate:10%, jump+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048006); // Scroll for Pet Equip. for Speed - Improves speed on Pet Equip. nSuccess rate:65%, speed+2
+                ret.add(2048007); // Scroll for Pet Equip. for Speed - Improves speed on Pet Equip. nSuccess rate:15%, speed+3
+                ret.add(2048008); // Scroll for Pet Equip. for Jump - Improves jump on Pet equip. nSuccess rate:65%, jump+2
+                ret.add(2048009); // Scroll for Pet Equip. for Jump - Improves jump on Pet equip. nSuccess rate:15%, jump+3
+                ret.add(2048010); // Scroll for Pet Equip. for STR 60% - Improves strength on pet equipments.\nSuccess rate:60%, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048011); // Scroll for Pet Equip. for INT 60% - Improves intelligence on pet equipments.\nSuccess rate:60%, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048012); // Scroll for Pet Equip. for DEX 60% - Improves dexterity on pet equipments.\nSuccess rate:60%, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2048013); // Scroll for Pet Equip. for LUK 60% - Improves luck on pet equipments.\nSuccess rate:60%, LUK+1. The success rate of this scroll can be enhanced by Vega's Spell.
+            }
+            case CATEGORY_1H_SWORD -> {
+                ret.add(2043000); // Scroll for One-Handed Sword for ATT - Improves attack on one-handed sword.\nSuccess rate:100%, weapon attack+1
+                ret.add(2043001); // Scroll for One-Handed Sword for ATT - Improves attack on one-handed sword.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043002); // Scroll for One-Handed Sword for ATT - Improves attack on one-handed sword.\nSuccess rate:10%, weapon attack+5, STR+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043003); // Scroll for One-Handed Sword for ATT - Improves attack on one-handed sword.\nSuccess rate:100%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2043008); // Scroll for One-Handed Sword for Magic Att. - Improves magic attack on one-handed sword.\nSuccess Rate 10%, magic attack+2, magic defense+1, INT+2. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043009); // Scroll for One-Handed Sword for Magic Att. - Improves magic attack on one-handed sword.\nSuccess Rate 60%, magic attack+1, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043010); // Scroll for One-Handed Sword for Magic Att. - Improves magic attack on one-handed sword.\nSuccess Rate 100%, magic attack+1
+                ret.add(2043011); // Scroll for One-Handed Sword for ATT - Improves attack on the one-handed sword.\nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2043012); // Scroll for One-Handed Sword for ATT - Improves attack on the one-handed sword.\nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2043015); // Scroll for One-Handed Sword for Accuracy 100% - Improves accuracy on one-handed swords.\nSuccess rate:100%, accuracy+1
+                ret.add(2043017); // Scroll for One-Handed Sword for Accuracy 60% - Improves accuracy on one-handed swords.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043019); // Scroll for One-Handed Sword for Accuracy 10% - Improves accuracy on one-handed swords.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043022); // Scroll for One-Handed Sword for ATT 50% - Improves attack on one-handed sword.\nSuccess rate:50%, weapon attack+5, STR+3, DEX+1
+                ret.add(2043023); // Scroll for One-Handed Sword for ATT 100% - Improves attack on one-handed sword.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2043024); // Scroll for One-Handed Sword for Accuracy 65% - Improves Accuracy on One-Handed Swords.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2043025); // Scroll for One-Handed Sword for Accuracy 15% - Improves Accuracy on One-Handed Swords.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+            }
+            case CATEGORY_1H_AXE -> {
+                ret.add(2043100); // Scroll for One-Handed Axe for ATT - Improves attack on one-handed axe.\nSuccess rate:100%, weapon attack+1
+                ret.add(2043101); // Scroll for One-Handed Axe for ATT - Improves attack on one-handed axe.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043102); // Scroll for One-Handed Axe for ATT - Improves attack on one-handed axe.\nSuccess rate: 10%, weapon attack +5, STR+3, weapon def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043103); // Scroll for One-Handed Axe for ATT - Improves attack on one-handed axe.\nSuccess rate:100%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2043106); // Scroll for One-Handed Axe for ATT - Improves attack on the one-handed axe.\nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2043107); // Scroll for One-Handed Axe for ATT - Improves attack on the one-handed axe.\nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2043110); // Scroll for One-Handed Axe for Accuracy 100% - Improves accuracy on one-handed axe.\nSuccess rate:100%, accuracy+1
+                ret.add(2043112); // Scroll for One-Handed Axe for Accuracy 60% - Improves accuracy on one-handed axe.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043114); // Scroll for One-Handed Axe for Accuracy 10% - Improves accuracy on one-handed axe.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043117); // Scroll for One-Handed Axe for ATT 100% - Improves attack on one-handed axe.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2043118); // Scroll for One-Handed Axe for Accuracy 65% - Improves Accuracy on One-Handed Axe.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2043119); // Scroll for One-Handed Axe for Accuracy 15% - Improves Accuracy on One-Handed Axe.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2043120); // Scroll for One-Handed Axe for ATT 50% - Improves attack on one-handed axe.\nSuccess rate: 50%, weapon attack +5, STR+3, DEX+1
+            }
+            case CATEGORY_1H_BW -> {
+                ret.add(2043200); // Scroll for One-Handed BW for ATT - Improves attack on one-handed blunt weapon.\nSuccess rate:100%, weapon attack+1
+                ret.add(2043201); // Scroll for One-Handed BW for ATT - Improves attack on one-handed blunt weapon.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043202); // Scroll for One-Handed BW for ATT - Improves attack on one-handed blunt weapon.\nSuccess rate: 10%, weapon attack +5, STR+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043203); // Scroll for One-Handed BW for ATT - Improves attack on one-handed blunt weaponnSuccess rate:100%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2043206); // Scroll for One-Handed BW for ATT - Improves attack on the one-handed blunt weapon.\nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2043207); // Scroll for One-Handed BW for ATT - Improves attack on the one-handed blunt weapon.\nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2043210); // Scroll for One-Handed BW for Accuracy 100% - Improves accuracy on one-handed blunt weapon.\nSuccess rate:100%, accuracy+1
+                ret.add(2043212); // Scroll for One-Handed BW for Accuracy 60% - Improves accuracy on one-handed blunt weapon.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043214); // Scroll for One-Handed BW for Accuracy 10% - Improves accuracy on one-handed blunt weapon.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043217); // Scroll for One-Handed BW for ATT 100% - Improves attack on one-handed blunt weapon.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2043218); // Scroll for One-Handed BW for Accuracy 65% - Improves Accuracy on One-Handed Blunt Weapons.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2043219); // Scroll for One-Handed BW for Accuracy 15% - Improves Accuracy on One-Handed Blunt Weapons.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2043220); // Scroll for One-Handed BW for ATT 50% - Improves attack on one-handed blunt weapon.\nSuccess rate: 50%, weapon attack +5, STR+3, DEX+1
+            }
+            case CATEGORY_DAGGER -> {
+                ret.add(2043300); // Scroll for Dagger for ATT - Improves attack on dagger.\nSuccess rate:100%, weapon attack+1
+                ret.add(2043301); // Scroll for Dagger for ATT - Improves attack on dagger.\nSuccess rate:60%, weapon attack+2, LUK+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043302); // Scroll for Dagger for ATT - Improves attack on dagger.\nSuccess rate: 10%, weapon attack +5, LUK+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043303); // Scroll for Dagger for ATT - Improves attack on dagger.\nSuccess rate:100%, weapon attack+5, LUK+3, weapon def.+1
+                ret.add(2043306); // Scroll for Dagger for ATT - Improves attack on the dagger.\nSuccess rate:65%, weapon attack+2, LUK+1
+                ret.add(2043307); // Scroll for Dagger for ATT - Improves attack on the dagger.\nSuccess rate:15%, weapon attack+5, LUK+3, weapon def.+1
+                ret.add(2043312); // Scroll for Dagger for ATT 100% - Improves attack on dagger.\nSuccess rate:100%, weapon attack+2, LUK+2
+                ret.add(2043313); // Scroll for Dagger for ATT 50% - Improves attack on dagger.\nSuccess rate: 50%, weapon attack +5, LUK+3, DEX+1
+            }
+            case CATEGORY_WAND -> {
+                ret.add(2043700); // Scroll for Wand for Magic Att. - Improves magic on wand.\nSuccess rate:100%, magic attack+1
+                ret.add(2043701); // Scroll for Wand for Magic Att. - Improves magic on wand.\nSuccess rate:60%, magic attack+2, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043702); // Scroll for Wand for Magic Att. - Improves magic on wand.\nSuccess rate:10%, magic attack+5, INT+3, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043703); // Scroll for Wand for Magic Att. - Improves magic on wand.\nSuccess rate:100%, magic attack+5, INT+3, magic def.+1
+                ret.add(2043706); // Scroll for Wand for Magic Att. - Improves magic attack on the wand.\nSuccess rate:65%, magic attack+2, INT+1
+                ret.add(2043707); // Scroll for Wand for Magic Att. - Improves magic attack on the wand.\nSuccess rate:15%, magic attack+5, INT+3, magic def.+1
+                ret.add(2043712); // Scroll for Wand for Magic ATT 100% - Improves magic on wand.\nSuccess rate:100%, magic attack+2, INT+2
+                ret.add(2043713); // Scroll for Wand for Magic Att. 50% - Improves magic on wand.\nSuccess rate:50%, magic attack+5, INT+3, LUK+1
+            }
+            case CATEGORY_STAFF -> {
+                ret.add(2043800); // Scroll for Staff for Magic Att. - Improves magic on staff.\nSuccess rate:100%, magic attack+1
+                ret.add(2043801); // Scroll for Staff for Magic Att. - Improves magic on staff.\nSuccess rate:60%, magic attack+2, INT+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043802); // Scroll for Staff for Magic Att. - Improves magic on staff.\nSuccess rate:10%, magic attack+5, INT+3, magic def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2043803); // Scroll for Staff for Magic Att. - Improves magic on staff.\nSuccess rate:100%, magic attack+5, INT+3, magic def.+1
+                ret.add(2043806); // Scroll for Staff for Magic Att. - Improves magic attack on the staff.\nSuccess rate:65%, magic attack+2, INT+1
+                ret.add(2043807); // Scroll for Staff for Magic Att. - Improves magic attack on the staff.\nSuccess rate:15%, magic attack+5, INT+3, magic def.+1
+                ret.add(2043812); // Scroll for Staff for Magic ATT 100% - Improves magic on staff.\nSuccess rate:100%, magic attack+2, INT+2
+                ret.add(2043813); // Scroll for Staff for Magic Att. 50% - Improves magic on staff.\nSuccess rate:50%, magic attack+5, INT+3, LUK+1
+            }
+            case CATEGORY_2H_SWORD -> {
+                ret.add(2044000); // Scroll for Two-handed Sword for ATT - Improves attack on two-handed sword.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044001); // Scroll for Two-handed Sword for ATT - Improves attack on two-handed sword.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044002); // Scroll for Two-handed Sword for ATT - Improves attack on two-handed sword.\nSuccess rate:10%, weapon attack+5, STR+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044003); // Scroll for Two-handed Sword for ATT - Improves attack on two-handed sword weapon.\nSuccess rate:100%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044006); // Scroll for Two-Handed Sword for ATT - Improves attack on the two-handed sword.\nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2044007); // Scroll for Two-Handed Sword for ATT - Improves attack on the two-handed sword.\nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044010); // Scroll for Two-Handed Sword for Accuracy 100% - Improves accuracy on two-handed swords.\nSuccess rate:100%, accuracy+1
+                ret.add(2044012); // Scroll for Two-Handed Sword for Accuracy 60% - Improves accuracy on two-handed swords.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044014); // Scroll for Two-Handed Sword for Accuracy 10% - Improves accuracy on two-handed swords.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044015); // Scroll for Two-Handed Swords for ATT 10% - Improves ATT on Two-Handed Swords. nSuccess rate: 10%, Weapons ATT +5, STR +3, Weapons Defense +1
+                ret.add(2044025); // Scroll for Two-handed Sword for ATT 100% - Improves attack on two-handed sword.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2044026); // Scroll for Two-Handed Sword for Accuracy 65% - Improves Accuracy on Two-Handed Swords.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2044027); // Scroll for Two-Handed Sword for Accuracy 15% - Improves Accuracy on Two-Handed Swords.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2044028); // Scroll for Two-handed Sword for ATT 50% - Improves attack on two-handed sword.\nSuccess rate:50%, weapon attack+5, STR+3, DEX+1
+            }
+            case CATEGORY_2H_AXE -> {
+                ret.add(2044100); // Scroll for Two-handed Axe for ATT - Improves attack on two-handed axe.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044101); // Scroll for Two-handed Axe for ATT - Improves attack on two-handed axe.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044102); // Scroll for Two-handed Axe for ATT - Improves attack on two-handed axe.\nSuccess rate:10%, weapon attack+5, STR+3, weapon def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044103); // Scroll for Two-handed Axe for ATT - Improves attack on two-handed axe.\nSuccess rate:100%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044106); // Scroll for Two-Handed Axe for ATT - Improves attack on the two-handed axe.\nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2044107); // Scroll for Two-Handed Axe for ATT - Improves attack on the two-handed axe.\nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044110); // Scroll for Two-Handed Axe for Accuracy 100% - Improves accuracy on two-handed axe.\nSuccess rate:100%, accuracy+1
+                ret.add(2044112); // Scroll for Two-Handed Axe for Accuracy 60% - Improves accuracy on two-handed axe.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044114); // Scroll for Two-Handed Axe for Accuracy 10% - Improves accuracy on two-handed axe.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044117); // Scroll for Two-handed Axe for ATT 100% - Improves attack on two-handed axe.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2044118); // Scroll for Two-Handed Axe for Accuracy 65% - Improves Accuracy on Two-Handed Axe.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2044119); // Scroll for Two-Handed Axe for Accuracy 15% - Improves Accuracy on Two-Handed Axe.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2044120); // Scroll for Two-handed Axe for ATT 50% - Improves attack on two-handed axe.\nSuccess rate:50%, weapon attack+5, STR+3, DEX+1
+            }
+            case CATEGORY_2H_BW -> {
+                ret.add(2044200); // Scroll for Two-handed BW for ATT - Improves attack on two-handed blunt weapon.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044201); // Scroll for Two-handed BW for ATT - Improves attack on two-handed blunt weapon.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044202); // Scroll for Two-handed BW for ATT - Improves attack on two-handed blunt weapon.\nSuccess rate:10%, weapon attack+5, STR+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044203); // Scroll for Two-handed BW for ATT - Improves attack on two-handed blunt weapon.\nSuccess rate:100%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044206); // Scroll for Two-Handed BW for ATT - Improves attack on the two-handed blunt weapon.\nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2044207); // Scroll for Two-Handed BW for ATT - Improves attack on the two-handed blunt weapon.\nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044210); // Scroll for Two-Handed BW for Accuracy 100% - Improves accuracy on two-handed blunt weapon.\nSuccess rate:100%, accuracy+1
+                ret.add(2044212); // Scroll for Two-Handed BW for Accuracy 60% - Improves accuracy on two-handed blunt weapon.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044214); // Scroll for Two-Handed BW for Accuracy 10% - Improves accuracy on two-handed blunt weapon.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044217); // Scroll for Two-handed BW for ATT 100% - Improves attack on two-handed blunt weapon.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2044218); // Scroll for Two-Handed BW for Accuracy 65% - Improves Accuracy on Two-Handed Blunt Weapons.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2044219); // Scroll for Two-Handed BW for Accuracy 15% - Improves Accuracy on Two-Handed Blunt Weapons.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2044220); // Scroll for Two-handed BW for ATT 50% - Improves attack on two-handed blunt weapon.\nSuccess rate:50%, weapon attack+5, STR+3, DEX+1
+            }
+            case CATEGORY_SPEAR -> {
+                ret.add(2044300); // Scroll for Spear for ATT - Improves attack on spear.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044301); // Scroll for Spear for ATT - Improves attack on spear.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044302); // Scroll for Spear for ATT - Improves attack on spear.\nSuccess rate:10%, weapon attack+5, STR+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044303); // Scroll for Spear for ATT - Improves attack on spear.\nSuccess rate:100%, weapon attack +5, STR+3, weapon def.+1
+                ret.add(2044306); // Scroll for Spear for ATT - Improves attack on the Spear. nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2044307); // Scroll for Spear for ATT - Improves attack on the Spear. nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044310); // Scroll for Spear for Accuracy 100% - Improves accuracy on spears.\nSuccess rate:100%, accuracy+1
+                ret.add(2044312); // Scroll for Spear for Accuracy 60% - Improves accuracy on spears.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044314); // Scroll for Spear for Accuracy 10% - Improves accuracy on spears.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044317); // Scroll for Spear for ATT 100% - Improves attack on spear.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2044318); // Scroll for Spears for Accuracy 65% - Improves Accuracy on Spears.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2044319); // Scroll for Spears for Accuracy 15% - Improves Accuracy on Spears.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2044320); // Scroll for Spear for ATT 50% - Improves attack on spear.\nSuccess rate:50%, weapon attack+5, STR+3, DEX+1
+            }
+            case CATEGORY_POLEARM -> {
+                ret.add(2044400); // Scroll for Pole Arm for ATT - Improves attack on pole arm.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044401); // Scroll for Pole Arm for ATT - Improves attack on pole arm.\nSuccess rate:60%, weapon attack+2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044402); // Scroll for Pole Arm for ATT - Improves attack on pole arm.\nSuccess rate:10%, weapon attack+5, STR+3, weapon def.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044403); // Scroll for Pole Arm for ATT - Improves attack on pole arm.\nSuccess rate:100%, weapon attack +5, STR+3, weapon def.+1
+                ret.add(2044406); // Scroll for Pole Arm for ATT - Improves attack on the Pole arm. nSuccess rate:65%, weapon attack+2, STR+1
+                ret.add(2044407); // Scroll for Pole Arm for ATT - Improves attack on the Pole arm. nSuccess rate:15%, weapon attack+5, STR+3, weapon def.+1
+                ret.add(2044410); // Scroll for Pole-Arm for Accuracy 100% - Improves accuracy on pole-arms.\nSuccess rate:100%, accuracy+1
+                ret.add(2044412); // Scroll for Pole-Arm for Accuracy 60% - Improves accuracy on pole-arms.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044414); // Scroll for Pole-Arm for Accuracy 10% - Improves accuracy on pole-arms.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044417); // Scroll for Pole Arm for ATT 100% - Improves attack on pole arm.\nSuccess rate:100%, weapon attack+2, STR+2
+                ret.add(2044418); // Scroll for Polearm for Accuracy 65% - Improves Accuracy on Polearms.\nSuccess Rate: 65%, Accuracy+3, DEX+2, Weapon Attack+1
+                ret.add(2044419); // Scroll for Polearm for Accuracy 15% - Improves Accuracy on Polearms.\nSuccess Rate: 15%, Accuracy+5, DEX+3, Weapon Attack+3
+                ret.add(2044420); // Scroll for Pole Arm for ATT 50% - Improves attack on pole arm.\nSuccess rate:50%, weapon attack+5, STR+3, DEX+1
+            }
+            case CATEGORY_BOW -> {
+                ret.add(2044500); // Scroll for Bow for ATT - Improves attack on bow.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044501); // Scroll for Bow for ATT - Improves attack on bow.\nSuccess rate: 60%, weapon attack+2, accuracy +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044502); // Scroll for Bow for ATT - Improves attack on bow.\nSuccess rate:10%, weapon attack+5, accuracy+3, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044503); // Scroll for Bow for ATT - Improves attack on bow.\nSuccess rate:100%, weapon attack +5, accuracy +3, DEX+1
+                ret.add(2044506); // Scroll for Bow for ATT - Improves attack on the Bow. nSuccess rate:65%, weapon attack+2, accuracy+1
+                ret.add(2044507); // Scroll for Bow for ATT - Improves attack on the Bow. nSuccess rate:15%, weapon attack+5, accuracy+3, DEX+1
+                ret.add(2044512); // Scroll for Bow for ATT 100% - Improves attack on bow.\nSuccess rate: 100%, weapon attack+2, accuracy +3
+                ret.add(2044513); // Scroll for Bow for ATT 50% - Improves attack on bow.\nSuccess rate:50%, weapon attack +5, DEX+1, STR+1
+            }
+            case CATEGORY_CROSSBOW -> {
+                ret.add(2044600); // Scroll for Crossbow for ATT - Improves attack on crossbow.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044601); // Scroll for Crossbow for ATT - Improves attack on crossbow.\nSuccess rate:60%, weapon attack+2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044602); // Scroll for Crossbow for ATT - Improves attack on crossbow.\nSuccess rate:10%, weapon attack+5, accuracy+3, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044603); // Scroll for Crossbow for ATT - Improves attack on crossbow.\nSuccess rate:100%, weapon attack+5, accuracy+3, DEX+1
+                ret.add(2044606); // Scroll for Crossbow for ATT - Improves attack on the Crossbow. nSuccess rate:65%, weapon attack+2, accuracy+1
+                ret.add(2044607); // Scroll for Crossbow for ATT - Improves attack on the Crossbow. nSuccess rate:15%, weapon attack+5, accuracy+3, DEX+1
+                ret.add(2044612); // Scroll for Crossbow for ATT 100% - Improves attack on crossbow.\nSuccess rate:100%, weapon attack+2, accuracy+3
+                ret.add(2044613); // Scroll for Crossbow for ATT 50% - Improves attack on crossbow.\nSuccess rate:50%, weapon attack+5, DEX+1, STR+1
+            }
+            case CATEGORY_CLAW -> {
+                ret.add(2044700); // Scroll for Claw for ATT - Improves attack on claw.\nSuccess rate:100%, weapon attack+1
+                ret.add(2044701); // Scroll for Claw for ATT - Improves attack on claw.\nSuccess rate:60%, weapon attack+2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044702); // Scroll for Claw for ATT - Improves attack on claw.\nSuccess rate:10%, weapon attack+5, accuracy+3, LUK+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044703); // Scroll for Claw for ATT - Improves attack on claw.\nSuccess rate:100%, weapon attack+5, accuracy+3, LUK+1
+                ret.add(2044706); // Scroll for Claw for ATT - Improves attack on the Claw. nSuccess rate:65%, weapon attack+2, accuracy+1
+                ret.add(2044707); // Scroll for Claw for ATT - Improves attack on the Claw. nSuccess rate:15%, weapon attack+5, accuracy+3, LUK+1
+                ret.add(2044712); // Scroll for Claw for ATT 100% - Improves attack on claw.\nSuccess rate:100%, weapon attack+2, accuracy+3
+                ret.add(2044713); // Scroll for Claw for ATT 50% - Improves attack on claw.\nSuccess rate:50%, weapon attack+5, LUK+1, DEX+1
+            }
+            case CATEGORY_KNUCKLE -> {
+                ret.add(2044800); // Scroll for Knuckler for Attack 100% - Improves attack on Knucklers.\nSuccess rate:100%, weapon att. +1
+                ret.add(2044801); // Scroll for Knuckler for Attack 60% - Improves attack on Knucklers.\nSuccess rate:60%, weapon att. +2, STR+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044802); // Scroll for Knuckler for ATT - Improves attack on Knucklers.\nSuccess rate:10%, weapon att. +5, STR+3, weapon def. +1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044805); // Scroll for Knuckle for Accuracy 100% - Improves accuracy on knuckles.\nSuccess rate:100%, accuracy+1
+                ret.add(2044807); // Scroll for Knuckle for Accuracy 60% - Improves accuracy on knuckles.\nSuccess rate:60%, accuracy+3, DEX+2, weapon att.+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044809); // Scroll for Knuckle for Accuracy 10% - Improves accuracy on knuckles.\nSuccess rate:10%, accuracy+5, DEX+3, weapon att.+3. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044811); // Scroll for Knuckles for ATT 65% - Improves ATT on Knuckles.\nSuccess Rate:65%, Weapon Att+2, STR+1
+                ret.add(2044812); // Scroll for Knuckles for ATT 15% - Improves ATT on Knuckles.\nSuccess Rate:15%, Weapon Att+5, STR+3, Weapon DEF+1
+                ret.add(2044813); // Scroll for Knuckles for Accuracy 65% - Improves Accuracy on Knuckles.\nSuccess Rate:65%, Accuracy+3, DEX+2, Weapon Att+1
+                ret.add(2044814); // Scroll for Knuckles for Accuracy 15% - Improves Accuracy on Knuckles.\nSuccess Rate:15%, Accuracy+5, DEX+3, Weapon Att+3
+                ret.add(2044815); // Scroll for Knuckler for Attack 100% - Improves attack on Knucklers.\nSuccess rate: 100%. Weapon Attack +2, STR +1
+                ret.add(2044817); // Scroll for Knuckler for Attack 50% - Improves attack on Knucklers.\nSuccess rate: 50%. Weapon Attack +5, STR +3,  DEX +1
+            }
+            case CATEGORY_PISTOL -> {
+                ret.add(2044900); // Scroll for Gun for Attack 100% - Improves attack on Guns.\nSuccess rate:100%, weapon att. +1
+                ret.add(2044901); // Scroll for Gun for Attack 60% - Improves attack on Guns.\nSuccess rate:60%, weapon att. +2, accuracy+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044902); // Scroll for Gun for ATT - Improves attack on Guns.\nSuccess rate:10%, weapon att. +5, accuracy+3, DEX+1. The success rate of this scroll can be enhanced by Vega's Spell.
+                ret.add(2044906); // Scroll for Gun for ATT 65% - Improves ATT on guns.\nSuccess Rate:65%, Weapon Att.+2, Accuracy+1
+                ret.add(2044907); // Scroll for Gun for ATT 15% - Improves ATT on guns.\nSuccess Rate:15%, Weapon Att.+5, Accuracy+3, DEX+1
+                ret.add(2044908); // Scroll for Gun for Attack 100% - Improves attack on Guns.\nSuccess rate: 100%. Weapon Attack +2, Accuracy +1
+                ret.add(2044910); // Scroll for Gun for Attack 50% - Improves attack on Guns.\nSuccess rate: 50%. Weapon Attack +5, LUK +1, DEX +1
+            }
+            default -> {
+                // whoops
+            }
+        }
+
+        // Add to cache
+        scrollsByEquipCategory.put(equipCategory, ret);
+
+        return scrollsByEquipCategory.get(equipCategory);
+    }
+}
