@@ -705,10 +705,13 @@ public class AbstractPlayerInteraction {
     public void displayAranIntro() {
         String intro = switch (c.getPlayer().getMapId()) {
             case MapId.ARAN_TUTO_1 -> "Effect/Direction1.img/aranTutorial/Scene0";
-            case MapId.ARAN_TUTO_2 -> "Effect/Direction1.img/aranTutorial/Scene1" + (c.getPlayer().getGender() == 0 ? "0" : "1");
-            case MapId.ARAN_TUTO_3 -> "Effect/Direction1.img/aranTutorial/Scene2" + (c.getPlayer().getGender() == 0 ? "0" : "1");
+            case MapId.ARAN_TUTO_2 ->
+                    "Effect/Direction1.img/aranTutorial/Scene1" + (c.getPlayer().getGender() == 0 ? "0" : "1");
+            case MapId.ARAN_TUTO_3 ->
+                    "Effect/Direction1.img/aranTutorial/Scene2" + (c.getPlayer().getGender() == 0 ? "0" : "1");
             case MapId.ARAN_TUTO_4 -> "Effect/Direction1.img/aranTutorial/Scene3";
-            case MapId.ARAN_POLEARM -> "Effect/Direction1.img/aranTutorial/HandedPoleArm" + (c.getPlayer().getGender() == 0 ? "0" : "1");
+            case MapId.ARAN_POLEARM ->
+                    "Effect/Direction1.img/aranTutorial/HandedPoleArm" + (c.getPlayer().getGender() == 0 ? "0" : "1");
             case MapId.ARAN_MAHA -> "Effect/Direction1.img/aranTutorial/Maha";
             default -> "";
         };
@@ -874,12 +877,33 @@ public class AbstractPlayerInteraction {
         removeAll(id, c);
     }
 
+
     public void removeAll(int id, Client cl) {
         InventoryType invType = ItemConstants.getInventoryType(id);
         int possessed = cl.getPlayer().getInventory(invType).countById(id);
         if (possessed > 0) {
             InventoryManipulator.removeById(cl, ItemConstants.getInventoryType(id), id, possessed, true, false);
             cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -possessed, true));
+        }
+
+        if (invType == InventoryType.EQUIP) {
+            if (cl.getPlayer().getInventory(InventoryType.EQUIPPED).countById(id) > 0) {
+                InventoryManipulator.removeById(cl, InventoryType.EQUIPPED, id, 1, true, false);
+                cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -1, true));
+            }
+        }
+    }
+
+    public void removeAmount(int id, int amount) {
+        removeAmount(id, amount, c);
+    }
+
+    public void removeAmount(int id, int amount, Client cl) {
+        InventoryType invType = ItemConstants.getInventoryType(id);
+        int possessed = cl.getPlayer().getInventory(invType).countById(id);
+        if (possessed > 0) {
+            InventoryManipulator.removeById(cl, ItemConstants.getInventoryType(id), id, amount, true, false);
+            cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -amount, true));
         }
 
         if (invType == InventoryType.EQUIP) {

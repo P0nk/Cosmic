@@ -293,6 +293,7 @@ public class Inventory implements Iterable<Item> {
         }
     }
 
+    // Returns the available upgrade slots for the inventory slot
     public int getUpgradeSlots(short slot) {
         lock.lock();
         try {
@@ -364,7 +365,7 @@ public class Inventory implements Iterable<Item> {
             log.info(equipStats.toString());
             log.info(String.valueOf(equipStats.get(dataItem)));
             String dataItemVal = String.valueOf(equipStats.get(dataItem));
-            if (dataItemVal.startsWith("null")){
+            if (dataItemVal.startsWith("null")) {
                 return 0;
             }
             return equipStats.get(dataItem);
@@ -373,21 +374,31 @@ public class Inventory implements Iterable<Item> {
         }
     }
 
-    // Returns an item with Vicious Hammer slots
-    public Item getItemWithViciousHammerSlots(short slot) {
+    // Returns the number of Vicious Hammer slots
+    public short getViciousSlots(short slot) {
         lock.lock();
         try {
             Item item = inventory.get(slot);
             Equip equip = (Equip) item;
-            if (equip.getVicious() < 2) {
-                return item;
-            }
-            return null;
+            return equip.getVicious();
         } finally {
             lock.unlock();
         }
     }
 
+    public Equip applyHammerToItem(Item item) {
+        Equip equip = (Equip) item;
+
+        if (equip.getVicious() == 2) { // Already fully hammered
+            return null;
+        } else if (equip.getVicious() == 0) { // No hammers used yet
+            equip.setUpgradeSlots(equip.getUpgradeSlots() + 2);
+        } else if (equip.getVicious() == 1) { // One hammer used
+            equip.setUpgradeSlots(equip.getUpgradeSlots() + 1);
+        }
+        equip.setVicious(2);
+        return equip;
+    }
 
     public void removeItem(short slot) {
         removeItem(slot, (short) 1, false);

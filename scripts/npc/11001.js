@@ -3,8 +3,14 @@
 // Constants
 const equipInv = 1;
 const useInv = 2;
+const cashInv = 5;
+const viciousHammer = 5570000;
 
 var status = 0;
+
+// Choice
+var hammering = false;
+var scrolling = false;
 
 // Auto-scroll variables
 var equipInvSlot = null;
@@ -21,6 +27,8 @@ var whiteScrollInvSlot = null;
 var whiteScrollId = 2340000;
 
 // Auto-hammer variables
+var requiredHammerCount = 0;
+var actualHammerCount = 0;
 
 function start() {
     status = 0;
@@ -33,19 +41,62 @@ function action(mode, type, selection) {
 
     switch (status) {
         case 1:
-            return showScrollableEquips();
+            return choice();
         case 2:
-            return showApplicableScrolls(selection);
+            if (selection === 0) {
+                return showHammerableEquips();
+            } else {
+                return showScrollableEquips();
+            }
         case 3:
-            return confirmScrollCount(selection);
+            if (hammering === true) {
+                return confirmHammerCount();
+            } else {
+                return showApplicableScrolls(selection);
+            }
         case 4:
+            if (hammering === true) {
+                return hammerTime();
+            } else {
+                return confirmScrollCount(selection);
+            }
+        case 5:
             return scrollItemOrStop(mode);
         default:
             return cm.dispose();
     }
 }
 
+function choice() {
+    var selStr = "\r\n#b#L0#Hammer all equips#l" +
+        "\r\n#b#L1#Auto scroll equip#l";
+    cm.sendSimple(selStr);
+}
+
+function showHammerableEquips() {
+    hammering = true;
+    var inv = cm.getInventory(equipInv);
+    var lines = [];
+
+    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+        var item = inv.getItem(slot);
+        if (!item) continue;
+        var viciousSlots = inv.getViciousSlots(slot);
+        if (viciousSlots < 2) {
+            requiredHammerCount = requiredHammerCount + (2 - viciousSlots);
+            lines.push("\t" + Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId()) + " - " + (2 - viciousSlots) + " hammer slots");
+        }
+    }
+
+    if (!lines.length) {
+        cm.sendOk("You have no hammerable items.");
+        return cm.dispose();
+    }
+    cm.sendYesNo("Would you like to hammer the following items:\r\n" + lines.join("\r\n"));
+}
+
 function showScrollableEquips() {
+    scrolling = true;
     var inv = cm.getInventory(equipInv);
     var lines = [];
 
@@ -70,6 +121,26 @@ function showScrollableEquips() {
         return cm.dispose();
     }
     cm.sendSimple("Select the equipment you want to scroll:\r\n" + lines.join("\r\n"));
+}
+
+function confirmHammerCount() {
+    var inv = cm.getInventory(cashInv);
+
+    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+        var item = inv.getItem(slot);
+        if (!item) continue;
+        if (item.getItemId() === viciousHammer) {
+            var hammers = item.getQuantity();
+            actualHammerCount = actualHammerCount + hammers;
+        }
+    }
+
+    if (requiredHammerCount > actualHammerCount) {
+        cm.sendOk("You don't have enough Vicious Hammers. You have " + actualHammerCount + " and you need " + requiredHammerCount);
+        return cm.dispose();
+    }
+
+    cm.sendYesNo("You have the required Vicious Hammers. Would you like to hammer all your equips?")
 }
 
 function showApplicableScrolls(equipInvSlotNum) {
@@ -106,6 +177,27 @@ function showApplicableScrolls(equipInvSlotNum) {
     }
 
     cm.sendSimple("Select the scroll you want to use:\r\n" + lines.join("\r\n"));
+}
+
+function hammerTime() {
+
+    var equipInventory = cm.getInventory(equipInv);
+    console.log("retrieved equip inventory")
+
+    // Hammer all equips
+    for (var equipSlot = 1; equipSlot <= equipInventory.getSlotLimit(); equipSlot++) {
+        var equipItem = equipInventory.getItem(equipSlot);
+        if (!equipItem) continue;
+        var hammeredItem = equipInventory.applyHammerToItem(equipItem);
+        if (!hammeredItem) continue;
+        cm.getPlayer().forceUpdateItem(hammeredItem);
+    }
+
+    cm.removeAmount(viciousHammer, requiredHammerCount)
+
+
+    cm.sendOk("All equips hammered");
+    cm.dispose();
 }
 
 function confirmScrollCount(useInvSlotNum) {
