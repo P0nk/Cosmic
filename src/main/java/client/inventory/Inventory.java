@@ -348,7 +348,6 @@ public class Inventory implements Iterable<Item> {
             Item item = inventory.get(slot);
             ItemInformationProvider ii = ItemInformationProvider.getInstance();
             Map<String, Integer> equipStats = ii.getEquipStats(item.getItemId());
-            log.info(equipStats.toString());
             return equipStats.get("success");
         } finally {
             lock.unlock();
@@ -362,8 +361,6 @@ public class Inventory implements Iterable<Item> {
             Item item = inventory.get(slot);
             ItemInformationProvider ii = ItemInformationProvider.getInstance();
             Map<String, Integer> equipStats = ii.getEquipStats(item.getItemId());
-            log.info(equipStats.toString());
-            log.info(String.valueOf(equipStats.get(dataItem)));
             String dataItemVal = String.valueOf(equipStats.get(dataItem));
             if (dataItemVal.startsWith("null")) {
                 return 0;

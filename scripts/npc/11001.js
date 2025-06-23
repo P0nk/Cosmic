@@ -1,10 +1,10 @@
 /* Subordinate – Free Market (9201611) NPC: Item Upgrade & Rebirth */
 
 // Constants
-const equipInv = 1;
-const useInv = 2;
-const cashInv = 5;
-const viciousHammer = 5570000;
+const invTypeEquip = 1;
+const invTypeUse = 2;
+const invTypeCash = 5;
+const viciousHammerId = 5570000;
 
 var status = 0;
 
@@ -23,7 +23,6 @@ var scrollName = null;
 var scrollId = null;
 var requiredScrollCount = null;
 var requiredWhiteScrollCount = null;
-var whiteScrollInvSlot = null;
 var whiteScrollId = 2340000;
 
 // Auto-hammer variables
@@ -32,7 +31,7 @@ var actualHammerCount = 0;
 
 function start() {
     status = 0;
-    cm.sendNext("Hello! I'm Otto Scroller");
+    cm.sendNext("Hello! I'm Otto");
 }
 
 function action(mode, type, selection) {
@@ -45,22 +44,22 @@ function action(mode, type, selection) {
         case 2:
             if (selection === 0) {
                 return showHammerableEquips();
-            } else {
-                return showScrollableEquips();
             }
+            return showScrollableEquips();
         case 3:
             if (hammering === true) {
                 return confirmHammerCount();
-            } else {
-                return showApplicableScrolls(selection);
             }
+            return showApplicableScrolls(selection);
         case 4:
             if (hammering === true) {
                 return hammerTime();
-            } else {
-                return confirmScrollCount(selection);
             }
+            return confirmScrollCount(selection);
         case 5:
+            if (hammering === true) {
+                return cm.dispose();
+            }
             return scrollItemOrStop(mode);
         default:
             return cm.dispose();
@@ -68,19 +67,26 @@ function action(mode, type, selection) {
 }
 
 function choice() {
-    var selStr = "\r\n#b#L0#Hammer all equips#l" +
-        "\r\n#b#L1#Auto scroll equip#l";
-    cm.sendSimple(selStr);
+    cm.sendSimple("Would you like me to:" +
+        "\r\n#b#L0#Hammer all your equips?#l" +
+        "\r\n#b#L1#Auto scroll a piece of equipment?#l"
+    );
 }
 
+// Check equip inventory for all equips eligible to be hammered
 function showHammerableEquips() {
     hammering = true;
-    var inv = cm.getInventory(equipInv);
+    var inv = cm.getInventory(invTypeEquip);
     var lines = [];
 
+    // Cycle through the equip inventory
     for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+
+        // Retrieve the equipment inventory slot and verify an item is present
         var item = inv.getItem(slot);
         if (!item) continue;
+
+        // Ensure it can be hammered, then add it to the list of hammerable equips as well as increasing the required number of vicious hammers
         var viciousSlots = inv.getViciousSlots(slot);
         if (viciousSlots < 2) {
             requiredHammerCount = requiredHammerCount + (2 - viciousSlots);
@@ -88,53 +94,63 @@ function showHammerableEquips() {
         }
     }
 
+    // Exit if no equipment has vicious hammer slots
     if (!lines.length) {
         cm.sendOk("You have no hammerable items.");
         return cm.dispose();
     }
+
+    // Does the user actually want to hammer
     cm.sendYesNo("Would you like to hammer the following items:\r\n" + lines.join("\r\n"));
 }
 
+// Check equip inventory for all equips eligible to be scrolled
 function showScrollableEquips() {
     scrolling = true;
-    var inv = cm.getInventory(equipInv);
+    var inv = cm.getInventory(invTypeEquip);
     var lines = [];
 
+    // Cycle through equip inventory
     for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+
+        // Retrieve the equipment inventory slot and verify an item is present
         var item = inv.getItem(slot);
         if (!item) continue;
+
+        // Ensure it can be scrolled, then add it to the list of scrollable equips
         var upgradeSlots = inv.getUpgradeSlots(slot);
         if (upgradeSlots) {
-            var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
-            lines.push(
-                "#L" + slot + "#"
-                + "#v" + item.getItemId() + "# "
-                + name
-                + " (Lv " + item.getItemLevel() + ")"
-                + "#l"
-            );
+            let name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
+            lines.push("#L" + slot + "##v" + item.getItemId() + "# " + name);
         }
     }
 
+    // No equipment valid for scrolling
     if (!lines.length) {
-        cm.sendOk("You have no equippable items to select.");
+        cm.sendOk("You have no equips to select.");
         return cm.dispose();
     }
+
     cm.sendSimple("Select the equipment you want to scroll:\r\n" + lines.join("\r\n"));
 }
 
+// Verify the user has enough vicious hammers to hammer all their equips
 function confirmHammerCount() {
-    var inv = cm.getInventory(cashInv);
+    var inv = cm.getInventory(invTypeCash);
 
+    // Cycle through cash inventory
     for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+
+        // Retrieve the cash inventory slot, verify it's a vicious hammer, and add it to the vicious hammer count
         var item = inv.getItem(slot);
         if (!item) continue;
-        if (item.getItemId() === viciousHammer) {
+        if (item.getItemId() === viciousHammerId) {
             var hammers = item.getQuantity();
             actualHammerCount = actualHammerCount + hammers;
         }
     }
 
+    // Need more hammers
     if (requiredHammerCount > actualHammerCount) {
         cm.sendOk("You don't have enough Vicious Hammers. You have " + actualHammerCount + " and you need " + requiredHammerCount);
         return cm.dispose();
@@ -143,20 +159,26 @@ function confirmHammerCount() {
     cm.sendYesNo("You have the required Vicious Hammers. Would you like to hammer all your equips?")
 }
 
+// Check use inventory for all scrolls valid for the equip
 function showApplicableScrolls(equipInvSlotNum) {
     equipInvSlot = equipInvSlotNum;
-    equipSelected = cm.getInventory(equipInv).getItem(equipInvSlotNum);
+    equipSelected = cm.getInventory(invTypeEquip).getItem(equipInvSlotNum);
     equipId = equipSelected.getItemId();
     equipName = Packages.server.ItemInformationProvider.getInstance().getName(equipId);
 
-    var inv = cm.getInventory(useInv);
+    var inv = cm.getInventory(invTypeUse);
     var lines = [];
 
-    // Retrieve scroll id's valid for the selected armor
+    // Retrieve scroll id's valid for the selected equip
     let validScrolls = Packages.server.ItemInformationProvider.getInstance().getScrollsByItemId(equipId);
+
+    // Cycle through valid scrolls
     for (var scroll = 0; scroll < validScrolls.length; scroll++) {
 
+        // Cycle through inventory, checking if the user has the valid scroll
         for (var useSlot = 1; useSlot <= inv.getSlotLimit(); useSlot++) {
+
+            // Retrieve the use inventory slot, verify it's a valid scroll, and add it to the list of scrolls the user has
             var item = inv.getItem(useSlot);
             if (!item) continue;
             if (item.getItemId() === validScrolls[scroll]) {
@@ -179,44 +201,51 @@ function showApplicableScrolls(equipInvSlotNum) {
     cm.sendSimple("Select the scroll you want to use:\r\n" + lines.join("\r\n"));
 }
 
+// Hammer all equipment in user inventory
 function hammerTime() {
 
-    var equipInventory = cm.getInventory(equipInv);
-    console.log("retrieved equip inventory")
+    var equipInventory = cm.getInventory(invTypeEquip);
 
-    // Hammer all equips
+    // Cycle through equip inventory
     for (var equipSlot = 1; equipSlot <= equipInventory.getSlotLimit(); equipSlot++) {
+
+        // Retrieve the equip inventory slot and verify it's present
         var equipItem = equipInventory.getItem(equipSlot);
         if (!equipItem) continue;
+
+        // Apply hammers if applicable and update the item
         var hammeredItem = equipInventory.applyHammerToItem(equipItem);
         if (!hammeredItem) continue;
         cm.getPlayer().forceUpdateItem(hammeredItem);
     }
 
-    cm.removeAmount(viciousHammer, requiredHammerCount)
-
+    // Remove vicious hammers
+    cm.removeAmount(viciousHammerId, requiredHammerCount)
 
     cm.sendOk("All equips hammered");
     cm.dispose();
 }
 
+// Verify the user has the correct number of scrolls to scroll their equipment
 function confirmScrollCount(useInvSlotNum) {
+
+    let useInv = cm.getInventory(invTypeUse)
+
     // Populate scroll globals (scrobals)
     scrollInvSlot = useInvSlotNum;
-    scrollSelected = cm.getInventory(useInv).getItem(scrollInvSlot);
+    scrollSelected = useInv.getItem(scrollInvSlot);
     scrollId = scrollSelected.getItemId();
     scrollName = Packages.server.ItemInformationProvider.getInstance().getName(scrollId);
 
     // Get the number of upgrade slots and scroll success percentage
-    equipUpgradeSlots = cm.getInventory(equipInv).getUpgradeSlots(equipInvSlot);
-    scrollSuccessPercent = cm.getInventory(useInv).getScrollSuccess(scrollInvSlot);
+    equipUpgradeSlots = cm.getInventory(invTypeEquip).getUpgradeSlots(equipInvSlot);
+    scrollSuccessPercent = useInv.getScrollSuccess(scrollInvSlot);
 
     // Calculate the number of scrolls required
     if (scrollSuccessPercent === 100) {
         requiredScrollCount = equipUpgradeSlots;
         requiredWhiteScrollCount = 0;
     } else {
-        console.log("required scroll count = " + equipUpgradeSlots + " / " + "(" + scrollSuccessPercent + " / " + 100 + ")");
         requiredScrollCount = Math.ceil(equipUpgradeSlots / (scrollSuccessPercent / 100));
         requiredWhiteScrollCount = requiredScrollCount;
     }
@@ -224,22 +253,17 @@ function confirmScrollCount(useInvSlotNum) {
     var lines = [];
 
     // Verify the user has the required scrolls
-    actualScrollCount = cm.getInventory(useInv).getItem(scrollInvSlot).getQuantity();
+    actualScrollCount = useInv.getItem(scrollInvSlot).getQuantity();
     if (actualScrollCount < requiredScrollCount) {
         // Add error message indicating lack of scrolls
         lines.push("Lacking required number of " + scrollName + "\r\n\tYou need " + requiredScrollCount + " and you have " + actualScrollCount);
     }
     if (requiredWhiteScrollCount > 0) {
-        whiteScrollInvSlot = cm.getInventory(useInv).getWhiteScrollSlot();
-        actualWhiteScrollCount = cm.getInventory(useInv).getInventoryWhiteScrollCount();
+        actualWhiteScrollCount = useInv.getInventoryWhiteScrollCount();
         if (actualWhiteScrollCount < requiredWhiteScrollCount) {
             // Add error message indicating lack of white scrolls
             lines.push("Lacking required number of White Scrolls\r\n\tYou need " + requiredWhiteScrollCount + " and you have " + actualWhiteScrollCount);
         }
-    }
-    {
-        whiteScrollInvSlot = -1
-        actualWhiteScrollCount = -1;
     }
 
     // Not enough scrolls
@@ -254,6 +278,7 @@ function confirmScrollCount(useInvSlotNum) {
         + "Would you like to scroll your " + equipName + "?\r\n");
 }
 
+// Scroll the equipment
 function scrollItemOrStop(mode) {
     // "No" response
     if (mode === 0) {
@@ -275,71 +300,6 @@ function scrollItemOrStop(mode) {
     }
     cm.getPlayer().forceUpdateItem(equipSelected);
 
-    // Calculate new stats
-    //newStats = calcNewStats(equipSelected, requiredScrollCount);
-
-    // Update equip
-    //applyNewStats(newStats);
-
     cm.sendOk("Congratulations! I scrolled your equip (hopefully)!")
     cm.dispose();
 }
-
-function calcNewStats(equip, scrollCount) {
-
-    slots = cm.getInventory(equipInv).getUpgradeSlots(equipInvSlot);
-    useInventory = cm.getInventory(useInv);
-
-    extraStr = slots * useInventory.getScrollStatBoost(scrollInvSlot, "STR"); // STR
-    extraDex = slots * useInventory.getScrollStatBoost(scrollInvSlot, "DEX"); // DEX
-    extraInt = slots * useInventory.getScrollStatBoost(scrollInvSlot, "INT"); // INT
-    extraLuk = slots * useInventory.getScrollStatBoost(scrollInvSlot, "LUK"); // LUK
-    extraHp = slots * useInventory.getScrollStatBoost(scrollInvSlot, "MHP"); // MHP
-    extraMp = slots * useInventory.getScrollStatBoost(scrollInvSlot, "MMP"); // MMP
-    extraWatk = slots * useInventory.getScrollStatBoost(scrollInvSlot, "PAD"); // PAD
-    extraMatk = slots * useInventory.getScrollStatBoost(scrollInvSlot, "MAD"); // MAD
-    extraWdef = slots * useInventory.getScrollStatBoost(scrollInvSlot, "PDD"); // PDD
-    extraMdef = slots * useInventory.getScrollStatBoost(scrollInvSlot, "MDD"); // MDD
-    extraAcc = slots * useInventory.getScrollStatBoost(scrollInvSlot, "ACC"); // ACC
-    extraAvoid = slots * useInventory.getScrollStatBoost(scrollInvSlot, "EVA"); // EVA
-    extraSpeed = slots * useInventory.getScrollStatBoost(scrollInvSlot, "Speed"); // Speed
-    extraJump = slots * useInventory.getScrollStatBoost(scrollInvSlot, "Jump"); // Jump
-
-    return {
-        str: equip.getStr() + extraStr,
-        dex: equip.getDex() + extraDex,
-        int: equip.getInt() + extraInt,
-        luk: equip.getLuk() + extraLuk,
-        hp: equip.getHp() + extraHp,
-        mp: equip.getMp() + extraMp,
-        watk: equip.getWatk() + extraWatk,
-        matk: equip.getMatk() + extraMatk,
-        wdef: equip.getWdef() + extraWdef,
-        mdef: equip.getMdef() + extraMdef,
-        acc: equip.getAcc() + extraAcc,
-        avoid: equip.getAvoid() + extraAvoid,
-        speed: equip.getSpeed() + extraSpeed,
-        jump: equip.getJump() + extraJump,
-    };
-}
-
-function applyNewStats(newStats) {
-    var s = newStats;
-    equipSelected.setStr(s.str);
-    equipSelected.setDex(s.dex);
-    equipSelected.setInt(s.int);
-    equipSelected.setLuk(s.luk);
-    equipSelected.setHp(s.hp);
-    equipSelected.setMp(s.mp);
-    equipSelected.setWatk(s.watk);
-    equipSelected.setMatk(s.matk);
-    equipSelected.setWdef(s.wdef);
-    equipSelected.setMdef(s.mdef);
-    equipSelected.setAcc(s.acc);
-    equipSelected.setAvoid(s.avoid);
-    equipSelected.setSpeed(s.speed);
-    equipSelected.setJump(s.jump);
-    equipSelected.setUpgradeSlots(0);
-    cm.getPlayer().forceUpdateItem(equipSelected);
-}
-
