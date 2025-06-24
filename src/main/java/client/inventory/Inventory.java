@@ -341,21 +341,8 @@ public class Inventory implements Iterable<Item> {
         }
     }
 
-    // Returns the scrolls success percentage
-    public int getScrollSuccess(short slot) {
-        lock.lock();
-        try {
-            Item item = inventory.get(slot);
-            ItemInformationProvider ii = ItemInformationProvider.getInstance();
-            Map<String, Integer> equipStats = ii.getEquipStats(item.getItemId());
-            return equipStats.get("success");
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    // Returns the scroll stat boost based on dataItem (i.e. STR/PAD/Speed)
-    public int getScrollStatBoost(short slot, String dataItem) {
+    // Returns the equip stat based on dataItem
+    public int getEquipStat(short slot, String dataItem) {
         lock.lock();
         try {
             Item item = inventory.get(slot);

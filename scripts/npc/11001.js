@@ -92,7 +92,7 @@ function showHammerableEquips() {
         if ((inv.getUpgradeSlots(slot) + item.getLevel()) <= 0) continue;
 
         // Skip cash items
-        if (inv.getScrollStatBoost(slot, "cash") === 1) continue;
+        if (inv.getEquipStat(slot, "cash") === 1) continue;
 
         // Skip based on item Id
         if (instance.isHammerableEquip(item.getItemId()) === false) continue;
@@ -229,7 +229,7 @@ function hammerTime() {
         if ((equipInventory.getUpgradeSlots(equipSlot) + equipItem.getLevel()) <= 0) continue;
 
         // Skip cash items
-        if (equipInventory.getScrollStatBoost(equipSlot, "cash") === 1) continue;
+        if (equipInventory.getEquipStat(equipSlot, "cash") === 1) continue;
 
         // Skip based on item Id
         if (instance.isHammerableEquip(equipItem.getItemId()) === false) continue;
@@ -260,7 +260,7 @@ function confirmScrollCount(useInvSlotNum) {
 
     // Get the number of upgrade slots and scroll success percentage
     equipUpgradeSlots = cm.getInventory(invTypeEquip).getUpgradeSlots(equipInvSlot);
-    scrollSuccessPercent = useInv.getScrollSuccess(scrollInvSlot);
+    scrollSuccessPercent = useInv.getEquipStat(scrollInvSlot, "success");
 
     // Calculate the number of scrolls required
     if (scrollSuccessPercent === 100) {
