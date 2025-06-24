@@ -386,14 +386,19 @@ public class Inventory implements Iterable<Item> {
     public Equip applyHammerToItem(Item item) {
         Equip equip = (Equip) item;
 
-        if (equip.getVicious() == 2) { // Already fully hammered
-            return null;
-        } else if (equip.getVicious() == 0) { // No hammers used yet
-            equip.setUpgradeSlots(equip.getUpgradeSlots() + 2);
-        } else if (equip.getVicious() == 1) { // One hammer used
-            equip.setUpgradeSlots(equip.getUpgradeSlots() + 1);
+        lock.lock();
+        try {
+            if (equip.getVicious() == 2) { // Already fully hammered
+                return null;
+            } else if (equip.getVicious() == 0) { // No hammers used yet
+                equip.setUpgradeSlots(equip.getUpgradeSlots() + 2);
+            } else if (equip.getVicious() == 1) { // One hammer used
+                equip.setUpgradeSlots(equip.getUpgradeSlots() + 1);
+            }
+            equip.setVicious(2);
+        } finally {
+            lock.unlock();
         }
-        equip.setVicious(2);
         return equip;
     }
 

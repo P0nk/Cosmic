@@ -900,17 +900,22 @@ public class AbstractPlayerInteraction {
 
     public void removeAmount(int id, int amount, Client cl) {
         InventoryType invType = ItemConstants.getInventoryType(id);
-        int possessed = cl.getPlayer().getInventory(invType).countById(id);
-        if (possessed > 0) {
-            InventoryManipulator.removeById(cl, ItemConstants.getInventoryType(id), id, amount, true, false);
-            cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -amount, true));
-        }
-
-        if (invType == InventoryType.EQUIP) {
-            if (cl.getPlayer().getInventory(InventoryType.EQUIPPED).countById(id) > 0) {
-                InventoryManipulator.removeById(cl, InventoryType.EQUIPPED, id, 1, true, false);
-                cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -1, true));
+        cl.getPlayer().getInventory(invType).lockInventory();
+        try {
+            int possessed = cl.getPlayer().getInventory(invType).countById(id);
+            if (possessed > 0) {
+                InventoryManipulator.removeById(cl, ItemConstants.getInventoryType(id), id, amount, true, false);
+                cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -amount, true));
             }
+
+            if (invType == InventoryType.EQUIP) {
+                if (cl.getPlayer().getInventory(InventoryType.EQUIPPED).countById(id) > 0) {
+                    InventoryManipulator.removeById(cl, InventoryType.EQUIPPED, id, 1, true, false);
+                    cl.sendPacket(PacketCreator.getShowItemGain(id, (short) -1, true));
+                }
+            }
+        } finally {
+            cl.getPlayer().getInventory(invType).unlockInventory();
         }
     }
 

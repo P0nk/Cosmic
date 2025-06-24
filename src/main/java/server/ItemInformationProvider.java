@@ -627,7 +627,6 @@ public class ItemInformationProvider {
     }
 
 
-
     private static double testYourLuck(double prop, int dices) {   // revamped testYourLuck author: David A.
         return Math.pow(1.0 - prop, dices);
     }
@@ -2400,6 +2399,13 @@ public class ItemInformationProvider {
         }
 
         List<Integer> ret = new ArrayList<>();
+
+        // Add all chaos scrolls to all equipment categories
+        ret.add(2049100); // Chaos Scroll 60% - Alters the equipment for better or worse. Not available on Cash Items.\nSuccess rate:60%
+        ret.add(2049115); // Chaos Scroll of Goodness 60% - Alters the equipment for better. Not available on Cash Items.\nSuccess rate:60%
+        ret.add(2049116); // Incredible Chaos Scroll of Goodness 60% - Alters the equipment for much better. Not available on Cash Items.\nSuccess rate:60%
+        ret.add(2049117); // Miraculous Chaos Scroll of Goodness 60% - Alters the equipment for super much better. Not available on Cash Items.\nSuccess rate:60%
+
         switch (equipCategory) {
             case CATEGORY_HELMET -> {
                 ret.add(2040000); // Scroll for Helmet for DEF - Improves the helmet's weapon def.\nSuccess rate:100%, weapon def. +1
