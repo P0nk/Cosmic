@@ -234,12 +234,10 @@ function hammerTime() {
         // Skip based on item Id
         if (instance.isHammerableEquip(equipItem.getItemId()) === false) continue;
 
-
-        // Ensure equip is hammerable
-            // Apply hammers if applicable and update the item
-            var hammeredItem = equipInventory.applyHammerToItem(equipItem);
-            if (!hammeredItem) continue;
-            cm.getPlayer().forceUpdateItem(hammeredItem);
+        // Apply hammers if applicable and update the item
+        var hammeredItem = equipInventory.applyHammerToItem(equipItem);
+        if (!hammeredItem) continue;
+        cm.getPlayer().forceUpdateItem(hammeredItem);
     }
 
     // Remove vicious hammers
