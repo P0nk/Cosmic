@@ -2403,8 +2403,10 @@ public class ItemInformationProvider {
         // Add all chaos scrolls to all equipment categories
         ret.add(2049100); // Chaos Scroll 60% - Alters the equipment for better or worse. Not available on Cash Items.\nSuccess rate:60%
         ret.add(2049115); // Chaos Scroll of Goodness 60% - Alters the equipment for better. Not available on Cash Items.\nSuccess rate:60%
-        ret.add(2049116); // Incredible Chaos Scroll of Goodness 60% - Alters the equipment for much better. Not available on Cash Items.\nSuccess rate:60%
-        ret.add(2049117); // Miraculous Chaos Scroll of Goodness 60% - Alters the equipment for super much better. Not available on Cash Items.\nSuccess rate:60%
+
+        // These 2 cog variants don't work when used - tested locally
+        //ret.add(2049116); // Incredible Chaos Scroll of Goodness 60% - Alters the equipment for much better. Not available on Cash Items.\nSuccess rate:60%
+        //ret.add(2049117); // Miraculous Chaos Scroll of Goodness 60% - Alters the equipment for super much better. Not available on Cash Items.\nSuccess rate:60%
 
         switch (equipCategory) {
             case CATEGORY_HELMET -> {
@@ -2973,5 +2975,24 @@ public class ItemInformationProvider {
         scrollsByEquipCategory.put(equipCategory, ret);
 
         return scrollsByEquipCategory.get(equipCategory);
+    }
+
+    public boolean isHammerableEquip(int itemId) {
+        int equipCategory = (itemId / 10000);
+
+        // Armor
+        if ((CATEGORY_HELMET <= equipCategory) && (equipCategory <= CATEGORY_BELT)) {
+            return true;
+        }
+
+        // Weapon
+        if (
+                ((CATEGORY_1H_SWORD <= equipCategory) && (equipCategory <= CATEGORY_DAGGER)) ||
+                        ((CATEGORY_WAND <= equipCategory) && (equipCategory <= CATEGORY_STAFF)) ||
+                        ((CATEGORY_2H_SWORD <= equipCategory) && (equipCategory <= CATEGORY_PISTOL))) {
+            return true;
+        }
+
+        return false;
     }
 }
