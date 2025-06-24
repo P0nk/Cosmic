@@ -2980,8 +2980,14 @@ public class ItemInformationProvider {
     public boolean isHammerableEquip(int itemId) {
         int equipCategory = (itemId / 10000);
 
-        // Armor
-        if ((CATEGORY_HELMET <= equipCategory) && (equipCategory <= CATEGORY_BELT)) {
+        // Armor - exclude rings
+        if (((CATEGORY_HELMET <= equipCategory) && (equipCategory <= CATEGORY_CAPE)) ||
+                ((CATEGORY_PENDANT <= equipCategory) && (equipCategory <= CATEGORY_BELT))) {
+            return true;
+        }
+
+        // One hammerable ring - Breath of Divinity
+        if (itemId == 1113269) {
             return true;
         }
 

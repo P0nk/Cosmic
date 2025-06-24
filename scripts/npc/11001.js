@@ -38,31 +38,37 @@ function action(mode, type, selection) {
     if (mode !== 1) return cm.dispose();
     status++;
 
-    switch (status) {
-        case 1:
-            return choice();
-        case 2:
-            if (selection === 0) {
-                return showHammerableEquips();
-            }
-            return showScrollableEquips();
-        case 3:
-            if (hammering === true) {
-                return confirmHammerCount();
-            }
-            return showApplicableScrolls(selection);
-        case 4:
-            if (hammering === true) {
-                return hammerTime();
-            }
-            return confirmScrollCount(selection);
-        case 5:
-            if (hammering === true) {
+    try {
+        switch (status) {
+            case 1:
+                return choice();
+            case 2:
+                if (selection === 0) {
+                    return showHammerableEquips();
+                }
+                return showScrollableEquips();
+            case 3:
+                if (hammering === true) {
+                    return confirmHammerCount();
+                }
+                return showApplicableScrolls(selection);
+            case 4:
+                if (hammering === true) {
+                    return hammerTime();
+                }
+                return confirmScrollCount(selection);
+            case 5:
+                if (hammering === true) {
+                    return cm.dispose();
+                }
+                return scrollItemOrStop(mode);
+            default:
                 return cm.dispose();
-            }
-            return scrollItemOrStop(mode);
-        default:
-            return cm.dispose();
+        }
+    } catch (err) {
+        console.log("Error during auto-scroll/hammer logic: " + err);
+        cm.sendOk("Something bad happened... Anyways, bye!")
+        return cm.dispose();
     }
 }
 
