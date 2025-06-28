@@ -905,6 +905,7 @@ public class Monster extends AbstractLoadedLife {
                 eim.friendlyKilled(this, hasKiller);
             }
         }
+        getMap().dismissRemoveAfter(this); // Cancel removeAfter to prevent 9400547 from scheduling 90000s tasks, which may cause memory leak-like buildup
     }
 
     private synchronized void processMonsterKilled(boolean hasKiller) {
