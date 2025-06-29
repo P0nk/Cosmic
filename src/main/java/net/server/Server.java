@@ -427,6 +427,8 @@ public class Server {
         log.info("Starting world {}", i);
 
         int exprate = YamlConfig.config.worlds.get(i).exp_rate;
+        float mobrate = YamlConfig.config.worlds.get(i).mob_rate;
+        int mobperspawnpoint = YamlConfig.config.worlds.get(i).max_mob_per_spawnpoint;
         int mesorate = YamlConfig.config.worlds.get(i).meso_rate;
         int droprate = YamlConfig.config.worlds.get(i).drop_rate;
         int bossdroprate = YamlConfig.config.worlds.get(i).boss_drop_rate;
@@ -438,10 +440,8 @@ public class Server {
         String event_message = YamlConfig.config.worlds.get(i).event_message;
         String why_am_i_recommended = YamlConfig.config.worlds.get(i).why_am_i_recommended;
 
-        World world = new World(i,
-                flag,
-                event_message,
-                exprate, droprate, bossdroprate, mesorate, questrate, travelrate, fishingrate);
+        World world = new World(i, flag, event_message, exprate, droprate, bossdroprate, mesorate, questrate,
+                travelrate, fishingrate, mobrate, mobperspawnpoint);
 
         Map<Integer, String> channelInfo = new HashMap<>();
         long bootTime = getCurrentTime();
@@ -1477,7 +1477,7 @@ public class Server {
             lgnWLock.unlock();
         }
     }
-    
+
     /*
     public void deleteAccountEntry(Integer accountid) { is this even a thing?
         lgnWLock.lock();
@@ -1487,7 +1487,7 @@ public class Server {
         } finally {
             lgnWLock.unlock();
         }
-    
+
         for (World wserv : this.getWorlds()) {
             wserv.clearAccountCharacterView(accountid);
             wserv.unregisterAccountStorage(accountid);
