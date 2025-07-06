@@ -1,19 +1,24 @@
 /*
-    This file is part of the OdinMS Maple Story Server
+	This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-                   Matthias Butz <matze@odinms.de>
-                   Jan Christian Meyer <vimes@odinms.de>
+		       Matthias Butz <matze@odinms.de>
+		       Jan Christian Meyer <vimes@odinms.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3.
+    published by the Free Software Foundation version 3 as published by
+    the Free Software Foundation. You may not use, modify or distribute
+    this program under any other version of the GNU Affero General Public
+    License.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Affero General Public License for more details.
-*/
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
 
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package constants.inventory;
 
 import client.inventory.InventoryType;
@@ -27,41 +32,40 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * ItemConstants - Utility class to check item types and flags.
- * Author(s): Jay Estrella, Ronan, Modified by Tom
+ * @author Jay Estrella
+ * @author Ronan
  */
 public final class ItemConstants {
-
-    // Cache for quick item type lookup
     protected static Map<Integer, InventoryType> inventoryTypeCache = new HashMap<>();
 
-    // Item flag constants (used in bitwise operations)
     public final static short LOCK = 0x01;
     public final static short SPIKES = 0x02;
     public final static short KARMA_USE = 0x02;
     public final static short COLD = 0x04;
     public final static short UNTRADEABLE = 0x08;
     public final static short KARMA_EQP = 0x10;
-    public final static short SANDBOX = 0x40;
+    public final static short SANDBOX = 0x40;             // let 0x40 until it's proven something uses this
     public final static short PET_COME = 0x80;
     public final static short ACCOUNT_SHARING = 0x100;
     public final static short MERGE_UNTRADEABLE = 0x200;
-    public final static short SELLALL_PROTECTED = 0x400;
-
+    // Add this new flag for sellall protection
+    public final static short SELLALL_PROTECTED = 0x400;  // hex value for bitwise operations
     public final static boolean EXPIRING_ITEMS = true;
     public final static Set<Integer> permanentItemids = new HashSet<>();
 
-    // Initialize permanent pet list
     static {
+        // i ain't going to open one gigantic itemid cache just for 4 perma itemids, no way!
         for (int petItemId : ItemId.getPermaPets()) {
             permanentItemids.add(petItemId);
         }
     }
 
-    // Utility checks for item flags and categories
     public static int getFlagByInt(int type) {
-        if (type == 128) return PET_COME;
-        if (type == 256) return ACCOUNT_SHARING;
+        if (type == 128) {
+            return PET_COME;
+        } else if (type == 256) {
+            return ACCOUNT_SHARING;
+        }
         return 0;
     }
 
@@ -151,7 +155,7 @@ public final class ItemConstants {
     }
 
     public static boolean isChaosScroll(int scrollId) {
-        return scrollId >= 2049100 && scrollId <= 2049103 || scrollId >= 2049115 && scrollId <= 2049117;
+        return scrollId >= 2049100 && scrollId <= 2049103 || scrollId >= 2049115 && scrollId <= 2049117 ; // Include Custom Chaos scroll
     }
 
     public static boolean isRateCoupon(int itemId) {
@@ -181,6 +185,7 @@ public final class ItemConstants {
         }
 
         InventoryType ret = InventoryType.UNDEFINED;
+
         final byte type = (byte) (itemId / 1000000);
         if (type >= 1 && type <= 5) {
             ret = InventoryType.getByType(type);
@@ -228,36 +233,12 @@ public final class ItemConstants {
         return itemId >= 20000 && itemId < 22000;
     }
 
-    //==================== HAIR ID LOOKUP (DYNAMIC) ======================//
-
-    // Cache of all valid hair IDs based on the XML filenames in Character.wz/Hair/
-    private static final Set<Integer> validHairIds = loadHairIds();
-
-    /**
-     * Loads all hair IDs from the XML filenames in the Hair folder.
-     * Files are expected to be named like: 00030000.img.xml → hair ID: 30000
-     */
-    private static Set<Integer> loadHairIds() {
-        Set<Integer> ids = new HashSet<>();
-        File hairDir = new File("D:/Devmaple/MerogieMS/wz/Character.wz/Hair/");
-        File[] files = hairDir.listFiles((dir, name) -> name.matches("000\\d{5}\\.img\\.xml"));
-        if (files != null) {
-            for (File file : files) {
-                try {
-                    String name = file.getName().substring(3, 8); // Extract 5-digit ID after '000'
-                    ids.add(Integer.parseInt(name));
-                } catch (Exception e) {
-                    System.err.println("Failed to parse hair ID from: " + file.getName());
-                }
-            }
-        }
-        return ids;
-    }
-
-    /**
-     * Checks whether a given item ID is a valid hair ID based on loaded Hair XML files.
-     */
     public static boolean isHair(int itemId) {
-        return validHairIds.contains(itemId);
+//        return itemId >= 30000 && itemId < 37608;
+        String folderpath = "D://MerogieMS/wz/Character.wz/Hair";
+        String fileName = "000" + itemId + ".img.xml";
+        File file = new File(folderpath, fileName);
+//        System.out.println(file);
+        return file.exists();
     }
 }
