@@ -228,13 +228,36 @@ public final class ItemConstants {
         return itemId >= 20000 && itemId < 22000;
     }
 
-    public static boolean isHair(int itemId) {
-//        return itemId >= 30000 && itemId < 37608;
-        String folderpath = "C://Devmaple//wz//Character.wz//Hair";
-        String fileName = "000" + itemId + ".img.xml";
-        File file = new File(folderpath, fileName);
-//        System.out.println(file);
-        return file.exists();
+    //==================== HAIR ID LOOKUP (DYNAMIC) ======================//
+
+    // Cache of all valid hair IDs based on the XML filenames in Character.wz/Hair/
+    private static final Set<Integer> validHairIds = loadHairIds();
+
+    /**
+     * Loads all hair IDs from the XML filenames in the Hair folder.
+     * Files are expected to be named like: 00030000.img.xml → hair ID: 30000
+     */
+    private static Set<Integer> loadHairIds() {
+        Set<Integer> ids = new HashSet<>();
+        File hairDir = new File("D:/Devmaple/MerogieMS/wz/Character.wz/Hair/");
+        File[] files = hairDir.listFiles((dir, name) -> name.matches("000\\d{5}\\.img\\.xml"));
+        if (files != null) {
+            for (File file : files) {
+                try {
+                    String name = file.getName().substring(3, 8); // Extract 5-digit ID after '000'
+                    ids.add(Integer.parseInt(name));
+                } catch (Exception e) {
+                    System.err.println("Failed to parse hair ID from: " + file.getName());
+                }
+            }
+        }
+        return ids;
     }
 
+    /**
+     * Checks whether a given item ID is a valid hair ID based on loaded Hair XML files.
+     */
+    public static boolean isHair(int itemId) {
+        return validHairIds.contains(itemId);
+    }
 }
