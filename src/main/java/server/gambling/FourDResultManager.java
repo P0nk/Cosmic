@@ -1,4 +1,4 @@
-package gambling;
+package server.gambling;
 
 import tools.DatabaseConnection;
 import tools.PacketCreator;
