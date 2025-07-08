@@ -9,9 +9,9 @@ var isQuickPick = false;
 var dateList = null;
 var MAX_HISTORY_BETS =100;
 var MAX_HISTORY_DRAWS =7;
-var FourDBetManager = Java.type("gambling.FourDBetManager");
-var FourDResultManager = Java.type("gambling.FourDResultManager");
-var FourDDrawScheduler = Java.type("gambling.FourDDrawScheduler");
+var FourDBetManager = Java.type("server.gambling.FourDBetManager");
+var FourDResultManager = Java.type("server.gambling.FourDResultManager");
+var FourDDrawScheduler = Java.type("server.gambling.FourDDrawScheduler");
 
 function start() {
     status = 0;
