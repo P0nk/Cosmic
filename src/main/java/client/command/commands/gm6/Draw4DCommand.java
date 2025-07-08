@@ -6,7 +6,7 @@ import client.command.Command;
 import net.packet.Packet;
 import net.server.Server;
 import net.server.world.World;
-import gambling.FourDResultManager;
+import server.gambling.FourDResultManager;
 import tools.PacketCreator;
 
 import java.time.LocalDate;

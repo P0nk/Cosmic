@@ -37,7 +37,7 @@ import constants.inventory.ItemConstants;
 import constants.net.OpcodeConstants;
 import constants.net.ServerConstants;
 import database.note.NoteDao;
-import gambling.FourDDrawScheduler;
+import server.gambling.FourDDrawScheduler;
 import net.ChannelDependencies;
 import net.PacketProcessor;
 import net.netty.LoginServer;

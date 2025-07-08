@@ -1,4 +1,4 @@
-package gambling;
+package server.gambling;
 
 import java.time.*;
 import java.util.*;
