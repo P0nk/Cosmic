@@ -230,7 +230,7 @@ function action(mode, type, selection) {
                   rows.push(chunk.join("   "));    // three spaces between each link
                 }
                 const grid = rows.join("\r\n");
-                cm.sendSimple("So you want to style your hair. Here's my catalogue.\r\nEach style cost 10k nx!\r\n" + grid);
+                cm.sendSimple("So you want to style your hair. Here's my catalogue.\r\nEach style cost "+hairprice+" nx!\r\n" + grid);
             } else if (selection == 1) { // Color Hair
                 status = 1;
                 beauty = 2;
