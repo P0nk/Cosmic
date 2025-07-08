@@ -7,9 +7,9 @@ var currentDrawDate;
 var betAmount = 1;
 var isQuickPick = false;
 
-var FourDBetManager = Java.type("gambling.FourDBetManager");
-var FourDResultManager = Java.type("gambling.FourDResultManager");
-var FourDDrawScheduler = Java.type("gambling.FourDDrawScheduler");
+var FourDBetManager = Java.type("server.gambling.FourDBetManager");
+var FourDResultManager = Java.type("server.gambling.FourDResultManager");
+var FourDDrawScheduler = Java.type("server.gambling.FourDDrawScheduler");
 
 function start() {
     status = 0;
