@@ -268,8 +268,8 @@ server:
   USE_ENFORCE_NOVICE_EXPRATE: true    #Hardsets experience rate 1x for beginners level 10 or under. Ideal for roaming on novice areas without caring too much about losing some stats.
   USE_ENFORCE_HPMP_SWAP: false        #Forces players to reuse stats (via AP Resetting) located on HP/MP pool only inside the HP/MP stats.
 
-  USE_ENFORCE_JOB_LEVEL_RANGE: true   #Caps the player level on the minimum required to advance their current jobs.
-  USE_ENFORCE_JOB_SP_RANGE: true      #Caps the player SP level on the total obtainable by their current jobs. After changing jobs, missing SP will be retrieved.
+  USE_ENFORCE_JOB_LEVEL_RANGE: false   #Caps the player level on the minimum required to advance their current jobs.
+  USE_ENFORCE_JOB_SP_RANGE: false      #Caps the player SP level on the total obtainable by their current jobs. After changing jobs, missing SP will be retrieved.
   USE_ENFORCE_ITEM_SUGGESTION: false  #Forces the Owl of Minerva and the Cash Shop to always display the defined item array instead of those featured by the players.
   USE_ENFORCE_UNMERCHABLE_CASH: true  #Forces players to not sell CASH items via merchants, drops of it disappears.
   USE_ENFORCE_UNMERCHABLE_PET: true   #Forces players to not sell pets via merchants, drops of it disappears. (since non-named pets gets dirty name and other possible DB-related issues)
@@ -316,7 +316,7 @@ server:
 
   #Commands Configuration
   BLOCK_GENERATE_CASH_ITEM: false     #Prevents creation of cash items with the item/drop command.
-  USE_WHOLE_SERVER_RANKING: false     #Enables a ranking pool made from every character registered on the server for the "ranks" command, instead of separated by worlds.
+  USE_WHOLE_SERVER_RANKING: true     #Enables a ranking pool made from every character registered on the server for the "ranks" command, instead of separated by worlds.
 
   EQUIP_EXP_RATE: 1.0                  #Rate for equipment exp gain, grows linearly. Set 1.0 for default (about 100~200 same-level range mobs killed to pass equip from level 1 to 2).
   PQ_BONUS_EXP_RATE: 10               #Rate for the PQ exp reward.
@@ -330,7 +330,7 @@ server:
   MAX_AP: 32767                               #Max AP allotted on the auto-assigner.
   MAX_EVENT_LEVELS: 8                         #Event has different levels of rewarding system.
   BLOCK_NPC_RACE_CONDT: 500   # (0.5 * 1000) Time the player client must wait before reopening a conversation with an NPC.
-  TOT_MOB_QUEST_REQUIREMENT: 500               #Overwrites old 999-mobs requirement for the ToT questline with new requirement value, set 0 for default.
+  TOT_MOB_QUEST_REQUIREMENT: 0               #Overwrites old 999-mobs requirement for the ToT questline with new requirement value, set 0 for default.
   MOB_REACTOR_REFRESH_TIME: 0         # (30 * 1000) Overwrites refresh time for those reactors oriented to inflict damage to bosses (Ice Queen, Riche), set 0 for default.
   PARTY_SEARCH_REENTRY_LIMIT: 10              #Max amount of times a party leader is allowed to persist on the Party Search before entry expiration (thus needing to manually restart the Party Search to be able to search for members).
   NAME_CHANGE_COOLDOWN: 2592000000      # (30*24*60*60*1000) Cooldown for name changes, default (GMS) is 30 days.
@@ -345,9 +345,9 @@ server:
 
   #Map Monitor Configuration
   ITEM_EXPIRE_CHECK: 10000        # (10 * 10000) Interval between item expiring tasks on maps, which checks and makes disappear expired items.
-  ITEM_LIMIT_ON_MAP: 200              #Max number of items allowed on a map.
+  ITEM_LIMIT_ON_MAP: 300              #Max number of items allowed on a map.
   MAP_VISITED_SIZE: 5                 #Max length for last mapids visited by a player. This is used to recover and update drops on these maps accordingly with player actions.
-  MAP_DAMAGE_OVERTIME_INTERVAL: 2500  #Interval in milliseconds between map environment damage (e.g. El Nath and Aqua Road surrondings).
+  MAP_DAMAGE_OVERTIME_INTERVAL: 500  #Interval in milliseconds between map environment damage (e.g. El Nath and Aqua Road surrondings).
   MAP_DAMAGE_OVERTIME_COUNT: 2
 
   #Channel Mob Disease Monitor Configuration
@@ -437,12 +437,12 @@ server:
   PET_AUTOMP_RATIO: 0.99
 
   #Pet & Mount Configuration
-  PET_EXHAUST_COUNT: 3               #Number of proc counts (1 per minute) on the exhaust schedule for fullness.
+  PET_EXHAUST_COUNT: 1               #Number of proc counts (1 per minute) on the exhaust schedule for fullness.
   MOUNT_EXHAUST_COUNT: 1             #Number of proc counts (1 per minute) on the exhaust schedule for tiredness.
 
   #Pet Hunger Configuration
-  PETS_NEVER_HUNGRY: true        #If true, pets and mounts will never grow hungry.
-  GM_PETS_NEVER_HUNGRY: true      #If true, pets and mounts owned by GMs will never grow hungry.
+  PETS_NEVER_HUNGRY: false        #If true, pets and mounts will never grow hungry.
+  GM_PETS_NEVER_HUNGRY: false      #If true, pets and mounts owned by GMs will never grow hungry.
 
   #Event Configuration
   EVENT_MAX_GUILD_QUEUE: 10           #Max number of guilds in queue for GPQ.
