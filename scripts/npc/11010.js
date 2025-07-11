@@ -1,12 +1,63 @@
 // Friendly ore name mapping
 var oreNames = {
-    4010000: "Bronze Ore", 4010001: "Steel Ore", 4010002: "Mithril Ore", 4010003: "Adamantium Ore",
-    4010004: "Silver Ore", 4010005: "Orihalcon Ore", 4010006: "Gold Ore", 4010007: "Lidium Ore",
-    4020000: "Garnet Ore", 4020001: "Amethyst Ore", 4020002: "Aquamarine Ore", 4020003: "Emerald Ore",
-    4020004: "Opal Ore", 4020005: "Sapphire Ore", 4020006: "Topaz Ore", 4020007: "Diamond Ore",
+    4010000: "Bronze Ore",
+    4010001: "Steel Ore",
+    4010002: "Mithril Ore",
+    4010003: "Adamantium Ore",
+    4010004: "Silver Ore",
+    4010005: "Orihalcon Ore",
+    4010006: "Gold Ore",
+    4010007: "Lidium Ore",
+    4020000: "Garnet Ore",
+    4020001: "Amethyst Ore",
+    4020002: "Aquamarine Ore",
+    4020003: "Emerald Ore",
+    4020004: "Opal Ore",
+    4020005: "Sapphire Ore",
+    4020006: "Topaz Ore",
+    4020007: "Diamond Ore",
     4020008: "Black Crystal Ore",
-    4004000: "Power Crystal Ore", 4004001: "Wisdom Crystal Ore", 4004002: "DEX Crystal Ore",
-    4004003: "LUK Crystal Ore", 4004004: "Dark Crystal Ore"
+    4004000: "Power Crystal Ore",
+    4004001: "Wisdom Crystal Ore",
+    4004002: "DEX Crystal Ore",
+    4004003: "LUK Crystal Ore",
+    4004004: "Dark Crystal Ore",
+
+    // Magic Powders
+    4007000: "Brown Magic Powder",
+    4007001: "White Magic Powder",
+    4007002: "Blue Magic Powder",
+    4007003: "Green Magic Powder",
+    4007004: "Yellow Magic Powder",
+    4007005: "Purple Magic Powder",
+    4007006: "Red Magic Powder",
+    4007007: "Black Magic Powder",
+
+    // Stimulators
+    4130000: "Gloves Production Stimulator",
+    4130001: "Shoes Production Stimulator",
+    4130002: "One-Handed Sword Forging Stimulator",
+    4130003: "One-Handed Axe Forging Stimulator",
+    4130004: "One-Handed Blunt Weapon Forging Stimulator",
+    4130005: "Two-Handed Sword Forging Stimulator",
+    4130006: "Two-Handed Axe Forging Stimulator",
+    4130007: "Two-Handed Mace Forging Stimulator",
+    4130008: "Spear Forging Stimulator",
+    4130009: "Pole Arm Forging Stimulator",
+    4130010: "Wand Production Stimulator",
+    4130011: "Staff Production Stimulator",
+    4130012: "Bow Production Stimulator",
+    4130013: "Crossbow Production Stimulator",
+    4130014: "Dagger Forging Stimulator",
+    4130015: "Claw Production Stimulator",
+    4130016: "Knuckler Production Stimulator",
+    4130017: "Gun Production Stimulator",
+    4130018: "Armor Production Stimulator",
+    4130019: "Topwear Production Stimulator",
+    4130020: "Bottomwear Production Stimulator",
+    4130021: "Overall Production Stimulator",
+    4130022: "Shield Production Stimulator",
+    4130023: "Katara Forging Stimulator"
 };
 
 // All ore item IDs
@@ -38,7 +89,7 @@ function action(mode, type, selection) {
 
     // Menu
     if (status === 0) {
-        cm.sendSimple("Helloo I'm Menma! I can help hold on to your ores! Would you like my help?\r\n#L0#Deposit all ores from inventory\r\n#L1#Withdraw ores from pouch");
+        cm.sendSimple("Helloo I'm Menma! I can help hold on to your ores/powders and stimulators! Would you like my help?\r\n#L0#Deposit all items from inventory\r\n#L1#Withdraw items from pouch");
     }
 
     // Deposit
@@ -79,7 +130,7 @@ function action(mode, type, selection) {
             }
         }
 
-        var msg = "Deposited " + deposited + " ores into your pouch.";
+        var msg = "Deposited " + deposited + " items into your pouch.";
         if (skipped.length > 0) {
             msg += "\r\nCannot store more of: " + skipped.join(", ") + " (limit 32,767 reached)";
         }
@@ -101,8 +152,8 @@ function action(mode, type, selection) {
         for (var i = 0; i < pouch.size(); i++) {
             var item = pouch.get(i);
             var itemId = item.getItemId();
-            var name = oreNames[itemId] || ("Ore (" + itemId + ")");
-            text += "#L" + i + "##v" + itemId + "# (x" + item.getQuantity() + ")\r\n";
+            var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
+            text += "#L" + i + "##v" + itemId + "# "+ name +" (" + item.getQuantity() + ")\r\n";
         }
 
         cm.sendSimple(text);
