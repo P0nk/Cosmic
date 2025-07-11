@@ -1,159 +1,173 @@
+// Final QuestBoardManager.java aligned to flat SQL schema
 package server.questboard;
 
+import client.Character;
+import constants.id.ItemId;
 import tools.DatabaseConnection;
+
 import java.sql.*;
 import java.util.*;
 
 public class QuestBoardManager {
 
-    private static Connection getConnection() throws SQLException {
-        return DatabaseConnection.getConnection();
-    }
-
-    // -------- QUEST_BOARD (Main Metadata) --------
-    public static void insertQuest(int questId, String title, String description, int createdBy, boolean isGM, Timestamp deadline, boolean repeatable, int maxCompletions, long taxPaid) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board (quest_id, title, description, created_by, is_gm_quest, deadline, repeatable, max_completions, tax_paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-            ps.setInt(1, questId);
-            ps.setString(2, title);
-            ps.setString(3, description);
-            ps.setInt(4, createdBy);
-            ps.setBoolean(5, isGM);
-            ps.setTimestamp(6, deadline);
-            ps.setBoolean(7, repeatable);
-            ps.setInt(8, maxCompletions);
-            ps.setLong(9, taxPaid);
-            ps.executeUpdate();
-        }
-    }
-
-    public static ResultSet getQuestById(Connection con, int questId) throws SQLException {
-        PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ?");
-        ps.setInt(1, questId);
-        return ps.executeQuery();
-    }
-
-    public static int getMaxQuestId() throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT MAX(quest_id) AS max_id FROM quest_board");
+    public static List<Map<String, Object>> getOpenQuests() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE status = 'OPEN'");
              ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt("max_id") : -1;
+
+            while (rs.next()) {
+                Map<String, Object> quest = new HashMap<>();
+                quest.put("quest_id", rs.getInt("quest_id"));
+                quest.put("created_by", rs.getInt("created_by"));
+                quest.put("requirement_itemid", rs.getInt("requirement_itemid"));
+                quest.put("requirement_quantity", rs.getInt("requirement_quantity"));
+                quest.put("reward_meso", rs.getLong("reward_meso"));
+                quest.put("reward_nx", rs.getLong("reward_nx"));
+                quest.put("reward_item1_id", rs.getInt("reward_item1_id"));
+                quest.put("reward_item1_qty", rs.getInt("reward_item1_qty"));
+                quest.put("reward_item2_id", rs.getInt("reward_item2_id"));
+                quest.put("reward_item2_qty", rs.getInt("reward_item2_qty"));
+                list.add(quest);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return list;
     }
 
-    // -------- QUEST_BOARD_REQUIREMENTS --------
-    public static void insertRequirement(int questId, int itemId, int quantity) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board_requirements (quest_id, item_id, quantity) VALUES (?, ?, ?)")) {
-            ps.setInt(1, questId);
+    public static boolean createQuest(Character player, int itemId, int quantity,
+                                      long meso, long nx, Integer item1Id, Integer item1Qty, Integer item2Id, Integer item2Qty) {
+        if (player.getMeso() < 10_000_000) return false;
+        player.gainMeso(-10_000_000, false);
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board (created_by, requirement_itemid, requirement_quantity, reward_meso, reward_nx, reward_item1_id, reward_item1_qty, reward_item2_id, reward_item2_qty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, player.getId());
             ps.setInt(2, itemId);
             ps.setInt(3, quantity);
+            ps.setLong(4, meso);
+            ps.setLong(5, nx);
+            ps.setObject(6, item1Id);
+            ps.setObject(7, item1Qty);
+            ps.setObject(8, item2Id);
+            ps.setObject(9, item2Qty);
             ps.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return false;
     }
 
-    public static List<Map<String, Object>> getRequirementsByQuestIdAsList(int questId) throws SQLException {
-        List<Map<String, Object>> results = new ArrayList<>();
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board_requirements WHERE quest_id = ?")) {
+    public static boolean fulfillQuest(Character player, int questId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND status = 'OPEN'")) {
             ps.setInt(1, questId);
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-                row.put("item_id", rs.getInt("item_id"));
-                row.put("quantity", rs.getInt("quantity"));
-                results.add(row);
+            if (!rs.next()) return false;
+
+            int reqItemId = rs.getInt("requirement_itemid");
+            short reqQty = rs.getShort("requirement_quantity");
+
+            if (!player.getAbstractPlayerInteraction().haveItem(reqItemId, reqQty)) return false;
+            player.getAbstractPlayerInteraction().gainItem(reqItemId, (short) -reqQty, true);
+
+            try (PreparedStatement update = con.prepareStatement("UPDATE quest_board SET status = 'COMPLETED', completed_by = ?, is_reward_claimed = 0 WHERE quest_id = ?")) {
+                update.setInt(1, player.getId());
+                update.setInt(2, questId);
+                update.executeUpdate();
             }
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return results;
+        return false;
     }
 
-    // -------- QUEST_BOARD_ITEM_REWARDS --------
-    public static void insertItemReward(int questId, int itemId, long quantity) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board_item_rewards (quest_id, item_id, quantity) VALUES (?, ?, ?)")) {
+    public static boolean claimReward(Character player, int questId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND completed_by = ? AND is_reward_claimed = 0")) {
             ps.setInt(1, questId);
-            ps.setInt(2, itemId);
-            ps.setLong(3, quantity);
-            ps.executeUpdate();
+            ps.setInt(2, player.getId());
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) return false;
+            player.gainMeso(rs.getInt("reward_meso"), true);
+            player.getCashShop().gainCash(1,(int) rs.getInt("reward_nx") );
+            int item1 = rs.getInt("reward_item1_id");
+            short qty1 = rs.getShort("reward_item1_qty");
+            if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
+
+            int item2 = rs.getInt("reward_item2_id");
+            short qty2 = rs.getShort("reward_item2_qty");
+            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
+
+            try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?")) {
+                upd.setInt(1, questId);
+                upd.executeUpdate();
+            }
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return false;
     }
 
-    public static List<Map<String, Object>> getItemRewardsByQuestIdAsList(int questId) throws SQLException {
-        List<Map<String, Object>> results = new ArrayList<>();
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board_item_rewards WHERE quest_id = ?")) {
+    public static boolean claimRequirements(Character player, int questId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND created_by = ? AND status = 'COMPLETED' AND is_req_claimed = 0")) {
             ps.setInt(1, questId);
+            ps.setInt(2, player.getId());
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) return false;
+
+            int itemId = rs.getInt("requirement_itemid");
+            short qty = rs.getShort("requirement_quantity");
+            player.getAbstractPlayerInteraction().gainItem(itemId, qty);
+
+            try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_req_claimed = 1, req_claimed_on = NOW() WHERE quest_id = ?")) {
+                upd.setInt(1, questId);
+                upd.executeUpdate();
+            }
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean withdrawQuest(Character player, int questId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE quest_board SET status = 'WITHDRAWN' WHERE quest_id = ? AND created_by = ? AND status = 'OPEN'")) {
+            ps.setInt(1, questId);
+            ps.setInt(2, player.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static List<Map<String, Object>> getPlayerQuests(int characterId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE created_by = ?")) {
+            ps.setInt(1, characterId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-                row.put("item_id", rs.getInt("item_id"));
-                row.put("quantity", rs.getLong("quantity"));
-                results.add(row);
+                Map<String, Object> quest = new HashMap<>();
+                quest.put("quest_id", rs.getInt("quest_id"));
+                quest.put("status", rs.getString("status"));
+                quest.put("completed_by", rs.getInt("completed_by"));
+                quest.put("is_req_claimed", rs.getInt("is_req_claimed"));
+                list.add(quest);
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return results;
-    }
-
-    // -------- QUEST_BOARD_CURRENCY_REWARDS --------
-    public static void insertCurrencyReward(int questId, String rewardType, long amount, int nxType) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board_currency_rewards (quest_id, reward_type, amount, nx_type) VALUES (?, ?, ?, ?)")) {
-            ps.setInt(1, questId);
-            ps.setString(2, rewardType);
-            ps.setLong(3, amount);
-            ps.setInt(4, nxType);
-            ps.executeUpdate();
-        }
-    }
-
-    public static List<Map<String, Object>> getCurrencyRewardsByQuestIdAsList(int questId) throws SQLException {
-        List<Map<String, Object>> results = new ArrayList<>();
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board_currency_rewards WHERE quest_id = ?")) {
-            ps.setInt(1, questId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-                row.put("reward_type", rs.getString("reward_type"));
-                row.put("amount", rs.getLong("amount"));
-                row.put("nx_type", rs.getInt("nx_type"));
-                results.add(row);
-            }
-        }
-        return results;
-    }
-
-    // -------- QUEST_BOARD_CLAIMS --------
-    public static void insertClaim(int questId, int creatorId) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board_claims (quest_id, creator_id) VALUES (?, ?)")) {
-            ps.setInt(1, questId);
-            ps.setInt(2, creatorId);
-            ps.executeUpdate();
-        }
-    }
-
-    // -------- QUEST_BOARD_SUBMISSIONS --------
-    public static void insertSubmission(int questId, int characterId, boolean rewardClaimed) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board_submissions (quest_id, character_id, reward_claimed) VALUES (?, ?, ?)")) {
-            ps.setInt(1, questId);
-            ps.setInt(2, characterId);
-            ps.setBoolean(3, rewardClaimed);
-            ps.executeUpdate();
-        }
-    }
-
-    // -------- QUEST_BOARD_LOGS --------
-    public static void insertLog(int questId, int actorId, String action, String details) throws SQLException {
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board_logs (quest_id, actor_id, action, details) VALUES (?, ?, ?, ?)")) {
-            ps.setInt(1, questId);
-            ps.setInt(2, actorId);
-            ps.setString(3, action);
-            ps.setString(4, details);
-            ps.executeUpdate();
-        }
+        return list;
     }
 }
