@@ -64,6 +64,9 @@ import client.command.commands.gm0.InactiveGuildMembersCommand;
 import client.command.commands.gm0.SellAllCommand;
 import client.command.commands.gm0.BuybackCommand;
 import client.command.commands.gm0.ToggleAutoPotCommand;
+import client.command.commands.gm0.CheckMyDmgCommand;
+
+
 
 import client.command.commands.gm1.BossHpCommand;
 import client.command.commands.gm1.MobHpCommand;
@@ -420,6 +423,9 @@ public class CommandsExecutor {
         addCommand("sellall",  SellAllCommand.class);
         addCommand("buyback", BuybackCommand.class);
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
+        addCommand("stats", CheckMyDmgCommand.class);
+
+
 
         commandsNameDesc.add(levelCommandsCursor);
     }
