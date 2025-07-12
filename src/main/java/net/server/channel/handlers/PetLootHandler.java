@@ -88,21 +88,28 @@ public final class PetLootHandler extends AbstractPacketHandler {
                     }
                 }
             }
-            // Added the below code
+            // --------- Added the below code ---------
             // Get list of map item
-            List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
+            int pethunger = pet.getFullness();
+            final double pickupRadius = (double) (500000 * pethunger) / 100;
+            System.out.println(pethunger);
+            boolean hasFreeEquip = chr.getInventory(InventoryType.EQUIP).getNumFreeSlot() > 0;
+            boolean hasFreeUse   = chr.getInventory(InventoryType.USE).getNumFreeSlot() > 0;
+            boolean hasFreeEtc   = chr.getInventory(InventoryType.ETC).getNumFreeSlot() > 0;
+
+            List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(pet.getPos(), pickupRadius, Arrays.asList(MapObjectType.ITEM));
             final Set<Integer> petIgnore = chr.getExcludedItems(); // get list of item ignore
-            if (c.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() < 1 || c.getPlayer().getInventory(InventoryType.EQUIP).getNumFreeSlot() < 1 ||
-                    c.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() < 1) {
-                chr.showHint("Pet can't loot anymore as either my EQUIP, USE or ETC inventory is full.. Might wanna do something about that..", 300);
+            if (!hasFreeEquip || !hasFreeUse || !hasFreeEtc) {
+                chr.showHint(
+                        "Pet can't loot: please free up some EQUIP, USE or ETC slots.",
+                        300
+                );
+                c.sendPacket(PacketCreator.enableActions());
                 return;
             }
             for (MapObject item : items) { // loop thorugh map item
                 MapItem mapItem = (MapItem) item; // assign map item to mapItem variable
                 // Check loot details
-//                System.out.println("Item ID: " + mapItem.getItemId());
-//                System.out.println("Quest ID: " + mapItem.getQuest());
-//                System.out.println("Quest Status of Quest Item: " + c.getPlayer().getQuestStatus(mapItem.getQuest()));
                 boolean is_player_kill = mapItem.getOwnerId() == c.getPlayer().getId();
                 boolean is_party_kill = mapItem.getOwnerId() == c.getPlayer().getPartyId();
                 boolean common_or_meso_item = mapItem.getQuest() <= 0; // QuestID <=0 because mesos quest id is -1
