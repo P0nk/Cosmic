@@ -3,7 +3,9 @@ package server.questboard;
 
 import client.Character;
 import constants.id.ItemId;
+import server.ItemInformationProvider;
 import tools.DatabaseConnection;
+import tools.Pair;
 
 import java.sql.*;
 import java.util.*;
@@ -169,5 +171,9 @@ public class QuestBoardManager {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public static List<Pair<Integer, String>> getItemInformationProvider() {
+        return ItemInformationProvider.getInstance().getAllItems();
     }
 }
