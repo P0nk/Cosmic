@@ -15,6 +15,7 @@ var quest_qty = 0;
 // Quest rewards
 var rewardItem = [];
 var quantity = [];
+var numOfRewards = 0;
 
 
 var qm = Java.type("server.questboard.QuestBoardManager");
@@ -79,18 +80,20 @@ function action(mode, type, selection) {
     else if (status == 24) {
         rewardtype = selection
         return listInventory(rewardtype)
+
     } // input reward details (search inventory and list if item)
     else if (status == 25) {
-        return rewardsQuantity(rewardtype, selection)
-    }  // stores the reward into rewardItem list and prompts qty
-    else if (status == 26) {
-        // ask if more reward.
-        return cm.dispose()
-    }
-    else if (status == 27) {
-        // tax - 10m per quest creation.
 
-    }
+        return rewardsQuantity(rewardtype, selection)
+    } // stores the reward into rewardItem list and prompts qty
+    else if (status == 26) {
+        return storeQuantity(rewardtype);
+
+    } // stores qty and ask if more reward.
+    else if (status == 27) {
+        return secondReward(selection)
+
+    } // handles second reward
     else if (status == 28) {
         // create quest.
 
@@ -139,6 +142,7 @@ function actionQuestDetail(index) {
 // ----------------- Creating new Bounties -----------------
 function beginQuestCreation() {
     cm.sendGetText("What item will you add to your collection quest?");
+
 }
 
 function listSearchName() {
@@ -149,7 +153,6 @@ function listSearchName() {
     for each (var itemPair in allItems) {
         var id   = itemPair.getLeft();
         var name = itemPair.getRight();
-        console.log(name)
         // stop if too many to avoid overrunning packet size
         if (searchResults.length > 99) {
             break;
@@ -157,7 +160,6 @@ function listSearchName() {
             searchResults.push(itemPair);
         }
     }
-    console.log(searchResults.length)
     if (searchResults.length === 0) {
         cm.sendOk("No items found matching: #b" + query + "#k");
         cm.dispose();
@@ -170,6 +172,7 @@ function listSearchName() {
             // #L<id># … #l = clickable; #i<id># = icon
             text += "\r\n#L" + itemId + "##i" + itemId + "# " + itemName + "#l";
         }
+        console.log(text)
         if (searchResults.length > maxResults) {
 //            text += "\r\n\r\n... and " + (searchResults.length - maxResults) + " more.";
             text += "\r\n\r\n... and more. Try to be more specific if you can't find your item";
@@ -213,31 +216,60 @@ function listInventory(rewardtype) {
           + lines.join("\r\n")
         );
     } else if (rewardtype == 4) { // Mesos
-        cm.sendGetText("How much Mesos do you want to give?")
+        cm.sendGetText("How much Mesos do you want to give?");
+        status = 25;
     } else if (rewardtype == 5) { // NX
-        cm.sendGetText("How much NX do you want to give?")
+        cm.sendGetText("How much NX do you want to give?");
+        status = 25;
     }
 }
 
 function rewardsQuantity(rewardtype, slot) {
-    if (rewardtype <= 3) {
-        var inv     = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
-        var item    = inv.getItem(slot);
-        var name    = Packages.server.ItemInformationProvider
-                       .getInstance().getName(item.getItemId());
+    var inv     = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
+    var item    = inv.getItem(slot);
+    var name    = Packages.server.ItemInformationProvider
+                   .getInstance().getName(item.getItemId());
 //        console.log(name)
-        cm.sendGetText("How much of #i" + item.getItemId() + "# do you want to give as a reward?")
-    } else if (rewardtype === 4) {
+    rewardItem.push(item.getItemId())
+    cm.sendGetText("How much of #i" + item.getItemId() + "# do you want to give as a reward?")
+}
+
+function storeQuantity() {
+    if (rewardtype < 4) {
+        msg = "You have registered x" + cm.getText() + " #i" + rewardItem[0] + "# as a reward."
+    }
+    else if (rewardtype === 4) {
         rewardItem.push("Mesos")
-        quantity.push(cm.getText())
-        cm.sendSimple("You have registered " + cm.numberWithCommas(cm.getText()) + " mesos as a reward.")
+        msg = "You have registered " + cm.numberWithCommas(cm.getText()) + " mesos as a reward."
     } else if (rewardtype === 5) {
         rewardItem.push("NX")
-        quantity.push(cm.getText())
-        m.sendSimple("You have registered " + cm.numberWithCommas(cm.getText()) + " nx as a reward.")
+        msg = "You have registered " + cm.numberWithCommas(cm.getText()) + " nx as a reward."
+    }
+    quantity.push(cm.getText())
+    numOfRewards = numOfRewards + 1;
+    if (numOfRewards < 2) {
+        cm.sendSimple(msg + "\r\nDo you wish to add more rewards?\r\n" +
+                      "#b#L0#Yes#l\r\n" +
+                      "#b#L1#No, proceed to post quest#l\r\n")
+    } else if (numOfRewards === 2) {
+        lines = [];
+        for (var i = 0; i < 2; i++) {
+            text = "#i" + rewardItem[i] + "#  x" + quantity[i]
+            line.push(text)
+        }
+        msg = "You have registered this items as a reward:\r\n" + lines.join("\r\n") +
+              "#b#L0#Post quest?#l\r\n" +
+              "#b#L1#No#l"
+        cm.sendSimple(msg)
     }
 }
 
+function secondReward(selection) {
+    if (selection == 0) {
+        qm.createQuest(cm.getPlayer(), quest_item, quest_qty, meso, nx, item1Id, item1Qty, item2Id, item2Qty)
+
+    }
+}
 // ----------------- Manage Bounties -----------------
 function manageCreatedQuests() {
     cm.sendOk("[WIP] Management of created quests will be available here.");
