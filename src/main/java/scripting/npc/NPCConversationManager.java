@@ -1613,7 +1613,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         getPlayer().sendPacket(PacketCreator.earnTitleMessage(text));
     }
 
-    public void convertItemFlag(short item) {
-
+    public boolean isEquipment(int itemId) {
+        return itemId < 2000000 && itemId != 0;
     }
 }

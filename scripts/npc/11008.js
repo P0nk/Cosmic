@@ -82,7 +82,13 @@ function action(mode, type, selection) {
         return itemQuantity()
     } // ask how many of the item to submit Output -> Qty_requirement
     else if (status == 23) {
-        if (quest_qty == -1) {
+        console.log(quest_item)
+        console.log(cm.isEquipment(quest_item))
+        if (cm.isEquipment(quest_item)) {
+            console.log('test')
+            quest_qty = 1
+        }
+        else if (quest_qty == -1) {
             quest_qty = Number(cm.getText())
         }
         return rewardType()
@@ -219,14 +225,21 @@ function listSearchName() {
 
 //} // Status 21
 
-function itemQuantity() { cm.sendGetText("How many do you need?");  // Status 22
+function itemQuantity() {
+    if (cm.isEquipment(quest_item)) {
+        cm.sendGetNumber("You have selected an Equipment, the maximum amount is 1.", 1, 1, 1)
+    } else {
+        cm.sendGetText("How many do you need?");  // Status 22
+    }
 }
 
 function rewardType() {
-    if ( Number(cm.getText()) < 1) {
-        cm.sendOk("Hey! Are you trying to create a quest or test the system! As punishment, you have to repost the quest!")
-        return cm.dispose();
-}
+    if (!cm.isEquipment(quest_item)) {
+        if ( Number(cm.getText()) < 1 ) {
+            cm.sendOk("Hey! Are you trying to create a quest or test the system! As punishment, you have to repost the quest!")
+            return cm.dispose();
+        }
+    }
     msg = "You are creating a quest with these requirements:\r\n" + "#i" + quest_item + "# x" + quest_qty +"\r\n"
     if (item2Id == -1) {
         cm.sendSimple(msg + "Please select the rewards you wish to grant upon quest completion!\r\n" +
