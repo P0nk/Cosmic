@@ -53,14 +53,13 @@ public class QuestBoardManager {
                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
 
             // Print values for debug
-            System.out.println("[QuestBoard] Inserting quest:");
-            System.out.println(" - Player ID: " + player.getId());
-            System.out.println(" - Req Item ID: " + itemId);
-            System.out.println(" - Req Qty: " + quantity);
+            System.out.println("[QuestBoard] Inserting quest for Player: " + player.getName() + " (ID: " + player.getId() + ")");
+            String itemName = ItemInformationProvider.getInstance().getName(itemId);
+            System.out.println(" - Requirement: " + itemName + " (ID: " + itemId + ") x" + quantity);
             System.out.println(" - Reward Mesos: " + meso);
             System.out.println(" - Reward NX: " + nx);
-            System.out.println(" - Reward Item 1: " + item1Id + " x " + item1Qty);
-            System.out.println(" - Reward Item 2: " + item2Id + " x " + item2Qty);
+            if (item1Id != null) System.out.println(" - Reward Item 1: " + item1Id + " x" + item1Qty);
+            if (item2Id != null) System.out.println(" - Reward Item 2: " + item2Id + " x" + item2Qty);
 
             ps.setInt(1, player.getId());
             ps.setInt(2, itemId);
@@ -88,31 +87,6 @@ public class QuestBoardManager {
         return false;
     }
 
-
-//    public static boolean createQuest(Character player, int itemId, int quantity,
-//                                      long meso, long nx, Integer item1Id, Integer item1Qty, Integer item2Id, Integer item2Qty) {
-//        if (player.getMeso() < 10_000_000) return false;
-//        player.gainMeso(-10_000_000, false);
-//
-//        try (Connection con = DatabaseConnection.getConnection();
-//             PreparedStatement ps = con.prepareStatement("INSERT INTO quest_board (created_by, requirement_itemid, requirement_quantity, reward_meso, reward_nx, reward_item1_id, reward_item1_qty, reward_item2_id, reward_item2_qty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-//            ps.setInt(1, player.getId());
-//            ps.setInt(2, itemId);
-//            ps.setInt(3, quantity);
-//            ps.setLong(4, meso);
-//            ps.setLong(5, nx);
-//            ps.setObject(6, item1Id);
-//            ps.setObject(7, item1Qty);
-//            ps.setObject(8, item2Id);
-//            ps.setObject(9, item2Qty);
-//            ps.executeUpdate();
-//            return true;
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//        return false;
-//    }
-
     public static boolean fulfillQuest(Character player, int questId) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND status = 'OPEN'")) {
@@ -120,11 +94,11 @@ public class QuestBoardManager {
             ResultSet rs = ps.executeQuery();
             if (!rs.next()) return false;
 
-//            int reqItemId = rs.getInt("requirement_itemid");
-//            short reqQty = rs.getShort("requirement_quantity");
-
-//            if (!player.getAbstractPlayerInteraction().haveItem(reqItemId, reqQty)) return false;
-//            player.getAbstractPlayerInteraction().gainItem(reqItemId, (short) -reqQty, true);
+            int reqItemId = rs.getInt("requirement_itemid");
+            int reqQty = rs.getInt("requirement_quantity");
+            String itemName = ItemInformationProvider.getInstance().getName(reqItemId);
+            System.out.println("[QuestBoard] Quest fulfilled by Player: " + player.getName() + " (ID: " + player.getId() + ")");
+            System.out.println(" - Submitted: " + itemName + " (ID: " + reqItemId + ") x" + reqQty);
 
             try (PreparedStatement update = con.prepareStatement("UPDATE quest_board SET status = 'COMPLETED', completed_by = ?, is_reward_claimed = 0 WHERE quest_id = ?")) {
                 update.setInt(1, player.getId());
@@ -140,23 +114,25 @@ public class QuestBoardManager {
     }
 
     public static boolean claimReward(Character player, int questId) {
-        System.out.println("[QuestBoard] Attempting to claim reward for quest ID: " + questId + ", Player ID: " + player.getId());
+        System.out.println("[QuestBoard] Attempting to claim reward for quest ID: " + questId + ", Player ID: " + player.getId() + " (" + player.getName() + ")");
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "SELECT * FROM quest_board WHERE quest_id = ? AND completed_by = ? AND is_reward_claimed = 0")) {
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND completed_by = ? AND is_reward_claimed = 0")) {
 
             ps.setInt(1, questId);
             ps.setInt(2, player.getId());
-
             ResultSet rs = ps.executeQuery();
 
-            if (!rs.next()) {
-                System.out.println("[QuestBoard] No matching quest found or reward already claimed.");
-                return false;
-            }
+            if (!rs.next()) return false;
 
-            // Log the reward info from DB
+            // Requirement info
+            int reqItemId = rs.getInt("requirement_itemid");
+            int reqQty = rs.getInt("requirement_quantity");
+            String reqItemName = ItemInformationProvider.getInstance().getName(reqItemId);
+            if (reqItemName == null || reqItemName.isEmpty()) reqItemName = "(Unknown Item)";
+            System.out.println("[QuestBoard] Requirement submitted: " + reqItemName + " (ID: " + reqItemId + ") x" + reqQty);
+
+            // Reward info
             int mesos = rs.getInt("reward_meso");
             int nx = rs.getInt("reward_nx");
             int item1 = rs.getInt("reward_item1_id");
@@ -170,70 +146,22 @@ public class QuestBoardManager {
             System.out.println(" - Item 1: " + item1 + " x" + qty1);
             System.out.println(" - Item 2: " + item2 + " x" + qty2);
 
-            // Apply rewards
-            if (mesos > 0) {
-                player.gainMeso(mesos, true, false, true);
-            }
+            if (mesos > 0) player.gainMeso(mesos, true, false, true);
+            if (nx > 0) player.getCashShop().gainCash(1, nx);
+            if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
+            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
 
-            if (nx > 0) {
-                player.getCashShop().gainCash(1, nx);
-            }
-
-            if (item1 > 0 && qty1 > 0) {
-                player.getAbstractPlayerInteraction().gainItem(item1, qty1);
-            }
-
-            if (item2 > 0 && qty2 > 0) {
-                player.getAbstractPlayerInteraction().gainItem(item2, qty2);
-            }
-
-            // Update reward status
-            try (PreparedStatement upd = con.prepareStatement(
-                    "UPDATE quest_board SET is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?")) {
+            try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?")) {
                 upd.setInt(1, questId);
-                int updated = upd.executeUpdate();
-                System.out.println("[QuestBoard] Marked quest reward as claimed. Rows updated: " + updated);
+                upd.executeUpdate();
             }
 
             return true;
-
         } catch (SQLException e) {
-            System.out.println("[QuestBoard] SQL exception while claiming reward:");
             e.printStackTrace();
         }
-
         return false;
     }
-
-
-//    public static boolean claimReward(Character player, int questId) {
-//        try (Connection con = DatabaseConnection.getConnection();
-//             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND completed_by = ? AND is_reward_claimed = 0")) {
-//            ps.setInt(1, questId);
-//            ps.setInt(2, player.getId());
-//            ResultSet rs = ps.executeQuery();
-//            if (!rs.next()) return false;
-//            player.gainMeso(rs.getInt("reward_meso"), true);
-//            player.getCashShop().gainCash(1,(int) rs.getInt("reward_nx") );
-//            int item1 = rs.getInt("reward_item1_id");
-//            short qty1 = rs.getShort("reward_item1_qty");
-//           if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
-//
-//            int item2 = rs.getInt("reward_item2_id");
-//            short qty2 = rs.getShort("reward_item2_qty");
-//            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
-//
-//            try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?")) {
-//                upd.setInt(1, questId);
-//                upd.executeUpdate();
-//            }
-//
-//            return true;
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//        return false;
-//    }
 
     public static boolean claimRequirements(Character player, int questId) {
         try (Connection con = DatabaseConnection.getConnection();
@@ -245,6 +173,9 @@ public class QuestBoardManager {
 
             int itemId = rs.getInt("requirement_itemid");
             short qty = rs.getShort("requirement_quantity");
+            String itemName = ItemInformationProvider.getInstance().getName(itemId);
+            System.out.println("[QuestBoard] Player " + player.getName() + " (ID: " + player.getId() + ") claimed completed quest requirement: " + itemName + " (ID: " + itemId + ") x" + qty);
+
             player.getAbstractPlayerInteraction().gainItem(itemId, qty);
 
             try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_req_claimed = 1, req_claimed_on = NOW() WHERE quest_id = ?")) {
@@ -260,14 +191,55 @@ public class QuestBoardManager {
     }
 
     public static boolean withdrawQuest(Character player, int questId) {
+        System.out.println("[QuestBoard] Attempting to withdraw quest ID: " + questId + ", Player ID: " + player.getId() + " (" + player.getName() + ")");
+
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("UPDATE quest_board SET status = 'WITHDRAWN' WHERE quest_id = ? AND created_by = ? AND status = 'OPEN'")) {
-            ps.setInt(1, questId);
-            ps.setInt(2, player.getId());
-            return ps.executeUpdate() > 0;
+             PreparedStatement select = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND created_by = ? AND status = 'OPEN'")) {
+
+            select.setInt(1, questId);
+            select.setInt(2, player.getId());
+            ResultSet rs = select.executeQuery();
+
+            if (!rs.next()) {
+                System.out.println("[QuestBoard] No matching OPEN quest found to withdraw.");
+                return false;
+            }
+
+            int reqItemId = rs.getInt("requirement_itemid");
+            int reqQty = rs.getInt("requirement_quantity");
+            String reqItemName = ItemInformationProvider.getInstance().getName(reqItemId);
+            System.out.println("[QuestBoard] Requirement: " + reqItemName + " (ID: " + reqItemId + ") x" + reqQty);
+
+            int mesos = rs.getInt("reward_meso");
+            int nx = rs.getInt("reward_nx");
+            int item1 = rs.getInt("reward_item1_id");
+            short qty1 = rs.getShort("reward_item1_qty");
+            int item2 = rs.getInt("reward_item2_id");
+            short qty2 = rs.getShort("reward_item2_qty");
+
+            System.out.println("[QuestBoard] Refunding:");
+            System.out.println(" - Mesos: " + mesos);
+            System.out.println(" - NX: " + nx);
+            System.out.println(" - Item 1: " + item1 + " x" + qty1);
+            System.out.println(" - Item 2: " + item2 + " x" + qty2);
+
+            if (mesos > 0) player.gainMeso(mesos, true, false, true);
+            if (nx > 0) player.getCashShop().gainCash(1, nx);
+            if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
+            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
+
+            try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET status = 'WITHDRAWN' WHERE quest_id = ?")) {
+                upd.setInt(1, questId);
+                int updated = upd.executeUpdate();
+                System.out.println("[QuestBoard] Quest marked as WITHDRAWN. Rows updated: " + updated);
+                return updated > 0;
+            }
+
         } catch (SQLException e) {
+            System.out.println("[QuestBoard] SQL exception while withdrawing quest:");
             e.printStackTrace();
         }
+
         return false;
     }
 
@@ -283,6 +255,8 @@ public class QuestBoardManager {
                 quest.put("status", rs.getString("status"));
                 quest.put("completed_by", rs.getInt("completed_by"));
                 quest.put("is_req_claimed", rs.getInt("is_req_claimed"));
+                quest.put("requirement_itemid", rs.getInt("requirement_itemid"));
+                quest.put("requirement_quantity", rs.getInt("requirement_quantity"));
                 list.add(quest);
             }
         } catch (SQLException e) {
