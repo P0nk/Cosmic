@@ -219,9 +219,14 @@ function listSearchName() {
 
 //} // Status 21
 
-function itemQuantity() { cm.sendGetText("How many do you need?"); } // Status 22
+function itemQuantity() { cm.sendGetText("How many do you need?");  // Status 22
+}
 
 function rewardType() {
+    if ( Number(cm.getText()) < 1) {
+        cm.sendOk("Hey! Are you trying to create a quest or test the system! As punishment, you have to repost the quest!")
+        return cm.dispose();
+}
     msg = "You are creating a quest with these requirements:\r\n" + "#i" + quest_item + "# x" + quest_qty +"\r\n"
     if (item2Id == -1) {
         cm.sendSimple(msg + "Please select the rewards you wish to grant upon quest completion!\r\n" +
