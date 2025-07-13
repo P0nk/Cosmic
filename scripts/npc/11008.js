@@ -149,10 +149,12 @@ function submitQuest(selection) {
         if (cm.haveItem(quest.requirement_itemid, quest.requirement_quantity)) {
             qm.fulfillQuest(cm.getPlayer(), quest.quest_id)
             cm.gainItem(quest.requirement_itemid, -quest.requirement_quantity)
-            if (quest.reward_meso > 0) cm.gainMeso(quest.reward_meso);
-            if (quest.reward_nx > 0) cm.gainCash(quest.reward_nx);
-            if (quest.reward_item1_id > 0) cm.gainItem(quest.reward_item1_id, quest.reward_item1_qty);
-            if (quest.reward_item2_id > 0) cm.gainItem(quest.reward_item2_id, quest.reward_item2_qty);
+            qm.claimReward(cm.getPlayer(), quest.quest_id)
+
+//            if (quest.reward_meso > 0) cm.gainMeso(quest.reward_meso);
+//            if (quest.reward_nx > 0) cm.gainCash(quest.reward_nx);
+//            if (quest.reward_item1_id > 0) cm.gainItem(quest.reward_item1_id, quest.reward_item1_qty);
+//            if (quest.reward_item2_id > 0) cm.gainItem(quest.reward_item2_id, quest.reward_item2_qty);
             return cm.dispose()
         } else {
             cm.sendOk("You do not have the required items!")
@@ -171,39 +173,77 @@ function beginQuestCreation() {
 }
 
 function listSearchName() {
-    var query = cm.getText().trim().toLowerCase(); // get the player input
+    var query = cm.getText().trim().toLowerCase();
+    searchResults = [];
+
     var allItems = qm.getItemInformationProvider();  // List<Pair<Integer,String>>
-    var maxResults = 50
-//    searchResults = [];
+    var maxResults = 30; // "magical" (34) crashes game
+
     for each (var itemPair in allItems) {
-        var id   = itemPair.getLeft();
+        var id = itemPair.getLeft();
         var name = itemPair.getRight();
-        // stop if too many to avoid overrunning packet size
-        if (searchResults.length > 99) {
-            break;
-        } else if (name.toLowerCase().indexOf(query) !== -1) {
+
+        if (name && name.toLowerCase().includes(query)) {
             searchResults.push(itemPair);
-        }
+            }
+    }
+    if (searchResults.length > maxResults) {
+        cm.sendOk("Too many matches (" + searchResults.length + ") for \"" + query + "\".\r\n" +
+                  "Please refine your search to return fewer than " + maxResults + " results.");
+        cm.dispose();
+        return;
     }
     if (searchResults.length === 0) {
-        cm.sendOk("No items found matching: #b" + query + "#k");
+        cm.sendOk("No items found for \"" + query + "\".");
         cm.dispose();
-    } else {
-        var text = "Found " + searchResults.length + " matches for \"#b" + query + "#k\":";
-        for (var i = 0; i < searchResults.length && i < maxResults; i++) {
-            var p = searchResults[i];
-            var itemId   = p.getLeft();
-            var itemName = p.getRight();
-            // #L<id># … #l = clickable; #i<id># = icon
-            text += "\r\n#L" + itemId + "##i" + itemId + "# " + itemName + "#l";
-        }
-        if (searchResults.length > maxResults) {
-//            text += "\r\n\r\n... and " + (searchResults.length - maxResults) + " more.";
-            text += "\r\n\r\n... and more. Try to be more specific if you can't find your item";
-        }
-        cm.sendSimple(text);
+        return;
     }
-} // Status 21
+
+    var text = "Found " + searchResults.length + " match(es):\r\n";
+    for (var i = 0; i < searchResults.length; i++) {
+        var item = searchResults[i];
+        text += "#L" + item.getLeft() + "##i" + item.getLeft() + "# " + item.getRight() + "#l\r\n";
+    }
+
+    cm.sendSimple(text);
+}
+
+
+
+//function listSearchName() {
+//    var query = cm.getText().trim().toLowerCase(); // get the player input
+//    var allItems = qm.getItemInformationProvider();  // List<Pair<Integer,String>>
+//    var maxResults = 50
+////    searchResults = [];
+//    for each (var itemPair in allItems) {
+//        var id   = itemPair.getLeft();
+//        var name = itemPair.getRight();
+//        // stop if too many to avoid overrunning packet size
+//        if (searchResults.length > 99) {
+//            break;
+//        } else if (name.toLowerCase().indexOf(query) !== -1) {
+//            searchResults.push(itemPair);
+//        }
+//    }
+//    if (searchResults.length === 0) {
+//        cm.sendOk("No items found matching: #b" + query + "#k");
+//        cm.dispose();
+//    } else {
+//        var text = "Found " + searchResults.length + " matches for \"#b" + query + "#k\":";
+//        for (var i = 0; i < searchResults.length && i < maxResults; i++) {
+//            var p = searchResults[i];
+//            var itemId   = p.getLeft();
+//            var itemName = p.getRight();
+//            // #L<id># … #l = clickable; #i<id># = icon
+//            text += "\r\n#L" + itemId + "##i" + itemId + "# " + itemName + "#l";
+//        }
+//        if (searchResults.length > maxResults) {
+////            text += "\r\n\r\n... and " + (searchResults.length - maxResults) + " more.";
+//            text += "\r\n\r\n... and more. Try to be more specific if you can't find your item";
+//        }
+//        cm.sendSimple(text);
+//    }
+//} // Status 21
 
 function itemQuantity() { cm.sendGetText("How many do you need?"); } // Status 22
 
