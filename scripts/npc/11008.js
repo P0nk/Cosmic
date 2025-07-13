@@ -173,70 +173,105 @@ function listSearchName() {
 }
 
 function listInventory(rewardtype) {
-    rewardtype = (item2Id == -1) ? rewardtype : rewardtype + 4;
     if (rewardtype <= 3) {
-        var inv = cm.getInventory(rewardtype + 2);
+        var inv = cm.getInventory(rewardtype + 2); // 2=USE, 3=SETUP, etc.
         var limit = inv.getSlotLimit();
         var lines = [];
+
         for (var slot = 1; slot <= limit; slot++) {
             var item = inv.getItem(slot);
             if (!item) continue;
             var name = ItemInfoProvider.getName(item.getItemId());
-            lines.push("#L" + slot + "#" + "#v" + item.getItemId() + "# " + name + "#l");
+            lines.push("#L" + slot + "# #v" + item.getItemId() + "# " + name + "#l");
         }
+
+        if (lines.length === 0) {
+            cm.sendOk("You have no items in this category.");
+            cm.dispose();
+            return;
+        }
+
         cm.sendSimple("Select the item you wish to give as a reward:\r\n" + lines.join("\r\n"));
-    } else if (rewardtype == 4) {
-        balance = cm.getMeso();
+    } else if (rewardtype === 4) { // Mesos
+        var balance = cm.getMeso();
         cm.sendGetText("Enter Mesos (Max " + cm.numberWithCommas(balance) + ")");
-        status = 25;
-    } else if (rewardtype == 5) {
-        balance = cm.getCashShop().getCash(1);
+        cm.setQuestCustomData("rewardBalance", balance); // Store for use in next step
+    } else if (rewardtype === 5) { // NX
+        var balance = cm.getCashShop().getCash(1);
         cm.sendGetText("Enter NX (Max " + cm.numberWithCommas(balance) + ")");
-        status = 25;
+        cm.setQuestCustomData("rewardBalance", balance);
     }
 }
+
 
 function rewardsQuantity(rewardtype, slot) {
     var inv = cm.getInventory(rewardtype + 2);
     var item = inv.getItem(slot);
+    if (!item) {
+        cm.sendOk("Invalid item.");
+        cm.dispose();
+        return;
+    }
+
     var name = ItemInfoProvider.getName(item.getItemId());
-    balance = cm.getPlayer().getItemQuantity(item.getItemId(), false);
-    if (item1Id == -1) item1Id = item.getItemId();
-    else item2Id = item.getItemId();
-    cm.sendGetText("How much of #i" + item.getItemId() + "# (Max " + balance + ")");
+    var balance = cm.getPlayer().getItemQuantity(item.getItemId(), false);
+
+    selectedItemId = item.getItemId(); // store for next step
+    selectedItemBalance = balance;
+
+    cm.sendGetText("How many of #i" + item.getItemId() + "# do you want to give? (You have " + balance + ")");
 }
 
+
 function storeQuantity() {
-    rewardtype = (item2Id == -1 || item2Qty == -1) ? rewardtype : rewardtype + 4;
-    var storedItem = (item2Id == -1) ? item1Id : item2Id;
-    var qty = Number(cm.getText());
+    var qty = parseInt(cm.getText());
+    if (isNaN(qty) || qty <= 0 || qty > 32000) {
+        cm.sendOk("Invalid quantity.");
+        return;
+    }
 
-    if (rewardtype < 4) {
-        if (balance < qty || qty > 32000) {
-            cm.sendOk("Invalid quantity. Quest creation cancelled.");
-            return cm.dispose();
+    if (rewardtype <= 3) {
+        if (qty > selectedItemBalance) {
+            cm.sendOk("You don't have enough of this item.");
+            return;
         }
-        if (item1Qty == -1) item1Qty = qty;
 
-        else item2Qty = qty;
-    } else if (rewardtype === 4) {
-               if (balance < qty) {
-              cm.sendOk("Invalid quantity. Quest creation cancelled.");
+        if (item1Id == null) {
+            item1Id = selectedItemId;
+            item1Qty = qty;
+        } else if (item2Id == null) {
+            if (selectedItemId == item1Id) {
+                cm.sendOk("This item is already added as a reward.");
+                return;
             }
-              meso = qty;
-              }
+            item2Id = selectedItemId;
+            item2Qty = qty;
+        } else {
+            cm.sendOk("You already have two item rewards.");
+            return;
+        }
 
-    else if (rewardtype === 5){
-                   if (balance < qty) {
-                  cm.sendOk("Invalid quantity. Quest creation cancelled.");
-                }
-                nx = qty;
-                  }
+    } else if (rewardtype === 4) { // Mesos
+        var maxMeso = parseInt(cm.getMeso());
+        if (qty > maxMeso) {
+            cm.sendOk("You don't have that many Mesos.");
+            return;
+        }
+        meso = qty;
+
+    } else if (rewardtype === 5) { // NX
+        var maxNx = parseInt(cm.getCashShop().getCash(1));
+        if (qty > maxNx) {
+            cm.sendOk("You don't have that much NX.");
+            return;
+        }
+        nx = qty;
     }
 
     cm.sendSimple("You have added:\r\n" + checkExistingRewards() +
-                  "\r\nAdd more rewards?\r\n#b#L0#Yes#l\r\n#L1#No, post quest#l");
+        "\r\nAdd more rewards?\r\n#b#L0#Yes#l\r\n#L1#No, post quest#l");
 }
+
 
 function secondReward(selection) {
     if (selection == 0) {
