@@ -12,8 +12,8 @@ var searchResults = [];
 var rewardtype;
 
 // Quest requirements
-var quest_item = 0;
-var quest_qty = 0;
+var quest_item = -1;
+var quest_qty = -1;
 
 // Quest rewards
 var item1Id = -1;
@@ -70,8 +70,7 @@ function action(mode, type, selection) {
     } // Quest selection page
     else if (status == 12) {
         // handles fulfil or go back main menu
-        action = selection;
-        return submitQuest(action);
+        return submitQuest(selection);
 
     } // Complete quest of go back menu
     else if (status == 21) {
@@ -83,7 +82,9 @@ function action(mode, type, selection) {
         return itemQuantity()
     } // ask how many of the item to submit Output -> Qty_requirement
     else if (status == 23) {
-        quest_qty = Number(cm.getText())
+        if (quest_qty == -1) {
+            quest_qty = Number(cm.getText())
+        }
         return rewardType()
     } // ask for reward type (inventories, meso, nx)
     else if (status == 24) {
@@ -143,8 +144,8 @@ function actionQuestDetail(index) {
     selected = index;
 }
 
-function submitQuest(action) {
-    if (action == 99) {
+function submitQuest(selection) {
+    if (selection == 99) {
         if (cm.haveItem(quest.requirement_itemid, quest.requirement_quantity)) {
             qm.fulfillQuest(cm.getPlayer(), quest.quest_id)
             cm.gainItem(quest.requirement_itemid, -quest.requirement_quantity)
@@ -157,9 +158,9 @@ function submitQuest(action) {
             cm.sendOk("You do not have the required items!")
             return cm.dispose()
         }
-    } else if (action == 98) {
-        status = 10
-        action(1,0,0)
+    } else if (selection == 98) {
+        status = 0;
+        action(1,0,0);
     }
 }
 
@@ -277,7 +278,7 @@ function storeQuantity() {
     if (balance < Number(cm.getText())) {
         cm.sendOk("Hey! You entered more than you have! As a punishment for being greedy, you have to repost the quest!")
         return cm.dispose()
-    } else if (Number(cm.getText()) > 32000) {
+    } else if (rewardtype < 4 && Number(cm.getText()) > 32000) {
         cm.sendOk("Hey! You can't enter more than 32,000!")
         return cm.dispose()
     }
