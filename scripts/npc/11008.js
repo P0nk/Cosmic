@@ -125,7 +125,7 @@ function action(mode, type, selection) {
 
 function viewAvailableQuests() {
     questList = qm.getOpenQuests();
-    console.log(questList)
+ //   console.log(questList)
     if (questList.length === 0) {
         cm.sendOk("There are no active bounties available right now.");
         cm.dispose();
@@ -217,41 +217,6 @@ function listSearchName() {
     cm.sendSimple(text);
 }
 
-
-
-//function listSearchName() {
-//    var query = cm.getText().trim().toLowerCase(); // get the player input
-//    var allItems = qm.getItemInformationProvider();  // List<Pair<Integer,String>>
-//    var maxResults = 50
-////    searchResults = [];
-//    for each (var itemPair in allItems) {
-//        var id   = itemPair.getLeft();
-//        var name = itemPair.getRight();
-//        // stop if too many to avoid overrunning packet size
-//        if (searchResults.length > 99) {
-//            break;
-//        } else if (name.toLowerCase().indexOf(query) !== -1) {
-//            searchResults.push(itemPair);
-//        }
-//    }
-//    if (searchResults.length === 0) {
-//        cm.sendOk("No items found matching: #b" + query + "#k");
-//        cm.dispose();
-//    } else {
-//        var text = "Found " + searchResults.length + " matches for \"#b" + query + "#k\":";
-//        for (var i = 0; i < searchResults.length && i < maxResults; i++) {
-//            var p = searchResults[i];
-//            var itemId   = p.getLeft();
-//            var itemName = p.getRight();
-//            // #L<id># … #l = clickable; #i<id># = icon
-//            text += "\r\n#L" + itemId + "##i" + itemId + "# " + itemName + "#l";
-//        }
-//        if (searchResults.length > maxResults) {
-////            text += "\r\n\r\n... and " + (searchResults.length - maxResults) + " more.";
-//            text += "\r\n\r\n... and more. Try to be more specific if you can't find your item";
-//        }
-//        cm.sendSimple(text);
-//    }
 //} // Status 21
 
 function itemQuantity() { cm.sendGetText("How many do you need?"); } // Status 22
@@ -324,7 +289,7 @@ function rewardsQuantity(rewardtype, slot) {
 function storeQuantity() {
     rewardtype = (item2Id == -1 || item2Qty == -1) ? rewardtype : rewardtype + 4
     storedItem = (item2Id == -1) ? item1Id : item2Id
-    if (balance < Number(cm.getText())) {
+    if (balance < Number(cm.getText()) ||  Number(cm.getText()) < 1) {
         cm.sendOk("Hey! You entered more than you have! As a punishment for being greedy, you have to repost the quest!")
         return cm.dispose()
     } else if (rewardtype < 4 && Number(cm.getText()) > 32000) {
@@ -462,7 +427,7 @@ function manageCreatedQuests() {
         console.log("[ManageQuests] #" + questId + ": " + itemName + " x" + reqQty + " [" + status + "]");
     }
 
-    console.log("[ManageQuests] Skipped " + skipped + " quests.");
+    //console.log("[ManageQuests] Skipped " + skipped + " quests.");
     cm.sendSimple(msg);
 }
 
