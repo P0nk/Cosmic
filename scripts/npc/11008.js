@@ -211,12 +211,11 @@ function storeQuantity() {
     var storedItem = (item2Id == -1) ? item1Id : item2Id;
     var qty = Number(cm.getText());
 
-    if (balance < qty || qty > 32000) {
-        cm.sendOk("Invalid quantity. Quest creation cancelled.");
-        return cm.dispose();
-    }
-
     if (rewardtype < 4) {
+        if (balance < qty || qty > 32000) {
+            cm.sendOk("Invalid quantity. Quest creation cancelled.");
+            return cm.dispose();
+        }
         if (item1Qty == -1) item1Qty = qty;
         else item2Qty = qty;
     } else if (rewardtype === 4) meso = qty;
