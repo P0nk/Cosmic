@@ -217,9 +217,22 @@ function storeQuantity() {
             return cm.dispose();
         }
         if (item1Qty == -1) item1Qty = qty;
+
         else item2Qty = qty;
-    } else if (rewardtype === 4) meso = qty;
-    else if (rewardtype === 5) nx = qty;
+    } else if (rewardtype === 4) {
+               if (balance < qty) {
+              cm.sendOk("Invalid quantity. Quest creation cancelled.");
+            }
+              meso = qty;
+              }
+
+    else if (rewardtype === 5){
+                   if (balance < qty) {
+                  cm.sendOk("Invalid quantity. Quest creation cancelled.");
+                }
+                nx = qty;
+                  }
+    }
 
     cm.sendSimple("You have added:\r\n" + checkExistingRewards() +
                   "\r\nAdd more rewards?\r\n#b#L0#Yes#l\r\n#L1#No, post quest#l");
