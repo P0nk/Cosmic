@@ -69,11 +69,11 @@ public class QuestBoardManager {
             ResultSet rs = ps.executeQuery();
             if (!rs.next()) return false;
 
-            int reqItemId = rs.getInt("requirement_itemid");
-            short reqQty = rs.getShort("requirement_quantity");
+//            int reqItemId = rs.getInt("requirement_itemid");
+//            short reqQty = rs.getShort("requirement_quantity");
 
-            if (!player.getAbstractPlayerInteraction().haveItem(reqItemId, reqQty)) return false;
-            player.getAbstractPlayerInteraction().gainItem(reqItemId, (short) -reqQty, true);
+//            if (!player.getAbstractPlayerInteraction().haveItem(reqItemId, reqQty)) return false;
+//            player.getAbstractPlayerInteraction().gainItem(reqItemId, (short) -reqQty, true);
 
             try (PreparedStatement update = con.prepareStatement("UPDATE quest_board SET status = 'COMPLETED', completed_by = ?, is_reward_claimed = 0 WHERE quest_id = ?")) {
                 update.setInt(1, player.getId());
@@ -95,15 +95,15 @@ public class QuestBoardManager {
             ps.setInt(2, player.getId());
             ResultSet rs = ps.executeQuery();
             if (!rs.next()) return false;
-            player.gainMeso(rs.getInt("reward_meso"), true);
-            player.getCashShop().gainCash(1,(int) rs.getInt("reward_nx") );
-            int item1 = rs.getInt("reward_item1_id");
-            short qty1 = rs.getShort("reward_item1_qty");
-            if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
-
-            int item2 = rs.getInt("reward_item2_id");
-            short qty2 = rs.getShort("reward_item2_qty");
-            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
+//            player.gainMeso(rs.getInt("reward_meso"), true);
+//            player.getCashShop().gainCash(1,(int) rs.getInt("reward_nx") );
+//            int item1 = rs.getInt("reward_item1_id");
+//            short qty1 = rs.getShort("reward_item1_qty");
+//            if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
+//
+//            int item2 = rs.getInt("reward_item2_id");
+//            short qty2 = rs.getShort("reward_item2_qty");
+//            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
 
             try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?")) {
                 upd.setInt(1, questId);
@@ -153,11 +153,11 @@ public class QuestBoardManager {
         return false;
     }
 
-    public static List<Map<String, Object>> getPlayerQuests(int characterId) {
+    public static List<Map<String, Object>> getPlayerQuests(Character player) {
         List<Map<String, Object>> list = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE created_by = ?")) {
-            ps.setInt(1, characterId);
+            ps.setInt(1, player.getId());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Map<String, Object> quest = new HashMap<>();
