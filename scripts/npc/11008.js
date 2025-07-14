@@ -147,6 +147,7 @@ function action(mode, type, selection) {
 
 function viewAvailableQuests() {
     questList = qm.getOpenQuests();
+ //               console.log(questList);
 
     if (questList.length === 0) {
         cm.sendOk("There are no active bounties available right now.");
@@ -157,13 +158,26 @@ function viewAvailableQuests() {
     var msg = "#eAvailable Bounties:#n\r\n";
     for (var i = 0; i < questList.length; i++) {
         var q = questList[i];
-        var creatorName = q.creator_name || "Unknown";
+ //           console.log(q);
+//              var map = playerQuests.get(i);
+//              var questId = map.get("quest_id");
+//              var status = map.get("status");
+//              var isClaimed = map.get("is_req_claimed");
+//              var reqItemId = map.get("requirement_itemid");
+//              var reqQty = map.get("requirement_quantity");
 
-        msg += "#L" + i + "#";
-        msg += "#h" + creatorName + "# - ";
+
+        var creatorName = q.get("creator_name");
+        var qid = q.get("quest_id");
+
+     //       console.log(creatorName);
+        msg += "#L" + i + "# Q_ID";
+        msg += qid;
+        msg += ": Help ";
+        msg += "#e" +creatorName + "#n ";
         msg += "Collect #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k\r\n";
     }
-
+       //     console.log(msg);
     cm.sendSimple(msg);
 }
 
