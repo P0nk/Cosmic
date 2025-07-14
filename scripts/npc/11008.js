@@ -129,21 +129,45 @@ function action(mode, type, selection) {
 
 }
 
+//function viewAvailableQuests() {
+//    questList = qm.getOpenQuests();
+// //   console.log(questList)
+//    if (questList.length === 0) {
+//        cm.sendOk("There are no active bounties available right now.");
+//        cm.dispose();
+//        return;
+//    }
+//    var msg = "#eAvailable Bounties:#n\r\n";
+//    for (var i = 0; i < questList.length; i++) {
+//        var q = questList[i];
+//        msg += "#L" + i + "#Submit #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k for rewards\r\n";
+//    }
+//    cm.sendSimple(msg);
+//}
+
 function viewAvailableQuests() {
     questList = qm.getOpenQuests();
- //   console.log(questList)
+
     if (questList.length === 0) {
         cm.sendOk("There are no active bounties available right now.");
         cm.dispose();
         return;
     }
+
     var msg = "#eAvailable Bounties:#n\r\n";
     for (var i = 0; i < questList.length; i++) {
         var q = questList[i];
-        msg += "#L" + i + "#Submit #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k for rewards\r\n";
+        var creatorName = q.creator_name || "Unknown";
+
+        msg += "#L" + i + "#";
+        msg += "#h" + creatorName + "# - ";
+        msg += "Collect #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k\r\n";
     }
+
     cm.sendSimple(msg);
 }
+
+
 
 function actionQuestDetail(index) {
     quest = questList[index];
