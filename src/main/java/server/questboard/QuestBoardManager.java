@@ -14,14 +14,20 @@ public class QuestBoardManager {
 
     public static List<Map<String, Object>> getOpenQuests() {
         List<Map<String, Object>> list = new ArrayList<>();
+        String query = "SELECT q.*, c.name AS creator_name " +
+                "FROM quest_board q " +
+                "LEFT JOIN cosmic.characters c ON q.created_by = c.id " +
+                "WHERE q.status = 'OPEN'";
+
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE status = 'OPEN'");
+             PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Map<String, Object> quest = new HashMap<>();
                 quest.put("quest_id", rs.getInt("quest_id"));
                 quest.put("created_by", rs.getInt("created_by"));
+                quest.put("creator_name", rs.getString("creator_name")); // newly added
                 quest.put("requirement_itemid", rs.getInt("requirement_itemid"));
                 quest.put("requirement_quantity", rs.getInt("requirement_quantity"));
                 quest.put("reward_meso", rs.getLong("reward_meso"));
@@ -32,9 +38,11 @@ public class QuestBoardManager {
                 quest.put("reward_item2_qty", rs.getInt("reward_item2_qty"));
                 list.add(quest);
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return list;
     }
 
