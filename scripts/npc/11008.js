@@ -198,7 +198,7 @@ function listSearchName() {
         var id = itemPair.getLeft();
         var name = itemPair.getRight();
 
-        if (name && name.toLowerCase().includes(query)) {
+        if (name && name.toLowerCase().includes(query) && Number(id) >= 2000000 && Number(id) != 0 && Number(id) <5000000) {
             searchResults.push(itemPair);
             }
     }
