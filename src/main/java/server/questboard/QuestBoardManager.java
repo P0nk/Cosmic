@@ -2,6 +2,8 @@
 package server.questboard;
 
 import client.Character;
+import client.inventory.Inventory;
+import client.inventory.InventoryType;
 import constants.id.ItemId;
 import server.ItemInformationProvider;
 import tools.DatabaseConnection;
@@ -125,12 +127,11 @@ public class QuestBoardManager {
         System.out.println("[QuestBoard] Attempting to claim reward for quest ID: " + questId + ", Player ID: " + player.getId() + " (" + player.getName() + ")");
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND completed_by = ? AND is_reward_claimed = 0")) {
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM quest_board WHERE quest_id = ? AND is_reward_claimed = 0")) {
 
             ps.setInt(1, questId);
-            ps.setInt(2, player.getId());
+//            ps.setInt(2, player.getId());
             ResultSet rs = ps.executeQuery();
-
             if (!rs.next()) return false;
 
             // Requirement info
@@ -154,10 +155,48 @@ public class QuestBoardManager {
             System.out.println(" - Item 1: " + item1 + " x" + qty1);
             System.out.println(" - Item 2: " + item2 + " x" + qty2);
 
-            if (mesos > 0) player.gainMeso(mesos, true, false, true);
-            if (nx > 0) player.getCashShop().gainCash(1, nx);
-            if (item1 > 0 && qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
-            if (item2 > 0 && qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
+            int item1type = Math.max((item1 / 1000000), 1); // if item is < 2000000 [equip; inventory 1] else inventory = 1st number of itemid
+            int item2type = Math.max((item1 / 1000000), 1);
+            List<Boolean> checkList = new ArrayList<>();
+
+            if (mesos > 0 && (player.getMeso() + mesos < 0)) { // meso overflow
+                checkList.add(false);
+            } else {
+                checkList.add(true);
+            }
+            if (nx > 0 && (player.getCashShop().getCash(1) + nx < 0)) { // nx overflow
+                checkList.add(false);
+            } else {
+                checkList.add(true);
+            }
+            if (item1 > 0 && qty1 > 0) {
+                if (hasEnoughSlots(player, item1type) >= 2) { // at least 2 slots
+                    checkList.add(true);
+                } else {
+                    checkList.add(false);
+                }
+            } else {
+                checkList.add(true);
+            }
+            if (item2 > 0) {
+                if (hasEnoughSlots(player, item2type) >= 2) { // at least 2 slots
+                    checkList.add(true);
+                } else {
+                    checkList.add(false);
+                }
+            } else {
+                checkList.add(true);
+            }
+
+            System.out.println(checkList);
+            if (checkList.contains(false)) {
+                return false;
+            } else {
+                if (mesos > 0) player.gainMeso(mesos, true, false, true);
+                if (nx > 0) player.getCashShop().gainCash(1, nx);
+                if (qty1 > 0) player.getAbstractPlayerInteraction().gainItem(item1, qty1);
+                if (qty2 > 0) player.getAbstractPlayerInteraction().gainItem(item2, qty2);
+            }
 
             try (PreparedStatement upd = con.prepareStatement("UPDATE quest_board SET is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?")) {
                 upd.setInt(1, questId);
@@ -310,5 +349,12 @@ public class QuestBoardManager {
 
     public static List<Pair<Integer, String>> getItemInformationProvider() {
         return ItemInformationProvider.getInstance().getAllItems();
+    }
+    public static Inventory getInventory(Character player, int type) {
+        return player.getInventory(InventoryType.getByType((byte) type));
+    }
+
+    public static int hasEnoughSlots(Character player, int inv) {
+        return getInventory(player, inv).getNumFreeSlot();
     }
 }

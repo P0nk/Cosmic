@@ -200,9 +200,14 @@ function actionQuestDetail(index) {
 function submitQuest(selection) {
     if (selection == 99) {
         if (cm.haveItem(quest.requirement_itemid, quest.requirement_quantity)) {
+            console.log(quest.quest_id)
+            var canClaim = qm.claimReward(cm.getPlayer(), quest.quest_id)
+            if (!canClaim) {
+                cm.sendOk("Hey you don't have enough space please make sure you have at least 2 empty slots!")
+                return cm.dispose()
+            }
             qm.fulfillQuest(cm.getPlayer(), quest.quest_id)
             cm.gainItem(quest.requirement_itemid, -quest.requirement_quantity)
-            qm.claimReward(cm.getPlayer(), quest.quest_id)
 
 //            if (quest.reward_meso > 0) cm.gainMeso(quest.reward_meso);
 //            if (quest.reward_nx > 0) cm.gainCash(quest.reward_nx);
@@ -456,6 +461,8 @@ function manageCreatedQuests() {
         var isClaimed = map.get("is_req_claimed");
         var reqItemId = map.get("requirement_itemid");
         var reqQty = map.get("requirement_quantity");
+        var canClaim = false;
+        var canWithdraw = false;
 
         if (status === "WITHDRAWN" || isClaimed != 0) {
             skipped++;
@@ -472,19 +479,25 @@ function manageCreatedQuests() {
              + itemName + " x" + reqQty + " : " + status;
 
         if (status === "COMPLETED" && isClaimed == 0) {
+            canClaim = true;
             msg += " #b(Claim)#k";
         } else if (status === "OPEN") {
+            canWithdraw = true;
             msg += " #r(Withdraw)#k";
         }
 
         msg += "#l\r\n";
-
         // Log debug info
         console.log("[ManageQuests] #" + questId + ": " + itemName + " x" + reqQty + " [" + status + "]");
     }
-
     //console.log("[ManageQuests] Skipped " + skipped + " quests.");
-    cm.sendSimple(msg);
+    if (canClaim || canWithdraw) {
+        cm.sendSimple(msg);
+    } else {
+        cm.sendOk("You do not have any quest posted or to claim.")
+        return cm.dispose()
+    }
+
 }
 
 
