@@ -254,7 +254,7 @@ function scrollItemOrStop(mode) {
 
     const originalStats = getStats(equip);
 
-    while (equip.getUpgradeSlots() > 0 && scrollQty > 0) {
+    while (equip.getUpgradeSlots() > 0 && scrollQty > 0 && whiteQty > 0) {
         scrollsUsed++;
         scrollQty--;
         cm.gainItem(scrollId, -1);
