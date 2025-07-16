@@ -442,6 +442,7 @@ var ItemInfoProvider = Java.type("server.ItemInformationProvider").getInstance()
 
 function manageCreatedQuests() {
     playerQuests = qm.getPlayerQuests(cm.getPlayer());
+    console.log(playerQuests);
     var total = playerQuests.size();
     console.log("[ManageQuests] Retrieved " + total + " quests for player.");
 
@@ -453,7 +454,8 @@ function manageCreatedQuests() {
 
     var msg = "#eYour Bounty Quests:#n\r\n";
     var skipped = 0;
-
+    var canClaim = false;
+    var canWithdraw = false;
     for (var i = 0; i < total; i++) {
         var map = playerQuests.get(i);
         var questId = map.get("quest_id");
@@ -461,8 +463,7 @@ function manageCreatedQuests() {
         var isClaimed = map.get("is_req_claimed");
         var reqItemId = map.get("requirement_itemid");
         var reqQty = map.get("requirement_quantity");
-        var canClaim = false;
-        var canWithdraw = false;
+
 
         if (status === "WITHDRAWN" || isClaimed != 0) {
             skipped++;
