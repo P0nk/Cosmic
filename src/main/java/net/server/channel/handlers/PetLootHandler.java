@@ -92,7 +92,6 @@ public final class PetLootHandler extends AbstractPacketHandler {
             // Get list of map item
             int pethunger = pet.getFullness();
             final double pickupRadius = (double) (500000 * pethunger) / 100;
-            System.out.println(pethunger);
             boolean hasFreeEquip = chr.getInventory(InventoryType.EQUIP).getNumFreeSlot() > 0;
             boolean hasFreeUse   = chr.getInventory(InventoryType.USE).getNumFreeSlot() > 0;
             boolean hasFreeEtc   = chr.getInventory(InventoryType.ETC).getNumFreeSlot() > 0;
