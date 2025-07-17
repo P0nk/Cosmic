@@ -50,7 +50,7 @@ public class KillAllCommand extends Command {
             Monster monster = (Monster) monstermo;
             if (!monster.getStats().isFriendly() && !(monster.getId() >= MobId.DEAD_HORNTAIL_MIN && monster.getId() <= MobId.HORNTAIL)) {
                 while (monster.getHp() > 0) {
-                    map.damageMonster(player, monster, Integer.MAX_VALUE);
+                    map.damageMonster(player, monster, monster.getHp());
                 }
                 count++;
             }

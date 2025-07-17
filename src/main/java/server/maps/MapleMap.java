@@ -1271,11 +1271,11 @@ public class MapleMap {
         return count;
     }
 
-     public boolean damageMonster(Character chr, Monster monster, int damage) {
+     public boolean damageMonster(Character chr, Monster monster, long damage) {
         return damageMonster(chr, monster, damage, (short) 0);
      }
 
-    public boolean damageMonster(final Character chr, final Monster monster, final int damage, short delay) {
+    public boolean damageMonster(final Character chr, final Monster monster, final long damage, short delay) {
         if (monster.getId() == MobId.ZAKUM_1) {
             for (MapObject object : chr.getMap().getMapObjects()) {
                 Monster mons = chr.getMap().getMonsterByOid(object.getObjectId());

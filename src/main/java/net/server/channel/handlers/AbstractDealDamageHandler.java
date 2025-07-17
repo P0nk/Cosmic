@@ -934,14 +934,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
             int actualDamage = (int) total;
             long toDamage = total - actualDamage; // if damage overflow in client was negative, add it to total dmg to 'reimburse' the dmg. if damage overflow is positive, remove it from total damage
-            int numTimeExceed = (int) (toDamage / Integer.MAX_VALUE);
-            int remainingDamage = (int) (toDamage % Integer.MAX_VALUE);
             MapleMap map = chr.getMap();
             if (total > Integer.MAX_VALUE) {
-                map.damageMonster(chr, monster, remainingDamage, tgt.delay); // deal the remainder of damage after Integer.MAX_VALUE
-                for (int i = 0; i < numTimeExceed; i++) {
-                    map.damageMonster(chr, monster, Integer.MAX_VALUE, tgt.delay);
-                }
+                map.damageMonster(chr, monster, toDamage, tgt.delay); // deal the remainder of damage after Integer.MAX_VALUE
             }
             // Print out to check
 //            System.out.println("MOB: " + mobId + "; Total Damage: " + total + "; Overflow: " + (int) total + "; toDamage: " +

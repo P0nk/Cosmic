@@ -354,7 +354,7 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    public synchronized long applyAndGetHpDamage(int delta, boolean stayAlive) { // slimy edits
+    public synchronized long applyAndGetHpDamage(long delta, boolean stayAlive) { // slimy edits
         long curHp = hp.get(); // slimy edits
         if (curHp <= 0) {       // this monster is already dead
             return 0;
@@ -406,7 +406,7 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    public boolean damage(Character attacker, int damage, boolean stayAlive) {
+    public boolean damage(Character attacker, long damage, boolean stayAlive) {
         boolean lastHit = false;
 
         this.lockMonster();
@@ -456,7 +456,7 @@ public class Monster extends AbstractLoadedLife {
      * @param damage
      * @param stayAlive
      */
-    private void applyDamage(Character from, int damage, boolean stayAlive, boolean fake) {
+    private void applyDamage(Character from, long damage, boolean stayAlive, boolean fake) {
         long trueDamage = applyAndGetHpDamage(damage, stayAlive); // Slimy edits
         if (trueDamage == 0) {
             return;
