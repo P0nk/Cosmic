@@ -34,7 +34,7 @@ var clearMap = 990001000;
 var minMapId = 990000000;
 var maxMapId = 990001101;
 
-var waitTime = 3;       //  3 minutes
+var waitTime = 0.5;       //  3 minutes
 var eventTime = 90;     // 90 minutes
 var bonusTime = 0.5;    // 30 seconds
 
