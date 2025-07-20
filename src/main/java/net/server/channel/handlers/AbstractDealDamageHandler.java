@@ -316,30 +316,33 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE) {
                         player.addHP((int) Math.min(monster.getMaxHp(), Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2)));
                     } else if (attack.skill == Bandit.STEAL) {
-                        Skill steal = SkillFactory.getSkill(Bandit.STEAL);
-                        if (monster.getStolen().size() < 1) { // One steal per mob <3
-                            if (steal.getEffect(player.getSkillLevel(steal)).makeChanceResult()) {
-                                monster.addStolen(0);
+                        if (monster.isBoss()) {
+                            player.dropMessage(5, "You cannot steal from bosses.");
+                        } else {
+                            Skill steal = SkillFactory.getSkill(Bandit.STEAL);
+                            if (monster.getStolen().size() < 1) { // One steal per mob <3
+                                if (steal.getEffect(player.getSkillLevel(steal)).makeChanceResult()) {
+                                    monster.addStolen(0);
 
-                                MonsterInformationProvider mi = MonsterInformationProvider.getInstance();
-                                List<Integer> dropPool = mi.retrieveDropPool(monster.getId());
-                                if (!dropPool.isEmpty()) {
-                                    int rndPool = (int) Math.floor(Math.random() * dropPool.get(dropPool.size() - 1));
+                                    MonsterInformationProvider mi = MonsterInformationProvider.getInstance();
+                                    List<Integer> dropPool = mi.retrieveDropPool(monster.getId());
+                                    if (!dropPool.isEmpty()) {
+                                        int rndPool = (int) Math.floor(Math.random() * dropPool.get(dropPool.size() - 1));
+                                        int i = 0;
+                                        while (rndPool >= dropPool.get(i)) {
+                                            i++;
+                                        }
 
-                                    int i = 0;
-                                    while (rndPool >= dropPool.get(i)) {
-                                        i++;
+                                        List<MonsterDropEntry> toSteal = new ArrayList<>();
+                                        toSteal.add(mi.retrieveDrop(monster.getId()).get(i));
+
+                                        map.dropItemsFromMonster(toSteal, player, monster, target.getValue().delay());
+                                        monster.addStolen(toSteal.get(0).itemId);
                                     }
-
-                                    List<MonsterDropEntry> toSteal = new ArrayList<>();
-                                    toSteal.add(mi.retrieveDrop(monster.getId()).get(i));
-
-                                    map.dropItemsFromMonster(toSteal, player, monster, target.getValue().delay());
-                                    monster.addStolen(toSteal.get(0).itemId);
                                 }
                             }
                         }
-                    } else if (attack.skill == FPArchMage.FIRE_DEMON) {
+                    }else if (attack.skill == FPArchMage.FIRE_DEMON) {
                         long duration = SECONDS.toMillis(SkillFactory.getSkill(FPArchMage.FIRE_DEMON).getEffect(player.getSkillLevel(SkillFactory.getSkill(FPArchMage.FIRE_DEMON))).getDuration());
                         //monster.setTempEffectiveness(Element.ICE, ElementalEffectiveness.WEAK, duration);// original
                         monster.setTempEffectiveness(Element.FIRE, ElementalEffectiveness.WEAK, duration);// merogie
