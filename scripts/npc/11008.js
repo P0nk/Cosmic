@@ -14,6 +14,7 @@ var rewardtype;
 // Quest requirements
 var quest_item = -1;
 var quest_qty = -1;
+var quest_item_blocked = [3020001,3020002,2002031,2002032,2002033,2002034,2002035,2002036];
 
 // Quest rewards
 var item1Id = -1;
@@ -241,7 +242,8 @@ function listSearchName() {
         var id = itemPair.getLeft();
         var name = itemPair.getRight();
 
-        if (name && name.toLowerCase().includes(query) && Number(id) >= 2000000 && Number(id) != 0 && Number(id) <5000000) {
+
+        if (name && name.toLowerCase().includes(query) && Number(id) >= 2000000 && Number(id) != 0 && Number(id) <5000000 && !quest_item_blocked.includes(Number(id))) {
             searchResults.push(itemPair);
             }
     }
