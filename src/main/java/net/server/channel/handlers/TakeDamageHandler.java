@@ -75,6 +75,7 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
         int pos_x = 0, pos_y = 0, fake = 0;
         boolean is_pgmr = false, is_pg = true, is_deadly = false;
         int mpattack = 0;
+        int hpattack = 0;
         Monster attacker = null;
         final MapleMap map = chr.getMap();
         if (damagefrom != -3 && damagefrom != -4) {
@@ -154,8 +155,13 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
         }
         if (damagefrom != -1 && damagefrom != -2 && attacker != null) {
             MobAttackInfo attackInfo = MobAttackInfoFactory.getMobAttackInfo(attacker, damagefrom);
+            // Handling the damage taken from mob attacks
             if (attackInfo != null) {
                 if (attackInfo.isDeadlyAttack()) {
+//                    System.out.println("Deadly Attack!");
+                    if (attacker.getId() == 8840000 || attacker.getId() == 8850011) {
+                        chr.addHP(-3200000);
+                    }
                     mpattack = chr.getMp() - 1;
                     is_deadly = true;
                 }

@@ -232,6 +232,7 @@ import client.command.commands.gm6.SetGmLevelCommand;
 import client.command.commands.gm6.ShutdownCommand;
 import client.command.commands.gm6.SpawnAllPNpcsCommand;
 import client.command.commands.gm6.SupplyRateCouponCommand;
+import client.command.commands.gm6.TestMobHpCommand;
 import client.command.commands.gm6.WarpWorldCommand;
 
 import client.command.commands.gm6.Draw4DCommand;
@@ -634,6 +635,7 @@ public class CommandsExecutor {
         addCommand("removeworld", 6, ServerRemoveWorldCommand.class);
         addCommand("devtest", 6, DevtestCommand.class);
         addCommand("draw4d", 6, Draw4DCommand.class);
+        addCommand("testmobhp", 6, TestMobHpCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
