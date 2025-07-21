@@ -78,9 +78,9 @@ function action(mode, type, selection) {
                 }
             } else if (mode >= 1 && cm.getJobId() % 100 % 10 == 2) {
                 if (cm.getJobId() == 412) {
-                    if (cm.getPlayer().getSkillLevel(4121008) == 0) {
-                        cm.teachSkill(4121008, 0, 10, -1);
-                    }
+//                    if (cm.getPlayer().getSkillLevel(4121008) == 0) {
+//                        cm.teachSkill(4121008, 0, 10, -1);
+//                    }
                     if (cm.getPlayer().getSkillLevel(4121004) == 0) {
                         cm.teachSkill(4121004, 0, 10, -1);
                     }
