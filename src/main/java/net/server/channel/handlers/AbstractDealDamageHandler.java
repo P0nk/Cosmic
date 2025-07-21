@@ -81,6 +81,7 @@ import constants.skills.WhiteKnight;
 import constants.skills.WindArcher;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
+import net.packet.Packet;
 import net.server.PlayerBuffValueHolder;
 import scripting.AbstractPlayerInteraction;
 import server.StatEffect;
@@ -96,12 +97,14 @@ import server.life.MonsterDropEntry;
 import server.life.MonsterInformationProvider;
 import server.maps.MapItem;
 import server.maps.MapObject;
+import server.maps.MapObjectType;
 import server.maps.MapleMap;
 import tools.PacketCreator;
 import tools.Randomizer;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -313,8 +316,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             }
                         }
 //                    } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
-                    } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE) {
-                        player.addHP((int) Math.min(monster.getMaxHp(), Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2)));
+                    } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
+                        int maxHeal = Math.min(player.getMaxHp() - player.getHp(), 5000);
+                        player.addHP((int) Math.min(maxHeal, Math.abs(Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2))));
                     } else if (attack.skill == Bandit.STEAL) {
                         if (monster.isBoss()) {
                             player.dropMessage(5, "You cannot steal from bosses.");
@@ -432,7 +436,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         Skill skill;
                         if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                             skill = SkillFactory.getSkill(21100005);
-                            player.addHP(((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
+                            int maxheal = player.getMaxHp() - player.getHp();
+                            player.addHP(Math.min(Math.min(5000, maxheal) , Math.abs(((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 1000))));
                         }
                     } else if (job == 412 || job == 422 || job == 1411) {
                         Skill type = SkillFactory.getSkill(player.getJob().getId() == 412 ? 4120005 : (player.getJob().getId() == 1411 ? 14110004 : 4220005));
@@ -570,6 +575,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
         if (animationTime > 0) { // be sure to only use LIMITED ATTACKS with animation time here
             TimerManager.getInstance().schedule(() -> {
+                int remainingHP = (int) Math.max(1, (monster.getMaxHp() - damage) * 100f / monster.getMaxHp());
+//                Packet packet = PacketCreator.showMonsterHP(monster.getObjectId(), remainingHP);
+//                monster.broadcastMobHpBar(attacker);
+//                attacker.sendPacket(packet);
                 map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
                 map.damageMonster(attacker, monster, damage);
             }, animationTime);
@@ -921,6 +930,24 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             ret.position.setLocation(p.readShort(), p.readShort());
         }
 
+        // ---------------- Energy Bolt ----------------
+//        if (ret.skill == 2001004) {
+//            for (Map.Entry<Integer, AttackTarget> entry : ret.targets.entrySet()) {
+//                int mobId = entry.getKey(); // get monsterId on map
+//                Monster monster = chr.getMap().getMonsterByOid(mobId); // get monster class
+//                List<MapObject> targets = chr.getMap().getMapObjectsInRange(monster.getPosition(), 15000, Arrays.asList(MapObjectType.MONSTER));
+//                int count = 0;
+//                for (int i = 0; i < targets.size(); i++) {
+//                    if (count == 2) break; // set the number of additional targets
+//                    Monster mob = (Monster) targets.get(i);
+//                    if (mobId != mob.getObjectId()) {
+//                        damageMonsterWithSkill(chr, chr.getMap(), mob, entry.getValue().damageLines.get(0), ret.skill, entry.getValue().delay);
+//                        count++;
+//                    }
+//                }
+//            }
+//        }
+
         // For handling total damage more than 2.14b =========== Slimy edits
 //        System.out.println("ret.targets: " + ret.targets);
         for (Map.Entry<Integer, AttackTarget> entry : ret.targets.entrySet()) {
@@ -934,7 +961,6 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     total += dmg;
                 }
             }
-
             int actualDamage = (int) total;
             long toDamage = total - actualDamage; // if damage overflow in client was negative, add it to total dmg to 'reimburse' the dmg. if damage overflow is positive, remove it from total damage
             MapleMap map = chr.getMap();
