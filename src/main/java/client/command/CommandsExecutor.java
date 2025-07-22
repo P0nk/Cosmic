@@ -48,7 +48,7 @@ import client.command.commands.gm0.StatLukCommand;
 import client.command.commands.gm0.StatStrCommand;
 import client.command.commands.gm0.TPCommand;
 import client.command.commands.gm0.TimeCommand;
-import client.command.commands.gm0.ToggleExpCommand;
+import client.command.commands.gm1.ToggleExpCommand;
 import client.command.commands.gm0.UnlockedBuffsCommand;
 import client.command.commands.gm0.UptimeCommand;
 import client.command.commands.gm0.NoobShopCommand;
@@ -403,7 +403,6 @@ public class CommandsExecutor {
         addCommand("int", StatIntCommand.class);
         addCommand("luk", StatLukCommand.class);
         addCommand("enableauth", EnableAuthCommand.class);
-        addCommand("toggleexp", ToggleExpCommand.class);
         addCommand("mylawn", MapOwnerClaimCommand.class);
         addCommand("bosshp", BossHpCommand.class);
         addCommand("mobhp", MobHpCommand.class);
@@ -434,6 +433,7 @@ public class CommandsExecutor {
 
     private void registerLv1Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
+        addCommand("toggleexp", ToggleExpCommand.class);
 
 
   //      addCommand("buffme", 2, BuffMeCommand.class);

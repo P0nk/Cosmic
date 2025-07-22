@@ -21,7 +21,7 @@
 /*
    @Author: Ronan
 */
-package client.command.commands.gm0;
+package client.command.commands.gm1;
 
 import client.Client;
 import client.command.Command;
