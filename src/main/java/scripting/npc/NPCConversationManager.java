@@ -1615,4 +1615,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public boolean isEquipment(int itemId) {
         return itemId < 2000000 && itemId != 0;
     }
+
+    public List<Channel> getChannels() {
+        return Server.getInstance().getChannelsFromWorld(getPlayer().getWorld());
+    }
 }

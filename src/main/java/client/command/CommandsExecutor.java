@@ -180,6 +180,7 @@ import client.command.commands.gm3.UnBanCommand;
 import client.command.commands.gm3.Ban2Command;
 
 import client.command.commands.gm4.BossDropRateCommand;
+import client.command.commands.gm4.BotMonitorCommand;
 import client.command.commands.gm4.CakeCommand;
 import client.command.commands.gm4.DropRateCommand;
 import client.command.commands.gm4.ExpRateCommand;
@@ -598,6 +599,7 @@ public class CommandsExecutor {
         addCommand("setitemstat", 4, SetItemStatCommand.class);
         addCommand("setitemstatrefund", 4, SetItemStatRefundCommand.class);
         addCommand("giveitem", 4, GiveItemCommand.class);
+        addCommand("botmonitor", 4, BotMonitorCommand.class);
         commandsNameDesc.add(levelCommandsCursor);
     }
 
