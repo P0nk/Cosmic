@@ -241,7 +241,6 @@ function action(mode, type, selection) {
             if (beauty == 1) {
                 page = selection;
                 hairnew = hairSelection(page)
-                console.log(hairnew)
                 cm.sendStyle("I can totally change up your hairstyle and make it look so good. Why don't you change it up a bit? If you have #b"
                 + hairprice +"nx#k I'll change it for you. Choose the one to your liking~.", hairnew);
             } else if (beauty == 2) {

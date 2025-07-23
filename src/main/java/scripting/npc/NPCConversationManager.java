@@ -624,6 +624,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         } else {
             baseid = (itemid / 10) * 10;
         }
+//        System.out.println(itemid + "|" + baseid + "|" + itemExists(baseid));
         return itemid != baseid && itemExists(baseid) ? baseid : -1;
     }
 
