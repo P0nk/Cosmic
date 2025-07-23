@@ -18,7 +18,7 @@ import java.util.List;
 
 public class SellAllCommand extends Command {
     {
-        setDescription("Sell all items from inventory. Usage: @sellall [equip/use/etc/all]");
+        setDescription("Sell all items from inventory. Usage: @sell [equip/use/etc/all]");
     }
 
     @Override

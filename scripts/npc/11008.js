@@ -387,6 +387,11 @@ function secondReward(selection) {
         status = 22;
         action(1,0,0);
     } else if (selection == 1) {
+            balance = cm.getMeso();
+        if (balance < meso + 10000000){
+        cm.sendOk("Insufficent Funds to Pay Questboard Tax!")
+        return cm.dispose()
+        }
         // Post quest
         qm.createQuest(cm.getPlayer(), quest_item, quest_qty, meso, nx, item1Id, item1Qty, item2Id, item2Qty)
         cm.sendOk("Quest has been posted!")

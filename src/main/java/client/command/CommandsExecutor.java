@@ -415,12 +415,12 @@ public class CommandsExecutor {
         addCommand("uni", 0, UniverseChatCommand.class);
         addCommand("w", 0, WorldChatCommand.class);
         addCommand("u", 0, UniverseChatCommand.class);
-        addCommand("sell", 0, SellItemsCommand.class);
+        addCommand("sellnobb", 0, SellItemsCommand.class);
         addCommand("exp", 0, ExpGainCommand.class);
         addCommand("powerup",  UnlockedBuffsCommand.class);
         addCommand("tp",  TPCommand.class);
         addCommand("inactiveguildmembers", InactiveGuildMembersCommand.class);
-        addCommand("sellall",  SellAllCommand.class);
+        addCommand("sell",  SellAllCommand.class);
         addCommand("buyback", BuybackCommand.class);
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
         addCommand("stats", CheckMyDmgCommand.class);
