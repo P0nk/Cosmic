@@ -27,7 +27,7 @@ const ExpeditionType = Java.type("server.expeditions.ExpeditionType");
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 6;
-var minLevel = 256, maxLevel = 256;
+var minLevel = 225, maxLevel = 256;
 var entryMap = 450012210;
 var exitMap = 450012200;
 var recruitMap = 450012200;
