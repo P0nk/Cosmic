@@ -357,6 +357,12 @@ public class GameConstants {
         add("BgmSG/Ghostship");
         add("BgmUI/ShopBgm");
         add("BgmUI/Title");
+        add("BgmTom/yoakenohotaru");
+        add("BgmTom/anohana");
+        add("BgmTom/Leafre - SLS");
+        add("BgmTom/Moonlight Shadow - SLS");
+        add("BgmTom/Above the Treetops - SLS");
+        add("BgmTom/FM Mix 1");
     }};
 
     // MapleStory default keyset
