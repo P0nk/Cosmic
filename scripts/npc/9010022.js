@@ -33,7 +33,7 @@ function action(mode, type, selection) {
                     selStr += "#1# Mu Lung Dojo";
                 }
 
-                if (cm.getLevel() >= 30 && cm.getLevel() <= 50) {   // MC 1 & 2 recalled thanks to ---
+                if (cm.getLevel() >= 30) {   // MC 1 & 2 recalled thanks to ---
                     selStr += "#2# Monster Carnival 1";
                 }
 

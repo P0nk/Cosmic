@@ -2247,7 +2247,8 @@ public class ItemInformationProvider {
 
     private boolean canUseSkillBook(Character player, Integer skillBookId) {
         Map<String, Integer> skilldata = getSkillStats(skillBookId, player.getJob().getId());
-        if (skilldata == null || skilldata.get("skillid") == 0) {
+        if (skilldata == null || skilldata.get("skillid") == 0 ||
+            skillBookId == 2290086 || skillBookId == 2290087) {
             return false;
         }
 
@@ -2257,7 +2258,7 @@ public class ItemInformationProvider {
 
     public List<Integer> usableMasteryBooks(Character player) {
         List<Integer> masterybook = new LinkedList<>();
-        for (Integer i = 2290000; i <= 2290139; i++) {
+        for (Integer i = 2290000; i <= 2290141; i++) {
             if (canUseSkillBook(player, i)) {
                 masterybook.add(i);
             }

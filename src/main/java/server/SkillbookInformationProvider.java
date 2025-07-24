@@ -282,7 +282,8 @@ public class SkillbookInformationProvider {
             }
 
             int skillid = -book;
-            if (skillid / 10000 == chr.getJob().getId()) {
+            if (skillid / 10000 == chr.getJob().getId() && skillid != 4121008) {
+                System.out.println(skillid);
                 if (chr.getMasterLevel(skillid) == 0) {
                     list.add(-skillid);
                 }
