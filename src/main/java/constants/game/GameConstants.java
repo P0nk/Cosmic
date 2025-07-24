@@ -26,7 +26,7 @@ public class GameConstants {
 
     // EXP Rate gain per level tier (1–10, 11–20, ..., 251–255)
 // Gradually increases with level to reward progression
-    private static final int[] EXP_RATE_GAIN = {
+    private static final double[] EXP_RATE_GAIN = {
             1,  // 1–10
             2,  // 11–20
             2,  // 21–30
@@ -47,11 +47,11 @@ public class GameConstants {
             6,  // 171–180
             6,  // 181–190
             6,  // 191–200
-            6, // 201–210
-            5, // 211–220
-            4, // 221–230
-            3, // 231–240
-            2, // 241–250
+            1, // 201–210
+            1, // 211–220
+            1, // 221–230
+            1, // 231–240
+            1, // 241–250
             1  // 251–255
     };
 
@@ -137,7 +137,7 @@ public class GameConstants {
         return (MESO_RATE_GAIN[slot]);
     }
 
-    public static int getPlayerBonusExpRate(int slot) {
+    public static double getPlayerBonusExpRate(int slot) {
         return (EXP_RATE_GAIN[slot]);
     }
 

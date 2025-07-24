@@ -536,13 +536,13 @@ public class Monster extends AbstractLoadedLife {
     }
 
     private void distributePlayerExperience(Character chr, float exp, float partyBonusMod, int totalPartyLevel, boolean highestPartyDamager, boolean whiteExpGain, boolean hasPartySharers) {
-        float playerExp = (YamlConfig.config.server.EXP_SPLIT_COMMON_MOD * chr.getLevel()) / totalPartyLevel; //0.8 * 10/20 = 0.8*0.5= 0.4
+        double playerExp = (YamlConfig.config.server.EXP_SPLIT_COMMON_MOD * chr.getLevel()) / totalPartyLevel; //0.8 * 10/20 = 0.8*0.5= 0.4
         if (highestPartyDamager) {
             playerExp += YamlConfig.config.server.EXP_SPLIT_MVP_MOD;
         }
 
         playerExp *= exp;
-        float bonusExp = partyBonusMod * playerExp;
+        double bonusExp = partyBonusMod * playerExp;
 
         this.giveExpToCharacter(chr, playerExp, bonusExp, whiteExpGain, hasPartySharers);
         giveFamilyRep(chr.getFamilyEntry());
@@ -781,13 +781,13 @@ public class Monster extends AbstractLoadedLife {
         return (int) Math.round(exp);    // operations on float point are not point-precise... thanks IxianMace for noticing -1 EXP gains
     }
 
-    private void giveExpToCharacter(Character attacker, Float personalExp, Float partyExp, boolean white, boolean hasPartySharers) {
+    private void giveExpToCharacter(Character attacker, Double personalExp, Double partyExp, boolean white, boolean hasPartySharers) {
         if (attacker.isAlive()) {
             if (personalExp != null) {
                 personalExp *= getStatusExpMultiplier(attacker, hasPartySharers);
                 personalExp *= attacker.getExpRate();
             } else {
-                personalExp = 0.0f;
+                personalExp = 0.0;
             }
 
             Integer expBonus = attacker.getBuffedValue(BuffStat.EXP_INCREASE);
@@ -802,7 +802,7 @@ public class Monster extends AbstractLoadedLife {
                 partyExp *= attacker.getExpRate();
                 partyExp *= YamlConfig.config.server.PARTY_BONUS_EXP_RATE;
             } else {
-                partyExp = 0.0f;
+                partyExp = 0.0;
             }
 
             int _partyExp = expValueToInteger(partyExp);

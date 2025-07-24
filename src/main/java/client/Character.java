@@ -228,7 +228,8 @@ public class Character extends AbstractCharacterObject {
     private int mesosTraded = 0;
     private int possibleReports = 10;
     private int ariantPoints, dojoPoints, vanquisherStage, dojoStage, dojoEnergy, vanquisherKills;
-    private int expRate = 1, mesoRate = 1, dropRate = 1, expCoupon = 1, mesoCoupon = 1, dropCoupon = 1;
+    private double expRate = 1;
+    private int mesoRate = 1, dropRate = 1, expCoupon = 1, mesoCoupon = 1, dropCoupon = 1;
     private int omokwins, omokties, omoklosses, matchcardwins, matchcardties, matchcardlosses;
     private int owlSearch;
     private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastDeathtime, jailExpiration = -1;
@@ -3101,19 +3102,19 @@ public class Character extends AbstractCharacterObject {
         updateSingleStat(Stat.GACHAEXP, gachaexp.addAndGet(gain));
     }
 
-    public void gainExp(int gain) {
+    public void gainExp(double gain) {
         gainExp(gain, true, true);
     }
 
-    public void gainExp(int gain, boolean show, boolean inChat) {
+    public void gainExp(double gain, boolean show, boolean inChat) {
         gainExp(gain, show, inChat, true);
     }
 
-    public void gainExp(int gain, boolean show, boolean inChat, boolean white) {
+    public void gainExp(double gain, boolean show, boolean inChat, boolean white) {
         gainExp(gain, 0, show, inChat, white);
     }
 
-    public void gainExp(int gain, int party, boolean show, boolean inChat, boolean white) {
+    public void gainExp(double gain, int party, boolean show, boolean inChat, boolean white) {
         if (hasDisease(Disease.CURSE)) {
             gain *= 0.5;
             party *= 0.5;
@@ -3155,12 +3156,12 @@ public class Character extends AbstractCharacterObject {
         sendPacket(PacketCreator.getShowExpGain((int) gain, equip, party, inChat, white));
     }
 
-    private synchronized void gainExpInternal(long gain, int equip, int party, boolean show, boolean inChat, boolean white) {   // need of method synchonization here detected thanks to MedicOP
-        long total = Math.max(gain + equip + party, -exp.get());
+    private synchronized void gainExpInternal(double gain, int equip, int party, boolean show, boolean inChat, boolean white) {   // need of method synchonization here detected thanks to MedicOP
+        double total = Math.max(gain + equip + party, -exp.get());
 
         if (level < getMaxLevel() && (allowExpGain || this.getEventInstance() != null)) {
-            long leftover = 0;
-            long nextExp = exp.get() + total;
+            double leftover = 0;
+            double nextExp = exp.get() + total;
 
             if (nextExp > (long) Integer.MAX_VALUE) {
                 total = Integer.MAX_VALUE - exp.get();
@@ -3170,7 +3171,7 @@ public class Character extends AbstractCharacterObject {
             totalExpGained += total;
             addExpTracked(total);
             if (show) {
-                announceExpGain(gain, equip, party, inChat, white);
+                announceExpGain((long) gain, equip, party, inChat, white);
             }
             while (exp.get() >= ExpTable.getExpNeededForLevel(level)) {
                 levelUp(true);
@@ -3189,7 +3190,7 @@ public class Character extends AbstractCharacterObject {
                 if (YamlConfig.config.server.USE_EXP_GAIN_LOG) {
                     ExpLogRecord expLogRecord = new ExpLogger.ExpLogRecord(
                             getWorldServer().getExpRate(),
-                            expCoupon,
+                            (int) expCoupon,
                             totalExpGained,
                             exp.get(),
                             new Timestamp(lastExpGainTime),
@@ -4954,7 +4955,7 @@ public class Character extends AbstractCharacterObject {
         return YamlConfig.config.server.USE_ENFORCE_NOVICE_EXPRATE && isBeginnerJob() && level < 11;
     }
 
-    public int getExpRate() {
+    public double getExpRate() {
         if (hasNoviceExpRate()) {   // base exp rate 1x for early levels idea thanks to Vcoc
             return 1;
         }
@@ -4962,11 +4963,11 @@ public class Character extends AbstractCharacterObject {
         return expRate;
     }
 
-    public int getCouponExpRate() {
+    public double getCouponExpRate() {
         return expCoupon;
     }
 
-    public int getRawExpRate() {
+    public double getRawExpRate() {
         return expRate / (expCoupon * getWorldServer().getExpRate());
     }
 
@@ -11252,7 +11253,7 @@ public class Character extends AbstractCharacterObject {
         }, duration);
     }
 
-    public void addExpTracked(long exp) {
+    public void addExpTracked(double exp) {
         // log.info("track EXP: " + exp);
         if (expTrackingTask != null) {
             expTracked += exp;
