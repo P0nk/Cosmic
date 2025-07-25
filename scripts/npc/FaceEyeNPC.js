@@ -26,8 +26,8 @@
 */
 var status = 0;
 var beauty = 0;
-var faceprice = 100000;
-var facecolorprice = 10000;
+var faceprice = 1000000;
+var facecolorprice = 1000000;
 var mhair_v = Array(
 20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 20009,
 20010, 20011, 20012, 20013, 20014, 20015, 20016, 20017, 20018, 20019,

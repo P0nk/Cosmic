@@ -4,7 +4,7 @@ function start() {
     const YamlConfig = Java.type('config.YamlConfig');
     if (YamlConfig.config.server.USE_ENABLE_CUSTOM_NPC_SCRIPT) {
         cm.dispose();
-        cm.openNpc(9201088, "FaceEyeNPC");
+        cm.openNpc(11016, "FaceEyeNPC");
         return;
     }
 
