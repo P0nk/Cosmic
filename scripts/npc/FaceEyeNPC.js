@@ -28,7 +28,7 @@ var status = 0;
 var beauty = 0;
 var faceprice = 1000000;
 var facecolorprice = 1000000;
-var mhair_v = Array(
+var mface_v = Array(
 20000, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 20009,
 20010, 20011, 20012, 20013, 20014, 20015, 20016, 20017, 20018, 20019,
 20020, 20021, 20022, 20023, 20024, 20025, 20026, 20027, 20028, 20029,
@@ -179,8 +179,8 @@ var mhair_v = Array(
 21869, 21870, 21871, 21872, 21873, 21874, 21875, 21876, 21877, 21878, // Page 37
 21880, 21881, 21882, 21883, 21884, 21885, 21887, 21888
 );
-var fhair_v = mhair_v;
-var hairnew = Array();
+var fface_v = mface_v;
+var facenew = Array();
 
 function pushIfItemExists(array, itemid) {
 //    console.log(cm.getCosmeticItem(itemid))
@@ -217,7 +217,7 @@ function action(mode, type, selection) {
                 beauty = 1;
                 var lines    = [];
                 const perRow = 4;
-                const max = Math.floor(mhair_v.length / 30);
+                const max = Math.floor(mface_v.length / 30);
                 for (var i=0; i <= max; i++) {
                     lines.push(
                     "#b#L" + i + "#" +
@@ -240,24 +240,24 @@ function action(mode, type, selection) {
         } else if (status == 2) {
             if (beauty == 1) {
                 page = selection;
-                hairnew = hairSelection(page)
-        //            console.log(hairnew)
+                facenew = hairSelection(page)
+        //            console.log(facenew)
                 cm.sendStyle("Control your face with the power of #b"
-                + faceprice +"nx#k I'll change it for you. Choose the one to your liking~.", hairnew);
+                + faceprice +"nx#k I'll change it for you. Choose the one to your liking~.", facenew);
             } else if (beauty == 2) {
-                haircolor = Array();
+                facecolor = Array();
                 beauty = 2;
                 var current = parseInt(cm.getPlayer().getFace() / 10) * 10;
                 for (var i = 0; i < 9; i++) {
-                    pushIfItemExists(haircolor, current + i);
+                    pushIfItemExists(facecolor, current + i);
                 }
-                cm.sendStyle("I can totally change your haircolor and make it look so good. Why don't you change it up a bit? With #b"+facecolorprice+"k nx#k I'll change it for you. Choose the one to your liking.", haircolor)
+                cm.sendStyle("I can totally change your facecolor and make it look so good. Why don't you change it up a bit? With #b"+facecolorprice+"k nx#k I'll change it for you. Choose the one to your liking.", facecolor)
             }
         } else if (status == 3) {
             cm.dispose();
             if (beauty == 1) {
                 if (cm.getCashShop().getCash(1) >= faceprice) {
-                    cm.setFace(hairnew[selection]);
+                    cm.setFace(facenew[selection]);
                     cm.gainCash(-faceprice);
                     cm.sendOk("Enjoy your new and improved hairstyle!");
                 } else {
@@ -265,7 +265,7 @@ function action(mode, type, selection) {
                 }
             } else if (beauty == 2) {
                 if (cm.getCashShop().getCash(1) >= facecolorprice) {
-                    cm.setFace(haircolor[selection]);
+                    cm.setFace(facecolor[selection]);
                     cm.gainCash(-facecolorprice);
                     cm.sendOk("Enjoy your new and improved hair color!");
                 } else {
@@ -277,13 +277,13 @@ function action(mode, type, selection) {
 }
 
 function hairSelection(page) {
-    hairnew = Array();
+    facenew = Array();
     const start   = page * 30;
-    const end     = Math.min(start + 30, mhair_v.length);
+    const end     = Math.min(start + 30, mface_v.length);
     const hairMod = cm.getPlayer().getHair() % 10;
     for (let i = start; i < end; i++) {
-//        console.log(mhair_v[i])
-        pushIfItemExists(hairnew, mhair_v[i] + hairMod);
+//        console.log(mface_v[i])
+        pushIfItemExists(facenew, mface_v[i] + hairMod);
     }
-    return hairnew;
+    return facenew;
 }
