@@ -196,7 +196,7 @@ public class EventInstanceManager {
             // check highest thresholds first
             if (thresholds.size() >= 5 && lvl >= thresholds.get(4)) {
                 // level >= 120
-                expToGive = ExpTable.getExpNeededForLevel(lvl) / 10;
+                expToGive = ExpTable.getExpNeededForLevel(lvl) / 100;
             } else if (thresholds.size() >= 4 && lvl >= thresholds.get(3)) {
                 // level >= 100
                 expToGive = ExpTable.getExpNeededForLevel(lvl) / 5;
