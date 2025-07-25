@@ -179,6 +179,7 @@ import client.command.commands.gm3.ToggleCouponCommand;
 import client.command.commands.gm3.UnBanCommand;
 import client.command.commands.gm3.Ban2Command;
 
+import client.command.commands.gm3.WorldChatBanCommand;
 import client.command.commands.gm4.BossDropRateCommand;
 import client.command.commands.gm4.BotMonitorCommand;
 import client.command.commands.gm4.CakeCommand;
@@ -413,9 +414,9 @@ public class CommandsExecutor {
         addCommand("roll", 0, RollCommand.class);
         addCommand("loot", LootCommand.class);
         addCommand("world", 0, WorldChatCommand.class);
-        addCommand("uni", 0, UniverseChatCommand.class);
+//        addCommand("uni", 0, UniverseChatCommand.class);
         addCommand("w", 0, WorldChatCommand.class);
-        addCommand("u", 0, UniverseChatCommand.class);
+//        addCommand("u", 0, UniverseChatCommand.class);
         addCommand("sellnobb", 0, SellItemsCommand.class);
         addCommand("exp", 0, ExpGainCommand.class);
         addCommand("powerup",  UnlockedBuffsCommand.class);
@@ -563,6 +564,7 @@ public class CommandsExecutor {
         addCommand("warparea", 3, WarpAreaCommand.class);
         addCommand("ban2", 3, Ban2Command.class);
         addCommand("getmaplewp", 3, GetMapleWp.class);
+        addCommand("chatban", 3, WorldChatBanCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
