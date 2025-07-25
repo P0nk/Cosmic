@@ -257,7 +257,7 @@ function action(mode, type, selection) {
             cm.dispose();
             if (beauty == 1) {
                 if (cm.getCashShop().getCash(1) >= faceprice) {
-                    cm.setHair(hairnew[selection]);
+                    cm.setFace(hairnew[selection]);
                     cm.gainCash(-faceprice);
                     cm.sendOk("Enjoy your new and improved hairstyle!");
                 } else {
