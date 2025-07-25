@@ -247,7 +247,7 @@ function action(mode, type, selection) {
             } else if (beauty == 2) {
                 haircolor = Array();
                 beauty = 2;
-                var current = parseInt(cm.getPlayer().getHair() / 10) * 10;
+                var current = parseInt(cm.getPlayer().getFace() / 10) * 10;
                 for (var i = 0; i < 9; i++) {
                     pushIfItemExists(haircolor, current + i);
                 }
@@ -265,7 +265,7 @@ function action(mode, type, selection) {
                 }
             } else if (beauty == 2) {
                 if (cm.getCashShop().getCash(1) >= facecolorprice) {
-                    cm.setHair(haircolor[selection]);
+                    cm.setFace(haircolor[selection]);
                     cm.gainCash(-facecolorprice);
                     cm.sendOk("Enjoy your new and improved hair color!");
                 } else {
