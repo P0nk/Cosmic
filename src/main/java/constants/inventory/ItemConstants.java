@@ -235,10 +235,12 @@ public final class ItemConstants {
 
     public static boolean isHair(int itemId) {
 //        return itemId >= 30000 && itemId < 37608;
-        String folderpath = "D://Devmaple/wz/Character.wz/Hair";
+        String folderpath = "C://Devmaple/wz/Character.wz/Hair";
         String fileName = "000" + itemId + ".img.xml";
         File file = new File(folderpath, fileName);
 //        System.out.println(file);
         return file.exists();
     }
 }
+
+

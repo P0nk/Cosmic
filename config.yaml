@@ -25,18 +25,18 @@ worlds:
     server_message: Welcome to MerogieMS's Bera Server! You are playing the hardcore mode!
     event_message: Bera!
     why_am_i_recommended: Welcome to Bera!
-    channels: 5
-    exp_rate: 1
-    meso_rate: 30
-    drop_rate: 6
-    boss_drop_rate: 10                       #NOTE: Boss drop rate OVERRIDES common drop rate, for bosses-only.
-    quest_rate: 4                           #Multiplier for Exp & Meso gains when completing a quest. Only available when USE_QUEST_RATE is true. Stacks with server Exp & Meso rates.
-    fishing_rate: 10                         #Multiplier for success likelihood on meso thrown during fishing.
-    travel_rate: 10                         #Means of transportation rides/departs using 1/N of the default time.
-
-    mob_rate: 3.0                            #Mob count multiplier
-    max_mob_per_spawnpoint: 3
-    use_progressive_exp: false
+    channels: 0
+#    exp_rate: 1
+#    meso_rate: 30
+#    drop_rate: 6
+#    boss_drop_rate: 10                       #NOTE: Boss drop rate OVERRIDES common drop rate, for bosses-only.
+#    quest_rate: 4                           #Multiplier for Exp & Meso gains when completing a quest. Only available when USE_QUEST_RATE is true. Stacks with server Exp & Meso rates.
+#    fishing_rate: 10                         #Multiplier for success likelihood on meso thrown during fishing.
+#    travel_rate: 10                         #Means of transportation rides/departs using 1/N of the default time.
+#
+#    mob_rate: 3.0                            #Mob count multiplier
+#    max_mob_per_spawnpoint: 3
+#    use_progressive_exp: false
 
     #Properties for Broa 2
   - flag: 0
@@ -179,7 +179,7 @@ server:
   INIT_CONNECTION_POOL_TIMEOUT: 180    # Seconds
 
   #Login Configuration
-  WORLDS: 1                           #Initial number of worlds on the server.
+  WORLDS: 2                           #Initial number of worlds on the server.
   WLDLIST_SIZE: 21                    #Max possible worlds on the server.
   CHANNEL_SIZE: 20                    #Max possible channels per world (which is 20, based on the channel list on login phase).
   CHANNEL_LOAD: 200                   #Max players per channel (limit actually used to calculate the World server capacity).
@@ -316,7 +316,7 @@ server:
 
   #Commands Configuration
   BLOCK_GENERATE_CASH_ITEM: false     #Prevents creation of cash items with the item/drop command.
-  USE_WHOLE_SERVER_RANKING: true     #Enables a ranking pool made from every character registered on the server for the "ranks" command, instead of separated by worlds.
+  USE_WHOLE_SERVER_RANKING: false     #Enables a ranking pool made from every character registered on the server for the "ranks" command, instead of separated by worlds.
 
   EQUIP_EXP_RATE: 1.0                  #Rate for equipment exp gain, grows linearly. Set 1.0 for default (about 100~200 same-level range mobs killed to pass equip from level 1 to 2).
   PQ_BONUS_EXP_RATE: 10               #Rate for the PQ exp reward.
