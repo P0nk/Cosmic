@@ -1339,7 +1339,7 @@ public class MapleMap {
 
             double Variance = (double) (Math.random() * 0.2 - 0.1) + 1; // add a +- 10% mesos variance
             double ratio = (double) (monster.getMaxHp() - min_mob_hp) / (max_mob_hp-min_mob_hp);
-            int nxAmount = Math.min((int) Math.max((min_nx_gain + (ratio * (max_nx_gain - min_nx_gain))), monster.getLevel()*3), 4000); // formula for nx gain
+            int nxAmount = Math.min((int) Math.max((min_nx_gain + (ratio * (max_nx_gain - min_nx_gain))), monster.getLevel()*5), 6000); // formula for nx gain
             if (nx_gain) {
                 chr.getCashShop().gainCash(1, (int) (nxAmount * Variance)); // gain nx
                 chr.sendPacket(PacketCreator.earnTitleMessage("Immortal Teto grants " + (int) (nxAmount * Variance) + " NX")); // post a yellow message to show nx gained
