@@ -1620,4 +1620,20 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public List<Channel> getChannels() {
         return Server.getInstance().getChannelsFromWorld(getPlayer().getWorld());
     }
+
+    // Field (add at the top of the class)
+    private Map<String, Object> gachaConfig = null;
+
+    // Setter
+    public void setGachaConfig(Map<String, Object> config) {
+        this.gachaConfig = config;
+    }
+
+    // Getter
+    public Map<String, Object> getGachaConfig() {
+        return this.gachaConfig;
+    }
+
+
+
 }
