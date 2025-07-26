@@ -22,7 +22,7 @@ function action(mode, type, selection) {
     status++;
 
     if (status === 0) {
-        cm.sendSimple("What would you like to do?\r\n#L0#Deposit all ores from inventory\r\n#L1#Withdraw ores from pouch");
+        cm.sendSimple("What would you like to do? (Item is not sharable across characters)\r\n#L0#Deposit all ores from inventory\r\n#L1#Withdraw ores from pouch");
     }
 
     // Deposit logic
@@ -36,7 +36,7 @@ function action(mode, type, selection) {
             if (qty > 0) {
                 var success = cm.getPlayer().addOreToPouch(id, qty);
                 if (success) {
-                    cm.removeAll(id);
+                    cm.removeAll(i  d);
                     deposited += qty;
                 } else {
                     skipped.push(Packages.server.MapleItemInformationProvider.getInstance().getName(id));
