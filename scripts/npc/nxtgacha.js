@@ -1,6 +1,6 @@
 var status = 0;
 var costItem = 3020001;
-var costAmount = 3;
+var costAmount = 1;
 
 var rarityRates = {
     "COMMON": 80.0,

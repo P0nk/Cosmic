@@ -755,12 +755,24 @@ public class Character extends AbstractCharacterObject {
 
     public void ban(String reason) {
         this.isbanned = true;
+        System.out.println("[Ban] Setting isbanned = true for account ID: " + accountid);
+
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("UPDATE accounts SET banned = 1, banreason = ? WHERE id = ?")) {
+
             ps.setString(1, reason);
             ps.setInt(2, accountid);
-            ps.executeUpdate();
+
+            System.out.println("[Ban] Executing SQL: UPDATE accounts SET banned = 1, banreason = '" + reason + "' WHERE id = " + accountid);
+            int affectedRows = ps.executeUpdate();
+
+            System.out.println("[Ban] Rows affected: " + affectedRows);
+            if (affectedRows == 0) {
+                System.out.println("[Ban] WARNING: No rows updated! Check if account ID exists.");
+            }
+
         } catch (SQLException e) {
+            System.out.println("[Ban] SQLException encountered while banning account ID: " + accountid);
             e.printStackTrace();
         }
     }

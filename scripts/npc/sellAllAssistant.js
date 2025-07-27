@@ -60,18 +60,18 @@ function action(userMode, type, selection) {
 }
 
 function showMainMenu() {
-    var text = "What would you like to do?\r\n";
-    text += "#L0#🔒 Lock or unlock items\r\n";
-    text += "#L1#❓ Help\r\n";
-    text += "#L2#🚪 Exit\r\n";
+    var text = "Hello! Welcome to Kuro's Sell Assistant! What would you like to do today?\r\n";
+    text += "#L0# Lock or unlock items\r\n";
+    text += "#L1# Help\r\n";
+    text += "#L2# Exit\r\n";
     cm.sendSimple(text);
 }
 
 function showCategoryMenu() {
     var text = "Select the inventory category to manage:\r\n";
-    text += "#L0#🛡 Equip\r\n";
-    text += "#L1#🧪 Use\r\n";
-    text += "#L2#⚙ Etc\r\n";
+    text += "#L0# Equip\r\n";
+    text += "#L1# Use\r\n";
+    text += "#L2# Etc\r\n";
     cm.sendSimple(text);
 }
 
@@ -79,9 +79,10 @@ function showItemList() {
     var text = "Select an item to lock or unlock:\r\n\r\n";
     for (var i = 0; i < items.length; i++) {
         var item = items[i];
+        var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
         if (item != null && item.getItemId() > 0) {
-            var locked = isItemLocked(item) ? " (Locked)" : "";
-            text += "#L" + i + "##v" + item.getItemId() + "# x" + item.getQuantity() + locked + "#\r\n";
+            var locked = isItemLocked(item) ? "#n#r [Locked]#n#k" : "";
+            text += "#L" + i + "##v" + item.getItemId() + "# x" + item.getQuantity() + name + locked + "#l\r\n";
         }
     }
     cm.sendSimple(text);
