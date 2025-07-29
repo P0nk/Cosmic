@@ -19,8 +19,9 @@ public class FourDBetManager {
      * @param date    Draw date string (yyyy-MM-dd).
      * @param amount  Ticket quantity (as string, will be parsed to int).
      */
-    public static void insertBet(int charId, String number, String type, String date, String amount) {
-        String sql = "INSERT INTO 4d_bets (char_id, bet_number, bet_type, draw_date, amount) VALUES (?, ?, ?, ?, ?)";
+
+    public static void insertBet(int charId, String number, String type, String date, String amount, String currencyType) {
+        String sql = "INSERT INTO 4d_bets (char_id, bet_number, bet_type, draw_date, amount, currency_type) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -30,6 +31,7 @@ public class FourDBetManager {
             ps.setString(3, type);
             ps.setDate(4, java.sql.Date.valueOf(date));
             ps.setInt(5, Integer.parseInt(amount.trim()));
+            ps.setString(6, currencyType);
 
             ps.executeUpdate();
         } catch (SQLException | NumberFormatException e) {
@@ -43,24 +45,22 @@ public class FourDBetManager {
      * @param charId Player ID
      * @return List of bets (each contains bet_id, prize_quantity)
      */
-    public static List<Map<String, Object>> getUnclaimedWinningBets(int charId) {
+    public static List<Map<String, Object>> getUnclaimedWinningBets(int characterId, String currencyType) {
         List<Map<String, Object>> results = new ArrayList<>();
-        String sql = "SELECT bet_id, prize_quantity FROM 4d_bets WHERE char_id = ? AND is_winner = 1 AND claimed = 0";
-
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, charId);
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM cosmic.4d_bets WHERE character_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?")) {
+            ps.setInt(1, characterId);
+            ps.setString(2, currencyType);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("bet_id", rs.getInt("bet_id"));
+                    row.put("bet_id", rs.getInt("id"));
                     row.put("prize_quantity", rs.getInt("prize_quantity"));
                     results.add(row);
                 }
             }
         } catch (SQLException e) {
-            System.out.println("[FourDBetManager] getUnclaimedWinningBets failed: " + e.getMessage());
+            e.printStackTrace();
         }
         return results;
     }
