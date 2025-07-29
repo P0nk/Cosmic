@@ -92,11 +92,11 @@ public class FourDResultManager {
                 int basePrize = 0;
                 String tier = null;
 
-                if (number.equals(first)) { basePrize = type.equals("BIG") ? 60 : 100; tier = "1st Prize"; }
-                else if (number.equals(second)) { basePrize = type.equals("BIG") ? 30 : 50; tier = "2nd Prize"; }
-                else if (number.equals(third)) { basePrize = type.equals("BIG") ? 15 : 25; tier = "3rd Prize"; }
-                else if (type.equals("BIG") && starters.contains(number)) basePrize = 2;
-                else if (type.equals("BIG") && consolations.contains(number)) basePrize = 1;
+                if (number.equals(first)) { basePrize = type.equals("BIG") ? 2000 : 3000; tier = "1st Prize"; }
+                else if (number.equals(second)) { basePrize = type.equals("BIG") ? 1000 : 2000; tier = "2nd Prize"; }
+                else if (number.equals(third)) { basePrize = type.equals("BIG") ? 490 : 800; tier = "3rd Prize"; }
+                else if (type.equals("BIG") && starters.contains(number)) basePrize = 250;
+                else if (type.equals("BIG") && consolations.contains(number)) basePrize = 60;
 
                 int totalPrize = basePrize * amount;
 
