@@ -197,13 +197,15 @@ public class Shop {
     }
 
     public void sell(Client c, InventoryType type, short slot, short quantity) {
-        if (quantity == 0xFFFF || quantity == 0) {
+        Item item = c.getPlayer().getInventory(type).getItem(slot);
+        int itemId = item.getItemId();
+        if (quantity == 0xFFFF || quantity == 0 || itemId == 3020002) {
             quantity = 1;
         } else if (quantity < 0) {
             return;
         }
 
-        Item item = c.getPlayer().getInventory(type).getItem(slot);
+
         if (canSell(item, quantity)) {
             quantity = getSellingQuantity(item, quantity);
             InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
@@ -215,6 +217,7 @@ public class Shop {
             }
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x8));
         } else {
+//            System.out.println("Can't sell item: " + itemId + "; Quantity: " + quantity);
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x5));
         }
     }
