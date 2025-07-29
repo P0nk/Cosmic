@@ -65,6 +65,7 @@ import client.command.commands.gm0.SellAllCommand;
 import client.command.commands.gm0.BuybackCommand;
 import client.command.commands.gm0.ToggleAutoPotCommand;
 import client.command.commands.gm0.CheckMyDmgCommand;
+import client.command.commands.gm0.EquipCashWeaponCommand;
 
 
 
@@ -426,7 +427,7 @@ public class CommandsExecutor {
         addCommand("buyback", BuybackCommand.class);
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
         addCommand("stats", CheckMyDmgCommand.class);
-
+        addCommand("equipcashweapon", EquipCashWeaponCommand.class);
 
 
         commandsNameDesc.add(levelCommandsCursor);

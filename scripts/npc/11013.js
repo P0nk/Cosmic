@@ -18,7 +18,7 @@ function start() {
     currentDrawDate = FourDDrawScheduler.getNextDrawDate();
 
     var msg = "#e#bWelcome to Merogie Pools~!#n#k\r\n";
-    msg += "Hi there~ I'm your lovely lottery lady, Esther!\r\n";
+    msg += "Hi there~ I'm your lovely lottery lady, Esther! You Can Bet and WIN BCOIN with me!\r\n";
     msg += "The Next 4D draw is on: #e#b" + currentDrawDate + " 12:00AM (GMT+8) #n\r\n\r\n";
     msg += "How may I help you today? Teehee~\r\n\r\n";
     msg += "#L0##bBuy 4D Ticket#k (#dManual Entry#k) - Got a lucky number?#l\r\n";
@@ -169,7 +169,7 @@ function action(mode, type, selection) {
                 var num = generateRandomNumber();
                 if (!/^\d{4}$/.test(num)) continue; // extra safety
                 picks.push(num);
-                FourDBetManager.insertBet(cm.getPlayer().getId(), num, betType, currentDrawDate.toString(), "1");
+                FourDBetManager.insertBet(cm.getPlayer().getId(), num, betType, currentDrawDate.toString(), "1","BCOIN");
             }
 
             cm.sendOk("You placed #e" + betAmount + "#n Quick Pick #b" + betType + "#k bet(s):\r\n#d" + picks.join(", ") +
@@ -202,7 +202,7 @@ function action(mode, type, selection) {
 
 function claimPrize() {
     try {
-        var wins = FourDBetManager.getUnclaimedWinningBets(cm.getPlayer().getId());
+        var wins = FourDBetManager.getUnclaimedWinningBets(cm.getPlayer().getId(),"BCOIN");
         var total = 0;
         for (var i = 0; i < wins.size(); i++) {
             var row = wins.get(i);

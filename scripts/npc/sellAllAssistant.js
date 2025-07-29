@@ -53,25 +53,24 @@ function action(userMode, type, selection) {
             }
 
             toggleItemLock(selectedIndex);
-            cm.sendOk("Item has been " + (isItemLocked(items[selectedIndex]) ? "locked." : "unlocked."));
-            cm.dispose();
+            showItemList();
             break;
     }
 }
 
 function showMainMenu() {
     var text = "What would you like to do?\r\n";
-    text += "#L0#🔒 Lock or unlock items\r\n";
-    text += "#L1#❓ Help\r\n";
-    text += "#L2#🚪 Exit\r\n";
+    text += "#L0#Lock or unlock items\r\n";
+    text += "#L1#Help\r\n";
+    text += "#L2#Exit\r\n";
     cm.sendSimple(text);
 }
 
 function showCategoryMenu() {
     var text = "Select the inventory category to manage:\r\n";
-    text += "#L0#🛡 Equip\r\n";
-    text += "#L1#🧪 Use\r\n";
-    text += "#L2#⚙ Etc\r\n";
+    text += "#L0#Equip\r\n";
+    text += "#L1#Use\r\n";
+    text += "#L2#Etc\r\n";
     cm.sendSimple(text);
 }
 
@@ -80,8 +79,8 @@ function showItemList() {
     for (var i = 0; i < items.length; i++) {
         var item = items[i];
         if (item != null && item.getItemId() > 0) {
-            var locked = isItemLocked(item) ? " (Locked)" : "";
-            text += "#L" + i + "##v" + item.getItemId() + "# x" + item.getQuantity() + locked + "#\r\n";
+            var locked = isItemLocked(item) ? "#r[Locked]#k" : "";
+            text += "#L" + i + "#" + locked + "#v" + item.getItemId() + "##t" +  item.getItemId() + "#\r\n";
         }
     }
     cm.sendSimple(text);
