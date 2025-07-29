@@ -317,7 +317,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
 //                    } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
                     } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
-                        int maxHeal = Math.min(player.getMaxHp() - player.getHp(), 5000);
+                        int maxHeal = Math.min(player.getCurrentMaxHp() - player.getHp(), 5000);
                         player.addHP((int) Math.min(maxHeal, Math.abs(Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2))));
                     } else if (attack.skill == Bandit.STEAL) {
                         if (monster.isBoss()) {
@@ -436,7 +436,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         Skill skill;
                         if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                             skill = SkillFactory.getSkill(21100005);
-                            int maxheal = player.getMaxHp() - player.getHp();
+                            int maxheal = player.getCurrentMaxHp() - player.getHp();
                             player.addHP(Math.min(Math.min(5000, maxheal) , Math.abs(((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 1000))));
                         }
                     } else if (job == 412 || job == 422 || job == 1411) {
