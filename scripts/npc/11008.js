@@ -310,6 +310,7 @@ function listInventory(rewardtype) {
         for (var slot = 1; slot <= limit; slot++) {
             var item = inv.getItem(slot);
             if (!item) continue;
+            if (item.getItemId() == item1Id) continue;
             var name = Packages.server.ItemInformationProvider
                        .getInstance().getName(item.getItemId());
             lines.push(
