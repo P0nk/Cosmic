@@ -226,13 +226,17 @@ function claimPrize() {
                 FourDBetManager.markBetClaimed(betId);
             }
         }
-
+            total_for_announce = total;
         // Issue the prize item if total > 0
         if (total > 0) {
             print("[DEBUG] Awarding total BCOINs: " + total);
             print("[DEBUG] MESO_BCOIN_ID: " + MESO_BCOIN_ID);
+            while(total >= 32000){
+                            cm.gainItem(MESO_BCOIN_ID, 32000);
+                            total -= 32000;}
+
             cm.gainItem(MESO_BCOIN_ID, total);
-            cm.sendOk("You claimed #e" + total + "#n #v" + MESO_BCOIN_ID + "#!\r\nCome win more next time~");
+            cm.sendOk("You claimed #e" + total_for_announce + "#n #v" + MESO_BCOIN_ID + "#!\r\nCome win more next time~");
         } else {
             print("[DEBUG] No prizes to claim.");
             cm.sendOk("No prizes to claim just yet~ Keep playing!");

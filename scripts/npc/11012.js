@@ -212,10 +212,15 @@ function claimPrize() {
                 FourDBetManager.markBetClaimed(row.get("bet_id"));
             }
         }
-
+            total_for_announce = total;
         if (total > 0) {
+            while(total >= 32000){
+                cm.gainItem(NX_MCOIN_ID, 32000);
+                total -= 32000;
+                }
+
             cm.gainItem(NX_MCOIN_ID, total);
-            cm.sendOk("You claimed #e" + total + "#n #v" + NX_MCOIN_ID + "#!\r\nCome win more next time~");
+            cm.sendOk("You claimed #e" + total_for_announce + "#n #v" + NX_MCOIN_ID + "#!\r\nCome win more next time~");
         } else {
             cm.sendOk("No prizes to claim just yet~ Keep playing!");
         }
