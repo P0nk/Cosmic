@@ -48,14 +48,15 @@ public class FourDBetManager {
     public static List<Map<String, Object>> getUnclaimedWinningBets(int characterId, String currencyType) {
         List<Map<String, Object>> results = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM cosmic.4d_bets WHERE character_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?")) {
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM cosmic.4d_bets WHERE char_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?")) {
             ps.setInt(1, characterId);
             ps.setString(2, currencyType);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("bet_id", rs.getInt("id"));
+                    row.put("bet_id", rs.getInt("bet_id"));
                     row.put("prize_quantity", rs.getInt("prize_quantity"));
+
                     results.add(row);
                 }
             }

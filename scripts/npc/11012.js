@@ -1,6 +1,6 @@
 var status = 0;
 var NX_MCOIN_ID = 3020001;
-var MESO_BCOIN_ID = 3020002;
+var MESO_BCOIN_ID = 3020002             ;
 var manualNumber = "";
 var betType = "";
 var currentDrawDate;
@@ -192,7 +192,7 @@ function action(mode, type, selection) {
         }
 
         cm.gainItem(NX_MCOIN_ID, -betAmount);
-        FourDBetManager.insertBet(cm.getPlayer().getId(), manualNumber, betType, currentDrawDate.toString(), betAmount.toString());
+        FourDBetManager.insertBet(cm.getPlayer().getId(), manualNumber, betType, currentDrawDate.toString(), betAmount.toString(),"NXT");
 
         cm.sendOk("You've placed #e" + betAmount + "#n " + betType + " bet(s) on #e" + manualNumber +
                   "#n for #b" + currentDrawDate + "#k!\r\nGood luck, sweetheart~");
@@ -214,8 +214,8 @@ function claimPrize() {
         }
 
         if (total > 0) {
-            cm.gainItem(MESO_BCOIN_ID, total);
-            cm.sendOk("You claimed #e" + total + "#n #v" + MESO_BCOIN_ID + "#!\r\nCome win more next time~");
+            cm.gainItem(NX_MCOIN_ID, total);
+            cm.sendOk("You claimed #e" + total + "#n #v" + NX_MCOIN_ID + "#!\r\nCome win more next time~");
         } else {
             cm.sendOk("No prizes to claim just yet~ Keep playing!");
         }
