@@ -1634,6 +1634,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return this.gachaConfig;
     }
 
-
+    public void sleep(int milliseconds) throws InterruptedException {
+        Thread.sleep(milliseconds);
+    }
 
 }

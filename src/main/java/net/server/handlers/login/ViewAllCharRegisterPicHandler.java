@@ -50,6 +50,11 @@ public final class ViewAllCharRegisterPicHandler extends AbstractPacketHandler {
         c.updateMacs(mac);
         c.updateHwid(hwid);
 
+        String ip = c.getRemoteIP();
+        if (ip != null && !ip.equals("null")) {
+            c.updateIP(ip);
+        }
+
         if (c.hasBannedMac() || c.hasBannedHWID()) {
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
