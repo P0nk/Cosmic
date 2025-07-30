@@ -48,6 +48,11 @@ public final class RegisterPicHandler extends AbstractPacketHandler {
         c.updateMacs(macs);
         c.updateHwid(hwid);
 
+        String ip = c.getRemoteIP();
+        if (ip != null && !ip.equals("null")) {
+            c.updateIP(ip);
+        }
+
         AntiMulticlientResult res = SessionCoordinator.getInstance().attemptGameSession(c, c.getAccID(), hwid);
         if (res != AntiMulticlientResult.SUCCESS) {
             c.sendPacket(PacketCreator.getAfterLoginError(parseAntiMulticlientError(res)));

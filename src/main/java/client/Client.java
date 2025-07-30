@@ -127,6 +127,7 @@ public class Client extends ChannelInboundHandlerAdapter {
     private volatile long lastPong;
     private int gmlevel;
     private Set<String> macs = new HashSet<>();
+    private Set<String> ips = new HashSet<>();
     private Map<String, ScriptEngine> engines = new HashMap<>();
     private byte characterSlots = 3;
     private byte loginattempt = 0;
@@ -292,6 +293,10 @@ public class Client extends ChannelInboundHandlerAdapter {
     public Hwid getHwid() {
         return hwid;
     }
+
+    public String getRemoteIP() {    return remoteAddress;    }
+
+    public void setRemoteIP(String remoteAddress) {    this.remoteAddress = remoteAddress;    }
 
     public void setHwid(Hwid hwid) {
         this.hwid = hwid;
@@ -789,6 +794,30 @@ public class Client extends ChannelInboundHandlerAdapter {
         }
     }
 
+
+    public void updateIP(String ip) {
+        ips.addAll(Arrays.asList(ip.split(";")));
+        StringBuilder newIPData = new StringBuilder();
+        Iterator<String> iter = ips.iterator();
+        while (iter.hasNext()) {
+            String cur = iter.next();
+            newIPData.append(cur);
+            if (iter.hasNext()) {
+                newIPData.append(";");
+            }
+        }
+
+        try (Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("UPDATE accounts SET ip = ? WHERE id = ?")) {
+            ps.setString(1, newIPData.toString());
+            ps.setInt(2, accId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    
     public void updateMacs(String macData) {
         macs.addAll(Arrays.asList(macData.split(", ")));
         StringBuilder newMacData = new StringBuilder();

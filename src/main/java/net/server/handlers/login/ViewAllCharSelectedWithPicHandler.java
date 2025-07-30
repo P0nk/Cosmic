@@ -51,6 +51,13 @@ public class ViewAllCharSelectedWithPicHandler extends AbstractPacketHandler {
         c.updateMacs(macs);
         c.updateHwid(hwid);
 
+
+
+        String ip = c.getRemoteIP();
+        if (ip != null && !ip.equals("null")) {
+            c.updateIP(ip);
+        }
+
         if (c.hasBannedMac() || c.hasBannedHWID()) {
             SessionCoordinator.getInstance().closeSession(c, true);
             return;

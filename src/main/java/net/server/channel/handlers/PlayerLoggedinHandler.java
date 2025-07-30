@@ -140,6 +140,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             Character player = wserv.getPlayerStorage().getCharacterById(cid);
 
             final Hwid hwid;
+
             if (player == null) {
                 hwid = SessionCoordinator.getInstance().pickLoginSessionHwid(c);
                 if (hwid == null) {
@@ -148,9 +149,12 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 }
             } else {
                 hwid = player.getClient().getHwid();
+
             }
 
             c.setHwid(hwid);
+            c.setRemoteIP(c.getRemoteIP());
+
 
             if (!server.validateCharacteridInTransition(c, cid)) {
                 c.disconnect(true, false);

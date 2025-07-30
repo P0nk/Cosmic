@@ -60,13 +60,27 @@ function action(mode, type, selection) {
         var sel = targets[selection];
         var targetChr = sel.chr;
         var targetChan = sel.channel;
-        var targetMap  = targetChr.getMap().getId();
+
 
         // If we're not already in the target's channel, switch first
         if (cm.getClient().getChannel() !== targetChan) {
-          cm.sendOk("Switching you to channel " + targetChan + "…");
-          cm.getClient().changeChannel(targetChan);
-          // after this your client will reconnect; you can then re-open the NPC if needed
+            cm.sendOk("Switching you to channel " + targetChan + "…");
+            cm.getClient().changeChannel(targetChan);
+            cm.sleep(3000);
+            try {
+                for (var i = 0; i < 7; i++) {   // poll for a while until the player reconnects
+                    if (cm.getPlayer().isLoggedinWorld()) {
+                      break;
+                    }
+                    Thread.sleep(1777);
+                }
+            } catch (Error) {
+            }
+
+            var targetMap  = targetChr.getMap().getId();
+            cm.warp(targetMap, 0);
+//            action(1,0,selection)
+            // after this your client will reconnect; you can then re-open the NPC if needed
         } else {
           // same channel: just warp straight there
           cm.sendOk("Warping you to #b"
