@@ -33,6 +33,7 @@ import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
+import constants.id.MobId;
 import constants.id.NpcId;
 import constants.inventory.ItemConstants;
 import constants.string.LanguageConstants;
@@ -1636,6 +1637,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void sleep(int milliseconds) throws InterruptedException {
         Thread.sleep(milliseconds);
+    }
+
+    public void spawnZakum() {
+        getPlayer().getMap().spawnFakeMonsterOnGroundBelow(LifeFactory.getMonster(MobId.ZAKUM_1), new Point(-17, -231));
+        for (int mobId = MobId.ZAKUM_ARM_1; mobId <= MobId.ZAKUM_ARM_8; mobId++) {
+            getPlayer().getMap().spawnMonsterOnGroundBelow(LifeFactory.getMonster(mobId), new Point(-17, -231));
+        }
     }
 
 }
