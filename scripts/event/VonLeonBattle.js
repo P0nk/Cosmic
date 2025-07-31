@@ -175,12 +175,12 @@ function playerDead(eim, player) {
 
     eim.setIntProperty("fallenPlayers", count);
 
-    if (count == 5) {
-        eim.dropMessage(5, "[Expedition] Too many players have fallen,  Von Leon is now deemed undefeatable; the expedition is over.");
+    if (count == 10) {
+        eim.dropMessage(10, "[Expedition] Too many players have fallen,  Von Leon is now deemed undefeatable; the expedition is over.");
         end(eim);
-    } else if (count == 4) {
+    } else if (count == 9) {
         eim.dropMessage(6, "[Expedition] This is your last chance! Do NOT die!");
-    } else if (count == 2) {
+    } else if (count == 4) {
         eim.dropMessage(6, "[Expedition] Casualty count is starting to get out of control. Battle with care.");
     }
 }
