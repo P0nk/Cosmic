@@ -97,7 +97,7 @@ function action(mode, type, selection) {
 
             case 3: // Quick pick
                 isQuickPick = true;
-                cm.sendGetNumber("How many tickets? Each costs #v" + NX_MCOIN_ID + "#:", 1, 1, 100);
+                cm.sendGetNumber("How many tickets? Each costs #v" + MESO_BCOIN_ID + "#:", 1, 1, 100);
                 break;
 
             case 4: // Past bets
@@ -134,8 +134,8 @@ function action(mode, type, selection) {
     if (status === 2) {
         if (isQuickPick) {
             betAmount = selection;
-            if (betAmount <= 0 || !cm.haveItem(NX_MCOIN_ID, betAmount)) {
-                cm.sendOk("Aww~ not enough #v" + NX_MCOIN_ID + "# NXT Coins.");
+            if (betAmount <= 0 || !cm.haveItem(MESO_BCOIN_ID, betAmount)) {
+                cm.sendOk("Aww~ not enough #v" + MESO_BCOIN_ID + "# BCoins.");
                 cm.dispose();
                 return;
             }
@@ -155,14 +155,14 @@ function action(mode, type, selection) {
         betType = (selection === 0) ? "BIG" : "SMALL";
 
         if (!isQuickPick) {
-            cm.sendGetNumber("How many #v" + NX_MCOIN_ID + "# will you bet?", 1, 1, 100);
+            cm.sendGetNumber("How many #v" + MESO_BCOIN_ID + "# will you bet?", 1, 1, 100);
         } else {
-            if (!cm.haveItem(NX_MCOIN_ID, betAmount)) {
-                cm.sendOk("Oops~ Not enough #v" + NX_MCOIN_ID + "#.");
+            if (!cm.haveItem(MESO_BCOIN_ID, betAmount)) {
+                cm.sendOk("Oops~ Not enough #v" + MESO_BCOIN_ID + "#.");
                 cm.dispose();
                 return;
             }
-            cm.gainItem(NX_MCOIN_ID, -betAmount);
+            cm.gainItem(MESO_BCOIN_ID, -betAmount);
 
             var picks = [];
             for (var i = 0; i < betAmount; i++) {
@@ -185,14 +185,14 @@ function action(mode, type, selection) {
             cm.dispose();
             return;
         }
-        if (!cm.haveItem(NX_MCOIN_ID, betAmount)) {
-            cm.sendOk("Oopsie~ You don't have enough #v" + NX_MCOIN_ID + "#.");
+        if (!cm.haveItem(MESO_BCOIN_ID, betAmount)) {
+            cm.sendOk("Oopsie~ You don't have enough #v" + MESO_BCOIN_ID + "#.");
             cm.dispose();
             return;
         }
 
-        cm.gainItem(NX_MCOIN_ID, -betAmount);
-        FourDBetManager.insertBet(cm.getPlayer().getId(), manualNumber, betType, currentDrawDate.toString(), betAmount.toString());
+        cm.gainItem(MESO_BCOIN_ID, -betAmount);
+        FourDBetManager.insertBet(cm.getPlayer().getId(), manualNumber, betType, currentDrawDate.toString(), betAmount.toString(),"BCOIN");
 
         cm.sendOk("You've placed #e" + betAmount + "#n " + betType + " bet(s) on #e" + manualNumber +
                   "#n for #b" + currentDrawDate + "#k!\r\nGood luck, sweetheart~");
@@ -202,29 +202,54 @@ function action(mode, type, selection) {
 
 function claimPrize() {
     try {
-        var wins = FourDBetManager.getUnclaimedWinningBets(cm.getPlayer().getId(),"BCOIN");
+        // Get unclaimed winning bets for this player using BCOIN currency
+        var playerId = cm.getPlayer().getId();
+        print("[DEBUG] Player ID: " + playerId);
+        var wins = FourDBetManager.getUnclaimedWinningBets(playerId, "BCOIN");
+        print("[DEBUG] Retrieved winning bets. Count: " + wins.size());
+
         var total = 0;
+
+        // Loop through all unclaimed winning bets
         for (var i = 0; i < wins.size(); i++) {
             var row = wins.get(i);
+            var betId = row.get("bet_id");
             var qty = row.get("prize_quantity");
+
+            print("[DEBUG] Processing bet ID: " + betId + ", prize_quantity: " + qty);
+
             if (qty > 0) {
                 total += qty;
-                FourDBetManager.markBetClaimed(row.get("bet_id"));
+
+                // Mark bet as claimed in DB
+                print("[DEBUG] Marking bet ID " + betId + " as claimed.");
+                FourDBetManager.markBetClaimed(betId);
             }
         }
-
+            total_for_announce = total;
+        // Issue the prize item if total > 0
         if (total > 0) {
+            print("[DEBUG] Awarding total BCOINs: " + total);
+            print("[DEBUG] MESO_BCOIN_ID: " + MESO_BCOIN_ID);
+            while(total >= 32000){
+                            cm.gainItem(MESO_BCOIN_ID, 32000);
+                            total -= 32000;}
+
             cm.gainItem(MESO_BCOIN_ID, total);
-            cm.sendOk("You claimed #e" + total + "#n #v" + MESO_BCOIN_ID + "#!\r\nCome win more next time~");
+            cm.sendOk("You claimed #e" + total_for_announce + "#n #v" + MESO_BCOIN_ID + "#!\r\nCome win more next time~");
         } else {
+            print("[DEBUG] No prizes to claim.");
             cm.sendOk("No prizes to claim just yet~ Keep playing!");
         }
 
     } catch (e) {
+        print("[ERROR] Exception during claimPrize: " + e);
         cm.sendOk("Eek! Something went wrong checking your prize.");
     }
+
     cm.dispose();
 }
+
 
 function generateRandomNumber() {
     return ("000" + Math.floor(Math.random() * 10000)).slice(-4);

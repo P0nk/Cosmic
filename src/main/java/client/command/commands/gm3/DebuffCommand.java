@@ -55,23 +55,23 @@ public class DebuffCommand extends Command {
         switch (params[0].toUpperCase()) {
             case "SLOW" -> {
                 disease = Disease.SLOW;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.SLOW, 7);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.SLOW, 5);
             }
             case "SEDUCE" -> {
                 disease = Disease.SEDUCE;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.SEDUCE, 7);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.SEDUCE, 5);
             }
             case "ZOMBIFY" -> {
                 disease = Disease.ZOMBIFY;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.UNDEAD, 1);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.UNDEAD, 5);
             }
             case "CONFUSE" -> {
                 disease = Disease.CONFUSE;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.REVERSE_INPUT, 2);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.REVERSE_INPUT, 5);
             }
             case "STUN" -> {
                 disease = Disease.STUN;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.STUN, 7);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.STUN, 5);
             }
             case "POISON" -> {
                 disease = Disease.POISON;
@@ -79,19 +79,19 @@ public class DebuffCommand extends Command {
             }
             case "SEAL" -> {
                 disease = Disease.SEAL;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.SEAL, 1);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.SEAL, 5);
             }
             case "DARKNESS" -> {
                 disease = Disease.DARKNESS;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.DARKNESS, 1);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.DARKNESS, 5);
             }
             case "WEAKEN" -> {
                 disease = Disease.WEAKEN;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.WEAKNESS, 1);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.WEAKNESS, 5);
             }
             case "CURSE" -> {
                 disease = Disease.CURSE;
-                skill = MobSkillFactory.getMobSkill(MobSkillType.CURSE, 1);
+                skill = MobSkillFactory.getMobSkill(MobSkillType.CURSE, 5);
             }
         }
 
@@ -100,7 +100,7 @@ public class DebuffCommand extends Command {
             return;
         }
 
-        for (MapObject mmo : player.getMap().getMapObjectsInRange(player.getPosition(), 777777.7, Arrays.asList(MapObjectType.PLAYER))) {
+        for (MapObject mmo : player.getMap().getMapObjectsInRange(player.getPosition(), 10000000, Arrays.asList(MapObjectType.PLAYER))) {
             Character chr = (Character) mmo;
 
             if (chr.getId() != player.getId()) {

@@ -876,6 +876,31 @@ public class Client extends ChannelInboundHandlerAdapter {
         }
     }
 
+    private void logLogin() {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO login_log (account_id, account_name, character_id, character_name, ip_address, mac_address, hwid, channel, world, session_id) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+
+            ps.setInt(1, accId);
+            ps.setString(2, accountName);
+            ps.setInt(3, player != null ? player.getId() : 0);
+            ps.setString(4, player != null ? player.getName() : null);
+            ps.setString(5, remoteAddress);
+            ps.setString(6, macs != null ? String.join(", ", macs) : null);
+            ps.setString(7, hwid != null ? hwid.hwid() : null);
+            ps.setInt(8, channel);
+            ps.setInt(9, world);
+            ps.setLong(10, sessionId);
+
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     public int getLoginState() {  // 0 = LOGIN_NOTLOGGEDIN, 1= LOGIN_SERVER_TRANSITION, 2 = LOGIN_LOGGEDIN
         try (Connection con = DatabaseConnection.getConnection()) {
             int state;
