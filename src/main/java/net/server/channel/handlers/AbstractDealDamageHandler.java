@@ -877,7 +877,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     float damage_mult = (float)Math.max(Math.abs(chrPos.getX() - mobPos.getX())/572, 0.25) * 2;
                     int maxBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
                     int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
-                    damage = (int) ((maxBase * snipeLevel/3) * damage_mult);
+                    damage = (int) ((maxBase * (snipeLevel/10 + 7)) * damage_mult);
                     chr.sendPacket(PacketCreator.damageMonster(oid, damage, mob.getHp(), mob.getMaxHp()));
 
                     System.out.println("Char x: " + chrPos.x + "| Mob x: " + mobPos.x + "| maxBase: " + maxBase + "| damage: " + damage + "| delay: " + delay);
