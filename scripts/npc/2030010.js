@@ -82,7 +82,7 @@ function action(mode, type, selection) {
                 cm.spawnZakum()
                 cm.gainItem(4001017, -1)
             } else {
-                cm.sendOk("You do not have an eye of Fire.")
+                cm.sendOk("You do not have an #v4001017#.")
                 return cm.dispose()
             }
 //            cm.sendOk("You can drop an Eye of Fire again.");
