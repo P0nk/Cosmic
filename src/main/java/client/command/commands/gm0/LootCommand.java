@@ -10,6 +10,7 @@ import tools.PacketCreator;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 public class LootCommand extends Command {
 
@@ -41,6 +42,8 @@ public class LootCommand extends Command {
             }
         }
 
+
+
         List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
         for (MapObject item : items) {
             MapItem mapItem = (MapItem) item;
@@ -49,7 +52,13 @@ public class LootCommand extends Command {
             boolean common_or_meso_item = mapItem.getQuest() <= 0; // QuestID <=0 because mesos quest id is -1
             boolean is_quest_item_and_active = c.getPlayer().getQuestStatus(mapItem.getQuest()) == 1;
             if ((is_player_kill || is_party_kill) && (common_or_meso_item || is_quest_item_and_active)) {
-                c.getPlayer().pickupItem(mapItem);
+                // Get pet ignore list
+                if (c.getPlayer().isEquippedPetItemIgnore()) {
+                    final Set<Integer> petIgnore = c.getPlayer().getExcludedItems();
+                    if (!petIgnore.isEmpty() && !petIgnore.contains(mapItem.getItem().getItemId())) {
+                        c.getPlayer().pickupItem(mapItem);
+                    }
+                }
             }
         }
 
