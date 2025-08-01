@@ -871,16 +871,17 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 }
 
                 if (ret.skill == Marksman.SNIPE) {
-                    float damage_mult = (float) Math.max(Math.random(),0.25) * 2;
-                    damage = (int) ((chr.getLevel() * 100000 + chr.getTotalWatk() * 1000 + chr.getTotalDex() * 500 + chr.getTotalStr() * 100) * (damage_mult));
-//                    System.out.println("character level damage: " + chr.getLevel() * 100000);
-//                    System.out.println("character watk damage: " +chr.getTotalWatk() * 1000 );
-//                    System.out.println("character totaldex damage: " +chr.getTotalDexfa() * 500);
-//                    System.out.println("character totalstr damage: " +chr.getTotalStr() * 100);
-//                    System.out.println("damagemult : " + damage_mult * 100);
+                    Monster mob = chr.getMap().getMonsterByOid(oid);
+                    Point mobPos = mob.getPosition();
+                    Point chrPos = chr.getPosition();
+                    float damage_mult = (float)Math.max(Math.abs(chrPos.getX() - mobPos.getX())/572, 0.25) * 2;
+                    int maxBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
+                    int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
+                    damage = (int) ((maxBase * snipeLevel/3) * damage_mult);
+                    chr.sendPacket(PacketCreator.damageMonster(oid, damage, mob.getHp(), mob.getMaxHp()));
 
-                    // damage = 1000000000;
-                    hitDmgMax = 5000;
+                    System.out.println("Char x: " + chrPos.x + "| Mob x: " + mobPos.x + "| maxBase: " + maxBase + "| damage: " + damage + "| delay: " + delay);
+                    hitDmgMax = (int) (((maxBase * 10)) * 2);
                 } else if (ret.skill == Beginner.BAMBOO_RAIN || ret.skill == Noblesse.BAMBOO_RAIN || ret.skill == Evan.BAMBOO_THRUST || ret.skill == Legend.BAMBOO_THRUST) {
                     hitDmgMax = 82569000; // 30% of Max HP of strongest Dojo boss
                 }
