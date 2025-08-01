@@ -58,6 +58,8 @@ public class LootCommand extends Command {
                     if (!petIgnore.isEmpty() && !petIgnore.contains(mapItem.getItem().getItemId())) {
                         c.getPlayer().pickupItem(mapItem);
                     }
+                } else {
+                    c.getPlayer().pickupItem(mapItem);
                 }
             }
         }
