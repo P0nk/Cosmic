@@ -118,9 +118,7 @@ function setup(level, lobbyid) {
     eim.setProperty("level", level);
     eim.setProperty("boss", "0");
 
-
     eim.getInstanceMap(271040100).resetPQ(level);
-
 
     respawnStages(eim);
     eim.startEventTimer(eventTime * 60000);
@@ -129,7 +127,12 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {}
+function afterSetup(eim) {
+    const LifeFactory = Java.type('server.life.LifeFactory');
+    const Point = Java.type('java.awt.Point');
+    var mapObj = eim.getInstanceMap(entryMap);
+    mapObj.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8850011), new Point(-156,24));
+}
 function respawnStages(eim) {}
 
 function playerEntry(eim, player) {

@@ -29,8 +29,9 @@ function start() {
         } else {
             cm.sendSimple(
                 "Zakum has been defeated.\r\nWhat would you like to do?\r\n" +
-                "#b#L0#Leave the map#l\r\n" +
-                "#L1#Let me spawn Zakum again#l"
+                "#b#L1#Let me spawn Zakum again#l\r\n" +
+                "#L0#Leave the map#l"
+
             );
         }
     } else {
@@ -76,8 +77,15 @@ function action(mode, type, selection) {
         if (zakumAlive) {
             cm.sendOk("You cannot reset reactors while Zakum is still alive.");
         } else {
-            cm.getPlayer().getMap().resetReactors();
-            cm.sendOk("You can drop an Eye of Fire again.");
+//            cm.getPlayer().getMap().resetReactors();
+            if (cm.haveItem(4001017, 1)) {
+                cm.spawnZakum()
+                cm.gainItem(4001017, -1)
+            } else {
+                cm.sendOk("You do not have an #v4001017#.")
+                return cm.dispose()
+            }
+//            cm.sendOk("You can drop an Eye of Fire again.");
         }
         cm.dispose();
     }

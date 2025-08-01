@@ -78,17 +78,23 @@ function action(mode, type, selection) {
             }
 
             var targetMap  = targetChr.getMap().getId();
-            cm.warp(targetMap, 0);
+            cm.getPlayer().dropMessage("Warping you to "
+                               + targetChr.getName()
+                               + " at "
+                               + targetChr.getMap().getMapName()
+                               + ".");
+            cm.warp(targetMap);
 //            action(1,0,selection)
             // after this your client will reconnect; you can then re-open the NPC if needed
         } else {
           // same channel: just warp straight there
-          cm.sendOk("Warping you to #b"
+          var targetMap  = targetChr.getMap().getId();
+          cm.getPlayer().dropMessage("Warping you to "
                    + targetChr.getName()
-                   + "#k at #b"
+                   + " at "
                    + targetChr.getMap().getMapName()
-                   + "#k.");
-          cm.warp(targetMap, 0);
+                   + ".");
+          cm.warp(targetMap);
         }
         cm.dispose();
     }
