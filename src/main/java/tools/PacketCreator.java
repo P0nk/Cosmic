@@ -4096,7 +4096,7 @@ public class PacketCreator {
         return damageMonster(oid, (int) -heal, curhp, maxhp); // slimy edits
     }
 
-    private static Packet damageMonster(int oid, int damage, long curhp, long maxhp) { // slimy edits
+    public static Packet damageMonster(int oid, int damage, long curhp, long maxhp) { // slimy edits
         final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
         p.writeInt(oid);
         p.writeByte(0);
