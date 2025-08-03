@@ -20,11 +20,11 @@
 package server.loot;
 
 import client.Character;
+import database.drop.DropProvider;
 import server.life.MonsterDropEntry;
-import server.life.MonsterInformationProvider;
 import server.quest.Quest;
 
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,66 +32,50 @@ import java.util.List;
  */
 public class LootManager {
 
-    private static boolean isRelevantDrop(MonsterDropEntry dropEntry, List<Character> players, List<LootInventory> playersInv) {
-        int qStartAmount = 0, qCompleteAmount = 0;
-        Quest quest = Quest.getInstance(dropEntry.questid);
-        if (quest != null) {
-            qStartAmount = quest.getStartItemAmountNeeded(dropEntry.itemId);
-            qCompleteAmount = quest.getCompleteItemAmountNeeded(dropEntry.itemId);
+    private static boolean isRelevantDrop(MonsterDropEntry dropEntry, List<Character> chrs, List<LootInventory> inventories) {
+        if (dropEntry.questid <= 0) {
+            return true;
         }
 
-        //boolean restricted = ItemInformationProvider.getInstance().isPickupRestricted(dropEntry.itemId);
-        for (int i = 0; i < players.size(); i++) {
-            LootInventory chrInv = playersInv.get(i);
+        Quest quest = Quest.getInstance(dropEntry.questid);
+        int questStartAmount = quest.getStartItemAmountNeeded(dropEntry.itemId);
+        int questCompleteAmount = quest.getCompleteItemAmountNeeded(dropEntry.itemId);
 
-            if (dropEntry.questid > 0) {
-                int qItemAmount, chrQuestStatus = players.get(i).getQuestStatus(dropEntry.questid);
-                if (chrQuestStatus == 0) {
-                    qItemAmount = qStartAmount;
-                } else if (chrQuestStatus != 1) {
-                    continue;
-                } else {
-                    qItemAmount = qCompleteAmount;
-                }
+        for (int i = 0; i < chrs.size(); i++) {
 
-                // thanks kvmba for noticing quest items with no required amount failing to be detected as such
-
-                int qItemStatus = chrInv.hasItem(dropEntry.itemId, qItemAmount);
-                if (qItemStatus == 2) {
-                    continue;
-                } /*else if (restricted && qItemStatus == 1) {  // one-of-a-kind loots should be available everytime, thanks onechord for noticing
-                    continue;
-                }*/
-            } /*else if (restricted && chrInv.hasItem(dropEntry.itemId, 1) > 0) {   // thanks Conrad, Legalize for noticing eligible loots not being available to drop for non-killer parties
+            int chrQuestStatus = chrs.get(i).getQuestStatus(dropEntry.questid);
+            final int questItemAmount;
+            if (chrQuestStatus == 0) {
+                questItemAmount = questStartAmount;
+            } else if (chrQuestStatus == 1) {
+                questItemAmount = questCompleteAmount;
+            } else {
                 continue;
-            }*/
+            }
 
-            return true;
+            LootInventory chrInv = inventories.get(i);
+            boolean hasQuestItems = chrInv.hasItem(dropEntry.itemId, questItemAmount);
+            if (!hasQuestItems) {
+                return true;
+            }
         }
 
         return false;
     }
 
-    public static List<MonsterDropEntry> retrieveRelevantDrops(int monsterId, List<Character> players) {
-        List<MonsterDropEntry> loots = MonsterInformationProvider.getInstance().retrieveEffectiveDrop(monsterId);
-        if (loots.isEmpty()) {
-            return loots;
+    public static List<MonsterDropEntry> retrieveRelevantDrops(int monsterId, List<Character> chrs, DropProvider dropProvider) {
+        List<MonsterDropEntry> drops = dropProvider.getMonsterDropEntries(monsterId);
+        if (drops.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        List<LootInventory> playersInv = new LinkedList<>();
-        for (Character chr : players) {
-            LootInventory lootInv = new LootInventory(chr);
-            playersInv.add(lootInv);
-        }
+        List<LootInventory> inventories = chrs.stream()
+                .map(LootInventory::new)
+                .toList();
 
-        List<MonsterDropEntry> effectiveLoot = new LinkedList<>();
-        for (MonsterDropEntry mde : loots) {
-            if (isRelevantDrop(mde, players, playersInv)) {
-                effectiveLoot.add(mde);
-            }
-        }
-
-        return effectiveLoot;
+        return drops.stream()
+                .filter(entry -> isRelevantDrop(entry, chrs, inventories))
+                .toList();
     }
 
 }

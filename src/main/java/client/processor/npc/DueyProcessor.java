@@ -35,6 +35,7 @@ import client.inventory.manipulator.KarmaManipulator;
 import config.YamlConfig;
 import constants.id.ItemId;
 import constants.inventory.ItemConstants;
+import net.netty.GameViolationException;
 import net.server.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -301,24 +302,22 @@ public class DueyProcessor {
                 if (sendMessage != null && sendMessage.length() > 100) {
                     AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit with Quick Delivery on duey.");
                     log.warn("Chr {} tried to use duey with too long of a text", c.getPlayer().getName());
-                    c.disconnect(true, false);
-                    return;
+                    throw GameViolationException.textLength(sendMessage);
                 }
+
                 if (!quick) {
                     fee += 5000;
                 } else if (!c.getPlayer().haveItem(ItemId.QUICK_DELIVERY_TICKET)) {
                     AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit with Quick Delivery on duey.");
                     log.warn("Chr {} tried to use duey with Quick Delivery without a ticket, mesos {} and amount {}", c.getPlayer().getName(), sendMesos, amount);
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Send Duey quick delivery without having a ticket");
                 }
 
                 long finalcost = (long) sendMesos + fee;
                 if (finalcost < 0 || finalcost > Integer.MAX_VALUE || (amount < 1 && sendMesos == 0)) {
                     AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit with duey.");
                     log.warn("Chr {} tried to use duey with mesos {} and amount {}", c.getPlayer().getName(), sendMesos, amount);
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Send invalid mesos with duey");
                 }
 
                 if(c.getPlayer().getMeso() < finalcost) {

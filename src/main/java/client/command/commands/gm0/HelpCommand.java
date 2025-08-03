@@ -25,7 +25,10 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.NpcId;
+
+import java.util.Map;
 
 public class HelpCommand extends Command {
     {
@@ -33,7 +36,8 @@ public class HelpCommand extends Command {
     }
 
     @Override
-    public void execute(Client client, String[] params) {
-        client.getAbstractPlayerInteraction().openNpc(NpcId.STEWARD, "commands");
+    public void execute(Client client, String[] params, CommandContext ctx) {
+        Map<String, Object> bindings = Map.of("ce", ctx.commandsExecutor());
+        client.getAbstractPlayerInteraction().openNpc(NpcId.STEWARD, "commands", bindings);
     }
 }

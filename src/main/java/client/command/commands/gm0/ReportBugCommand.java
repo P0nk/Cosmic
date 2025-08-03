@@ -26,6 +26,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class ReportBugCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(ReportBugCommand.class);
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
 
         if (params.length < 1) {

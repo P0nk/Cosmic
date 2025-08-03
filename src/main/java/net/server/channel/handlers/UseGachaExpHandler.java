@@ -26,6 +26,7 @@ import client.Client;
 import client.autoban.AutobanFactory;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
+import service.BanService;
 import tools.PacketCreator;
 
 /**
@@ -34,6 +35,11 @@ import tools.PacketCreator;
  * Modified by -- Ronan - concurrency protection
  */
 public class UseGachaExpHandler extends AbstractPacketHandler {
+    private final BanService banService;
+
+    public UseGachaExpHandler(BanService banService) {
+        this.banService = banService;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -41,7 +47,8 @@ public class UseGachaExpHandler extends AbstractPacketHandler {
         if (c.tryacquireClient()) {
             try {
                 if (c.getPlayer().getGachaExp() <= 0) {
-                    AutobanFactory.GACHA_EXP.autoban(c.getPlayer(), "Player tried to redeem GachaEXP, but had none to redeem.");
+                    banService.autoban(c.getPlayer(), AutobanFactory.GACHA_EXP, "Player tried to redeem GachaEXP, but had none to redeem.");
+                    return;
                 }
                 c.getPlayer().gainGachaExp();
             } finally {

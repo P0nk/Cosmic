@@ -26,6 +26,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import config.YamlConfig;
 
 public class ShowRatesCommand extends Command {
@@ -34,7 +35,7 @@ public class ShowRatesCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         String showMsg = "#eEXP RATE#n" + "\r\n";
         showMsg += "World EXP Rate: #k" + c.getWorldServer().getExpRate() + "x#k" + "\r\n";

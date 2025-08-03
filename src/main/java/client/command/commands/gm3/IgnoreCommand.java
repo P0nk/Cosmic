@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.autoban.AutobanFactory;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import tools.PacketCreator;
 
@@ -36,7 +37,7 @@ public class IgnoreCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !ignore <ign>");

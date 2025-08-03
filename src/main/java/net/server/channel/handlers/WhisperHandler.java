@@ -25,6 +25,7 @@ import client.Character;
 import client.Client;
 import client.autoban.AutobanFactory;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,8 +97,7 @@ public final class WhisperHandler extends AbstractPacketHandler {
         if (message.length() > Byte.MAX_VALUE) {
             AutobanFactory.PACKET_EDIT.alert(user, user.getName() + " tried to packet edit with whispers.");
             log.warn("Chr {} tried to send text with length of {}", user.getName(), message.length());
-            user.getClient().disconnect(true, false);
-            return;
+            throw GameViolationException.textLength(message);
         }
 
         ChatLogger.log(user.getClient(), "Whisper To " + target.getName(), message);

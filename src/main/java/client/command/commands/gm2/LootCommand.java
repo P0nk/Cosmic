@@ -25,6 +25,7 @@ package client.command.commands.gm2;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.maps.MapItem;
 import server.maps.MapObject;
 import server.maps.MapObjectType;
@@ -39,7 +40,7 @@ public class LootCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
         for (MapObject item : items) {
             MapItem mapItem = (MapItem) item;

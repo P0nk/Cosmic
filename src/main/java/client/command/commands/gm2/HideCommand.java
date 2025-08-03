@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.SkillFactory;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class HideCommand extends Command {
     {
@@ -34,7 +35,7 @@ public class HideCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         SkillFactory.getSkill(9101004).getEffect(SkillFactory.getSkill(9101004).getMaxLevel()).applyTo(player);
 

@@ -5,6 +5,7 @@ import config.YamlConfig;
 import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.TransitionService;
 
 import java.util.Collection;
 
@@ -13,6 +14,12 @@ import java.util.Collection;
  */
 public class TimeoutTask extends BaseTask implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(TimeoutTask.class);
+    private final TransitionService transitionService;
+
+    public TimeoutTask(World world, TransitionService transitionService) {
+        super(world);
+        this.transitionService = transitionService;
+    }
 
     @Override
     public void run() {
@@ -21,12 +28,8 @@ public class TimeoutTask extends BaseTask implements Runnable {
         for (Character chr : chars) {
             if (time - chr.getClient().getLastPacket() > YamlConfig.config.server.TIMEOUT_DURATION) {
                 log.info("Chr {} auto-disconnected due to inactivity", chr.getName());
-                chr.getClient().disconnect(true, chr.getCashShop().isOpened());
+                transitionService.disconnect(chr.getClient(), true);
             }
         }
-    }
-
-    public TimeoutTask(World world) {
-        super(world);
     }
 }

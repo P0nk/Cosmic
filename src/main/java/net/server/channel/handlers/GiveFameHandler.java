@@ -26,6 +26,7 @@ import client.Character.FameStatus;
 import client.Client;
 import client.autoban.AutobanFactory;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +46,7 @@ public final class GiveFameHandler extends AbstractPacketHandler {
         } else if (famechange != 1 && famechange != -1) {
             AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit fame.");
             log.warn("Chr {} tried to fame hack with famechange {}", c.getPlayer().getName(), famechange);
-            c.disconnect(true, false);
-            return;
+            throw new GameViolationException("Give too much fame");
         }
 
         FameStatus status = player.canGiveFame(target);

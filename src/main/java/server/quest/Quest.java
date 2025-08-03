@@ -79,7 +79,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -244,15 +243,6 @@ public class Quest {
         }
 
         return getInstance(id);
-    }
-
-    public boolean isSameDayRepeatable() {
-        if (!repeatable) {
-            return false;
-        }
-
-        IntervalRequirement ir = (IntervalRequirement) startReqs.get(QuestRequirementType.INTERVAL);
-        return ir.getInterval() < HOURS.toMillis(YamlConfig.config.server.QUEST_POINT_REPEATABLE_INTERVAL);
     }
 
     public boolean canStartQuestByStatus(Character chr) {

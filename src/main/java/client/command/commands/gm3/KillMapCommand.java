@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class KillMapCommand extends Command {
     {
@@ -33,7 +34,7 @@ public class KillMapCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (Character mch : player.getMap().getCharacters()) {
             mch.updateHp(0);

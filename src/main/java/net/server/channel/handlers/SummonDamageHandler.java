@@ -31,6 +31,7 @@ import client.inventory.Item;
 import client.inventory.WeaponType;
 import client.status.MonsterStatusEffect;
 import constants.skills.Outlaw;
+import database.drop.DropProvider;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,7 @@ import server.StatEffect;
 import server.life.Monster;
 import server.life.MonsterInformationProvider;
 import server.maps.Summon;
+import service.BanService;
 import tools.PacketCreator;
 
 import java.awt.*;
@@ -47,6 +49,10 @@ import java.util.List;
 
 public final class SummonDamageHandler extends AbstractDealDamageHandler {
     private static final Logger log = LoggerFactory.getLogger(SummonDamageHandler.class);
+
+    public SummonDamageHandler(DropProvider dropProvider, BanService banService) {
+        super(dropProvider, banService);
+    }
 
     public record SummonAttackTarget(int monsterOid, int damage, short delay) {}
 

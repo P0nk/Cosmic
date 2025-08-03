@@ -23,6 +23,7 @@ package server;
 
 import config.YamlConfig;
 import constants.inventory.EquipType;
+import database.maker.MakerDisassemblyInfo;
 import tools.Pair;
 
 import java.util.ArrayList;
@@ -36,8 +37,7 @@ import java.util.Map.Entry;
 public class MakerItemFactory {
     private static final ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-    public static MakerItemCreateEntry getItemCreateEntry(int toCreate, int stimulantid, Map<Integer, Short> reagentids) {
-        MakerItemCreateEntry makerEntry = ii.getMakerItemEntry(toCreate);
+    public static MakerItemCreateEntry finalizeItemCreateEntry(MakerItemCreateEntry makerEntry, int toCreate, int stimulantid, Map<Integer, Short> reagentids) {
         if (makerEntry.isInvalid()) {
             return makerEntry;
         }
@@ -64,12 +64,10 @@ public class MakerItemFactory {
         return ret;
     }
 
-    public static MakerItemCreateEntry generateDisassemblyCrystalEntry(int fromEquipid, int cost, List<Pair<Integer, Integer>> gains) {     // equipment at specific position already taken
-        MakerItemCreateEntry ret = new MakerItemCreateEntry(cost, 0, 1);
+    public static MakerItemCreateEntry generateDisassemblyCrystalEntry(int fromEquipid, MakerDisassemblyInfo disassemblyInfo) {     // equipment at specific position already taken
+        MakerItemCreateEntry ret = new MakerItemCreateEntry(disassemblyInfo.fee(), 0, 1);
         ret.addReqItem(fromEquipid, 1);
-        for (Pair<Integer, Integer> p : gains) {
-            ret.addGainItem(p.getLeft(), p.getRight());
-        }
+        disassemblyInfo.gainedItems().forEach(i -> ret.addGainItem(i.itemId(), i.count()));
         return ret;
     }
 
@@ -157,16 +155,6 @@ public class MakerItemFactory {
             this.reqMakerLevel = reqMakerLevel;
         }
 
-        public MakerItemCreateEntry(MakerItemCreateEntry mi) {
-            this.cost = mi.cost;
-            this.reqLevel = mi.reqLevel;
-            this.reqMakerLevel = mi.reqMakerLevel;
-
-            reqItems.addAll(mi.reqItems);
-
-            gainItems.addAll(mi.gainItems);
-        }
-
         public List<Pair<Integer, Integer>> getReqItems() {
             return reqItems;
         }
@@ -183,7 +171,7 @@ public class MakerItemFactory {
             return reqMakerLevel;
         }
 
-        public int getCost() {
+        public int getReqCost() {
             return reqCost;
         }
 
@@ -191,11 +179,15 @@ public class MakerItemFactory {
             cost += amount;
         }
 
-        protected void addReqItem(int itemId, int amount) {
+        public int getCost() {
+            return (int) this.cost;
+        }
+
+        public void addReqItem(int itemId, int amount) {
             reqItems.add(new Pair<>(itemId, amount));
         }
 
-        protected void addGainItem(int itemId, int amount) {
+        public void addGainItem(int itemId, int amount) {
             gainItems.add(new Pair<>(itemId, amount));
         }
 

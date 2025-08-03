@@ -23,30 +23,55 @@
 package net.server.handlers.login;
 
 import client.Client;
+import client.Gender;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
-import net.server.coordinator.session.SessionCoordinator;
+import service.AccountService;
 import tools.PacketCreator;
 
 /**
  * @author kevintjuh93
+ * @author Ponk
  */
 public class SetGenderHandler extends AbstractPacketHandler {
+    private final AccountService accountService;
+
+    public SetGenderHandler(AccountService accountService) {
+        this.accountService = accountService;
+    }
+
     @Override
     public void handlePacket(InPacket p, Client c) {
-        if (c.getGender() == 10) { //Packet shouldn't come if Gender isn't 10.
-            byte confirmed = p.readByte();
-            if (confirmed == 0x01) {
-                c.setGender(p.readByte());
-                c.sendPacket(PacketCreator.getAuthSuccess(c));
-
-                Server.getInstance().registerLoginState(c);
-            } else {
-                SessionCoordinator.getInstance().closeSession(c, null);
-                c.updateLoginState(Client.LOGIN_NOTLOGGEDIN);
-            }
+        if (c.getGender() != Gender.NOT_SET) { // Packet shouldn't come if Gender isn't 10.
+            logOut(c);
+            return;
         }
+
+        byte confirmed = p.readByte();
+        if (confirmed != 0x01) {
+            logOut(c);
+            return;
+        }
+
+        byte gender = p.readByte();
+        if (gender != Gender.MALE && gender != Gender.FEMALE) {
+            logOut(c);
+            return;
+        }
+
+        if (!accountService.setGender(c.getAccID(), gender)) {
+            logOut(c);
+            return;
+        }
+
+        c.setGender(gender);
+        c.sendPacket(PacketCreator.getAuthSuccess(c));
+        Server.getInstance().registerLoginState(c);
+    }
+
+    private void logOut(Client c) {
+        accountService.setLoggedOutAndDisconnect(c);
     }
 
 }

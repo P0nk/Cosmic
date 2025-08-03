@@ -33,6 +33,7 @@ import config.YamlConfig;
 import constants.id.ItemId;
 import constants.inventory.ItemConstants;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ import server.CashShop;
 import server.CashShop.CashItem;
 import server.CashShop.CashItemFactory;
 import server.ItemInformationProvider;
+import service.AccountService;
 import service.NoteService;
 import tools.PacketCreator;
 import tools.Pair;
@@ -49,15 +51,15 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-
 public final class CashOperationHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(CashOperationHandler.class);
 
     private final NoteService noteService;
+    private final AccountService accountService;
 
-    public CashOperationHandler(NoteService noteService) {
+    public CashOperationHandler(NoteService noteService, AccountService accountService) {
         this.noteService = noteService;
+        this.accountService = accountService;
     }
 
     @Override
@@ -256,14 +258,13 @@ public final class CashOperationHandler extends AbstractPacketHandler {
                         return;
                     }
                     cs.gainCash(cash, cItem, chr.getWorld());
-                    if (c.gainCharacterSlot()) {
-                        c.sendPacket(PacketCreator.showBoughtCharacterSlot(c.getCharacterSlots()));
-                        c.sendPacket(PacketCreator.showCash(chr));
-                    } else {
+                    if (!accountService.addChrSlot(c)) {
                         log.warn("Could not add a chr slot to {}'s account", Character.makeMapleReadable(chr.getName()));
                         c.enableCSActions();
                         return;
                     }
+                    c.sendPacket(PacketCreator.showBoughtCharacterSlot(c.getCharacterSlots()));
+                    c.sendPacket(PacketCreator.showCash(chr));
                 } else if (action == 0x0D) { // Take from Cash Inventory
                     Item item = cs.findByCashId(p.readInt());
                     if (item == null) {
@@ -287,8 +288,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
 
                     byte invType = p.readByte();
                     if (invType < 1 || invType > 5) {
-                        c.disconnect(false, false);
-                        return;
+                        throw GameViolationException.inventoryType(invType);
                     }
 
                     Inventory mi = chr.getInventory(InventoryType.getByType(invType));
@@ -417,7 +417,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
                             c.sendPacket(PacketCreator.showCashShopMessage((byte) 0));
                             c.enableCSActions();
                             return;
-                        } else if (c.getTempBanCalendar() != null && (c.getTempBanCalendar().getTimeInMillis() + DAYS.toMillis(30)) > Calendar.getInstance().getTimeInMillis()) {
+                        } else if (c.wasRecentlyBanned()) {
                             c.sendPacket(PacketCreator.showCashShopMessage((byte) 0));
                             c.enableCSActions();
                             return;
@@ -473,6 +473,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
         }
     }
 
+    // TODO: move to util class. Method to parse LocalDate from this encoded int.
     public static boolean checkBirthday(Client c, int idate) {
         int year = idate / 10000;
         int month = (idate - year * 10000) / 100;

@@ -27,6 +27,7 @@ import constants.id.ItemId;
 import constants.id.NpcId;
 import constants.inventory.ItemConstants;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import scripting.npc.NPCScriptManager;
 
@@ -40,16 +41,13 @@ public final class RemoteGachaponHandler extends AbstractPacketHandler {
         int gacha = p.readInt();
         if (ticket != ItemId.REMOTE_GACHAPON_TICKET) {
             AutobanFactory.GENERAL.alert(c.getPlayer(), " Tried to use RemoteGachaponHandler with item id: " + ticket);
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Use Remote gachapon without owning the item");
         } else if (gacha < 0 || gacha > 11) {
             AutobanFactory.GENERAL.alert(c.getPlayer(), " Tried to use RemoteGachaponHandler with mode: " + gacha);
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Use Remote gachapon with invalid mode");
         } else if (c.getPlayer().getInventory(ItemConstants.getInventoryType(ticket)).countById(ticket) < 1) {
             AutobanFactory.GENERAL.alert(c.getPlayer(), " Tried to use RemoteGachaponHandler without a ticket.");
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Use Remote gachapon without a ticket");
         }
         int npcId = NpcId.GACHAPON_HENESYS;
         if (gacha != 8 && gacha != 9) {
@@ -57,6 +55,6 @@ public final class RemoteGachaponHandler extends AbstractPacketHandler {
         } else {
             npcId = gacha == 8 ? NpcId.GACHAPON_NLC : NpcId.GACHAPON_NAUTILUS;
         }
-        NPCScriptManager.getInstance().start(c, npcId, "gachaponRemote", null);
+        NPCScriptManager.getInstance().start(c, npcId, "gachaponRemote");
     }
 }

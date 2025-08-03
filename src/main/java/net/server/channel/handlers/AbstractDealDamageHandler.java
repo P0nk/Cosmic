@@ -21,11 +21,8 @@
  */
 package net.server.channel.handlers;
 
-import client.BuffStat;
 import client.Character;
-import client.Job;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.autoban.AutobanFactory;
 import client.status.MonsterStatus;
 import client.status.MonsterStatusEffect;
@@ -34,88 +31,41 @@ import constants.game.GameConstants;
 import constants.id.ItemId;
 import constants.id.MapId;
 import constants.id.MobId;
-import constants.skills.Aran;
-import constants.skills.Assassin;
-import constants.skills.Bandit;
-import constants.skills.Beginner;
-import constants.skills.Bishop;
-import constants.skills.BlazeWizard;
-import constants.skills.Bowmaster;
-import constants.skills.Brawler;
-import constants.skills.Buccaneer;
-import constants.skills.ChiefBandit;
-import constants.skills.Cleric;
-import constants.skills.Corsair;
-import constants.skills.Crossbowman;
-import constants.skills.Crusader;
-import constants.skills.DawnWarrior;
-import constants.skills.DragonKnight;
-import constants.skills.Evan;
-import constants.skills.FPArchMage;
-import constants.skills.FPMage;
-import constants.skills.FPWizard;
-import constants.skills.Fighter;
-import constants.skills.Gunslinger;
-import constants.skills.Hermit;
-import constants.skills.Hero;
-import constants.skills.Hunter;
-import constants.skills.ILArchMage;
-import constants.skills.ILMage;
-import constants.skills.Legend;
-import constants.skills.Marauder;
-import constants.skills.Marksman;
-import constants.skills.NightLord;
-import constants.skills.NightWalker;
-import constants.skills.Noblesse;
-import constants.skills.Outlaw;
-import constants.skills.Page;
-import constants.skills.Paladin;
-import constants.skills.Ranger;
-import constants.skills.Rogue;
-import constants.skills.Shadower;
-import constants.skills.Sniper;
-import constants.skills.Spearman;
-import constants.skills.SuperGM;
-import constants.skills.ThunderBreaker;
-import constants.skills.WhiteKnight;
-import constants.skills.WindArcher;
+import constants.skills.*;
+import database.drop.DropProvider;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.PlayerBuffValueHolder;
 import scripting.AbstractPlayerInteraction;
 import server.StatEffect;
 import server.TimerManager;
-import server.life.Element;
-import server.life.ElementalEffectiveness;
-import server.life.MobSkill;
-import server.life.MobSkillFactory;
-import server.life.MobSkillId;
-import server.life.MobSkillType;
-import server.life.Monster;
-import server.life.MonsterDropEntry;
-import server.life.MonsterInformationProvider;
+import server.life.*;
 import server.maps.MapItem;
 import server.maps.MapObject;
 import server.maps.MapleMap;
+import service.BanService;
 import tools.PacketCreator;
 import tools.Randomizer;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
+    private final DropProvider dropProvider;
+    private final BanService banService;
     private static final int EXPLODED_MESO_SPREAD_DELAY = 100;
     private static final int EXPLODED_MESO_MAX_DELAY = 1000;
 
-    public static class AttackInfo {
+    public AbstractDealDamageHandler(DropProvider dropProvider, BanService banService) {
+        this.dropProvider = dropProvider;
+        this.banService = banService;
+    }
+
+    public class AttackInfo {
 
         public int numAttacked, numDamage, numAttackedAndDamage, skill, skilllevel, stance, direction, rangedirection, charge, display;
         public Map<Integer, AttackTarget> targets;
@@ -141,7 +91,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             }
             if (display > 80) { //Hmm
                 if (!mySkill.getAction()) {
-                    AutobanFactory.FAST_ATTACK.autoban(chr, "WZ Edit; adding action to a skill: " + display);
+                    banService.autoban(chr, AutobanFactory.FAST_ATTACK, "WZ Edit; adding action to a skill: " + display);
                     return null;
                 }
             }
@@ -174,7 +124,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 }
 
                 if (player.getMp() < attackEffect.getMpCon()) {
-                    AutobanFactory.MPCON.addPoint(player.getAutobanManager(), "Skill: " + attack.skill + "; Player MP: " + player.getMp() + "; MP Needed: " + attackEffect.getMpCon());
+                    banService.addPoint(player, AutobanFactory.MPCON, "Skill: " + attack.skill + "; Player MP: " + player.getMp() + "; MP Needed: " + attackEffect.getMpCon());
                 }
 
                 int mobCount = attackEffect.getMobCount();
@@ -205,7 +155,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 }
 
                 if (attack.numAttacked > mobCount) {
-                    AutobanFactory.MOB_COUNT.autoban(player, "Skill: " + attack.skill + "; Count: " + attack.numAttacked + " Max: " + attackEffect.getMobCount());
+                    banService.autoban(player, AutobanFactory.MOB_COUNT, "Skill: " + attack.skill + "; Count: " + attack.numAttacked + " Max: " + attackEffect.getMobCount());
                     return;
                 }
             }
@@ -315,27 +265,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         player.addHP(Math.min(monster.getMaxHp(), Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2)));
                     } else if (attack.skill == Bandit.STEAL) {
                         Skill steal = SkillFactory.getSkill(Bandit.STEAL);
-                        if (monster.getStolen().size() < 1) { // One steal per mob <3
-                            if (steal.getEffect(player.getSkillLevel(steal)).makeChanceResult()) {
-                                monster.addStolen(0);
+                        if (steal.getEffect(player.getSkillLevel(steal)).makeChanceResult() && monster.trySteal()) {
 
-                                MonsterInformationProvider mi = MonsterInformationProvider.getInstance();
-                                List<Integer> dropPool = mi.retrieveDropPool(monster.getId());
-                                if (!dropPool.isEmpty()) {
-                                    int rndPool = (int) Math.floor(Math.random() * dropPool.get(dropPool.size() - 1));
-
-                                    int i = 0;
-                                    while (rndPool >= dropPool.get(i)) {
-                                        i++;
-                                    }
-
-                                    List<MonsterDropEntry> toSteal = new ArrayList<>();
-                                    toSteal.add(mi.retrieveDrop(monster.getId()).get(i));
-
-                                    map.dropItemsFromMonster(toSteal, player, monster, target.getValue().delay());
-                                    monster.addStolen(toSteal.get(0).itemId);
-                                }
-                            }
+                            Optional<MonsterDropEntry> stolenItem = dropProvider.getRandomStealDrop(monster.getId());
+                            stolenItem.ifPresent(item -> map.dropItemsFromMonster(Collections.singletonList(item), player, monster, attack.attackDelay));
                         }
                     } else if (attack.skill == FPArchMage.FIRE_DEMON) {
                         long duration = SECONDS.toMillis(SkillFactory.getSkill(FPArchMage.FIRE_DEMON).getEffect(player.getSkillLevel(SkillFactory.getSkill(FPArchMage.FIRE_DEMON))).getDuration());
@@ -461,7 +394,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     if (attack.skill != 0) {
                         if (attackEffect.getFixDamage() != -1) {
                             if (totDamageToOneMonster != attackEffect.getFixDamage() && totDamageToOneMonster != 0) {
-                                AutobanFactory.FIX_DAMAGE.autoban(player, totDamageToOneMonster + " damage");
+                                banService.autoban(player, AutobanFactory.FIX_DAMAGE, totDamageToOneMonster + " damage");
                             }
 
                             int threeSnailsId = player.getJobType() * 10000000 + 1000;
@@ -866,7 +799,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
                 // Add a ab point if its over 5x what we calculated.
                 if (damage > maxWithCrit * 5) {
-                    AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    banService.addPoint(chr, AutobanFactory.DAMAGE_HACK, "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                 }
 
                 if (ret.skill == Marksman.SNIPE || (canCrit && damage > hitDmgMax)) {
@@ -880,7 +813,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         maxattack = maxattack * 2;
                     }
                     if (ret.numDamage > maxattack) {
-                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Too many lines: " + ret.numDamage + " Max lines: " + maxattack + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                        banService.addPoint(chr, AutobanFactory.DAMAGE_HACK, "Too many lines: " + ret.numDamage + " Max lines: " + maxattack + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                     }
                 }
 

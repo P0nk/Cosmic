@@ -25,6 +25,7 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import scripting.npc.NPCScriptManager;
 import scripting.quest.QuestScriptManager;
 import tools.PacketCreator;
@@ -35,7 +36,7 @@ public class DisposeCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         NPCScriptManager.getInstance().dispose(c);
         QuestScriptManager.getInstance().dispose(c);
         c.sendPacket(PacketCreator.enableActions());

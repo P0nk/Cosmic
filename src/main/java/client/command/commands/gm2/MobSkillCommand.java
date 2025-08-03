@@ -3,6 +3,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.life.MobSkill;
 import server.life.MobSkillFactory;
 import server.life.MobSkillType;
@@ -16,7 +17,7 @@ public class MobSkillCommand extends Command {
     }
 
     @Override
-    public void execute(Client client, String[] params) {
+    public void execute(Client client, String[] params, CommandContext ctx) {
         if (params.length < 2) {
             throw new IllegalArgumentException("Mob skill command requires two args: mob skill id and level");
         }

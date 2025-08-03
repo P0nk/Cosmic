@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import io.netty.buffer.Unpooled;
 import net.PacketHandler;
 import net.PacketProcessor;
@@ -49,7 +50,7 @@ public class PeCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(PeCommand.class);
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         String packet = "";
         try (BufferedReader br = Files.newBufferedReader(Path.of("pe.txt"))) {

@@ -30,9 +30,14 @@ import net.packet.InPacket;
  * @author Jay Estrella, Ronan
  */
 public final class MakerSkillHandler extends AbstractPacketHandler {
+    private final MakerProcessor makerProcessor;
+
+    public MakerSkillHandler(MakerProcessor makerProcessor) {
+        this.makerProcessor = makerProcessor;
+    }
 
     @Override
-    public final void handlePacket(InPacket p, Client c) {
-        MakerProcessor.makerAction(p, c);
+    public void handlePacket(InPacket p, Client c) {
+        makerProcessor.makerAction(p, c);
     }
 }

@@ -22,6 +22,7 @@
 package server.maps;
 
 import constants.id.MapId;
+import database.drop.DropProvider;
 import provider.Data;
 import provider.DataProvider;
 import provider.DataProviderFactory;
@@ -130,7 +131,8 @@ public class MapFactory {
         }
     }
 
-    public static MapleMap loadMapFromWz(int mapid, int world, int channel, EventInstanceManager event) {
+    public static MapleMap loadMapFromWz(int mapid, int world, int channel, EventInstanceManager event,
+                                         DropProvider dropProvider) {
         MapleMap map;
 
         String mapName = getMapName(mapid);
@@ -147,7 +149,7 @@ public class MapFactory {
         if (mobRate != null) {
             monsterRate = (Float) mobRate.getData();
         }
-        map = new MapleMap(mapid, world, channel, DataTool.getInt("returnMap", infoData), monsterRate);
+        map = new MapleMap(mapid, world, channel, DataTool.getInt("returnMap", infoData), monsterRate, dropProvider);
         map.setEventInstance(event);
 
         String onFirstEnter = DataTool.getString(infoData.getChildByPath("onFirstUserEnter"), String.valueOf(mapid));

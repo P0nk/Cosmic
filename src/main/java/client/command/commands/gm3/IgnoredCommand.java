@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.autoban.AutobanFactory;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class IgnoredCommand extends Command {
     {
@@ -34,7 +35,7 @@ public class IgnoredCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (int chrId : AutobanFactory.getIgnoredChrIds()) {
             player.yellowMessage(Character.getNameById(chrId) + " is being ignored.");

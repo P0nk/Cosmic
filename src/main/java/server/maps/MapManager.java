@@ -19,6 +19,7 @@
 */
 package server.maps;
 
+import database.drop.DropProvider;
 import scripting.event.EventInstanceManager;
 
 import java.util.HashMap;
@@ -30,17 +31,19 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class MapManager {
     private final int channel;
     private final int world;
-    private EventInstanceManager event;
+    private final DropProvider dropProvider;
+    private EventInstanceManager eventInstanceManager;
 
     private final Map<Integer, MapleMap> maps = new HashMap<>();
 
     private final Lock mapsRLock;
     private final Lock mapsWLock;
 
-    public MapManager(EventInstanceManager eim, int world, int channel) {
+    public MapManager(EventInstanceManager eim, int world, int channel, DropProvider dropProvider) {
         this.world = world;
         this.channel = channel;
-        this.event = eim;
+        this.eventInstanceManager = eim;
+        this.dropProvider = dropProvider;
 
         ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
         this.mapsRLock = readWriteLock.readLock();
@@ -74,7 +77,7 @@ public class MapManager {
             }
         }
 
-        map = MapFactory.loadMapFromWz(mapid, world, channel, event);
+        map = MapFactory.loadMapFromWz(mapid, world, channel, eventInstanceManager, dropProvider);
 
         if (cache) {
             mapsWLock.lock();
@@ -135,7 +138,7 @@ public class MapManager {
             map.dispose();
         }
 
-        this.event = null;
+        this.eventInstanceManager = null;
     }
 
 }

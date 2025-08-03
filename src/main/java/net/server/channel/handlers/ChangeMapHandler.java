@@ -28,6 +28,7 @@ import client.inventory.manipulator.InventoryManipulator;
 import constants.id.ItemId;
 import constants.id.MapId;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.Server;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import server.Trade;
 import server.maps.MapleMap;
 import server.maps.Portal;
+import service.TransitionService;
 import tools.PacketCreator;
 
 import java.awt.*;
@@ -43,6 +45,12 @@ import java.net.UnknownHostException;
 
 public final class ChangeMapHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(ChangeMapHandler.class);
+
+    private final TransitionService transitionService;
+
+    public ChangeMapHandler(TransitionService transitionService) {
+        this.transitionService = transitionService;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -67,8 +75,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
         }
 
         if (chr.getCashShop().isOpened()) {
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Changing channel inside cash shop");
         }
 
         try {
@@ -179,8 +186,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
         final Character chr = c.getPlayer();
 
         if (!chr.getCashShop().isOpened()) {
-            c.disconnect(false, false);
-            return;
+            throw new GameViolationException("Enter map from cash shop, but is not in cash shop");
         }
         String[] socket = Server.getInstance().getInetSocket(c, c.getWorld(), c.getChannel());
         if (socket == null) {
@@ -189,7 +195,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
         }
         chr.getCashShop().open(false);
 
-        chr.setSessionTransitionState();
+        transitionService.setInTransition(c, chr.getId());
         try {
             c.sendPacket(PacketCreator.getChannelChange(InetAddress.getByName(socket[0]), Integer.parseInt(socket[1])));
         } catch (UnknownHostException ex) {

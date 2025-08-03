@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 
 public class FlyCommand extends Command {
@@ -34,7 +35,7 @@ public class FlyCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) { // fly option will become available for any character of that account
+    public void execute(Client c, String[] params, CommandContext ctx) { // fly option will become available for any character of that account
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !fly <on/off>");

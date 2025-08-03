@@ -26,6 +26,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.MapId;
 import server.events.gm.Event;
 import server.maps.FieldLimit;
@@ -36,7 +37,7 @@ public class JoinEventCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (!FieldLimit.CANNOTMIGRATE.check(player.getMap().getFieldLimit())) {
             Event event = c.getChannelServer().getEvent();

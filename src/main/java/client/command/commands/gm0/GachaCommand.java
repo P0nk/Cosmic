@@ -25,6 +25,7 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.NpcId;
 import server.ItemInformationProvider;
 import server.gachapon.Gachapon;
@@ -35,7 +36,7 @@ public class GachaCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Gachapon.GachaponType gacha = null;
         String search = c.getPlayer().getLastCommandMessage();
         String gachaName = "";

@@ -28,6 +28,7 @@ import client.inventory.InventoryType;
 import client.keybind.KeyBinding;
 import constants.game.GameConstants;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 
 public final class KeymapChangeHandler extends AbstractPacketHandler {
@@ -66,15 +67,13 @@ public final class KeymapChangeHandler extends AbstractPacketHandler {
             } else if (mode == 1) { // Auto HP Potion
                 int itemID = p.readInt();
                 if (itemID != 0 && c.getPlayer().getInventory(InventoryType.USE).findById(itemID) == null) {
-                    c.disconnect(false, false); // Don't let them send a packet with a use item they dont have.
-                    return;
+                    throw new GameViolationException("Set auto hp potion without owning the item");
                 }
                 c.getPlayer().changeKeybinding(91, new KeyBinding(7, itemID));
             } else if (mode == 2) { // Auto MP Potion
                 int itemID = p.readInt();
                 if (itemID != 0 && c.getPlayer().getInventory(InventoryType.USE).findById(itemID) == null) {
-                    c.disconnect(false, false); // Don't let them send a packet with a use item they dont have.
-                    return;
+                    throw new GameViolationException("Set auto mp potion without owning the item");
                 }
                 c.getPlayer().changeKeybinding(92, new KeyBinding(7, itemID));
             }

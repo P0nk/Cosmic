@@ -21,6 +21,7 @@
  */
 package scripting.event;
 
+import database.drop.DropProvider;
 import net.server.channel.Channel;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractScriptManager;
@@ -42,6 +43,7 @@ public class EventScriptManager extends AbstractScriptManager {
     private static final String INJECTED_VARIABLE_NAME = "em";
     private static EventEntry fallback;
     private final Map<String, EventEntry> events = new ConcurrentHashMap<>();
+    private final DropProvider dropProvider;
     private boolean active = false;
 
     private static class EventEntry {
@@ -55,7 +57,8 @@ public class EventScriptManager extends AbstractScriptManager {
         public EventManager em;
     }
 
-    public EventScriptManager(final Channel channel, String[] scripts) {
+    public EventScriptManager(final Channel channel, String[] scripts, DropProvider dropProvider) {
+        this.dropProvider = dropProvider;
         for (String script : scripts) {
             if (!script.isEmpty()) {
                 events.put(script, initializeEventEntry(script, channel));
@@ -106,7 +109,7 @@ public class EventScriptManager extends AbstractScriptManager {
     private EventEntry initializeEventEntry(String script, Channel channel) {
         ScriptEngine engine = getInvocableScriptEngine("event/" + script + ".js");
         Invocable iv = SynchronizedInvocable.of((Invocable) engine);
-        EventManager eventManager = new EventManager(channel, iv, script);
+        EventManager eventManager = new EventManager(channel, iv, script, dropProvider);
         engine.put(INJECTED_VARIABLE_NAME, eventManager);
         return new EventEntry(iv, eventManager);
     }

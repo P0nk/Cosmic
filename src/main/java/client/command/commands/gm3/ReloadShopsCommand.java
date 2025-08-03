@@ -25,7 +25,7 @@ package client.command.commands.gm3;
 
 import client.Client;
 import client.command.Command;
-import server.ShopFactory;
+import client.command.CommandContext;
 
 
 public class ReloadShopsCommand extends Command {
@@ -34,7 +34,7 @@ public class ReloadShopsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
-        ShopFactory.getInstance().reloadShops();
+    public void execute(Client c, String[] params, CommandContext ctx) {
+        ctx.shopFactory().reloadShops();
     }
 }

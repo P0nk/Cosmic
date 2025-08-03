@@ -28,6 +28,7 @@ import client.Client;
 import client.Skill;
 import client.SkillFactory;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class BuffCommand extends Command {
     {
@@ -35,7 +36,7 @@ public class BuffCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !buff <buffid>");

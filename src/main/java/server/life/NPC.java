@@ -22,7 +22,6 @@
 package server.life;
 
 import client.Client;
-import server.ShopFactory;
 import server.maps.MapObjectType;
 import tools.PacketCreator;
 
@@ -32,14 +31,6 @@ public class NPC extends AbstractLoadedLife {
     public NPC(int id, NPCStats stats) {
         super(id);
         this.stats = stats;
-    }
-
-    public boolean hasShop() {
-        return ShopFactory.getInstance().getShopForNPC(getId()) != null;
-    }
-
-    public void sendShop(Client c) {
-        ShopFactory.getInstance().getShopForNPC(getId()).sendShop(c);
     }
 
     @Override

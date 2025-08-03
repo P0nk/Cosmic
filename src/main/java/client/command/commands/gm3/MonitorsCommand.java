@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.packet.logging.MonitoredChrLogger;
 
 public class MonitorsCommand extends Command {
@@ -34,7 +35,7 @@ public class MonitorsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (int chrId : MonitoredChrLogger.getMonitoredChrIds()) {
             player.yellowMessage(Character.getNameById(chrId) + " is being monitored.");

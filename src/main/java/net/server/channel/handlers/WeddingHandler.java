@@ -16,6 +16,7 @@ import client.inventory.manipulator.InventoryManipulator;
 import client.inventory.manipulator.KarmaManipulator;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
+import database.character.CharacterSaver;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import org.slf4j.Logger;
@@ -32,6 +33,11 @@ import java.util.List;
  */
 public final class WeddingHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(WeddingHandler.class);
+    private final CharacterSaver chrSaver;
+
+    public WeddingHandler(CharacterSaver chrSaver) {
+        this.chrSaver = chrSaver;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -87,9 +93,6 @@ public final class WeddingHandler extends AbstractPacketHandler {
                                         }
 
                                         if (newItem != null) {
-                                            if (YamlConfig.config.server.USE_ENFORCE_MERCHANT_SAVE) {
-                                                chr.saveCharToDB(false);
-                                            }
                                             marriage.saveGiftItemsToDb(c, groomWishlist, cid);
                                         }
                                     } else {

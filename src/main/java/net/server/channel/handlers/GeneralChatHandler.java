@@ -26,6 +26,7 @@ import client.Client;
 import client.autoban.AutobanFactory;
 import client.command.CommandsExecutor;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,11 @@ import tools.PacketCreator;
 
 public final class GeneralChatHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(GeneralChatHandler.class);
+    private final CommandsExecutor commandsExecutor;
+
+    public GeneralChatHandler(CommandsExecutor commandsExecutor) {
+        this.commandsExecutor = commandsExecutor;
+    }
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -46,12 +52,11 @@ public final class GeneralChatHandler extends AbstractPacketHandler {
         if (s.length() > Byte.MAX_VALUE && !chr.isGM()) {
             AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit in General Chat.");
             log.warn("Chr {} tried to send text with length of {}", c.getPlayer().getName(), s.length());
-            c.disconnect(true, false);
-            return;
+            throw GameViolationException.textLength(s);
         }
         char heading = s.charAt(0);
         if (CommandsExecutor.isCommand(c, s)) {
-            CommandsExecutor.getInstance().handle(c, s);
+            commandsExecutor.handle(c, s);
         } else if (heading != '/') {
             int show = p.readByte();
             if (chr.getMap().isMuted() && !chr.isGM()) {

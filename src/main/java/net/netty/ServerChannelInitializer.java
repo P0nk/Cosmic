@@ -17,6 +17,7 @@ import net.packet.logging.InPacketLogger;
 import net.packet.logging.OutPacketLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.TransitionService;
 import tools.PacketCreator;
 
 import java.net.InetSocketAddress;
@@ -29,7 +30,13 @@ public abstract class ServerChannelInitializer extends ChannelInitializer<Socket
     private static final ChannelHandler sendPacketLogger = new OutPacketLogger();
     private static final ChannelHandler receivePacketLogger = new InPacketLogger();
 
+    private final DisconnectHandler disconnectingInboundHandler;
+
     static final AtomicLong sessionId = new AtomicLong(7777);
+
+    public ServerChannelInitializer(TransitionService transitionService) {
+        this.disconnectingInboundHandler = new DisconnectHandler(transitionService);
+    }
 
     String getRemoteAddress(Channel channel) {
         String remoteAddress = "null";
@@ -58,6 +65,7 @@ public abstract class ServerChannelInitializer extends ChannelInitializer<Socket
         pipeline.addLast("IdleStateHandler", new IdleStateHandler(0, 0, IDLE_TIME_SECONDS));
         pipeline.addLast("PacketCodec", new PacketCodec(ClientCyphers.of(sendIv, recvIv)));
         pipeline.addLast("Client", client);
+        pipeline.addLast("Disconnect", disconnectingInboundHandler);
 
         if (LOG_PACKETS) {
             pipeline.addBefore("Client", "SendPacketLogger", sendPacketLogger);

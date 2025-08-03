@@ -21,6 +21,7 @@
 */
 package client;
 
+import model.CharacterIdentity;
 import net.packet.Packet;
 import net.server.PlayerStorage;
 import tools.DatabaseConnection;
@@ -48,7 +49,7 @@ public class BuddyList {
 
     private final Map<Integer, BuddylistEntry> buddies = new LinkedHashMap<>();
     private int capacity;
-    private final Deque<CharacterNameAndId> pendingRequests = new LinkedList<>();
+    private final Deque<CharacterIdentity> pendingRequests = new LinkedList<>();
 
     public BuddyList(int capacity) {
         this.capacity = capacity;
@@ -150,7 +151,7 @@ public class BuddyList {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         if (rs.getInt("pending") == 1) {
-                            pendingRequests.push(new CharacterNameAndId(rs.getInt("buddyid"), rs.getString("buddyname")));
+                            pendingRequests.push(new CharacterIdentity(rs.getString("buddyname"), rs.getInt("buddyid")));
                         } else {
                             put(new BuddylistEntry(rs.getString("buddyname"), rs.getString("group"), rs.getInt("buddyid"), (byte) -1, true));
                         }
@@ -167,7 +168,7 @@ public class BuddyList {
         }
     }
 
-    public CharacterNameAndId pollPendingRequest() {
+    public CharacterIdentity pollPendingRequest() {
         return pendingRequests.pollLast();
     }
 
@@ -176,7 +177,7 @@ public class BuddyList {
         if (pendingRequests.isEmpty()) {
             c.sendPacket(PacketCreator.requestBuddylistAdd(cidFrom, c.getPlayer().getId(), nameFrom));
         } else {
-            pendingRequests.push(new CharacterNameAndId(cidFrom, nameFrom));
+            pendingRequests.push(new CharacterIdentity(nameFrom, cidFrom));
         }
     }
 }

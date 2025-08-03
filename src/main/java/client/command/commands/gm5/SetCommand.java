@@ -25,6 +25,7 @@ package client.command.commands.gm5;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.net.ServerConstants;
 
 public class SetCommand extends Command {
@@ -33,7 +34,7 @@ public class SetCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         for (int i = 0; i < params.length; i++) {
             ServerConstants.DEBUG_VALUES[i] = Integer.parseInt(params[i]);
         }

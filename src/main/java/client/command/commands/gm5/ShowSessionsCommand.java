@@ -21,6 +21,7 @@ package client.command.commands.gm5;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.coordinator.session.SessionCoordinator;
 
 /**
@@ -32,7 +33,7 @@ public class ShowSessionsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         SessionCoordinator.getInstance().printSessionTrace(c);
     }
 }

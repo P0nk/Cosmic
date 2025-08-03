@@ -26,6 +26,7 @@ import client.Client;
 import client.inventory.Equip;
 import client.inventory.Item;
 import config.YamlConfig;
+import database.character.CharacterSaver;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
@@ -44,6 +45,12 @@ import java.util.List;
 
 
 public final class EnterMTSHandler extends AbstractPacketHandler {
+    private final CharacterSaver chrSaver;
+
+    public EnterMTSHandler(CharacterSaver chrSaver) {
+        this.chrSaver = chrSaver;
+    }
+
 
     @Override
     public void handlePacket(InPacket p, Client c) {
@@ -101,7 +108,7 @@ public final class EnterMTSHandler extends AbstractPacketHandler {
         chr.forfeitExpirableQuests();
         chr.cancelQuestExpirationTask();
 
-        chr.saveCharToDB();
+            chrSaver.save(chr);
 
         c.getChannelServer().removePlayer(chr);
         chr.getMap().removePlayer(c.getPlayer());

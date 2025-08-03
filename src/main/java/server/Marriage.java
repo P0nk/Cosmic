@@ -26,6 +26,7 @@ import client.inventory.InventoryType;
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.manipulator.InventoryManipulator;
+import database.drop.DropProvider;
 import scripting.event.EventInstanceManager;
 import scripting.event.EventManager;
 import tools.DatabaseConnection;
@@ -42,8 +43,8 @@ import java.util.List;
  * @author Ronan
  */
 public class Marriage extends EventInstanceManager {
-    public Marriage(EventManager em, String name) {
-        super(em, name);
+    public Marriage(EventManager em, String name, DropProvider dropProvider) {
+        super(em, name, dropProvider);
     }
 
     public boolean giftItemToSpouse(int cid) {
