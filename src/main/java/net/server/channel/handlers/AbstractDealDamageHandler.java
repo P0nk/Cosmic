@@ -29,6 +29,7 @@ import client.SkillFactory;
 import client.autoban.AutobanFactory;
 import client.status.MonsterStatus;
 import client.status.MonsterStatusEffect;
+import com.mysql.cj.CacheAdapterFactory;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.ItemId;
@@ -110,6 +111,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -874,11 +877,18 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     Monster mob = chr.getMap().getMonsterByOid(oid);
                     Point mobPos = mob.getPosition();
                     Point chrPos = chr.getPosition();
-                    float damage_mult = (float)Math.max(Math.abs(chrPos.getX() - mobPos.getX())/572, 0.25) * 2;
+                    double damage_mult = Math.max((double) Math.abs((int) (chrPos.getX() - mobPos.getX()) / 57) / 10, 0.25) * 2;
                     int maxBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
                     int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
                     damage = (int) ((maxBase * (snipeLevel/10 + 7)) * damage_mult);
-                    chr.sendPacket(PacketCreator.damageMonster(oid, damage, mob.getHp(), mob.getMaxHp()));
+
+                    int finalDamage = damage; // required for Timer task
+                    int delayMs = 500; // 500 milliseconds delay
+
+                    TimerManager.getInstance().schedule(() -> {
+                        chr.getMap().broadcastMessage(PacketCreator.damageMonster(oid, finalDamage, mob.getHp(), mob.getMaxHp()), mobPos);
+                    }, delay);
+//                    chr.sendPacket(PacketCreator.damageMonster(oid, finalDamage, mob.getHp(), mob.getMaxHp()));
 
                     System.out.println("Char x: " + chrPos.x + "| Mob x: " + mobPos.x + "| maxBase: " + maxBase + "| damage: " + damage + "| delay: " + delay);
                     hitDmgMax = (int) (((maxBase * 10)) * 2);
