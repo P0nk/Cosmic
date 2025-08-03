@@ -1276,16 +1276,16 @@ public class MapleMap {
      }
 
     public boolean damageMonster(final Character chr, final Monster monster, final long damage, short delay) {
-//        if (monster.getId() == MobId.ZAKUM_1) {
-//            for (MapObject object : chr.getMap().getMapObjects()) {
-//                Monster mons = chr.getMap().getMonsterByOid(object.getObjectId());
-//                if (mons != null) {
-//                    if (mons.getId() >= MobId.ZAKUM_ARM_1 && mons.getId() <= MobId.ZAKUM_ARM_8) {
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
+        if (monster.getId() == MobId.ZAKUM_1) {
+            for (MapObject object : chr.getMap().getMapObjects()) {
+                Monster mons = chr.getMap().getMonsterByOid(object.getObjectId());
+                if (mons != null) {
+                    if (mons.getId() >= MobId.ZAKUM_ARM_1 && mons.getId() <= MobId.ZAKUM_ARM_8) {
+                        return true;
+                    }
+                }
+            }
+        }
         if (!monster.isAlive()) {
             return false;
         }
@@ -1319,13 +1319,6 @@ public class MapleMap {
             }
         }
         // === DPS Dummy Feature End ===
-        // === DPS tracker for bosses ===
-
-        int mapId = monster.getMap().mapid;
-        if (chr.DAMAGE_TRACKED_MAPS.contains(mapId)) {
-            chr.addDamageDealt(damage);
-        }
-        // =============================
 
         selfDestruction selfDestr = monster.getStats().selfDestruction();
         if (selfDestr != null && selfDestr.getHp() > -1) {// should work ;p
