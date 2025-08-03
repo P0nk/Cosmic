@@ -543,12 +543,13 @@ public class Client extends ChannelInboundHandlerAdapter {
                 try (PreparedStatement ps = con.prepareStatement("INSERT INTO macbans (mac, aid) VALUES (?, ?)")) {
                     for (String mac : macs) {
                         boolean matched = false;
-                        for (String filter : filtered) {
+                        for (String filter : filtered) { // if it is already in mac filter table
                             if (mac.matches(filter)) {
                                 matched = true;
                                 break;
                             }
                         }
+                        if (mac.equals("00-00-00-00-00-00")) continue;
                         if (!matched) {
                             ps.setString(1, mac);
                             ps.setString(2, String.valueOf(getAccID()));
