@@ -160,6 +160,8 @@ import client.command.commands.gm4.ForceVacCommand;
 import client.command.commands.gm4.HorntailCommand;
 import client.command.commands.gm4.ItemVacCommand;
 import client.command.commands.gm4.MesoRateCommand;
+import client.command.commands.gm4.MobRateCommand;
+import client.command.commands.gm4.MobpointRateCommand;
 import client.command.commands.gm4.PapCommand;
 import client.command.commands.gm4.PianusCommand;
 import client.command.commands.gm4.PinkbeanCommand;
@@ -507,6 +509,8 @@ public class CommandsExecutor {
         addCommand("questrate", 4, QuestRateCommand.class);
         addCommand("travelrate", 4, TravelRateCommand.class);
         addCommand("fishrate", 4, FishingRateCommand.class);
+        addCommand("mobrate", 4, MobRateCommand.class);
+        addCommand("mobpoint", 4, MobpointRateCommand.class);
         addCommand("itemvac", 4, ItemVacCommand.class);
         addCommand("forcevac", 4, ForceVacCommand.class);
         addCommand("zakum", 4, ZakumCommand.class);

@@ -7,6 +7,8 @@ public class WorldConfig {
     public String why_am_i_recommended = "";
     public int channels = 1;
     public int exp_rate = 1;
+    public float mob_rate = 1;
+    public int max_mob_per_spawnpoint = 1;
     public int meso_rate = 1;
     public int drop_rate = 1;
     public int boss_drop_rate = 1;
