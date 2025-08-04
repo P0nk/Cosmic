@@ -151,7 +151,6 @@ import server.partyquest.PartyQuest;
 import server.quest.Quest;
 import server.ItemBuybackManager;
 import server.ItemBuybackManager.BuybackEntry;
-import server.inventory.OrePouchManager;
 
 import tools.DatabaseConnection;
 import tools.LongTool;
@@ -11439,6 +11438,10 @@ public class Character extends AbstractCharacterObject {
     /** For commands or NPCs to display how much damage this player has dealt */
     public long getTotalDamageDealt() {
         return totalDamageDealt;
+    }
+
+    public void setTotalDamageDealt(int damage) {
+        totalDamageDealt = 0;
     }
 
 }
