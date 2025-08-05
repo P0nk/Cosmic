@@ -1289,7 +1289,7 @@ public class MapleMap {
         if (!monster.isAlive()) {
             return false;
         }
-
+        long monsterRemainingHp = monster.getHp();
         boolean killed = monster.damage(chr, damage, false);
         // === DPS Dummy Feature Start ===
         if (monster.getId() == 9001007) { // Replace with your custom dummy mob ID
@@ -1323,7 +1323,11 @@ public class MapleMap {
 
         int mapId = monster.getMap().mapid;
         if (chr.DAMAGE_TRACKED_MAPS.contains(mapId)) {
-            chr.addDamageDealt(damage);
+            if (killed) {
+                chr.addDamageDealt(monsterRemainingHp);
+            } else {
+                chr.addDamageDealt(damage);
+            }
         }
         // =============================
 

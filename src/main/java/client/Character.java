@@ -151,7 +151,6 @@ import server.partyquest.PartyQuest;
 import server.quest.Quest;
 import server.ItemBuybackManager;
 import server.ItemBuybackManager.BuybackEntry;
-import server.inventory.OrePouchManager;
 
 import tools.DatabaseConnection;
 import tools.LongTool;
@@ -365,6 +364,12 @@ public class Character extends AbstractCharacterObject {
     private long loginTime;
     private boolean chasing = false;
     private boolean autopotEnabled = true; // default to true for backward compatibility
+    // Damage tracker for boss maps
+    private long totalDamageDealt = 0L;
+    public static final Set<Integer> DAMAGE_TRACKED_MAPS = new HashSet<>(Arrays.asList(
+            280030000 // Zakum Altar
+    ));
+
 
 
     private Character() {
@@ -11424,6 +11429,19 @@ public class Character extends AbstractCharacterObject {
 
     public void setAutopotEnabled(boolean enabled) {
         this.autopotEnabled = enabled;
+    }
+
+    public void addDamageDealt(long dmg) {
+        this.totalDamageDealt += dmg;
+    }
+
+    /** For commands or NPCs to display how much damage this player has dealt */
+    public long getTotalDamageDealt() {
+        return totalDamageDealt;
+    }
+
+    public void setTotalDamageDealt(int damage) {
+        totalDamageDealt = 0;
     }
 
 }
