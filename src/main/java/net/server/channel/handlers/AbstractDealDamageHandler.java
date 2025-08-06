@@ -877,7 +877,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     Monster mob = chr.getMap().getMonsterByOid(oid);
                     Point mobPos = mob.getPosition();
                     Point chrPos = chr.getPosition();
-                    double damage_mult = Math.max((double) Math.abs((int) (chrPos.getX() - mobPos.getX()) / 57) / 10, 0.25) * 2;
+                    double damage_mult = Math.max(Math.abs((chrPos.getX() - mobPos.getX()) / 57) / 10, 0.25) * 2;
                     int maxBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
                     int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
                     damage = (int) ((maxBase * (snipeLevel/10 + 7)) * damage_mult);
@@ -890,7 +890,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     }, delay);
 //                    chr.sendPacket(PacketCreator.damageMonster(oid, finalDamage, mob.getHp(), mob.getMaxHp()));
 
-                    System.out.println("Char x: " + chrPos.x + "| Mob x: " + mobPos.x + "| maxBase: " + maxBase + "| damage: " + damage + "| delay: " + delay);
+//                    System.out.println("Char x: " + chrPos.x + "| Mob x: " + mobPos.x + "| maxBase: " + maxBase + "| damage: " + damage + "| delay: " + delay);
                     hitDmgMax = (int) (((maxBase * 10)) * 2);
                 } else if (ret.skill == Beginner.BAMBOO_RAIN || ret.skill == Noblesse.BAMBOO_RAIN || ret.skill == Evan.BAMBOO_THRUST || ret.skill == Legend.BAMBOO_THRUST) {
                     hitDmgMax = 82569000; // 30% of Max HP of strongest Dojo boss
