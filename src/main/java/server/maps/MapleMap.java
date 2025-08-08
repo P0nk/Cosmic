@@ -67,6 +67,7 @@ import server.life.MonsterListener;
 import server.life.NPC;
 import server.life.PlayerNPC;
 import server.life.SpawnPoint;
+import server.loot.FoodDropper;
 import server.partyquest.CarnivalFactory;
 import server.partyquest.CarnivalFactory.MCSkill;
 import server.partyquest.GuardianSpawnPoint;
@@ -1365,6 +1366,15 @@ public class MapleMap {
 //               int meso_bounty = Math.min(Math.max(500,meso_normal),4000);
 //                chr.gainMeso(meso_bounty);}
             chr.gainMeso((int) (meso_normal * Variance),true,false,false);
+            FoodDropper.dropForMonster(
+                    chr.getMap(),   // MapleMap
+                    monster,        // the dead Monster
+                    chr,      // Character owner
+                    monster.getPosition(),
+                    1,              // rolls per kill (change to 2–3 if you like)
+                    (byte)(chr.getParty() != null ? 1 : 0),
+                    false
+            );
         }
         return true;
     }
