@@ -21,7 +21,7 @@ public class TestMobHpCommand extends Command {
         for (int i = 0; i < targets.size(); i++) {
             Monster mob = (Monster) targets.get(i);
             Packet packet = PacketCreator.showMonsterHP(mob.getObjectId(), 1);
-            System.out.println(packet);
+            System.out.println(mob.getObjectId());
             mob.broadcastMobHpBar(player);
             player.sendPacket(packet);
         }

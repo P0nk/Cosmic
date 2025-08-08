@@ -11441,7 +11441,7 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void setTotalDamageDealt(int damage) {
-        totalDamageDealt = 0;
+        totalDamageDealt = damage;
     }
 
 }
