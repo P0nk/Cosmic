@@ -68,11 +68,11 @@ function action(mode, type, selection) {
             cm.getClient().changeChannel(targetChan);
             cm.sleep(3000);
             try {
-                for (var i = 0; i < 7; i++) {   // poll for a while until the player reconnects
+                for (var i = 0; i < 15; i++) {   // poll for a while until the player reconnects
                     if (cm.getPlayer().isLoggedinWorld()) {
                       break;
                     }
-                    Thread.sleep(1777);
+                    Thread.sleep(777);
                 }
             } catch (Error) {
             }
@@ -83,18 +83,19 @@ function action(mode, type, selection) {
                                + " at "
                                + targetChr.getMap().getMapName()
                                + ".");
-            cm.warp(targetMap);
+            cm.getTragetMap(targetChr.getName());
 //            action(1,0,selection)
             // after this your client will reconnect; you can then re-open the NPC if needed
         } else {
           // same channel: just warp straight there
           var targetMap  = targetChr.getMap().getId();
+          console.log(targetChr.getName())
           cm.getPlayer().dropMessage("Warping you to "
                    + targetChr.getName()
                    + " at "
                    + targetChr.getMap().getMapName()
                    + ".");
-          cm.warp(targetMap);
+          cm.getTragetMap(targetChr.getName());
         }
         cm.dispose();
     }

@@ -1646,4 +1646,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         }
     }
 
+    public void getTragetMap(String targetName) {
+        Character victim = c.getWorldServer().getPlayerStorage().getCharacterByName(targetName);
+        MapleMap map = victim.getMap();
+        getPlayer().forceChangeMap(map, map.findClosestPortal(victim.getPosition()));
+    }
+
 }
