@@ -2,6 +2,8 @@ package server.loot;
 
 import java.awt.Point;
 import java.util.*;
+
+import config.YamlConfig;
 import server.maps.MapleMap;
 import server.maps.MapObject;
 import server.life.Monster;
@@ -91,7 +93,8 @@ public final class FoodDropper {
             int itemId = items[RNG.nextInt(items.length)];
             Item item = new Item(itemId, (short)0, (short)1);
             Random rng = new Random();
-            int dropchance = rng.nextInt(1_000_000) + 1; // 1 to 1,000,000 inclusive
+            int dropchance = (rng.nextInt(1_000_000) + 1) * YamlConfig.config.worlds.get(0).drop_rate; // 1 to 1,000,000 inclusive
+//            System.out.println(dropchance);
             if (dropchance <= 100) {
                 map.spawnItemDrop((MapObject) mob, owner, item, seedPos, dropType, playerDrop);
             }
