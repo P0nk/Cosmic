@@ -74,6 +74,7 @@ public final class NPCTalkHandler extends AbstractPacketHandler {
                     boolean hasNpcScript = NPCScriptManager.getInstance().start(c, npc.getId(), oid, null);
                     if (!hasNpcScript) {
                         if (!npc.hasShop()) {
+                            NPCScriptManager.getInstance().start(c, npc.getId(), "unidentifiedNpc", null);
                             log.warn("NPC {} ({}) is not coded", npc.getName(), npc.getId());
                             return;
                         } else if (c.getPlayer().getShop() != null) {

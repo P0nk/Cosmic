@@ -138,8 +138,10 @@ function changedMap(eim, player, mapid) {
             eim.dropMessage(5, "[Expedition] Either the leader has quit the expedition or there is no longer the minimum number of members required to continue it.");
             end(eim);
         } else {
-            eim.dropMessage(5, "[Expedition] " + player.getName() + " has left the instance.");
-            eim.unregisterPlayer(player);
+            if (!player.isGM()) {
+                eim.dropMessage(5, "[Expedition] " + player.getName() + " has left the instance.");
+                eim.unregisterPlayer(player);
+            }
         }
     }
 }
