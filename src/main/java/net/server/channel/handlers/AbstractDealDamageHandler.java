@@ -980,9 +980,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             }
 
             // required because BoT doesnt damage mobs from client
-            if (ret.skill == ChiefBandit.BAND_OF_THIEVES) {
-                map.damageMonster(chr, monster, total, tgt.delay);
-            }
+//            if (ret.skill == ChiefBandit.BAND_OF_THIEVES) {
+//                map.damageMonster(chr, monster, total, tgt.delay);
+//            }
             // Print out to check
 //            System.out.println("MOB: " + mobId + "; Total Damage: " + total + "; Overflow: " + (int) total + "; toDamage: " +
 //                    toDamage + "; numTimeExceed: " + numTimeExceed + "; remainingDamage: " + remainingDamage);
