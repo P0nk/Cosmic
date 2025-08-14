@@ -978,6 +978,11 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             if (total > Integer.MAX_VALUE) {
                 map.damageMonster(chr, monster, toDamage, tgt.delay); // deal the remainder of damage after Integer.MAX_VALUE
             }
+
+            // required because BoT doesnt damage mobs from client
+            if (ret.skill == ChiefBandit.BAND_OF_THIEVES) {
+                map.damageMonster(chr, monster, total, tgt.delay);
+            }
             // Print out to check
 //            System.out.println("MOB: " + mobId + "; Total Damage: " + total + "; Overflow: " + (int) total + "; toDamage: " +
 //                    toDamage + "; numTimeExceed: " + numTimeExceed + "; remainingDamage: " + remainingDamage);
