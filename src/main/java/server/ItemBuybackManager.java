@@ -71,7 +71,7 @@ public class ItemBuybackManager {
             buybacks.add(0, new BuybackEntry(itemCopy, price, quantity, expiry));
 
             // Optional: Log buyback action
-            log.info("Buyback added: {} | itemId={} qty={} price={} meso", chr.getName(), itemCopy.getItemId(), quantity, price);
+            //log.info("Buyback added: {} | itemId={} qty={} price={} meso", chr.getName(), itemCopy.getItemId(), quantity, price);
 
             // Trim if exceeding size
             if (buybacks.size() > MAX_BUYBACK_ITEMS) {
