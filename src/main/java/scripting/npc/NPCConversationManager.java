@@ -1211,6 +1211,24 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         this.getPlayer().forceUpdateItem(newItem);
     }
 
+    public static double curvedScale(int hands) {
+//        Used for scaling rebirth cost
+//        0 → 100,000
+//        1 → 197,128
+//        2 → 531,813
+//        3 → 1,696,096
+//        4 → 6,123,898
+//        5 → 24,459,082
+//        6 → 106,478,473
+//        7 → 500,000,000
+        double start = 100_000.0;
+        double end   = 500_000_000.0;
+        double p     = 1.3;                // tweak this for more/less curve
+        double t     = hands / 7.0;
+        double r     = end / start;        // 5000
+        return start * Math.pow(r, Math.pow(t, p));
+    }
+
     public void rebirthItem(short ItemSlot, short hands) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         Equip selectedItem = (Equip) eqpInv.getItem(ItemSlot);
@@ -1266,7 +1284,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             }
         } else { // if item is not weapon (armours and accessories)
 
-            double carryOver = 0.25; //Increment -- 25% of total stats
+            double carryOver = (hands >= 3) ? 0.2: 0.25; //Increment -- 25% of total stats
 
             addStr = (short) (selectedItem.getStr() * carryOver);
             addDex = (short) (selectedItem.getDex() * carryOver);
