@@ -455,105 +455,76 @@ function format(n) {
     return cm.numberWithCommas(n) + " mesos";
 }
 
-function getTotals(uptoLevel, hands) {
-    /*
-    Function to handle the materials to refund
-    Will loop through the levels and  and decide the total materials to refund for that rebrith
-    */
-  let totalFee = 0;
-  const totalMats = {};    // { materialId: totalAmt, … }
-  if (0 <= hands <= 3) { // able to configure to hand different upgradeConfigRb0-3 if needed here
-    upgradeConfig = upgradeConfigRb0
-  }
+function getTotalsForItem(item) {
+    const hands = item.getHands();          // how many rebirths completed (i.e., which hand we're on)
+    const lvl   = item.getItemLevel();      // 1..5 (5 means rebirth-ready)
+    const matIds = Object.values(materials);
 
-  // loop from 1 → uptoLevel
-  for (let lvl = 1; lvl <= uptoLevel; lvl++) {
-    const step = upgradeConfig[lvl-1];
-    if (!step) continue;   // in case some levels are missing
+    let totalFee = 0;
+    const totalMats = {}; // { [matId]: qty }
 
-    // add the fee
-    totalFee += step.fee;
+    // Iterate hands 0..hands (inclusive). If h < hands, that hand is fully completed (levels 1..4).
+    // If h == hands, only levels 1..(lvl-1) were consumed so far.
+    for (let h = 0; h <= hands; h++) {
+        const matId = matIds[h];
+        if (matId == null) continue; // in case there are fewer mat tiers than hands
 
-    // accumulate each material
-    step.mats.forEach(({ id, amt }) => {
-      totalMats[id] = (totalMats[id] || 0) + amt;
-    });
-  }
+        const maxLevelOnThisHand = (h < hands) ? 4 : (lvl - 1);
+        for (let L = 1; L <= maxLevelOnThisHand; L++) {
+            const amt = AMOUNTS[L - 1];
+            totalMats[matId] = (totalMats[matId] || 0) + amt;
+            totalFee += FEES[L - 1];
+        }
+    }
 
-  return { totalFee, totalMats };
+    return { totalFee, totalMats };
 }
 
 function salvageSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
     if (!selectedItem) {
         cm.sendOk("Invalid selection.");
-        return cm.dispose();
+    return cm.dispose();
     }
-    // nothing to salvage if level 1 and hands = 0
+
+    // nothing to salvage if fresh: level 1 on first hand
     if (selectedItem.getItemLevel() === 1 && selectedItem.getHands() === 0) {
         cm.sendOk("Clean item selected, nothing to salvage.");
-        return cm.dispose();
+    return cm.dispose();
     }
 
-    const lvl        = selectedItem.getItemLevel();
-    const hands      = selectedItem.getHands();
-    const { totalFee, totalMats } = getTotals(lvl);
+    const { totalFee, totalMats } = getTotalsForItem(selectedItem);
 
-    // 1) Initialize with guaranteed returns per hand
-    const matsToReturn = {};
-    matsToReturn[zakDiamond] = 4 * hands;
-    matsToReturn[hTegg]      = 4 * hands;
+    // 20% mesos refund of the fees actually paid to reach the current state
+    const refundMesos = Math.floor(totalFee * 0.2);
 
-    // 2) Merge in all mats used up through this level
-    Object.keys(totalMats).forEach(id => {
-        const used = totalMats[id] || 0;
-        matsToReturn[id] = (matsToReturn[id] || 0) + used;
+    // Build confirmation message
+    let msg = "Salvage will refund:\r\n";
+    msg += "- " + cm.numberWithCommas(refundMesos) + " mesos\r\n";
+    Object.entries(totalMats).forEach(([id, amt]) => {
+    msg += "- " + amt + "x #v" + id + "#\r\n";
     });
-
-    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
-    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
-
-    // 4) Build confirmation message
-    let msg = "We will refund you " + format(refundMesos) + "\r\n";
-    Object.entries(matsToReturn).forEach(([id, amt]) => {
-        msg += amt + "x #v" + id + "#\r\n";
-    });
-    if (hands > 0) {
-        msg += hands + "x #v" + rockOfTime + "#\r\n";
-    }
-    msg += "Are you sure you want to salvage this equip?";
+    msg += "\r\nAre you sure you want to salvage this equip?";
 
     cm.sendYesNo(msg);
 }
 
 function salvageItem() {
-    var lvl        = selectedItem.getItemLevel();
-    var hands      = selectedItem.getHands();
-    var { totalFee, totalMats } = getTotals(lvl);
+    const { totalFee, totalMats } = getTotalsForItem(selectedItem);
+    const refundMesos = Math.floor(totalFee * 0.2);
 
-    // 1) Initialize with guaranteed returns per hand
-    var matsToReturn = {};
-    matsToReturn[zakDiamond] = 4 * hands;
-    matsToReturn[hTegg]      = 4 * hands;
+    // Give mesos
+    cm.gainMeso(refundMesos);
 
-    // 2) Merge in all mats used up through this level
-    Object.keys(totalMats).forEach(id => {
-        const used = totalMats[id] || 0;
-        matsToReturn[id] = (matsToReturn[id] || 0) + used;
+    // Give materials back
+    Object.entries(totalMats).forEach(([id, amt]) => {
+        cm.gainItem(parseInt(id, 10), amt);
     });
 
-    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
-    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
-
-    // 4) Build confirmation message
-    var returnstr = "I have salvaged your items, please check."
-    cm.gainMeso(refundMesos)
-    Object.entries(matsToReturn).forEach(([id, amt]) => {
-        cm.gainItem(parseInt(id), amt);
-    });
-    cm.gainItem(rockOfTime, hands);
-    cm.gainCash(350000 * hands * 0.6);
+    // Remove the item
     cm.removeItemNPC(selectedItem.getPosition());
+
+    cm.sendOk("Your item has been salvaged. Materials and mesos have been returned.");
     return cm.dispose();
 }
 

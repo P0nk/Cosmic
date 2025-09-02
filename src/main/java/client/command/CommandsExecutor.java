@@ -151,6 +151,7 @@ import client.command.commands.gm3.MonitorCommand;
 import client.command.commands.gm3.MonitorsCommand;
 import client.command.commands.gm3.MusicCommand;
 import client.command.commands.gm3.MuteMapCommand;
+import client.command.commands.gm3.NewSubCommand;
 import client.command.commands.gm3.NightCommand;
 import client.command.commands.gm3.NoticeCommand;
 import client.command.commands.gm3.NpcCommand;
@@ -566,6 +567,7 @@ public class CommandsExecutor {
         addCommand("ban2", 3, Ban2Command.class);
         addCommand("getmaplewp", 3, GetMapleWp.class);
         addCommand("chatban", 3, WorldChatBanCommand.class);
+        addCommand("newsub", 3, NewSubCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
