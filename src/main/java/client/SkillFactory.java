@@ -115,7 +115,6 @@ public class SkillFactory {
     }
 
     private static Skill loadFromData(int id, Data data) {
-        System.out.println("SKILLID"+id);
         Skill ret = new Skill(id);
         boolean isBuff = false;
         int skillType = DataTool.getInt("skillType", data, -1);
