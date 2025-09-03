@@ -18,8 +18,8 @@ public class ItemBuybackManager {
     private final ReentrantLock lock = new ReentrantLock();
 
     // Configuration constants
-    private static final int MAX_BUYBACK_ITEMS = 60;
-    private static final long BUYBACK_EXPIRY = 60 * 60 * 1000; // 1 hour
+    private static final int MAX_BUYBACK_ITEMS = 120;
+    private static final long BUYBACK_EXPIRY = 60 * 60 * 1000 * 4; // 4 hour
     // private static final int MAX_TOTAL_BUYBACK_VALUE = 500_000_000; // Optional feature
 
     private Timer cleanupTimer;
