@@ -171,7 +171,8 @@ function weaponSelection(selection) {
         if (!item) continue;
         var name = Packages.server.ItemInformationProvider
                    .getInstance().getName(item.getItemId());
-        if (cm.checkBlacklistedItem(slot) & selection === 2) { // Make sures any item they planned to salvage cant level up on their own
+//        console.log("Hands: " + item.getHands() + "Level: " + item.getItemLevel())
+        if ((cm.checkBlacklistedItem(slot) & selection === 2) || (item.getHands() >= 5 & item.getItemLevel() == 5)) { // Make sures any item they planned to salvage cant level up on their own
             continue;
         }
         lines.push(
@@ -208,6 +209,7 @@ function preview(slot, upgradeNormal) {
     var lvl   = selectedItem.getItemLevel();
     var hands = selectedItem.getHands();
     var hiddenlvl = selectedItem.getLevel();
+    var rebirthNxCost = curvedScale(hands)
 
     // Checks before previewing
     if (!selectedItem) {
@@ -215,21 +217,21 @@ function preview(slot, upgradeNormal) {
         return cm.dispose();
     }
     // Rebirth condition: level = 5 but and not rebirthed 3 times
-    if (lvl == 5 && hands <= 2) {
+    if (lvl == 5 && hands <= 5) {
         isRebirth = true;
         return cm.sendYesNo(
             "Your item has reached its max upgrades. I can reset it with a base stat boost.\r\n"
-          + "Cost: 1x#v" + matValues[hands+1] + "# + 350k NX. Proceed?"
+          + "Cost: 1x#v" + matValues[hands+1] + "# + " + Math.trunc(rebirthNxCost/1000) + "k NX. Proceed?"
         );
     }
     // checks if hiddenlvl is correct ( if rb0 item lvl = 1, hiddenlvl = 0, if rb 3 item lvl = 2, hiddenlvl = 13
 //    console.log(hiddenlvl)
 //    console.log(lvl)
 //    console.log(hands*4 + lvl - 1)
-    if ((hands*4 + lvl - 1) != hiddenlvl) {
-        cm.sendOk("Looks like you have an antique equipment... Let me help you destroy it... MUAHAHAHA");
-        return cm.dispose();
-    }
+//    if ((hands*4 + lvl - 1) != hiddenlvl) {
+//        cm.sendOk("Looks like you have an antique equipment... Let me help you destroy it... MUAHAHAHA");
+//        return cm.dispose();
+//    }
 
     // reworked how materials are selected
     var mat  = matValues[hands];
@@ -256,7 +258,7 @@ function preview(slot, upgradeNormal) {
     previewFee = (upgradeNormal ? ii/2 * 100000 : ii/2 * 1000000) // cost of better rol is 10x more
 
     // Regular upgrade: level 1–4, hands ≤=3
-    if (lvl >= 1 && lvl <= 4 && hands <= 3) {
+    if (lvl >= 1 && lvl <= 4 && hands <= 5) {
         if (cm.getMeso() < previewFee + FEES[lvl-1]) {
             if (cm.haveItem(3020002, 1)) {
                 cm.gainItem(3020002, -1)
@@ -363,54 +365,74 @@ function calcBetterNewStats(item, itemId) {
 }
 
 function doUpgrade(newStats) {
-    var lvl  = selectedItem.getItemLevel();
+    var lvl   = selectedItem.getItemLevel();
     var hands = selectedItem.getHands();
-    var hiddenlvl = selectedItem.getLevel();
-    if (lvl == 5) {
-//        console.log("Rebirth")
-        return doRebirth();
-    }
-//    console.log(selectedItem.getHands())
-    var mat  = matValues[hands];
-    var amt  = AMOUNTS[lvl-1];
 
-    // Check materials
+    // Rebirth handoff
+    if (lvl == 5) return doRebirth();
+
+    var mat = matValues[hands];
+    var amt = AMOUNTS[lvl - 1];
+
     if (!cm.haveItem(mat, amt)) {
         cm.sendOk("You lack " + amt + "x#v" + mat + "#.");
         return cm.dispose();
     }
 
-    // Deduct cost & materials
-    cm.gainMeso(-FEES[lvl-1]);
+    // Pay cost
+    cm.gainMeso(-FEES[lvl - 1]);
     cm.gainItem(mat, -amt);
 
-    // Success roll
+    // Roll outcomes
     var successRate = 1 - 0.1 * (lvl - 1);
     var boomChance  = (lvl === 4 ? 0.005 : 0);
     var roll        = Math.random();
     var success     = (roll < successRate);
     var boom        = (!success && Math.random() < boomChance);
 
+    // Where to loop back: normal -> 19, premium -> 29
+    var loopStatus = upgradeNormal ? 19 : 29;
+
     if (success) {
         applyNewStats(newStats);
-        cm.sendOk("By the blessing from Carbo, your item has been upgraded successfully!");
         cm.scrollPass(cm.getPlayer().getId());
-    } else if (boom) {
-        if (cm.haveItem(boomProtectScroll, 1)) {
-            cm.sendOk("BOOM SHAKA LA.. eh? what? AL AKAHS MOOB?!?! Huh? Did time rewind? Weird... What was I doing...");
-            cm.gainItem(boomProtectScroll, -1)
-        } else {
-            cm.removeItemNPC(selectedItem.getPosition());
-            cm.sendOk("BOOM SHAKA LAKA! BOOM BOOM BOOM~~ Your item has exploded into fireworks by Merogie!");
-            cm.scrollBoom(cm.getPlayer().getId());
+        cm.getPlayer().dropMessage(5, "Upgrade succeeded!");
+        // loop back to preview without changing the selected slot
+        if (hands == 5 && lvl == 4) {
+            return cm.dispose
         }
-    } else {
-        cm.sendOk("Upgrade failed. Better luck next time.");
-        cm.scrollFail(cm.getPlayer().getId());
+        reroll = true;          // <— keep current slot
+        status = loopStatus;
+        action(1, 0, 0);
+        return;
     }
 
-    return cm.dispose();
+    if (boom) {
+        if (cm.haveItem(boomProtectScroll, 1)) {
+            cm.gainItem(boomProtectScroll, -1);
+            cm.getPlayer().dropMessage(5, "Your item would have boomed, but Protection saved it!");
+            // loop back again
+            reroll = true;
+            status = loopStatus;
+            action(1, 0, 0);
+            return;
+        } else {
+            cm.removeItemNPC(selectedItem.getPosition());
+            cm.scrollBoom(cm.getPlayer().getId());
+            cm.sendOk("BOOM! Your item exploded.");
+            return cm.dispose();
+        }
+    }
+
+    // Failure (no boom)
+    cm.scrollFail(cm.getPlayer().getId());
+    cm.getPlayer().dropMessage(5, "Upgrade failed.");
+    reroll = true;
+    status = loopStatus;
+    action(1, 0, 0);
+    return;
 }
+
 
 function applyNewStats(newStats) {
     var s = newStats;
@@ -435,16 +457,16 @@ function doRebirth() {
     }
     var hands = selectedItem.getHands();
     var rebrithMat = matValues[hands+1]
-    var rebirthNxCost = cm.curvedScale(hands)
+    var rebirthNxCost = Math.trunc(curvedScale(hands))
     // Check materials
     if (!cm.haveItem(rebrithMat, 1)) {
         cm.sendOk("You need 1x#v" + rebrithMat + "# to rebirth.");
-    } else if (cm.getCashShop().getCash(1) < 350000) {
-        cm.sendOk("You need 350k NX to rebirth your item.");
+    } else if (cm.getCashShop().getCash(1) < rebirthNxCost) {
+        cm.sendOk("You need " + Math.trunc(rebirthNxCost/1000) + "k NX to rebirth your item.");
     } else {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
         cm.gainItem(rebrithMat, -1);
-        cm.gainCash(-350000);
+        cm.gainCash(-rebirthNxCost);
         cm.scrollPass(cm.getPlayer().getId());
         cm.sendOk("Your item has been reborn. Go get stronger!");
     }
@@ -455,76 +477,105 @@ function format(n) {
     return cm.numberWithCommas(n) + " mesos";
 }
 
-function getTotalsForItem(item) {
-    const hands = item.getHands();          // how many rebirths completed (i.e., which hand we're on)
-    const lvl   = item.getItemLevel();      // 1..5 (5 means rebirth-ready)
-    const matIds = Object.values(materials);
+function getTotals(uptoLevel, hands) {
+    /*
+    Function to handle the materials to refund
+    Will loop through the levels and  and decide the total materials to refund for that rebrith
+    */
+  let totalFee = 0;
+  const totalMats = {};    // { materialId: totalAmt, … }
+//  if (0 <= hands <= 3) { // able to configure to hand different upgradeConfigRb0-3 if needed here
+//    upgradeConfig = upgradeConfigRb0
+//  }
 
-    let totalFee = 0;
-    const totalMats = {}; // { [matId]: qty }
+  // loop from 1 → uptoLevel
+  for (let lvl = 1; lvl <= uptoLevel; lvl++) {
+//    const step = upgradeConfig[lvl-1];
+//    if (!step) continue;   // in case some levels are missing
 
-    // Iterate hands 0..hands (inclusive). If h < hands, that hand is fully completed (levels 1..4).
-    // If h == hands, only levels 1..(lvl-1) were consumed so far.
-    for (let h = 0; h <= hands; h++) {
-        const matId = matIds[h];
-        if (matId == null) continue; // in case there are fewer mat tiers than hands
+    // add the fee
+    totalFee += step.fee;
 
-        const maxLevelOnThisHand = (h < hands) ? 4 : (lvl - 1);
-        for (let L = 1; L <= maxLevelOnThisHand; L++) {
-            const amt = AMOUNTS[L - 1];
-            totalMats[matId] = (totalMats[matId] || 0) + amt;
-            totalFee += FEES[L - 1];
-        }
-    }
+    // accumulate each material
+    step.mats.forEach(({ id, amt }) => {
+      totalMats[id] = (totalMats[id] || 0) + amt;
+    });
+  }
 
-    return { totalFee, totalMats };
+  return { totalFee, totalMats };
 }
 
 function salvageSelection(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
     if (!selectedItem) {
         cm.sendOk("Invalid selection.");
-    return cm.dispose();
+        return cm.dispose();
     }
-
-    // nothing to salvage if fresh: level 1 on first hand
+    // nothing to salvage if level 1 and hands = 0
     if (selectedItem.getItemLevel() === 1 && selectedItem.getHands() === 0) {
         cm.sendOk("Clean item selected, nothing to salvage.");
-    return cm.dispose();
+        return cm.dispose();
     }
 
-    const { totalFee, totalMats } = getTotalsForItem(selectedItem);
+    const lvl        = selectedItem.getItemLevel();
+    const hands      = selectedItem.getHands();
+    const { totalFee, totalMats } = getTotals(lvl);
 
-    // 20% mesos refund of the fees actually paid to reach the current state
-    const refundMesos = Math.floor(totalFee * 0.2);
+    // 1) Initialize with guaranteed returns per hand
+    const matsToReturn = {};
+    matsToReturn[zakDiamond] = 4 * hands;
+    matsToReturn[hTegg]      = 4 * hands;
 
-    // Build confirmation message
-    let msg = "Salvage will refund:\r\n";
-    msg += "- " + cm.numberWithCommas(refundMesos) + " mesos\r\n";
-    Object.entries(totalMats).forEach(([id, amt]) => {
-    msg += "- " + amt + "x #v" + id + "#\r\n";
+    // 2) Merge in all mats used up through this level
+    Object.keys(totalMats).forEach(id => {
+        const used = totalMats[id] || 0;
+        matsToReturn[id] = (matsToReturn[id] || 0) + used;
     });
-    msg += "\r\nAre you sure you want to salvage this equip?";
+
+    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
+    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
+
+    // 4) Build confirmation message
+    let msg = "We will refund you " + format(refundMesos) + "\r\n";
+    Object.entries(matsToReturn).forEach(([id, amt]) => {
+        msg += amt + "x #v" + id + "#\r\n";
+    });
+    if (hands > 0) {
+        msg += hands + "x #v" + rockOfTime + "#\r\n";
+    }
+    msg += "Are you sure you want to salvage this equip?";
 
     cm.sendYesNo(msg);
 }
 
 function salvageItem() {
-    const { totalFee, totalMats } = getTotalsForItem(selectedItem);
-    const refundMesos = Math.floor(totalFee * 0.2);
+    var lvl        = selectedItem.getItemLevel();
+    var hands      = selectedItem.getHands();
+    var { totalFee, totalMats } = getTotals(lvl);
 
-    // Give mesos
-    cm.gainMeso(refundMesos);
+    // 1) Initialize with guaranteed returns per hand
+    var matsToReturn = {};
+    matsToReturn[zakDiamond] = 4 * hands;
+    matsToReturn[hTegg]      = 4 * hands;
 
-    // Give materials back
-    Object.entries(totalMats).forEach(([id, amt]) => {
-        cm.gainItem(parseInt(id, 10), amt);
+    // 2) Merge in all mats used up through this level
+    Object.keys(totalMats).forEach(id => {
+        const used = totalMats[id] || 0;
+        matsToReturn[id] = (matsToReturn[id] || 0) + used;
     });
 
-    // Remove the item
-    cm.removeItemNPC(selectedItem.getPosition());
+    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
+    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
 
-    cm.sendOk("Your item has been salvaged. Materials and mesos have been returned.");
+    // 4) Build confirmation message
+    var returnstr = "I have salvaged your items, please check."
+    cm.gainMeso(refundMesos)
+    Object.entries(matsToReturn).forEach(([id, amt]) => {
+        cm.gainItem(parseInt(id), amt);
+    });
+    cm.gainItem(rockOfTime, hands);
+//    cm.gainCash(350000 * hands * 0.6);
+    cm.removeItemNPC(selectedItem.getPosition());
     return cm.dispose();
 }
 
@@ -569,4 +620,22 @@ function listNonZeroStats(item) {
     .filter(line => line !== null);
 
   return lines.join("\r\n");
+}
+
+function curvedScale(hands) {
+//        Used for scaling rebirth cost
+//        0 → 100,000
+//        1 → 197,128
+//        2 → 531,813
+//        3 → 1,696,096
+//        4 → 6,123,898
+//        5 → 24,459,082
+//        6 → 106,478,473
+//        7 → 500,000,000
+    var start = 100_000.0;
+    var end   = 500_000_000.0;
+    var p     = 1.3;                // tweak this for more/less curve
+    var t     = hands / 7.0;
+    var r     = end / start;        // 5000
+    return start * Math.pow(r, Math.pow(t, p));
 }
