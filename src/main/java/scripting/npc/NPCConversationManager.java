@@ -1272,15 +1272,14 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
             } else { // if rebirth is greater than 3 (Unused/for future)
                 System.out.println("Rebirth 4 and above check [in NPCConversationManager/rebirthItem");
-
-                double carryOver = 0.25;
+                double carryOver = 0.18;
 
                 addStr = (short) (selectedItem.getStr() * carryOver);
                 addDex = (short) (selectedItem.getDex() * carryOver);
                 addInt = (short) (selectedItem.getInt() * carryOver);
                 addLuk = (short) (selectedItem.getLuk() * carryOver);
-                addMatk = (short) (selectedItem.getMatk() * carryOver);
-                addWatk = (short) (selectedItem.getWatk() * carryOver);
+                addMatk = (short) (selectedItem.getMatk() * carryOver + ((double) itemReqLevel / 3));
+                addWatk = (short) (selectedItem.getWatk() * carryOver + ((double) itemReqLevel / 3));
             }
         } else { // if item is not weapon (armours and accessories)
 
