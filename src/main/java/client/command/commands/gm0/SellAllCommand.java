@@ -3,6 +3,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.inventory.Equip;
 import client.inventory.Item;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
@@ -92,6 +93,12 @@ public class SellAllCommand extends Command {
                     && !ii.isDropRestricted(item.getItemId())
                     && !item.isUntradeable()) {
                 // Check if item is protected
+                if (type == InventoryType.EQUIP) {
+                    Equip selectedItem = (Equip) inventory.getItem(item.getPosition());
+                    if ((selectedItem.getHands() > 0) || (selectedItem.getItemLevel() > 1)) {
+                        continue;
+                    }
+                }
                 if ((item.getFlag() & ItemConstants.SELLALL_PROTECTED) != ItemConstants.SELLALL_PROTECTED) {
                     itemsToSell.add(item);
                 }

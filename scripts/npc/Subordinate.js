@@ -37,6 +37,10 @@ var newStats;
 var totalUpgradeFee = 460000000;
 var totalRebirthMats = {};
 
+// Auto re-roll (premium only)
+var autoRerollPremium = false;   // one-shot flag to trigger automation
+var autoRerollTarget  = 0;       // e.g., 1.59
+
 function start() {
     status = 0;
     cm.sendNext("Hello! I'm Slimy's Subordinate! I facilitate Weapon Upgrading and Rebirths, what do you want to do today?");
@@ -81,27 +85,47 @@ function action(mode, type, selection) {
         }
         doUpgrade(newStats)
     } else if (status === 30) {
-//        preview stats with premium roll
-//        2 options given here:
-//          0: Reroll
-//          1: Upgrade!
-//          if selection == 1 : status == 30
-//          else status == 29: action(1, 0, undefined)
+        // preview stats with premium roll
+        // 0: Reroll
+        // 1: Upgrade!
+        // 2: Auto re-roll to target (new)
         if (!reroll) {
             slot = selection;
         }
-        return preview(slot, upgradeNormal)
+        return preview(slot, upgradeNormal);
+
     } else if (status === 31) {
-//        Handle weapon upgrade -- premium tier
-//        cm.dispose()
-        if (selection == 0) { // reroll
+        if (selection == 0) { // manual reroll
             status = 29;
             reroll = true;
             action(1, 0, 0);
             return;
+        } else if (selection == 1) { // upgrade now
+            return doUpgrade(newStats);
+        } else if (selection == 2) { // set target for auto re-roll
+            // Ask player for a rate between 1.40 and 1.60
+            cm.sendGetText("Enter your target rate (1.40 to 1.599), e.g. 1.59:");
+//            status = 32;
+            return;
         }
-        return doUpgrade(newStats)
+        return doUpgrade(newStats);
 
+    } else if (status === 32) {
+        // Receive target from sendGetText (premium only)
+        var txt = String(cm.getText());
+        var rate = parseFloat(txt);
+        if (isNaN(rate) || rate < 1.40 || rate > 1.599) {
+            cm.sendOk("Please enter a valid number between 1.40 and 1.599.");
+            return cm.dispose();
+        }
+        autoRerollPremium = true;
+        autoRerollTarget  = rate;
+
+        // Re-enter premium preview with automation enabled
+        reroll = true;     // keep current slot
+        status = 29;       // back into premium preview step
+        action(1, 0, 0);
+        return;
     } else if (status === 40) {
 //        Show Materials, Mesos and NX to refund if applicable
 //        Use YesNo
@@ -219,10 +243,11 @@ function preview(slot, upgradeNormal) {
     // Rebirth condition: level = 5 but and not rebirthed 3 times
     if (lvl == 5 && hands <= 5) {
         isRebirth = true;
-        return cm.sendYesNo(
+        cm.sendYesNo(
             "Your item has reached its max upgrades. I can reset it with a base stat boost.\r\n"
           + "Cost: 1x#v" + matValues[hands+1] + "# + " + Math.trunc(rebirthNxCost/1000) + "k NX. Proceed?"
         );
+        return;
     }
     // checks if hiddenlvl is correct ( if rb0 item lvl = 1, hiddenlvl = 0, if rb 3 item lvl = 2, hiddenlvl = 13
 //    console.log(hiddenlvl)
@@ -257,6 +282,74 @@ function preview(slot, upgradeNormal) {
 
     previewFee = (upgradeNormal ? ii/2 * 100000 : ii/2 * 1000000) // cost of better rol is 10x more
 
+    // ============================ For Auto roll [Huge Chunk] ==========================
+    // ===== Auto re-roll (premium only) =====
+    var autoMsg = "";
+    if (!upgradeNormal && autoRerollPremium && autoRerollTarget >= 1.40 && autoRerollTarget <= 1.60) {
+        var perAutoCost = Math.floor(previewFee * 1.2); // +20% each automated reroll
+        var iterations = 0;
+        var extraMesosSpent = 0;
+        var extraNxSpent = 0;
+
+        // Helper: get the effective multiplier used for main stats in premium
+        var currentMult = (Array.isArray(newStats.mult) && newStats.mult.length)
+                          ? Math.max.apply(null, newStats.mult)
+                          : 1.0;
+
+        // Keep trying until we meet/exceed target, or can't afford next auto reroll
+        while (currentMult < autoRerollTarget) {
+            // Check mesos for another auto reroll
+            if (cm.getMeso() < perAutoCost + FEES[lvl-1]) {
+                    if (cm.haveItem(3020002, 1)) {
+                        cm.gainItem(3020002, -1)
+                        cm.gainMeso(1000000000);
+                    } else {
+                        cm.getPlayer().dropMessage(5, "You are declared bankrupt!");
+                        break;
+                    }
+            }
+//            if (cm.getMeso() < perAutoCost) break;
+            // Optional: also ensure player still has enough to eventually pay upgrade fee (not required for preview loops)
+            // if (cm.getMeso() < perAutoCost + FEES[lvl-1]) break;
+
+            // Charge auto reroll mesos
+            cm.gainMeso(-perAutoCost);
+            extraMesosSpent += perAutoCost;
+
+            // Charge NX if multiplier mode is on (mirror normal preview behavior)
+            if (nxMultiplier) {
+                if (cm.getCashShop().getCash(1) < nxMultiplierCost) {
+                    // Not enough NX for further auto tries
+                    cm.getPlayer().dropMessage(5, "Auto re-roll stopped: not enough NX.");
+                    break;
+                }
+                cm.gainCash(-nxMultiplierCost);
+                extraNxSpent += nxMultiplierCost;
+            }
+
+            // Re-roll premium stats
+            newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier);
+            iterations++;
+            currentMult = (Array.isArray(newStats.mult) && newStats.mult.length)
+                          ? Math.max.apply(null, newStats.mult)
+                          : 1.0;
+        }
+
+        // One-shot run; disable after use
+        autoRerollPremium = false;
+
+        if (iterations > 0) {
+            autoMsg =
+                "\r\n\r\n#d[Auto Re-roll Summary]#k\r\n" +
+                "Target: x" + autoRerollTarget.toFixed(3) + "\r\n" +
+                "Attempts: " + iterations + "\r\n" +
+                "Best roll reached: x" + currentMult.toFixed(3) + (currentMult >= autoRerollTarget ? " #g(OK)#k" : " #r(Stopped)#k") + "\r\n" +
+                "Extra mesos spent: " + Math.floor(extraMesosSpent).toLocaleString() + "\r\n" +
+                (nxMultiplier ? ("Extra NX spent: " + cm.numberWithCommas(extraNxSpent) + "\r\n") : "");
+        }
+    }
+    // ======================= Auto roll end ================================
+
     // Regular upgrade: level 1–4, hands ≤=3
     if (lvl >= 1 && lvl <= 4 && hands <= 5) {
         if (cm.getMeso() < previewFee + FEES[lvl-1]) {
@@ -272,7 +365,7 @@ function preview(slot, upgradeNormal) {
         }
 
         // Deduct preview fee
-        cm.gainMeso(-previewFee);
+//        cm.gainMeso(-previewFee);
         if (nxMultiplier) {
             cm.gainCash(-nxMultiplierCost);
             cm.getPlayer().dropMessage(5, "You have used 2mil nx. You have " + cm.numberWithCommas(cm.getCashShop().getCash(1)) + "nx remaining.");
@@ -297,7 +390,12 @@ function preview(slot, upgradeNormal) {
             "Cost: " + format(FEES[lvl-1]) + " + " + amt + "x#v" + mat + "#"
         ].join("\r\n");
 
-        return cm.sendSimple(msg + warning + "\r\n#L0#Reroll preview stats#l\r\n#L1#Proceed with upgrade#l");
+        var menu = "\r\n#L0#Reroll preview stats#l\r\n#L1#Proceed with upgrade#l";
+        if (!upgradeNormal) {
+            menu += "\r\n#L2#Auto re-roll to target#l"; // premium-only option
+        }
+        return cm.sendSimple(msg + warning + autoMsg + menu);
+
     } else {
         cm.sendOk("No upgrade path configured for level " + lvl + ".");
         return cm.dispose();
@@ -369,7 +467,10 @@ function doUpgrade(newStats) {
     var hands = selectedItem.getHands();
 
     // Rebirth handoff
-    if (lvl == 5) return doRebirth();
+    if (lvl == 5) {
+        console.log('Rebirth')
+        return doRebirth();
+    }
 
     var mat = matValues[hands];
     var amt = AMOUNTS[lvl - 1];
@@ -456,16 +557,16 @@ function doRebirth() {
         return;
     }
     var hands = selectedItem.getHands();
-    var rebrithMat = matValues[hands+1]
+    var rebirthMat = matValues[hands+1]
     var rebirthNxCost = Math.trunc(curvedScale(hands))
     // Check materials
-    if (!cm.haveItem(rebrithMat, 1)) {
-        cm.sendOk("You need 1x#v" + rebrithMat + "# to rebirth.");
+    if (!cm.haveItem(rebirthMat, 1)) {
+        cm.sendOk("You need 1x#v" + rebirthMat + "# to rebirth.");
     } else if (cm.getCashShop().getCash(1) < rebirthNxCost) {
         cm.sendOk("You need " + Math.trunc(rebirthNxCost/1000) + "k NX to rebirth your item.");
     } else {
         cm.rebirthItem(selectedItem.getPosition(), selectedItem.getHands());
-        cm.gainItem(rebrithMat, -1);
+        cm.gainItem(rebirthMat, -1);
         cm.gainCash(-rebirthNxCost);
         cm.scrollPass(cm.getPlayer().getId());
         cm.sendOk("Your item has been reborn. Go get stronger!");
