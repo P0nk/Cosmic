@@ -1284,7 +1284,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             }
         } else { // if item is not weapon (armours and accessories)
 
-            double carryOver = (hands >= 3) ? 0.2: 0.25; //Increment -- 25% of total stats
+            double carryOver = (hands >= 3) ? 0.18: 0.25; //Increment -- 25% of total stats
 
             addStr = (short) (selectedItem.getStr() * carryOver);
             addDex = (short) (selectedItem.getDex() * carryOver);

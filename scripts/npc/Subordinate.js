@@ -30,9 +30,9 @@ var reroll          = false;
 var resetItem       = false;
 
 //Upgrade variables
-var selectedItem
+var selectedItem;
 var newStats;
-
+var max_rate = 1.599;
 // Salvage variables
 var totalUpgradeFee = 460000000;
 var totalRebirthMats = {};
@@ -104,7 +104,11 @@ function action(mode, type, selection) {
             return doUpgrade(newStats);
         } else if (selection == 2) { // set target for auto re-roll
             // Ask player for a rate between 1.40 and 1.60
-            cm.sendGetText("Enter your target rate (1.40 to 1.599), e.g. 1.59:");
+            if (selectedItem.getHands() >= 4 && selectedItem.getHands() <= 6) {
+                cm.sendGetText("Enter your target rate (1.40 to 1.55), e.g. 1.53:");
+            } else {
+                cm.sendGetText("Enter your target rate (1.40 to 1.599), e.g. 1.59:");
+            }
 //            status = 32;
             return;
         }
@@ -114,8 +118,8 @@ function action(mode, type, selection) {
         // Receive target from sendGetText (premium only)
         var txt = String(cm.getText());
         var rate = parseFloat(txt);
-        if (isNaN(rate) || rate < 1.40 || rate > 1.599) {
-            cm.sendOk("Please enter a valid number between 1.40 and 1.599.");
+        if (isNaN(rate) || rate < 1.40 || rate > max_rate) {
+            cm.sendOk("Please enter a valid number between 1.40 and " + max_rate + ".");
             return cm.dispose();
         }
         autoRerollPremium = true;
@@ -240,6 +244,9 @@ function preview(slot, upgradeNormal) {
         cm.sendOk("Invalid selection.");
         return cm.dispose();
     }
+    if (selectedItem.getHands() >= 4 && selectedItem.getHands() <= 6) {
+        max_rate = 1.549;
+    }
     // Rebirth condition: level = 5 but and not rebirthed 3 times
     if (lvl == 5 && hands <= 5) {
         isRebirth = true;
@@ -275,9 +282,9 @@ function preview(slot, upgradeNormal) {
 
     // Assigning the stats to preview
     if (upgradeNormal) {
-        newStats = calcNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier);
+        newStats = calcNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
     } else {
-        newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier);
+        newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
     }
 
     previewFee = (upgradeNormal ? ii/2 * 100000 : ii/2 * 1000000) // cost of better rol is 10x more
@@ -405,13 +412,13 @@ function preview(slot, upgradeNormal) {
     cm.dispose();
 }
 
-function calcNewStats(item, itemId, nxMultiplier) {
+function calcNewStats(item, itemId, nxMultiplier, max_rate) {
     // Main stats 40–60% increase, defs 10–20%
 //    if (parseInt(itemId/10000) < 130) {
     if (nxMultiplier) {
         var mm = () => 1.4 + Math.random() * 0.22;
     } else {
-        var mm = () => 1.4 + Math.random() * 0.2;
+        var mm = () => 1.4 + Math.random() * (max_rate - 1.4);
     }
 
     var dm = () => 1.1 + Math.random() * 0.1;
@@ -431,7 +438,7 @@ function calcNewStats(item, itemId, nxMultiplier) {
     };
 }
 
-function calcBetterNewStats(item, itemId) {
+function calcBetterNewStats(item, itemId, max_rate) {
     // Main stats 55–60% increase, defs 10–20%
 //    if (parseInt(itemId/10000) < 130) {
 //        var mm = 1.4 + Math.random() * 0.2;
@@ -441,7 +448,8 @@ function calcBetterNewStats(item, itemId) {
     if (nxMultiplier) {
         var mm = 1.4 + Math.random() * 0.22;
     } else {
-        var mm = 1.4 + Math.random() * 0.2;
+        console.log(max_rate)
+        var mm = 1.4 + Math.random() * (max_rate - 1.4);
     }
 //    var mm = 1.4 + Math.random() * 0.2;
 //    var dm = () => 1.1 + Math.random() * 0.1;
