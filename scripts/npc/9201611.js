@@ -375,7 +375,7 @@ function preview(slot, upgradeNormal) {
         }
 
         // Deduct preview fee
-//        cm.gainMeso(-previewFee);
+        cm.gainMeso(-previewFee);
         if (nxMultiplier) {
             cm.gainCash(-nxMultiplierCost);
             cm.getPlayer().dropMessage(5, "You have used 2mil nx. You have " + cm.numberWithCommas(cm.getCashShop().getCash(1)) + "nx remaining.");
