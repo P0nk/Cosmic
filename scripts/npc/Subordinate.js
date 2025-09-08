@@ -199,7 +199,7 @@ function weaponSelection(selection) {
         if (!item) continue;
         var name = Packages.server.ItemInformationProvider
                    .getInstance().getName(item.getItemId());
-//        console.log("Hands: " + item.getHands() + "Level: " + item.getItemLevel())
+        console.log("Hands: " + item.getHands() + "Level: " + item.getItemLevel())
         if ((cm.checkBlacklistedItem(slot) & selection === 2) || (item.getHands() >= 5 & item.getItemLevel() == 5)) { // Make sures any item they planned to salvage cant level up on their own
             continue;
         }
@@ -284,6 +284,7 @@ function preview(slot, upgradeNormal) {
     if (upgradeNormal) {
         newStats = calcNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
     } else {
+        console.log(max_rate);
         newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
     }
 
@@ -292,7 +293,7 @@ function preview(slot, upgradeNormal) {
     // ============================ For Auto roll [Huge Chunk] ==========================
     // ===== Auto re-roll (premium only) =====
     var autoMsg = "";
-    if (!upgradeNormal && autoRerollPremium && autoRerollTarget >= 1.40 && autoRerollTarget <= 1.60) {
+    if (!upgradeNormal && autoRerollPremium && autoRerollTarget >= 1.40 && autoRerollTarget <= max_rate) {
         var perAutoCost = Math.floor(previewFee * 1.2); // +20% each automated reroll
         var iterations = 0;
         var extraMesosSpent = 0;
@@ -335,7 +336,7 @@ function preview(slot, upgradeNormal) {
             }
 
             // Re-roll premium stats
-            newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier);
+            newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
             iterations++;
             currentMult = (Array.isArray(newStats.mult) && newStats.mult.length)
                           ? Math.max.apply(null, newStats.mult)
@@ -358,7 +359,7 @@ function preview(slot, upgradeNormal) {
     // ======================= Auto roll end ================================
 
     // Regular upgrade: level 1–4, hands ≤=3
-    if (lvl >= 1 && lvl <= 4 && hands <= 5) {
+    if (lvl >= 1 && lvl <= 4 && hands <= 6) {
         if (cm.getMeso() < previewFee + FEES[lvl-1]) {
             if (cm.haveItem(3020002, 1)) {
                 cm.gainItem(3020002, -1)
@@ -418,6 +419,7 @@ function calcNewStats(item, itemId, nxMultiplier, max_rate) {
     if (nxMultiplier) {
         var mm = () => 1.4 + Math.random() * 0.22;
     } else {
+        console.log(max_rate);
         var mm = () => 1.4 + Math.random() * (max_rate - 1.4);
     }
 
@@ -438,7 +440,7 @@ function calcNewStats(item, itemId, nxMultiplier, max_rate) {
     };
 }
 
-function calcBetterNewStats(item, itemId, max_rate) {
+function calcBetterNewStats(item, itemId, nxMultiplier, max_rate) {
     // Main stats 55–60% increase, defs 10–20%
 //    if (parseInt(itemId/10000) < 130) {
 //        var mm = 1.4 + Math.random() * 0.2;
