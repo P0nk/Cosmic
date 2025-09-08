@@ -45,6 +45,9 @@ public class BuffWorldCommand extends Command {
                 SkillFactory.getSkill(9101003).getEffect(SkillFactory.getSkill(9101003).getMaxLevel()).applyTo(chr, true);
                 SkillFactory.getSkill(9101008).getEffect(SkillFactory.getSkill(9101008).getMaxLevel()).applyTo(chr, true);
                 SkillFactory.getSkill(1005).getEffect(SkillFactory.getSkill(1005).getMaxLevel()).applyTo(chr, true);
+                SkillFactory.getSkill(5121009).getEffect(SkillFactory.getSkill(5121009).getMaxLevel()).applyTo(chr, true);
+                SkillFactory.getSkill(3121002).getEffect(SkillFactory.getSkill(3121002).getMaxLevel()).applyTo(chr, true);
+                SkillFactory.getSkill(4111001).getEffect(SkillFactory.getSkill(4111001).getMaxLevel()).applyTo(chr, true);
             }
         }
     }
