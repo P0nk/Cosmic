@@ -322,7 +322,7 @@ public class PlayerNPC extends AbstractMapObject {
             int branchSid = NpcId.PLAYER_NPC_BASE + (branch * 100);
             int nextBranchSid = branchSid + branchLen;
 
-            List<Integer> availables = new ArrayList<>(20);
+            List<Integer> availables = new ArrayList<>(50);
             try (Connection con = DatabaseConnection.getConnection();
                  PreparedStatement ps = con.prepareStatement("SELECT scriptid FROM playernpcs WHERE scriptid >= ? AND scriptid < ? ORDER BY scriptid")) {
                 ps.setInt(1, branchSid);
@@ -342,7 +342,7 @@ public class PlayerNPC extends AbstractMapObject {
                             availables.add(i);
                             j++;
 
-                            if (j == 20) {
+                            if (j == 50) {
                                 break;
                             }
                         } else {
@@ -364,7 +364,7 @@ public class PlayerNPC extends AbstractMapObject {
         List<Integer> availablesBranch = availablePlayerNpcScriptIds.get(branch);
 
         if (availablesBranch == null) {
-            availablesBranch = new ArrayList<>(20);
+            availablesBranch = new ArrayList<>(50);
             availablePlayerNpcScriptIds.put(branch, availablesBranch);
         }
 

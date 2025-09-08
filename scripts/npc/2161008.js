@@ -1,41 +1,58 @@
-/*  Von Leon (boss spawner)
-    Audience room (211070100)
-    Talkable NPC that spawns the boss.
+/*
+    Von Leon (Human form) - NPC 2161008
+    Appears after Von Leon dies, offers rematch.
 */
 
-    var status;
-    const ExpeditionType = Java.type('server.expeditions.ExpeditionType');
-    var exped = ExpeditionType.VONLEON;
+var status = 0;
 
-    function start() {
+function start() {
     status = -1;
     action(1, 0, 0);
-    }
+}
 
-    function action(mode, type, selection) {
+function action(mode, type, selection) {
     if (mode == -1) {
-            cm.dispose();
+        cm.dispose();
     } else {
         if (mode == 0 && type > 0) {
-                cm.dispose();
-                return;
+            cm.sendOk("Very well... you may rest now.");
+            cm.dispose();
+            return;
         }
-        if (mode == 1)
-                status++;
-        else
-                status--;
+        if (mode == 1) status++;
+        else status--;
 
-        if(status == 0) {
-            expedition = cm.getExpedition(exped);
-            if (expedition.isLeader(cm.getPlayer())) {
-                cm.sendYesNo("Are you the warriors who came to defeat me? Or are you from the Anti Black Mage Alliance? It doesn't matter who you are ... There's no need for chitchatting, if we are sure about eachother's purpose... Bring it on, you fools!");
-            }
+        if (status == 0) {
+            cm.sendYesNo("You have bested me this time... Do you dare to face me again?");
         } else if (status == 1) {
-                cm.getMap().spawnMonsterOnGroundBelow(8840000, 49, -181);
-                cm.getMap().destroyNPC(2161008);
-                cm.getMap().killMonster(8840010);
-                cm.dispose();
-                return;
+            var eim = cm.getPlayer().getEventInstance();
+            if (eim != null) {
+                var map = eim.getMapInstance(211070100);
+                const LifeFactory = Java.type('server.life.LifeFactory');
+                const Point = Java.type('java.awt.Point');
+
+                var mesocost = 100_000_000;
+                if (cm.getMeso() < mesocost) {
+                    if (cm.haveItem(3020002, 1)) {
+                        cm.gainItem(3020002, -1)
+                        cm.gainMeso(1000000000);
+                        cm.gainMeso(-mesocost);
+                    } else {
+                        cm.sendOk("You need at least " + mesocost + " mesos to preview and perform this upgrade.");
+                        return cm.dispose();
+                    }
+                } else {
+                    cm.gainMeso(-mesocost);
+                }
+                // remove myself
+                map.destroyNPC(cm.getNpc());
+
+                // respawn Von Leon
+                var boss = LifeFactory.getMonster(8840000);
+                eim.registerMonster(boss);
+                map.spawnMonsterOnGroundBelow(boss, new Point(49, -181));
+            }
+            cm.dispose();
         }
     }
- }
+}

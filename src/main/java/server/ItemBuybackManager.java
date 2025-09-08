@@ -19,7 +19,7 @@ public class ItemBuybackManager {
 
     // Configuration constants
     private static final int MAX_BUYBACK_ITEMS = 120;
-    private static final long BUYBACK_EXPIRY = 60 * 60 * 1000 * 4; // 4 hour
+    private static final long BUYBACK_EXPIRY = 60 * 60 * 1000 * 24; // 24 hour
     // private static final int MAX_TOTAL_BUYBACK_VALUE = 500_000_000; // Optional feature
 
     private Timer cleanupTimer;
