@@ -201,7 +201,7 @@ function weaponSelection(selection) {
         if (!item) continue;
         var name = Packages.server.ItemInformationProvider
                    .getInstance().getName(item.getItemId());
-        console.log("Hands: " + item.getHands() + "Level: " + item.getItemLevel())
+//        console.log("Hands: " + item.getHands() + "Level: " + item.getItemLevel())
         if ((cm.checkBlacklistedItem(slot) & selection === 2) || (item.getHands() >= 5 & item.getItemLevel() == 5)) { // Make sures any item they planned to salvage cant level up on their own
             continue;
         }
@@ -286,7 +286,7 @@ function preview(slot, upgradeNormal) {
     if (upgradeNormal) {
         newStats = calcNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
     } else {
-        console.log(max_rate);
+//        console.log(max_rate);
         newStats = calcBetterNewStats(selectedItem, selectedItem.getItemId(), nxMultiplier, max_rate);
     }
 
@@ -421,7 +421,7 @@ function calcNewStats(item, itemId, nxMultiplier, max_rate) {
     if (nxMultiplier) {
         var mm = () => 1.4 + Math.random() * 0.22;
     } else {
-        console.log(max_rate);
+//        console.log(max_rate);
         var mm = () => 1.4 + Math.random() * (max_rate - 1.4);
     }
 
@@ -452,7 +452,7 @@ function calcBetterNewStats(item, itemId, nxMultiplier, max_rate) {
     if (nxMultiplier) {
         var mm = 1.4 + Math.random() * 0.22;
     } else {
-        console.log(max_rate)
+//        console.log(max_rate)
         var mm = 1.4 + Math.random() * (max_rate - 1.4);
     }
 //    var mm = 1.4 + Math.random() * 0.2;
@@ -480,7 +480,7 @@ function doUpgrade(newStats) {
 
     // Rebirth handoff
     if (lvl == 5) {
-        console.log('Rebirth')
+//        console.log('Rebirth')
         return doRebirth();
     }
 
