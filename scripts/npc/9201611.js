@@ -14,7 +14,7 @@ const matValues = Object.values(materials);
 // level-by-level parameters
 const LEVELS    = [1,    2,     3,      4];
 const FEES      = [15e6, 45e6, 125e6, 275e6];
-const AMOUNTS   = [1,    3,     5,      7];
+const AMOUNTS   = [1,    2,     3,      3];
 var REFUND_RATE = 0.5; // 50% refund target
 
 var nxMultiplier = false;
@@ -500,7 +500,7 @@ function doUpgrade(newStats) {
     cm.gainItem(mat, -amt);
 
     // Roll outcomes
-    var successRate = 1 - 0.1 * (lvl - 1);
+    var successRate = 1 - 0.1 * (lvl - 2);
     var boomChance  = (lvl === 4 ? 0.005 : 0);
     var roll        = Math.random();
     var success     = (roll < successRate);
