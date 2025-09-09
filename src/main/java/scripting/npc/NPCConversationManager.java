@@ -1185,6 +1185,19 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                getItemName(slot).contains("Fearless") || getItemName(slot).contains("Balrog's Fur Shoes");
     }
 
+    public short replaceItem(short slot) {
+        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        // get a clean item from the selected item ID
+        int newItemId = eqpInv.getItem(slot).getItemId();
+        //remove the item
+        removeItemNPC(slot);
+        // get next empty slot
+        short newItemSlot = eqpInv.getNextFreeSlot();
+        // give the item
+        this.gainItem(newItemId, (short) 1, true, true);
+        return newItemSlot;
+    }
+
     public void replaceBoomedUpgradeItem(short boomedItemSlot) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         // get a clean item from the selected item ID

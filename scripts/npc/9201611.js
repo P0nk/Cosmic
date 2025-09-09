@@ -15,7 +15,7 @@ const matValues = Object.values(materials);
 const LEVELS    = [1,    2,     3,      4];
 const FEES      = [15e6, 45e6, 125e6, 275e6];
 const AMOUNTS   = [1,    3,     5,      7];
-
+var REFUND_RATE = 0.5; // 50% refund target
 
 var nxMultiplier = false;
 var nxMultiplierCost = 2000000;
@@ -28,6 +28,7 @@ var boomProtectScroll = 3020003;
 var salvage         = false; // must take precedence over upgrade
 var upgradeNormal   = false;
 var slot            = -1;
+var newSlot         = -1;
 var reroll          = false;
 var resetItem       = false;
 
@@ -38,6 +39,7 @@ var max_rate = 1.599;
 // Salvage variables
 var totalUpgradeFee = 460000000;
 var totalRebirthMats = {};
+
 
 // Auto re-roll (premium only)
 var autoRerollPremium = false;   // one-shot flag to trigger automation
@@ -146,7 +148,8 @@ function action(mode, type, selection) {
         if (!reroll) {
             slot = selection
         }
-        return innocenceItem(slot);
+        slot = innocenceItem(slot);
+        return;
     } else if (status === 51) {
         if (selection == 0) { // reroll
             status = 49;
@@ -202,7 +205,7 @@ function weaponSelection(selection) {
         var name = Packages.server.ItemInformationProvider
                    .getInstance().getName(item.getItemId());
 //        console.log("Hands: " + item.getHands() + "Level: " + item.getItemLevel())
-        if ((cm.checkBlacklistedItem(slot) & selection === 2) || (item.getHands() >= 5 & item.getItemLevel() == 5)) { // Make sures any item they planned to salvage cant level up on their own
+        if ((cm.checkBlacklistedItem(slot) & selection === 2) || (item.getHands() >= 5 & item.getItemLevel() == 5 & selection < 2)) { // Make sures any item they planned to salvage cant level up on their own
             continue;
         }
         lines.push(
@@ -592,30 +595,36 @@ function format(n) {
 
 function getTotals(uptoLevel, hands) {
     /*
-    Function to handle the materials to refund
-    Will loop through the levels and  and decide the total materials to refund for that rebrith
+      Returns total mesos + mats used for ALL upgrades so far.
+      - For each completed hand (0 .. hands-1): add all 4 levels.
+      - For the current hand (hands): add levels actually done, i.e. 1 .. (uptoLevel-1).
     */
-  let totalFee = 0;
-  const totalMats = {};    // { materialId: totalAmt, … }
-//  if (0 <= hands <= 3) { // able to configure to hand different upgradeConfigRb0-3 if needed here
-//    upgradeConfig = upgradeConfigRb0
-//  }
+    let totalFee = 0;
+    const totalMats = {}; // { materialId: totalAmt }
 
-  // loop from 1 → uptoLevel
-  for (let lvl = 1; lvl <= uptoLevel; lvl++) {
-//    const step = upgradeConfig[lvl-1];
-//    if (!step) continue;   // in case some levels are missing
+    // safety
+    const maxLevelPerHand = 4;
 
-    // add the fee
-    totalFee += step.fee;
+    // Sum all completed hands (each has 4 upgrades)
+    for (let h = 0; h < hands; h++) {
+        const matId = matValues[h]; // which mat was used in that hand
+        for (let lvl = 1; lvl <= maxLevelPerHand; lvl++) {
+            totalFee += (FEES[lvl - 1] || 0);
+            const amt = (AMOUNTS[lvl - 1] || 0);
+            if (matId && amt > 0) totalMats[matId] = (totalMats[matId] || 0) + amt;
+        }
+    }
 
-    // accumulate each material
-    step.mats.forEach(({ id, amt }) => {
-      totalMats[id] = (totalMats[id] || 0) + amt;
-    });
-  }
+    // Sum current hand: only the upgrades actually done so far
+    const currentMatId = matValues[hands];
+    const doneLevelsThisHand = Math.max(0, Math.min(maxLevelPerHand, (uptoLevel - 1)));
+    for (let lvl = 1; lvl <= doneLevelsThisHand; lvl++) {
+        totalFee += (FEES[lvl - 1] || 0);
+        const amt = (AMOUNTS[lvl - 1] || 0);
+        if (currentMatId && amt > 0) totalMats[currentMatId] = (totalMats[currentMatId] || 0) + amt;
+    }
 
-  return { totalFee, totalMats };
+    return { totalFee, totalMats };
 }
 
 function salvageSelection(slot) {
@@ -630,67 +639,68 @@ function salvageSelection(slot) {
         return cm.dispose();
     }
 
-    const lvl        = selectedItem.getItemLevel();
-    const hands      = selectedItem.getHands();
-    const { totalFee, totalMats } = getTotals(lvl);
+    const lvl   = selectedItem.getItemLevel();
+    const hands = selectedItem.getHands();
+    const { totalFee, totalMats } = getTotals(lvl, hands);
 
     // 1) Initialize with guaranteed returns per hand
     const matsToReturn = {};
-    matsToReturn[zakDiamond] = 4 * hands;
-    matsToReturn[hTegg]      = 4 * hands;
+//    matsToReturn[materials.zakDiamond] = 4 * hands;
+//    matsToReturn[materials.hTegg]      = 4 * hands;
 
-    // 2) Merge in all mats used up through this level
+    // 2) Merge in all mats used up through this level + prior hands
     Object.keys(totalMats).forEach(id => {
         const used = totalMats[id] || 0;
         matsToReturn[id] = (matsToReturn[id] || 0) + used;
     });
 
-    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
-    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
+    // 3) 50% refund (includes your rebirth-mesos proxy too)
+    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * REFUND_RATE);
 
-    // 4) Build confirmation message
+    // 4) Confirmation message
     let msg = "We will refund you " + format(refundMesos) + "\r\n";
     Object.entries(matsToReturn).forEach(([id, amt]) => {
         msg += amt + "x #v" + id + "#\r\n";
     });
-    if (hands > 0) {
-        msg += hands + "x #v" + rockOfTime + "#\r\n";
-    }
+//    if (hands > 0) {
+//        msg += hands + "x #v" + materials.rockOfTime + "#\r\n";
+//    }
     msg += "Are you sure you want to salvage this equip?";
 
     cm.sendYesNo(msg);
 }
 
+
 function salvageItem() {
-    var lvl        = selectedItem.getItemLevel();
-    var hands      = selectedItem.getHands();
-    var { totalFee, totalMats } = getTotals(lvl);
+    var lvl   = selectedItem.getItemLevel();
+    var hands = selectedItem.getHands();
+    var { totalFee, totalMats } = getTotals(lvl, hands);
 
-    // 1) Initialize with guaranteed returns per hand
+    // 1) Guaranteed per-hand returns
     var matsToReturn = {};
-    matsToReturn[zakDiamond] = 4 * hands;
-    matsToReturn[hTegg]      = 4 * hands;
+//    matsToReturn[materials.zakDiamond] = 4 * hands;
+//    matsToReturn[materials.hTegg]      = 4 * hands;
 
-    // 2) Merge in all mats used up through this level
+    // 2) Add all used upgrade mats (all past hands + current hand so far)
     Object.keys(totalMats).forEach(id => {
         const used = totalMats[id] || 0;
         matsToReturn[id] = (matsToReturn[id] || 0) + used;
     });
 
-    // 3) Compute 20% refund of full cost (including totalUpgradeFee per hand)
-    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * 0.2);
+    // 3) 50% mesos refund (upgrade + rebirth bucket)
+    const refundMesos = Math.floor((totalFee + totalUpgradeFee * hands) * REFUND_RATE);
 
-    // 4) Build confirmation message
-    var returnstr = "I have salvaged your items, please check."
-    cm.gainMeso(refundMesos)
+    // 4) Grant refunds
+    var returnstr = "I have salvaged your items, please check.";
+    cm.gainMeso(refundMesos);
     Object.entries(matsToReturn).forEach(([id, amt]) => {
-        cm.gainItem(parseInt(id), amt);
+        cm.gainItem(parseInt(id, 10), amt);
     });
-    cm.gainItem(rockOfTime, hands);
-//    cm.gainCash(350000 * hands * 0.6);
+//    cm.gainItem(materials.rockOfTime, hands);
     cm.removeItemNPC(selectedItem.getPosition());
     return cm.dispose();
 }
+
 
 function innocenceItem(slot) {
     selectedItem = cm.getInventory(1).getItem(slot);
@@ -702,9 +712,11 @@ function innocenceItem(slot) {
         return cm.dispose();
     }
 
-    newItem = cm.getInventory(1).getItem(cm.replaceItem(slot))
+    slot = cm.replaceItem(slot)
+    newItem = cm.getInventory(1).getItem(slot)
     cm.gainCash(-100_000);
     cm.sendSimple("Item has been reset. Item Stats:\r\n" + listNonZeroStats(newItem) +"\r\n#b#L0#Roll again...#l\r\n#b#L1#thats good enough!#l")
+    return slot
 }
 
 function listNonZeroStats(item) {
