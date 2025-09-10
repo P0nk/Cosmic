@@ -3277,19 +3277,42 @@ public class Character extends AbstractCharacterObject {
 
     public void gainMeso(int gain, boolean show, boolean enableActions, boolean inChat) {
         long nextMeso;
-        int billionCoin = 3020002;
+        final int BILLION_COIN = 3020002;
+        final int CONVERSION = 1_100_000_000;
+
         petLock.lock();
         try {
-            nextMeso = (long) meso.get() + gain;  // thanks Thora for pointing integer overflow here
-//            System.out.println(nextMeso);
-            if (nextMeso > Integer.MAX_VALUE) { // if mesos looted exceeds 2.147b
-                gain = -1100000000 + gain; // remove 1.1 from player (auto convert)
-                this.getAbstractPlayerInteraction().gainItem(billionCoin, (short) 1, true); // gain a billion coin
-                sendPacket(PacketCreator.getShowMesoGain(-1100000000, true));
-//                gain -= (nextMeso - Integer.MAX_VALUE);
+            int current = meso.get();
+            nextMeso = (long) current + (long) gain;  // avoid int overflow
+
+            if (nextMeso > Integer.MAX_VALUE) { // if mesos would exceed 2.147b
+                int conversions = 1;
+
+                // After 1 conversion, would it STILL exceed the cap?
+                long afterOne = (long) current + ((long) gain - CONVERSION);
+                if (afterOne > Integer.MAX_VALUE) {
+                    conversions = 2; // do a 2nd conversion
+                }
+
+                // Apply conversions (gain can become negative)
+                gain -= conversions * CONVERSION;
+
+                // Grant coins and show per-conversion meso loss tick(s)
+                for (int i = 0; i < conversions; i++) {
+                    this.getAbstractPlayerInteraction().gainItem(BILLION_COIN, (short) 1, true);
+                    sendPacket(PacketCreator.getShowMesoGain(-CONVERSION, true));
+                }
+
+                // (Optional safety) If net result would go below 0, clamp
+                long postConv = (long) current + (long) gain;
+                if (postConv < 0) {
+                    gain = -current;
+                }
+
             } else if (nextMeso < 0) {
                 gain = -meso.get();
             }
+
             nextMeso = meso.addAndGet(gain);
         } finally {
             petLock.unlock();
