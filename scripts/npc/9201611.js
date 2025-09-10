@@ -712,11 +712,16 @@ function innocenceItem(slot) {
         return cm.dispose();
     }
 
-    slot = cm.replaceItem(slot)
-    newItem = cm.getInventory(1).getItem(slot)
-    cm.gainCash(-100_000);
-    cm.sendSimple("Item has been reset. Item Stats:\r\n" + listNonZeroStats(newItem) +"\r\n#b#L0#Roll again...#l\r\n#b#L1#thats good enough!#l")
-    return slot
+    if (cm.getCashShop().getCash(1) < 100_000) {
+            cm.sendOk("You need 100k NX to rebirth your item.");
+            return cm.dispose
+    } else {
+        slot = cm.replaceItem(slot)
+        newItem = cm.getInventory(1).getItem(slot)
+        cm.gainCash(-100_000);
+        cm.sendSimple("Item has been reset. Item Stats:\r\n" + listNonZeroStats(newItem) +"\r\n#b#L0#Roll again...#l\r\n#b#L1#thats good enough!#l")
+        return slot
+    }
 }
 
 function listNonZeroStats(item) {
