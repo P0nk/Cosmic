@@ -286,7 +286,7 @@ public class Shop {
                                 recharges.remove(Integer.valueOf(starItem.getItemId()));
                             }
                         } else {
-                            ret.addItem(new ShopItem((short) 1000, rs.getInt("itemid"), rs.getInt("price"), rs.getInt("pitch")));
+                            ret.addItem(new ShopItem((short) 32000, rs.getInt("itemid"), rs.getInt("price"), rs.getInt("pitch")));
                         }
                     }
                     for (Integer recharge : recharges) {
