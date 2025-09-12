@@ -77,21 +77,6 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
             }
         }
 
-        // Checks integrity of wz file -- to create a checker class on its own
-        if (attack.skill == NightLord.TRIPLE_THROW) {
-            if (chr.getBuffedValue(BuffStat.SHADOWPARTNER) != null & attack.numDamage != 10) {
-                System.out.println(chr + " used Triple Throw with " + attack.numDamage +" lines");
-                chr.dropMessage(9, "You have disconnected. Please update your wz files");
-                chr.getClient().forceDisconnect();
-                return;
-            } else if (attack.numDamage != 5) {
-                System.out.println(chr + " used Triple Throw with " + attack.numDamage +" lines");
-                chr.dropMessage(9, "You have disconnected. Please update your wz files");
-                chr.getClient().forceDisconnect();
-                return;
-            }
-        }
-
         if (MapId.isDojo(chr.getMap().getId()) && attack.numAttacked > 0) {
             chr.setDojoEnergy(chr.getDojoEnergy() + YamlConfig.config.server.DOJO_ENERGY_ATK);
             c.sendPacket(PacketCreator.getEnergy("energy", chr.getDojoEnergy()));

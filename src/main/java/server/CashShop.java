@@ -76,6 +76,18 @@ public class CashShop {
     private final List<Integer> wishList = new ArrayList<>();
     private int notes = 0;
     private final Lock lock = new ReentrantLock();
+    // Attach owning character so CashShop can mint items (e.g., NXT) via player APIs.
+    private client.Character owner;
+
+    /** Attach the owning character after construction. */
+    public void setCharacter(client.Character chr) {
+        this.owner = chr;
+    }
+
+    /** Optional getter if you need it elsewhere. */
+    public client.Character getCharacter() {
+        return owner;
+    }
 
     public CashShop(int accountId, int characterId, int jobType) throws SQLException {
         this.accountId = accountId;
@@ -327,18 +339,58 @@ public class CashShop {
     }
 
     public void gainCash(int type, int cash) {
+        final int NXT_ITEM_ID = 3020001;
+        final int CONVERSION = 1_100_000;           // 1,000,000 NX -> 1 NXT
+        final int NX_CAP = Integer.MAX_VALUE;       // cap at 2,147,483,647
+
+        int conversions = 0;
+
         switch (type) {
-            case NX_CREDIT ->
-                nxCredit = Math.min(nxCredit + cash, Integer.MAX_VALUE);
-
-            case MAPLE_POINT ->
-                maplePoint = Math.min(maplePoint + cash, Integer.MAX_VALUE);
-
-            case NX_PREPAID ->
-                nxPrepaid = Math.min(nxPrepaid + cash, Integer.MAX_VALUE);
+            case NX_CREDIT -> {
+                long next = (long) nxCredit + (long) cash; // compute in long
+                while (next >= (long) NX_CAP) {
+                    next -= CONVERSION;
+                    conversions++;
+                }
+                nxCredit = (int) next;
+            }
+            case MAPLE_POINT -> {
+                long next = (long) maplePoint + (long) cash;
+                while (next >= (long) NX_CAP) {
+                    next -= CONVERSION;
+                    conversions++;
+                }
+                maplePoint = (int) next;
+            }
+            case NX_PREPAID -> {
+                long next = (long) nxPrepaid + (long) cash;
+                while (next >= (long) NX_CAP) {
+                    next -= CONVERSION;
+                    conversions++;
+                }
+                nxPrepaid = (int) next;
+            }
         }
+//        System.out.println("Owner: "+ owner);
+//        System.out.println("conversions: "+ conversions);
 
+        // Grant NXT via the attached Character (CashShop itself can't mint items)
+        if (owner != null && conversions > 0) {
+            int remaining = conversions;
+//            System.out.println("remaining1: "+ remaining);
+            while (remaining > 0) {
+//                System.out.println("remaining2: "+ remaining);
+
+                int give = Math.min(remaining, Short.MAX_VALUE);
+//                System.out.println("give1: "+ give);
+                owner.getAbstractPlayerInteraction().gainItem(NXT_ITEM_ID, (short) give, true);
+                remaining -= give;
+//                System.out.println("give2: "+ give);
+//                System.out.println("remaining3: "+ remaining);
+            }
+        }
     }
+
 
     public void gainCash(int type, CashItem buyItem, int world) {
         gainCash(type, -buyItem.getPrice());

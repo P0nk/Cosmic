@@ -7217,6 +7217,7 @@ public class Character extends AbstractCharacterObject {
             }
 
             ret.cashshop = new CashShop(ret.accountid, ret.id, ret.getJobType());
+            ret.cashshop.setCharacter(ret);   // <-- attach owner so NXT minting works
             ret.autoban = new AutobanManager(ret);
 
             // Blessing of the Fairy
@@ -10083,9 +10084,20 @@ public class Character extends AbstractCharacterObject {
         return linkedName;
     }
 
+    public void setCashShop(CashShop cs) {
+        this.cashshop = cs;
+        if (cs != null) {
+            cs.setCharacter(this);
+        }
+    }
+
     public CashShop getCashShop() {
+        if (cashshop != null && cashshop.getCharacter() == null) {
+            cashshop.setCharacter(this);  // attach owner on first access
+        }
         return cashshop;
     }
+
 
     public Set<NewYearCardRecord> getNewYearRecords() {
         return newyears;
