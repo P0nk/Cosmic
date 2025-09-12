@@ -4,6 +4,7 @@
 
 var status = 0, candidates = [], pickSlot = -1;
 var nxCost = 50000
+var rbLevel = -1;
 function start() {
     status = -1;
     action(1, 0, 0);
@@ -49,11 +50,14 @@ function action(mode, type, selection) {
         pickSlot = selection;
         if (pickSlot <= 0) { cm.sendOk("Cancelled."); return cm.dispose(); }
         var it = cm.getInventory(1).getItem(pickSlot);
+        rbLevel = it.getHands()
+        nxCost = (50_000 * (rbLevel + 1))
         if (!it) { cm.sendOk("Couldn’t find that item."); return cm.dispose(); }
-        cm.sendYesNo("Convert #i"+it.getItemId()+"##z"+it.getItemId()+"# to #bTradeable (once)#k? It will cost 50k nx");
+        cm.sendYesNo("Convert #i"+it.getItemId()+"##z"+it.getItemId()+"# to #bTradeable (once)#k? It will cost " + (50 * (rbLevel + 1)) + "k nx");
     }
 
     else if (status === 2) {
+        console.log(nxCost)
         if (cm.getCashShop().getCash(1) < nxCost) {
             cm.sendOk("You do not have enough NX!");
             return cm.dispose();
