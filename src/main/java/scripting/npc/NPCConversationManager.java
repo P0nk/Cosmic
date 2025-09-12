@@ -85,6 +85,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static client.inventory.manipulator.KarmaManipulator.getKarmaFlag;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
@@ -1680,6 +1681,19 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         Character victim = c.getWorldServer().getPlayerStorage().getCharacterByName(targetName);
         MapleMap map = victim.getMap();
         getPlayer().forceChangeMap(map, map.findClosestPortal(victim.getPosition()));
+    }
+
+    public Equip setSharingFlag(Equip Item) {
+        short flag = Item.getFlag();
+        flag |= ItemConstants.KARMA_EQP;
+        Item.setFlag(flag);
+        getPlayer().forceUpdateItem(Item);
+        return Item;
+    }
+
+    public static boolean hasKarmaFlag(Equip item) {
+        short karmaFlag = getKarmaFlag(item);
+        return (item.getFlag() & karmaFlag) == karmaFlag;
     }
 
 }

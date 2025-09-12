@@ -26,7 +26,7 @@ import constants.inventory.ItemConstants;
  * @author RonanLana
  */
 public class KarmaManipulator {
-    private static short getKarmaFlag(Item item) {
+    public static short getKarmaFlag(Item item) {
         return item.getItemType() == 1 ? ItemConstants.KARMA_EQP : ItemConstants.KARMA_USE;
     }
 
