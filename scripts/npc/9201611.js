@@ -299,7 +299,7 @@ function preview(slot, upgradeNormal) {
     // ===== Auto re-roll (premium only) =====
     var autoMsg = "";
     if (!upgradeNormal && autoRerollPremium && autoRerollTarget >= 1.40 && autoRerollTarget <= max_rate) {
-        var perAutoCost = Math.floor(previewFee * 1.2); // +20% each automated reroll
+        var perAutoCost = Math.floor(previewFee * 1.0); // +20% each automated reroll
         var iterations = 0;
         var extraMesosSpent = 0;
         var extraNxSpent = 0;
