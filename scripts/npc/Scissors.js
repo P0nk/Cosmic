@@ -1,0 +1,93 @@
+/* NPC: Make EQUIP account-shareable (once)
+ * Uses cm.setSharingFlag(Equip) from NPCConversationManager.java
+ */
+
+var status = 0, candidates = [], pickSlot = -1;
+var nxCost = 250_000 // cost per rb
+var rbLevel = -1;
+
+const materials = {
+  zakDiamond:    4032133,
+  hTegg:         4001094,
+  rockOfTime:    4021010,
+  vonleonSeal:   4001693,
+  cygnusCirclet: 4000659,
+  gigaToadPurse: 4000703,
+};
+const matValues = Object.values(materials);
+
+function start() {
+    status = -1;
+    action(1, 0, 0);
+}
+
+function action(mode, type, selection) {
+    if (mode !== 1) return cm.dispose();
+    status++;
+
+    if (status === 0) {
+        var inv   = cm.getInventory(1); // EQUIP
+        var limit = inv.getSlotLimit();
+        var IIP   = Packages.server.ItemInformationProvider.getInstance();
+        candidates = [];
+
+        for (var s = 1; s <= limit; s++) {
+            var it = inv.getItem(s);
+            if (!it) continue;
+            var f = it.getFlag();
+
+            var shared  = (f & Packages.constants.inventory.ItemConstants.KARMA_EQP)
+                          === Packages.constants.inventory.ItemConstants.KARMA_EQP;
+            if (!it.isUntradeable() || shared) continue;
+
+            var id = it.getItemId(), name = IIP.getName(id) || (""+id);
+            candidates.push([s, id, name]);
+        }
+
+        if (!candidates.length) {
+            cm.sendOk("No eligible untradeable equips found.");
+            return cm.dispose();
+        }
+
+        var txt = "Pick an untradeable equip to make #bTradeable within Account (once)#k.\r\n\r\n";
+        for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i];
+            txt += "#L" + c[0] + "##v" + c[1] + "# " + c[2] + " (Slot " + c[0] + ")#l\r\n";
+        }
+        cm.sendSimple(txt);
+    }
+
+    else if (status === 1) {
+        pickSlot = selection;
+        if (pickSlot <= 0) { cm.sendOk("Cancelled."); return cm.dispose(); }
+        var it = cm.getInventory(1).getItem(pickSlot);
+        rbLevel = it.getHands()
+        var matText = ""
+        for (var i = 0; i <= rbLevel; i++) {
+            matText += " 1x #v" + matValues[i] + "#\n\r"
+        }
+
+        nxCost = (nxCost * (rbLevel + 1))
+        if (!it) { cm.sendOk("Couldn’t find that item."); return cm.dispose(); }
+        cm.sendYesNo("Convert #i"+it.getItemId()+"##z"+it.getItemId()+"# to #bTradeable (once)#k? It will cost " + nxCost/1000 + "k nx and:\n\r" + matText);
+    }
+
+    else if (status === 2) {
+        console.log(nxCost)
+        if (cm.getCashShop().getCash(1) < nxCost) {
+            cm.sendOk("You do not have enough NX!");
+            return cm.dispose();
+        }
+        var it = cm.getInventory(1).getItem(pickSlot);
+        if (!it) { cm.sendOk("Item missing."); return cm.dispose(); }
+
+        it = cm.setSharingFlag(it);
+
+        cm.gainCash(-nxCost);
+        for (var i = 0; i <= rbLevel; i++) {
+            cm.gainItem(matValues[i],-1)
+        }
+        cm.sendOk("Done! #i"+it.getItemId()+"##z"+it.getItemId()+"# is now #bTradeable within Account (once)#k.");
+        cm.dispose();
+    }
+}

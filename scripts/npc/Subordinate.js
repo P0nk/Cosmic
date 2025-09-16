@@ -343,6 +343,8 @@ function preview(slot, upgradeNormal) {
                           : 1.0;
         }
 
+        if (iterations >= 200) break;
+
         // One-shot run; disable after use
         autoRerollPremium = false;
 

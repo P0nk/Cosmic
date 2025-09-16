@@ -63,7 +63,7 @@ function tierForReqLevel(req) {
     if (req <= 80) return 'T3';
     if (req <= 120) return 'T4';
     if (req <= 150) return 'T5';
-    if (req <= 170) return 'T6';
+    if (req <= 160) return 'T6';
     return 'T7';
 }
 function isWeapon(item) {
@@ -87,9 +87,7 @@ function foodListForTier(tier, qty) {
     if (!pool || pool.length === 0) return "#r(No food configured for " + tier + ")#k";
     var parts = [];
     for (var i = 0; i < pool.length; i++) {
-        var name = Packages.server.ItemInformationProvider
-                       .getInstance().getName(pool[i]);
-        parts.push(qty + "x #v" + pool[i] + "# " + name);
+        parts.push(qty + "x #v" + pool[i] + "#");
     }
     return parts.join("\r\n");
 }
@@ -167,13 +165,13 @@ function guide() {
     msg += "Items are divided into tiers based on their required level. Each tier grants bonus stats upon upgrading.\r\n\r\n";
 
     msg += "#dTier by Required Level:#k\r\n";
-    msg += "T1: Lv. 1 to 30\r\n";
-    msg += "T2: Lv. 31 to 50\r\n";
-    msg += "T3: Lv. 51 to 80\r\n";
-    msg += "T4: Lv. 81 to 120\r\n";
-    msg += "T5: Lv. 121 to 150\r\n";
-    msg += "T6: Lv. 151 to 170\r\n";
-//    msg += "T7: Lv. 161+ (WIP)\r\n\r\n";
+    msg += "T1: Lv. 1–30\r\n";
+    msg += "T2: Lv. 31–50\r\n";
+    msg += "T3: Lv. 51–80\r\n";
+    msg += "T4: Lv. 81–120\r\n";
+    msg += "T5: Lv. 121–150\r\n";
+    msg += "T6: Lv. 151–160\r\n";
+    msg += "T7: Lv. 161+ (WIP)\r\n\r\n";
 
     msg += "#bWeapon Upgrade Bonuses:#k\r\n";
     msg += "T1: +2 STR/DEX/INT/LUK, +4 WATK/MATK\r\n";
@@ -182,7 +180,7 @@ function guide() {
     msg += "T4: +5 STR/DEX/INT/LUK, +7 WATK/MATK\r\n";
     msg += "T5: +6 STR/DEX/INT/LUK, +8 WATK/MATK\r\n";
     msg += "T6: +7 STR/DEX/INT/LUK, +9 WATK/MATK\r\n";
-//    msg += "T7: (Placeholder)\r\n\r\n";
+    msg += "T7: (Placeholder)\r\n\r\n";
 
     msg += "#bArmor Upgrade Bonuses:#k\r\n";
     msg += "T1: +3 All Stats\r\n";
@@ -191,21 +189,21 @@ function guide() {
     msg += "T4: +9 All Stats\r\n";
     msg += "T5: +11 All Stats\r\n";
     msg += "T6: +9 All Stats, +1 WATK/MATK\r\n";
-//    msg += "T7: (Placeholder)\r\n";
+    msg += "T7: (Placeholder)\r\n";
     return msg
 }
 
 // ======================= SCRIPT FLOW ===================
 function start() {
     status = 0;
-    cm.sendSimple(
+    cm.sendNext(
         "Hey there! Free food keeps dropping and apparently if I chew on them and spit on any equipment, they get upgraded!\r\n"
         + "#d> Tier = equip's required level.\r\n"
         + "> Each success consumes #r1 upgrade slot#k and the required Food.\r\n"
         + "> No upgrades if the item has #r0 slots#k.\r\n"
         + "> T7 to be confirmed.#k"
         + "\r\n#b#L0#Proceed#l"
-        + "\r\n#b#L1#Guide me please#l"
+        + "\r\n#b#L1#Guide please#l"
     );
 }
 
@@ -217,10 +215,10 @@ function action(mode, type, selection) {
     status++;
 
     if (status === 1) {
-        if (selection == 1) {
+        if (selection == 0) {
             cm.sendOk(guide())
             cm.dispose()
-        } else if (selection == 0) {
+        } else if (selection == 1) {
             var inv = cm.getInventory(1);
             if (!inv) {
                 cm.sendOk("I can't access your equip inventory right now.");

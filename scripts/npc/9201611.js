@@ -17,6 +17,8 @@ const FEES      = [15e6, 45e6, 125e6, 275e6];
 const AMOUNTS   = [1,    2,     3,      3];
 var REFUND_RATE = 0.5; // 50% refund target
 
+const maxRolls = 100;
+
 var nxMultiplier = false;
 var nxMultiplierCost = 2000000;
 
@@ -299,8 +301,7 @@ function preview(slot, upgradeNormal) {
     // ===== Auto re-roll (premium only) =====
     var autoMsg = "";
     if (!upgradeNormal && autoRerollPremium && autoRerollTarget >= 1.40 && autoRerollTarget <= max_rate) {
-//        var perAutoCost = Math.floor(previewFee * 1.2); // +20% each automated reroll
-        var perAutoCost = Math.floor(previewFee * 1.0); // Remove additional cost
+        var perAutoCost = Math.floor(previewFee * 1.05); // +20% each automated reroll
         var iterations = 0;
         var extraMesosSpent = 0;
         var extraNxSpent = 0;
@@ -310,8 +311,13 @@ function preview(slot, upgradeNormal) {
                           ? Math.max.apply(null, newStats.mult)
                           : 1.0;
 
+        var rollCount = 0;
         // Keep trying until we meet/exceed target, or can't afford next auto reroll
         while (currentMult < autoRerollTarget) {
+            if (rollCount >= 100) {
+                cm.getPlayer().dropMessage(5, "You rolled 100 times but couldn't get the desired multiplier... Better luck next time!");
+                break;
+            }
             // Check mesos for another auto reroll
             if (cm.getMeso() < perAutoCost + FEES[lvl-1]) {
                     if (cm.haveItem(3020002, 1)) {
@@ -322,6 +328,7 @@ function preview(slot, upgradeNormal) {
                         break;
                     }
             }
+            rollCount += 1
 //            if (cm.getMeso() < perAutoCost) break;
             // Optional: also ensure player still has enough to eventually pay upgrade fee (not required for preview loops)
             // if (cm.getMeso() < perAutoCost + FEES[lvl-1]) break;

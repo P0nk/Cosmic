@@ -67,6 +67,7 @@ import server.life.MonsterListener;
 import server.life.NPC;
 import server.life.PlayerNPC;
 import server.life.SpawnPoint;
+import server.loot.BossDropper;
 import server.loot.FoodDropper;
 import server.partyquest.CarnivalFactory;
 import server.partyquest.CarnivalFactory.MCSkill;
@@ -1368,6 +1369,7 @@ public class MapleMap {
             chr.gainMeso((int) (meso_normal * Variance),true,false,false);
 
             FoodDropper.dropForMonster(chr.getMap(), monster, chr, monster.getPosition(),1,(byte)(chr.getParty() != null ? 1 : 0),false);
+            BossDropper.dropForMonster(chr.getMap(), monster, chr,monster.getPosition(), (byte)(chr.getParty() != null ? 1 : 0), false);
         }
         return true;
     }
