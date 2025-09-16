@@ -19,7 +19,9 @@ public class QuestBoardManager {
         String query = "SELECT q.*, c.name AS creator_name " +
                 "FROM quest_board q " +
                 "LEFT JOIN cosmic.characters c ON q.created_by = c.id " +
-                "WHERE q.status = 'OPEN'";
+                "WHERE q.status = 'OPEN'" +
+                "AND DATE_FORMAT(q.created_at, '%Y-%m-%d %H:%i:%s') + INTERVAL 14 DAY > NOW()" +
+                "ORDER BY q.quest_id DESC";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query);
@@ -295,7 +297,8 @@ public class QuestBoardManager {
         String query = "SELECT q.*, c.name AS creator_name " +
                 "FROM quest_board q " +
                 "LEFT JOIN cosmic.characters c ON q.created_by = c.id " +
-                "WHERE q.created_by = ?";
+                "WHERE q.created_by = ?" +
+                "ORDER BY q.quest_id ASC";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
