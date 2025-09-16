@@ -70,14 +70,22 @@ function setup(level, lobbyid) {
 }
 
 function afterSetup(eim) {
-    const LifeFactory = Java.type('server.life.LifeFactory');
     const Point = Java.type('java.awt.Point');
     var mapObj = eim.getInstanceMap(entryMap);
 
     // ✅ Ensure the human NPC is removed at the start
     mapObj.destroyNPC(2161008);
 
-    // spawn Von Leon immediately
+    // schedule the boss spawn after 3 seconds (3000 ms)
+    eim.schedule("spawnVonLeon", 10000);
+}
+
+// helper function that gets called by eim.schedule
+function spawnVonLeon(eim) {
+    const LifeFactory = Java.type('server.life.LifeFactory');
+    const Point = Java.type('java.awt.Point');
+    var mapObj = eim.getMapInstance(entryMap);
+
     var boss = LifeFactory.getMonster(8840000);
     eim.registerMonster(boss);
     mapObj.spawnMonsterOnGroundBelow(boss, new Point(49, -181));
