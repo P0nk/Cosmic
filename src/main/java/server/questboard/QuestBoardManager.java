@@ -297,8 +297,7 @@ public class QuestBoardManager {
         String query = "SELECT q.*, c.name AS creator_name " +
                 "FROM quest_board q " +
                 "LEFT JOIN cosmic.characters c ON q.created_by = c.id " +
-                "WHERE q.created_by = ?" +
-                "ORDER BY q.quest_id ASC";
+                "WHERE q.created_by = ?";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
