@@ -95,7 +95,7 @@ public final class FoodDropper {
             Random rng = new Random();
             int dropchance = (rng.nextInt(1_000_000) + 1) * YamlConfig.config.worlds.get(0).drop_rate; // 1 to 1,000,000 inclusive
 //            System.out.println(dropchance);
-            if (dropchance <= 100) {
+            if (dropchance <= 1000) {
                 map.spawnItemDrop((MapObject) mob, owner, item, seedPos, dropType, playerDrop);
             }
         }
