@@ -154,12 +154,10 @@ function consumeTierFood(tier, qty) {
         if (take > 0) {
             console.log("Remove item")
             cm.gainItem(id, -take);
-//            remaining -= take;
-        } else {
-            return false
+            remaining -= take;
         }
     }
-    return true;
+    return remaining === 0;
 }
 
 function guide() {
