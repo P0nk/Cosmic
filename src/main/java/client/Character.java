@@ -11332,8 +11332,6 @@ public class Character extends AbstractCharacterObject {
 
         //print
 
-        System.out.println(characterId);
-
         String query = "SELECT skillid FROM unlocked_buffs WHERE playerid = ?";
 
         try (Connection con = DatabaseConnection.getConnection();
@@ -11350,8 +11348,6 @@ public class Character extends AbstractCharacterObject {
         } catch (SQLException ex) {
             ex.printStackTrace(); // or use a logger in production
         }
-
-        System.out.println(characterId);
 
         return unlocked; // will return empty list if none found
     }
