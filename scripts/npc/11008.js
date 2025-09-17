@@ -402,11 +402,11 @@ function secondReward(selection) {
 } // status 27
 
 // ----------------- Manage Bounties -----------------
-function manageCreatedQuests() {
-    cm.sendOk("[WIP] Management of created quests will be available here.");
-    console.log(qm.getPlayerQuests())
-    cm.dispose();
-}
+//function manageCreatedQuests() {
+//    cm.sendOk("[WIP] Management of created quests will be available here.");
+//    console.log(qm.getPlayerQuests())
+//    cm.dispose();
+//}
 
 
 // ----------------- Debug check -----------------
