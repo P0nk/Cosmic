@@ -41,7 +41,7 @@ public class NXGachaponManager {
         LootEntry reward = tierList.get(random.nextInt(tierList.size()));
         if (ItemConstants.isPet(reward.itemId)) { // Checks if reward is pet
             int petid = Pet.createPet(reward.itemId);
-            InventoryManipulator.addById(player.getClient(), reward.itemId, (short) 1, player.getName(), petid, (long) 90);
+            InventoryManipulator.addById(player.getClient(), reward.itemId, (short) 1, player.getName(), petid, (long) 365);
         } else {
             player.getAbstractPlayerInteraction().gainItem(reward.itemId, (short) 1);
         }

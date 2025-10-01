@@ -97,7 +97,10 @@ var lootTable = {
         [1703489, "ULTRA_RARE"], // Popstar Keyboard Sword
         [5000867, "ULTRA_RARE"], // Lucid
         [5000868, "ULTRA_RARE"], // Lucid
-        [5000869, "ULTRA_RARE"]  // Lucid
+        [5000869, "ULTRA_RARE"], // Lucid
+        [5002060, "ULTRA_RARE"], // Baby Axol
+        [5002061, "ULTRA_RARE"], // Baby Xolo
+        [5002062, "ULTRA_RARE"]  // Baby Lotl
     ]
 };
 
