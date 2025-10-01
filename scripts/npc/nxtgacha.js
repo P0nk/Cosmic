@@ -72,33 +72,33 @@ var rarityRates = {
 
 //// OCTOBER NX GACHA LIST ////
 var lootTable = {
-  "COMMON": [
-    [1102819, "COMMON"], // Naughty Boy Backpack
-    [1052367, "COMMON"], // Crow Suit
-    [1052340, "COMMON"], // Lab Gear (M)
-    [1002468, "COMMON"], // Golden Bulldog Hat
-    [1002467, "COMMON"], // Horoscope Hat Capricon
-    [1082741, "COMMON"], // Fox Fire Sweeping Sleeve
-    [1073202, "COMMON"]  // Gatekeeper Boots
-  ],
-  "RARE": [
-    [1102858, "RARE"], // Eternal Clockwork
-    [1102868, "RARE"], // Triple Bat Cape
-    [1052083, "RARE"], // Son Wu Kong Robe
-    [1052601, "RARE"], // Kerning Technical high Uniform
-    [1051591, "RARE"], // Springtime Sprout Outfit (F)
-    [1004203, "RARE"], // Kitty Kitty Hat
-    [1003778, "RARE"], // Fluffy Cat Hood
-    [1003506, "RARE"]  // Intergalactic Hat
-  ],
-  "ULTRA_RARE": [
-    [1703248, "ULTRA_RARE"], // Manager's management
-    [1703394, "ULTRA_RARE"], // Scary Chainsaw
-    [1703489, "ULTRA_RARE"], // Popstar Keyboard Sword
-    [5000867, "ULTRA_RARE"], // Lucid
-    [5000868, "ULTRA_RARE"], // Lucid
-    [5000869, "ULTRA_RARE"]  // Lucid
-  ]
+    "COMMON": [
+        [1102819, "COMMON"], // Naughty Boy Backpack
+        [1052367, "COMMON"], // Crow Suit
+        [1052340, "COMMON"], // Lab Gear (M)
+        [1002468, "COMMON"], // Golden Bulldog Hat
+        [1002467, "COMMON"], // Horoscope Hat Capricon
+        [1082741, "COMMON"], // Fox Fire Sweeping Sleeve
+        [1073202, "COMMON"]  // Gatekeeper Boots
+    ],
+    "RARE": [
+        [1102858, "RARE"], // Eternal Clockwork
+        [1102868, "RARE"], // Triple Bat Cape
+        [1052083, "RARE"], // Son Wu Kong Robe
+        [1052601, "RARE"], // Kerning Technical high Uniform
+        [1051591, "RARE"], // Springtime Sprout Outfit (F)
+        [1004203, "RARE"], // Kitty Kitty Hat
+        [1003778, "RARE"], // Fluffy Cat Hood
+        [1003506, "RARE"]  // Intergalactic Hat
+    ],
+    "ULTRA_RARE": [
+        [1703248, "ULTRA_RARE"], // Manager's management
+        [1703394, "ULTRA_RARE"], // Scary Chainsaw
+        [1703489, "ULTRA_RARE"], // Popstar Keyboard Sword
+        [5000867, "ULTRA_RARE"], // Lucid
+        [5000868, "ULTRA_RARE"], // Lucid
+        [5000869, "ULTRA_RARE"]  // Lucid
+    ]
 };
 
 function start() {
