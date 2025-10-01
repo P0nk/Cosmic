@@ -77,7 +77,7 @@ function afterSetup(eim) {
     mapObj.destroyNPC(2161008);
 
     // schedule the boss spawn after 3 seconds (3000 ms)
-    eim.schedule("spawnVonLeon", 10000);
+    eim.schedule("spawnVonLeon", 4000);
 }
 
 // helper function that gets called by eim.schedule

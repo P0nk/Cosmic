@@ -5,6 +5,8 @@
  * - Consumes ONE upgrade slot per upgrade; blocks when 0.
  */
 
+const ItemConstants = Packages.constants.inventory.ItemConstants;
+
 var status = 0;
 var selectedSlot = -1;
 var selectedItem = null;
@@ -67,7 +69,7 @@ function tierForReqLevel(req) {
     return 'T7';
 }
 function isWeapon(item) {
-    return (item.getWatk() > 0 || item.getMatk() > 0);
+    return ItemConstants.isWeapon(item.getItemId());
 }
 function foodPoolForTier(tier) {
     switch (tier) {
