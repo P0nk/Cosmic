@@ -1,6 +1,9 @@
 package server.gachapon;
 
 import client.Character;
+import client.inventory.Pet;
+import client.inventory.manipulator.InventoryManipulator;
+import constants.inventory.ItemConstants;
 import server.ItemInformationProvider;
 import tools.PacketCreator;
 
@@ -36,7 +39,12 @@ public class NXGachaponManager {
         if (tierList.isEmpty()) return false;
 
         LootEntry reward = tierList.get(random.nextInt(tierList.size()));
-        player.getAbstractPlayerInteraction().gainItem(reward.itemId, (short) 1);
+        if (ItemConstants.isPet(reward.itemId)) { // Checks if reward is pet
+            int petid = Pet.createPet(reward.itemId);
+            InventoryManipulator.addById(player.getClient(), reward.itemId, (short) 1, player.getName(), petid, (long) 90);
+        } else {
+            player.getAbstractPlayerInteraction().gainItem(reward.itemId, (short) 1);
+        }
 
         String itemName = ItemInformationProvider.getInstance().getName(reward.itemId);
         player.dropMessage(6, "[NX Gachapon] You won: " + itemName + " (" + reward.rarity + ")");
