@@ -39,35 +39,66 @@ var rarityRates = {
 //};
 
 //// SEPTEMBER NX GACHA LIST ////
-var lootTable = {
-    "COMMON": [
-        [1073476, "COMMON"], // Mad Mage Shoes
-        [1005611, "COMMON"], // Mad Mage Hood
-        [1053082, "COMMON"], // Oversized Beach Gown
-        [1005263, "COMMON"], // Roar Snapback
-        [1053301, "COMMON"], // Homeless Cat Outfit
-        [1082750, "COMMON"], // Mad Mage Gloves
-        [1103291, "COMMON"], // Mad Mage Cape
-        [1053629, "COMMON"]  // Mad Mage Suit
-    ],
-    "RARE": [
-        [1005563, "RARE"], // Lily Bucket Hat
-        [1005562, "RARE"], // Nero Bucket Hat
-        [1053594, "RARE"], // Lily Print Overfit Outfit
-        [1053593, "RARE"], // Nero Print Overfit Outfit
-        [1053654, "RARE"], // My Beating Heart Outfit
-        [1053640, "RARE"], // [BTS] Love Swan
-        [1703033, "RARE"], // Mad Mage Staff
-        [1005409, "RARE"], // Black Bucket Hat
-        [1103160, "RARE"], // Plaid Pashmina (Pink)
-        [1103161, "RARE"], // Plaid Pashmina (Purple)
+//var lootTable = {
+//    "COMMON": [
+//        [1073476, "COMMON"], // Mad Mage Shoes
+//        [1005611, "COMMON"], // Mad Mage Hood
+//        [1053082, "COMMON"], // Oversized Beach Gown
+//        [1005263, "COMMON"], // Roar Snapback
+//        [1053301, "COMMON"], // Homeless Cat Outfit
+//        [1082750, "COMMON"], // Mad Mage Gloves
+//        [1103291, "COMMON"], // Mad Mage Cape
+//        [1053629, "COMMON"]  // Mad Mage Suit
+//    ],
+//    "RARE": [
+//        [1005563, "RARE"], // Lily Bucket Hat
+//        [1005562, "RARE"], // Nero Bucket Hat
+//        [1053594, "RARE"], // Lily Print Overfit Outfit
+//        [1053593, "RARE"], // Nero Print Overfit Outfit
+//        [1053654, "RARE"], // My Beating Heart Outfit
+//        [1053640, "RARE"], // [BTS] Love Swan
+//        [1703033, "RARE"], // Mad Mage Staff
+//        [1005409, "RARE"], // Black Bucket Hat
+//        [1103160, "RARE"], // Plaid Pashmina (Pink)
+//        [1103161, "RARE"], // Plaid Pashmina (Purple)
+//
+//    ],
+//    "ULTRA_RARE": [
+//        [1703534, "ULTRA_RARE"], // Savage Fang Sword
+//        [1703238, "ULTRA_RARE"], // Scar of Darkness
+//        [1702903, "ULTRA_RARE"]  // Sunny Songbird Weapon
+//    ]
+//};
 
-    ],
-    "ULTRA_RARE": [
-        [1703534, "ULTRA_RARE"], // Savage Fang Sword
-        [1703238, "ULTRA_RARE"], // Scar of Darkness
-        [1702903, "ULTRA_RARE"]  // Sunny Songbird Weapon
-    ]
+//// OCTOBER NX GACHA LIST ////
+var lootTable = {
+  "COMMON": [
+    [1102819, "COMMON"], // Naughty Boy Backpack
+    [1052367, "COMMON"], // Crow Suit
+    [1052340, "COMMON"], // Lab Gear (M)
+    [1002468, "COMMON"], // Golden Bulldog Hat
+    [1002467, "COMMON"], // Horoscope Hat Capricon
+    [1082741, "COMMON"], // Fox Fire Sweeping Sleeve
+    [1073202, "COMMON"]  // Gatekeeper Boots
+  ],
+  "RARE": [
+    [1102858, "RARE"], // Eternal Clockwork
+    [1102868, "RARE"], // Triple Bat Cape
+    [1052083, "RARE"], // Son Wu Kong Robe
+    [1052601, "RARE"], // Kerning Technical high Uniform
+    [1051591, "RARE"], // Springtime Sprout Outfit (F)
+    [1004203, "RARE"], // Kitty Kitty Hat
+    [1003778, "RARE"], // Fluffy Cat Hood
+    [1003506, "RARE"]  // Intergalactic Hat
+  ],
+  "ULTRA_RARE": [
+    [1703248, "ULTRA_RARE"], // Manager's management
+    [1703394, "ULTRA_RARE"], // Scary Chainsaw
+    [1703489, "ULTRA_RARE"], // Popstar Keyboard Sword
+    [5000867, "ULTRA_RARE"], // Lucid
+    [5000868, "ULTRA_RARE"], // Lucid
+    [5000869, "ULTRA_RARE"]  // Lucid
+  ]
 };
 
 function start() {
