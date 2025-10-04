@@ -89,7 +89,13 @@ var lootTable = {
         [1051591, "RARE"], // Springtime Sprout Outfit (F)
         [1004203, "RARE"], // Kitty Kitty Hat
         [1003778, "RARE"], // Fluffy Cat Hood
-        [1003506, "RARE"]  // Intergalactic Hat
+        [1003506, "RARE"], // Intergalactic Hat
+        [1802585, "RARE"], // Rosy Dreams
+        [1802586, "RARE"], // Idyllic Dreams
+        [1802587, "RARE"], // Hopeful Dreams
+        [1802708, "RARE"], // Baby Axol Crown
+        [1802709, "RARE"], // Baby Xolo Crown
+        [1802710, "RARE"], // Baby Lotl Crown
     ],
     "ULTRA_RARE": [
         [1703248, "ULTRA_RARE"], // Manager's management
