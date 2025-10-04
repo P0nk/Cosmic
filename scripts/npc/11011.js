@@ -69,7 +69,7 @@ function tierForReqLevel(req) {
     return 'T7';
 }
 function isWeapon(item) {
-    return ItemConstants.isWeapon(item.getItemId());
+    return (item.getWatk() > 0 || item.getMatk() > 0);
 }
 function foodPoolForTier(tier) {
     switch (tier) {
