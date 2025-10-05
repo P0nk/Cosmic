@@ -69,7 +69,52 @@ function tierForReqLevel(req) {
     return 'T7';
 }
 function isWeapon(item) {
-    return (item.getWatk() > 0 || item.getMatk() > 0);
+    var itemId = item.getItemId();
+    var itemName = Packages.server.ItemInformationProvider.getInstance().getName(itemId);
+
+    // Step 1: Base server check
+    var baseWeapon = ItemConstants.isWeapon(itemId);
+
+    // Step 2: Range-based detection
+    var inWeaponRange = (itemId >= 1300000 && itemId < 1500000);
+    var inCashWeaponRange = (itemId >= 1700000 && itemId < 1800000);
+
+    // Step 3: Type-based exclusions
+    var isAccessory = ItemConstants.isAccessory(itemId);
+    var isOverall = ItemConstants.isOverall(itemId);
+    var isMedal = ItemConstants.isMedal(itemId);
+    var isShield = (itemId >= 1092000 && itemId < 1100000);
+    var inArmorRange = (itemId >= 1000000 && itemId < 1300000);
+
+    // Step 4: Consolidate exclusion logic
+    var excluded = (
+        inArmorRange ||
+        isShield ||
+        isAccessory ||
+        isOverall ||
+        isMedal ||
+        inCashWeaponRange
+    );
+
+    // Step 5: Final classification
+    var finalFlag = (inWeaponRange || baseWeapon) && !excluded;
+
+    // Step 6: Full debug output
+//    console.log("====== [TierUpgrader Debug] ======");
+//    console.log("Item: " + itemName + " (" + itemId + ")");
+//    console.log("baseWeapon: " + baseWeapon);
+//    console.log("inWeaponRange: " + inWeaponRange);
+//    console.log("inCashWeaponRange: " + inCashWeaponRange);
+//    console.log("isAccessory: " + isAccessory);
+//    console.log("isOverall: " + isOverall);
+//    console.log("isMedal: " + isMedal);
+//    console.log("isShield: " + isShield);
+//    console.log("inArmorRange: " + inArmorRange);
+//    console.log("excluded: " + excluded);
+//    console.log("FINAL WEAPON FLAG: " + finalFlag);
+//    console.log("=================================");
+
+    return finalFlag;
 }
 function foodPoolForTier(tier) {
     switch (tier) {

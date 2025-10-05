@@ -11,19 +11,20 @@ var selectedItem = null;
 var pendingTier = null;
 var pendingDelta = null;
 var preUpgradeItem = null;
+
 // ======================= CONFIG ========================
-// Fill/adjust these IDs to match your FoodDropper.java tiers.
 const FOOD_T1 = [4036173, 4036174];
 const FOOD_T2 = [4036175, 4036176, 4036177];
 const FOOD_T3 = [4036178, 4036179, 4036180, 4036181, 4036182, 4036183];
 const FOOD_T4 = [4036184, 4036185, 4036186, 4036187, 4036188, 4036189];
 const FOOD_T5 = [4036190, 4036191, 4036192, 4036193, 4036194, 4036195, 4036196, 4036197, 4036198, 4036199, 4036200];
 const FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 4036208, 4036209, 4036210];
-// T7 (to be confirmed):
 const FOOD_T7 = [];
 
-const FOOD_PER_UPGRADE = 1; // how many to consume per upgrade
+const FOOD_PER_UPGRADE = 1;
 const MESO_FEE = { T1:0, T2:0, T3:0, T4:0, T5:0, T6:0, T7:0 };
+
+const ItemConstants = Packages.constants.inventory.ItemConstants;
 
 // ================== STATS PER TIER =====================
 function tierDelta(tier, isWeapon) {
@@ -47,7 +48,7 @@ function tierDelta(tier, isWeapon) {
             return isWeapon ? {str:7, dex:7, int:7, luk:7, watk:9, matk:9}
                             : {str:9, dex:9, int:9, luk:9, watk:1, matk:1};
         case 'T7':
-            return {str:0, dex:0, int:0, luk:0, watk:0, matk:0}; // placeholder
+            return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
     }
     return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
 }
@@ -66,22 +67,57 @@ function tierForReqLevel(req) {
     if (req <= 160) return 'T6';
     return 'T7';
 }
+
 function isWeapon(item) {
-    return (item.getWatk() > 0 || item.getMatk() > 0);
+    var itemId = item.getItemId();
+    var itemName = Packages.server.ItemInformationProvider.getInstance().getName(itemId);
+
+    // Step 1: Base server check
+    var baseWeapon = ItemConstants.isWeapon(itemId);
+
+    // Step 2: Range-based detection
+    var inWeaponRange = (itemId >= 1300000 && itemId < 1500000);
+    var inCashWeaponRange = (itemId >= 1700000 && itemId < 1800000);
+
+    // Step 3: Type-based exclusions
+    var isAccessory = ItemConstants.isAccessory(itemId);
+    var isOverall = ItemConstants.isOverall(itemId);
+    var isMedal = ItemConstants.isMedal(itemId);
+    var isShield = (itemId >= 1092000 && itemId < 1100000);
+    var inArmorRange = (itemId >= 1000000 && itemId < 1300000);
+
+    // Step 4: Consolidate exclusion logic
+    var excluded = (
+        inArmorRange ||
+        isShield ||
+        isAccessory ||
+        isOverall ||
+        isMedal ||
+        inCashWeaponRange
+    );
+
+    // Step 5: Final classification
+    var finalFlag = (inWeaponRange || baseWeapon) && !excluded;
+
+    // Step 6: Full debug output
+    console.log("====== [TierUpgrader Debug] ======");
+    console.log("Item: " + itemName + " (" + itemId + ")");
+    console.log("baseWeapon: " + baseWeapon);
+    console.log("inWeaponRange: " + inWeaponRange);
+    console.log("inCashWeaponRange: " + inCashWeaponRange);
+    console.log("isAccessory: " + isAccessory);
+    console.log("isOverall: " + isOverall);
+    console.log("isMedal: " + isMedal);
+    console.log("isShield: " + isShield);
+    console.log("inArmorRange: " + inArmorRange);
+    console.log("excluded: " + excluded);
+    console.log("FINAL WEAPON FLAG: " + finalFlag);
+    console.log("=================================");
+
+    return finalFlag;
 }
-function foodPoolForTier(tier) {
-    switch (tier) {
-        case 'T1': return FOOD_T1;
-        case 'T2': return FOOD_T2;
-        case 'T3': return FOOD_T3;
-        case 'T4': return FOOD_T4;
-        case 'T5': return FOOD_T5;
-        case 'T6': return FOOD_T6;
-        case 'T7': return FOOD_T7;
-    }
-    return [];
-}
-// Build a pretty list of acceptable Food items like “materials required” displays
+
+
 function foodListForTier(tier, qty) {
     var pool = foodPoolForTier(tier);
     if (!pool || pool.length === 0) return "#r(No food configured for " + tier + ")#k";
@@ -91,6 +127,7 @@ function foodListForTier(tier, qty) {
     }
     return parts.join("\r\n");
 }
+
 function findUsableFoodId(tier, need) {
     var pool = foodPoolForTier(tier);
     for (var i = 0; i < pool.length; i++) {
@@ -99,6 +136,7 @@ function findUsableFoodId(tier, need) {
     }
     return 0;
 }
+
 function applyStats(item, d) {
     item.setStr(item.getStr() + d.str);
     item.setDex(item.getDex() + d.dex);
@@ -107,9 +145,10 @@ function applyStats(item, d) {
     item.setWatk(item.getWatk() + d.watk);
     item.setMatk(item.getMatk() + d.matk);
 }
+
 function statSummary(item, d) {
     function line(label, cur, add) {
-        return label + ": " + cur + " to " + (cur + add) + (add ? " (+"+add+")" : "");
+        return label + ": " + cur + " → " + (cur + add) + (add ? " (+" + add + ")" : "");
     }
     var lines = [];
     lines.push(line("STR", item.getStr(), d.str));
@@ -134,10 +173,6 @@ function hasEnoughTierFood(tier, qty) {
     return countTierFood(tier) >= qty;
 }
 
-/**
- * Consume qty items from any combination of IDs in the tier pool.
- * Returns true if fully consumed; false if not enough.
- */
 function consumeTierFood(tier, qty) {
     var pool = foodPoolForTier(tier);
     var remaining = qty;
@@ -145,19 +180,15 @@ function consumeTierFood(tier, qty) {
     for (var i = 0; i < pool.length && remaining > 0; i++) {
         var id = pool[i];
         var have = cm.itemQuantity(id);
-        console.log("ID: " + id + " Have: " + have)
         if (have <= 0) continue;
 
         var take = Math.min(have, remaining);
         if (take > 0) {
-            console.log("Remove item")
             cm.gainItem(id, -take);
-//            remaining -= take;
-        } else {
-            return false
+            remaining -= take;
         }
     }
-    return true;
+    return remaining === 0;
 }
 
 function guide() {
@@ -190,7 +221,7 @@ function guide() {
     msg += "T5: +11 All Stats\r\n";
     msg += "T6: +9 All Stats, +1 WATK/MATK\r\n";
     msg += "T7: (Placeholder)\r\n";
-    return msg
+    return msg;
 }
 
 // ======================= SCRIPT FLOW ===================
@@ -216,8 +247,8 @@ function action(mode, type, selection) {
 
     if (status === 1) {
         if (selection == 0) {
-            cm.sendOk(guide())
-            cm.dispose()
+            cm.sendOk(guide());
+            cm.dispose();
         } else if (selection == 1) {
             var inv = cm.getInventory(1);
             if (!inv) {
@@ -278,16 +309,12 @@ function action(mode, type, selection) {
 
         var req = getEquipReqLevel(selectedItem.getItemId());
         pendingTier = tierForReqLevel(req);
-
-        // Show the full list of acceptable foods for the tier right away
         var foodList = foodListForTier(pendingTier, FOOD_PER_UPGRADE);
-
         var foodId = findUsableFoodId(pendingTier, FOOD_PER_UPGRADE);
         var weaponFlag = isWeapon(selectedItem);
         pendingDelta = tierDelta(pendingTier, weaponFlag);
         var fee = MESO_FEE[pendingTier] || 0;
 
-        // If missing the food, show a “materials required”-style list
         if (!foodId) {
             cm.sendOk(
                 "You're missing the right Food for this tier.\r\n\r\n"
@@ -298,7 +325,6 @@ function action(mode, type, selection) {
             return;
         }
 
-        // Preview message includes the full tier list too (so players know alternates)
         var msg =
             "I'll apply a #b" + pendingTier + "#k enhancement to:\r\n"
             + "#v" + selectedItem.getItemId() + "# "
@@ -316,52 +342,41 @@ function action(mode, type, selection) {
     if (status === 3) {
         var fee = MESO_FEE[pendingTier] || 0;
 
-            if (fee > 0 && cm.getMeso() < fee) {
-                cm.sendOk("You don't have enough mesos.");
-                cm.dispose();
-                return;
-            }
-
-            // Verify total across the whole tier pool
-            if (!hasEnoughTierFood(pendingTier, FOOD_PER_UPGRADE)) {
-                var foodList = foodListForTier(pendingTier, FOOD_PER_UPGRADE);
-                cm.sendOk(
-                    "Looks like you don't have enough Food for this tier.\r\n\r\n"
-                    + "#dAcceptable " + pendingTier + " Food:#k\r\n"
-                    + foodList
-                );
-                cm.dispose();
-                return;
-            }
-
-            if (fee > 0) {
-                cm.gainMeso(-fee);
-            }
-
-            // Consume from the pool across IDs (not just the first one)
-            var ok = consumeTierFood(pendingTier, FOOD_PER_UPGRADE);
-            console.log(ok)
-            if (!ok) {
-                // Re-list acceptable items when the check fails here too
-                var foodList2 = foodListForTier(pendingTier, FOOD_PER_UPGRADE);
-                cm.sendOk(
-                    "Couldn't consume the required Food for some reason.\r\n\r\n"
-                    + "#dAcceptable " + pendingTier + " Food:#k\r\n"
-                    + foodList2
-                );
-                cm.dispose();
-                return;
-            }
-
-            // Consume 1 upgrade slot
-            selectedItem.setUpgradeSlots(selectedItem.getUpgradeSlots() - 1);
-
-            // Apply stats
-            applyStats(selectedItem, pendingDelta);
-            cm.getPlayer().forceUpdateItem(selectedItem);
-
-            cm.sendOk("Done! One slot consumed.");
+        if (fee > 0 && cm.getMeso() < fee) {
+            cm.sendOk("You don't have enough mesos.");
             cm.dispose();
             return;
+        }
+
+        if (!hasEnoughTierFood(pendingTier, FOOD_PER_UPGRADE)) {
+            var foodList = foodListForTier(pendingTier, FOOD_PER_UPGRADE);
+            cm.sendOk(
+                "Looks like you don't have enough Food for this tier.\r\n\r\n"
+                + "#dAcceptable " + pendingTier + " Food:#k\r\n"
+                + foodList
+            );
+            cm.dispose();
+            return;
+        }
+
+        if (fee > 0) cm.gainMeso(-fee);
+        var ok = consumeTierFood(pendingTier, FOOD_PER_UPGRADE);
+        if (!ok) {
+            var foodList2 = foodListForTier(pendingTier, FOOD_PER_UPGRADE);
+            cm.sendOk(
+                "Couldn't consume the required Food for some reason.\r\n\r\n"
+                + "#dAcceptable " + pendingTier + " Food:#k\r\n"
+                + foodList2
+            );
+            cm.dispose();
+            return;
+        }
+
+        selectedItem.setUpgradeSlots(selectedItem.getUpgradeSlots() - 1);
+        applyStats(selectedItem, pendingDelta);
+        cm.getPlayer().forceUpdateItem(selectedItem);
+
+        cm.sendOk("Done! One slot consumed.");
+        cm.dispose();
     }
 }

@@ -4551,14 +4551,37 @@ public class Character extends AbstractCharacterObject {
                 }, buffInterval, buffInterval);
             }
         } else if (effect.isRecovery()) {
-            int healInterval = (YamlConfig.config.server.USE_ULTRA_RECOVERY) ? 2000 : 5000;
-            final byte heal = (byte) effect.getX();
+            int healInterval = (YamlConfig.config.server.USE_ULTRA_RECOVERY) ? 1000 : 5000;
+
+            int heal;
+            int x = effect.getX(); // this gives 400, 800, or 1200 depending on skill level
+
+            // Map X values to your desired heal amounts
+            switch (x) {
+                case 4000:
+                    heal = 50;
+                    break;
+                case 8000:
+                    heal = 100;
+                    break;
+                case 12000:
+                    heal = 200;
+                    break;
+                default:
+                    heal = 50; // fallback if WZ value changes or missing
+                    break;
+            }
+
+//            final byte heal = (byte) effect.getX();
 
             chrLock.lock();
             try {
                 if (recoveryTask != null) {
                     recoveryTask.cancel(false);
                 }
+
+                final int finalHeal = heal;
+                final int finalX = x; // capture for logging
 
                 recoveryTask = TimerManager.getInstance().register(new Runnable() {
                     @Override
@@ -4577,9 +4600,16 @@ public class Character extends AbstractCharacterObject {
                             return;
                         }
 
-                        addHP(heal);
-                        sendPacket(PacketCreator.showOwnRecovery(heal));
-                        getMap().broadcastMessage(Character.this, PacketCreator.showRecovery(id, heal), false);
+//                        addHP(heal);
+                        addHP(finalHeal);
+
+                        // ✅ Debug log for console
+                        System.out.println("[Recovery] Heal tick: +" + finalHeal + " HP (X=" + finalX + ") for " + getName());
+
+//                        sendPacket(PacketCreator.showOwnRecovery(heal));
+                        sendPacket(PacketCreator.showOwnRecovery((byte) finalHeal));
+//                        getMap().broadcastMessage(Character.this, PacketCreator.showRecovery(id, heal), false);
+                        getMap().broadcastMessage(Character.this,PacketCreator.showRecovery(id, (byte) finalHeal), false);
                     }
                 }, healInterval, healInterval);
             } finally {
