@@ -14,9 +14,20 @@ const CREATOR_SHARE = 0.30; // reference only, claim NPC handles reward split
 
 // Hardcoded items for sale
 const ITEMS = [
-    { id: 1003175, name: "Raven Horn Chaser Hat",  price: 2000000000 },
-    { id: 1052314, name: "Raven Horn Chaser Coat", price: 60000000 },
-    { id: 1072486, name: "Raven Horn Chaser Boots", price: 40000000 }
+    { id: 1103158, name: "[Sunny] Brown Plaid Pashmina",  price: 2000000000 },
+    { id: 1103159, name: "[Sunny] Green Plaid Pashmina", price: 2000000000 },
+    { id: 1103160, name: "[Sunny] Pink Plaid Pashmina",  price: 2000000000 },
+    { id: 1103161, name: "[Sunny] Purple Plaid Pashmina", price: 2000000000 },
+    { id: 1103162, name: "[Sunny] Red Plaid Pashmina",  price: 2000000000 },
+    { id: 1103163, name: "[Sunny] Fuschia Plaid Pashmina", price: 2000000000 },
+    { id: 1103164, name: "[Sunny] Ivory Plaid Pashmina ",  price: 2000000000 },
+    { id: 1103165, name: "[Sunny] White Plaid Pashmina", price: 2000000000 },
+    { id: 1103166, name: "[Sunny] Black Plaid Pashmina",  price: 2000000000 },
+    { id: 1103167, name: "[Sunny] Grey Plaid Pashmina", price: 2000000000 },
+    { id: 1108000, name: "[Sunny] Gold Plaid Pashmina",  price: 2000000000 },
+    { id: 1108001, name: "[Sunny] Lime Green Plaid Pashmina", price: 2000000000 },
+    { id: 1053638, name: "[Sunny] Crimson BTS Love Swan", price: 2000000000 },
+    { id: 1053639, name: "[Sunny] Blackpink BTS Love Swan", price: 2000000000 }
 ];
 
 function start() {
