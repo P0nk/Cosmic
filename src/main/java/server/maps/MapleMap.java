@@ -3600,11 +3600,17 @@ public class MapleMap {
         System.out.println("try " + monsterSpawn.size() + " - " + spawnedMonstersOnMap.get());
         System.out.println("----------------------------------");
         */
+//        System.out.println("monsterSpawn.size():" + monsterSpawn.size());
+//        System.out.println("getWorldServer().getMobrate():" + getWorldServer().getMobrate());
         float maxMob = monsterSpawn.size() * getWorldServer().getMobrate();
 
         if (YamlConfig.config.server.USE_ENABLE_FULL_RESPAWN) {
+//            System.out.println("maxMob:" + maxMob);
+//            System.out.println("Math.ceil(maxMob): " + Math.ceil(maxMob));
+//            System.out.println("spawnedMonstersOnMap.get() :" + spawnedMonstersOnMap.get());
       //      return (monsterSpawn.size() - spawnedMonstersOnMap.get()); // Original
             return (int) Math.ceil(maxMob) - spawnedMonstersOnMap.get(); // Mob Rate Increase - Merogie
+
         }
 
 //        int maxNumShouldSpawn = (int) Math.ceil(getCurrentSpawnRate(numPlayers) * monsterSpawn.size()); // original
@@ -3621,7 +3627,6 @@ public class MapleMap {
         chrRLock.lock();
         try {
             numPlayers = characters.size();
-
             if (numPlayers == 0) {
                 return;
             }
@@ -3634,20 +3639,37 @@ public class MapleMap {
             List<SpawnPoint> randomSpawn = new ArrayList<>(getMonsterSpawn());
             Collections.shuffle(randomSpawn);
             short spawned = 0;
-            for (SpawnPoint spawnPoint : randomSpawn) {
-                if (spawnPoint.shouldSpawn(getWorldServer().getMobperspawnpoint())) { // merogie
- //               if (spawnPoint.shouldSpawn()) { // original
 
+            // 🧩 Configurable values from YAML / WorldConfig
+            int mobsPerTick = getWorldServer().getMobperspawntick();       // how many spawn attempts per tick
+            int mobsPerSpawnPoint = getWorldServer().getMobperspawnpoint(); // max per spawn point
+
+            for (SpawnPoint spawnPoint : randomSpawn) {
+
+                // First spawn respects cooldown timing
+                if (spawnPoint.shouldSpawn(mobsPerSpawnPoint)) {
                     spawnMonster(spawnPoint.getMonster());
                     spawned++;
 
-                    if (spawned >= numShouldSpawn) {
-                        break;
+                    // Additional spawns (same tick) ignore cooldown but still respect per-spawn cap
+                    for (int i = 1; i < mobsPerTick; i++) {
+                        if (spawnPoint.shouldSpawnExtra(mobsPerSpawnPoint)) { // 👈 use new helper
+                            spawnMonster(spawnPoint.getMonster());
+                            spawned++;
+                            if (spawned >= numShouldSpawn) break;
+                        }
                     }
+                }
+
+                if (spawned >= numShouldSpawn) {
+                    break;
                 }
             }
         }
     }
+
+
+
 
     public void mobMpRecovery() {
         for (Monster mob : this.getAllMonsters()) {

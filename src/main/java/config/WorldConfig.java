@@ -16,4 +16,5 @@ public class WorldConfig {
     public float mob_rate = 1;
     public int max_mob_per_spawnpoint = 1;
     public boolean use_progressive_exp = true;
+    public int mob_per_spawntick = 1; // default 1 tick spawn per spawn point
 }

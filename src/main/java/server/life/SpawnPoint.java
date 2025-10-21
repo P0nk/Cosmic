@@ -1,24 +1,3 @@
-/*
- This file is part of the OdinMS Maple Story Server
- Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
- Matthias Butz <matze@odinms.de>
- Jan Christian Meyer <vimes@odinms.de>
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as
- published by the Free Software Foundation version 3 as published by
- the Free Software Foundation. You may not use, modify or distribute
- this program under any other version of the GNU Affero General Public
- License.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 package server.life;
 
 import client.Character;
@@ -41,6 +20,9 @@ public class SpawnPoint {
     private final AtomicInteger spawnedMonsters = new AtomicInteger(0);
     private final boolean immobile;
     private boolean denySpawn = false;
+
+    // ✅ Added field to support multi-spawn per tick
+    private int allowedSpawnCount = 1;
 
     public SpawnPoint(final Monster monster, Point pos, boolean immobile, int mobTime, int mobInterval, int team) {
         this.monster = monster.getId();
@@ -67,18 +49,53 @@ public class SpawnPoint {
     }
 
     public boolean shouldSpawn() {
-   //     if (denySpawn || mobTime < 0 || spawnedMonsters.get() > 0) {
         return shouldSpawn(1);
     }
 
     public boolean shouldSpawn(int maxSpawnedMonsters) {
         Monster mob = LifeFactory.getMonster(monster);
-        int max = mob != null && (mob.isBoss() || mob.getId() == 9001007) ? 1 : maxSpawnedMonsters; // Merogie - Patched to make dps dummy only spawn 1.
+        int max = (mob != null && (mob.isBoss() || mob.getId() == 9001007)) ? 1 : maxSpawnedMonsters;
+
         if (denySpawn || mobTime < 0 || spawnedMonsters.get() >= max) {
             return false;
         }
 
-        return nextPossibleSpawn <= Server.getInstance().getCurrentTime();
+        // Only allow spawn attempts if cooldown expired
+        if (nextPossibleSpawn > Server.getInstance().getCurrentTime()) {
+            return false;
+        }
+
+        // 💡 Double the spawn output per tick if possible
+        int remaining = max - spawnedMonsters.get();
+        int spawnNow = Math.min(2, remaining); // 2 mobs per tick max
+
+        // Update next spawn timing *after* this double spawn
+        nextPossibleSpawn = Server.getInstance().getCurrentTime() + mobInterval;
+
+        // Store how many spawns are permitted this tick
+        allowedSpawnCount = spawnNow;
+
+        return true;
+    }
+    // Allows additional spawns in same tick without waiting for cooldown
+    public boolean shouldSpawnExtra(int maxSpawnedMonsters) {
+        Monster mob = LifeFactory.getMonster(monster);
+        int max = (mob != null && (mob.isBoss() || mob.getId() == 9001007)) ? 1 : maxSpawnedMonsters;
+
+        if (denySpawn || mobTime < 0 || spawnedMonsters.get() >= max) {
+            return false;
+        }
+
+        // Skip cooldown check entirely for extra tick spawns
+        int remaining = max - spawnedMonsters.get();
+        return remaining > 0;
+    }
+
+
+
+    // ✅ Getter so MapleMap can read how many mobs to spawn this tick
+    public int getAllowedSpawnCount() {
+        return allowedSpawnCount;
     }
 
     public boolean shouldForceSpawn() {
@@ -108,7 +125,7 @@ public class SpawnPoint {
             public void monsterDamaged(Character from, int trueDmg) {}
 
             @Override
-            public void monsterHealed(long trueHeal) {} // slimy edits
+            public void monsterHealed(long trueHeal) {}
         });
         if (mobTime == 0) {
             nextPossibleSpawn = Server.getInstance().getCurrentTime() + mobInterval;

@@ -128,6 +128,7 @@ public class World {
     private int fishingrate;
     private float mobrate;
     private int mobperspawnpoint;
+    private final int mobperspawntick;
     private boolean progexptoggle;
 
     private final String eventmsg;
@@ -217,6 +218,7 @@ public class World {
             int fishingrate,
             float mobrate,
             int mobperspawnpoint,
+            int mobperspawntick,
             boolean progexptoggle) {
 
         this.id = world;
@@ -231,6 +233,7 @@ public class World {
         this.fishingrate = fishingrate;
         this.mobrate = mobrate;
         this.mobperspawnpoint = mobperspawnpoint;
+        this.mobperspawntick = mobperspawntick;
         this.progexptoggle = progexptoggle;
 
         runningPartyId.set(1000000001); // partyid must not clash with charid to solve update item looting issues, found thanks to Vcoc
@@ -270,6 +273,10 @@ public class World {
             FamilyDailyResetTask.resetEntitlementUsage(this);
             tman.register(new FamilyDailyResetTask(this), DAYS.toMillis(1), timeLeft);
         }
+    }
+
+    public int getMobperspawntick() {
+        return mobperspawntick;
     }
 
     public int getChannelsSize() {

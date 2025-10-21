@@ -436,6 +436,7 @@ public class Server {
         int fishingrate = YamlConfig.config.worlds.get(i).fishing_rate;
         float mobrate = YamlConfig.config.worlds.get(i).mob_rate;
         int mobperspawnpoint = YamlConfig.config.worlds.get(i).max_mob_per_spawnpoint;
+        int mobperspawntick = YamlConfig.config.worlds.get(i).mob_per_spawntick;
         boolean progexptoggle = YamlConfig.config.worlds.get(i).use_progressive_exp;
         int flag = YamlConfig.config.worlds.get(i).flag;
         String event_message = YamlConfig.config.worlds.get(i).event_message;
@@ -454,6 +455,7 @@ public class Server {
                 fishingrate,
                 mobrate,                      //Added by merogie
                 mobperspawnpoint,             //Added by merogie
+                mobperspawntick,              // added by merogie
                 progexptoggle
         );
 
