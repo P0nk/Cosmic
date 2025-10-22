@@ -1,6 +1,5 @@
 /* 11021.js — Creator Shop Claim Board
- * View creator shops, claim earnings (password-protected)
- * Simplified: no use of tempData methods.
+ * Final: fixes large number display using safe Java formatter
  */
 
 const CreatorShopManager = Packages.server.creator_shop.CreatorShopManager;
@@ -10,10 +9,14 @@ var selectedShop = null;
 var enteredPassword = null;
 var pendingReward = 0;
 
-// Define all creator shops here
 const CREATOR_SHOPS = [
-    { npcId: 11020, name: "Sunny's Shop", share: 0.60, password: "SUNNY123" }
+    { npcId: 11020, name: "Sunny's Shop", share: 0.50, password: "SUNNY123" }
 ];
+
+// Safe long-number formatter
+function formatNumber(num) {
+    return java.text.NumberFormat.getInstance().format(num);
+}
 
 function start() {
     status = 0;
@@ -27,7 +30,6 @@ function action(mode, type, selection) {
     }
     status++;
 
-    // Step 1 — Choose shop
     if (status == 1) {
         var text = "#e[ Creator Shop Earnings Board ]#n\r\n\r\n";
         text += "Select a creator shop to manage.\r\n";
@@ -37,7 +39,6 @@ function action(mode, type, selection) {
         cm.sendSimple(text);
     }
 
-    // Step 2 — Password input
     else if (status == 2) {
         selectedShop = CREATOR_SHOPS[selection];
         if (!selectedShop) {
@@ -48,7 +49,6 @@ function action(mode, type, selection) {
         cm.sendGetText("Please enter the password for #b" + selectedShop.name + "#k to proceed:");
     }
 
-    // Step 3 — Verify password, show earnings only after success
     else if (status == 3) {
         enteredPassword = cm.getText();
 
@@ -69,14 +69,13 @@ function action(mode, type, selection) {
 
         cm.sendYesNo(
             "✅ Password verified!\r\n\r\n" +
-            "Total unclaimed earnings: #b" + cm.numberWithCommas(total) + "#k mesos\r\n" +
+            "Total unclaimed earnings: #b" + formatNumber(total) + "#k mesos\r\n" +
             "Your share (" + (selectedShop.share * 100) + "%): #b" +
-            cm.numberWithCommas(pendingReward) + "#k mesos\r\n\r\n" +
+            formatNumber(pendingReward) + "#k mesos\r\n\r\n" +
             "Would you like to claim your reward now?"
         );
     }
 
-    // Step 4 — Claim payout
     else if (status == 4) {
         if (pendingReward <= 0 || selectedShop == null) {
             cm.sendOk("No pending reward found.");
@@ -88,11 +87,10 @@ function action(mode, type, selection) {
         CreatorShopManager.markClaimed(selectedShop.npcId);
 
         cm.sendOk(
-            "💰 Successfully claimed #b" + cm.numberWithCommas(pendingReward) +
+            "💰 Successfully claimed #b" + formatNumber(pendingReward) +
             "#k mesos for #b" + selectedShop.name + "#k!\r\nThank you for your contributions!"
         );
 
-        // Reset local state
         pendingReward = 0;
         selectedShop = null;
         cm.dispose();
