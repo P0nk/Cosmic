@@ -12,7 +12,7 @@ var pendingReward = 0;
 
 // Define all creator shops here
 const CREATOR_SHOPS = [
-    { npcId: 11020, name: "Sunny's Shop", share: 0.30, password: "SUNNY123" }
+    { npcId: 11020, name: "Sunny's Shop", share: 0.60, password: "SUNNY123" }
 ];
 
 function start() {
