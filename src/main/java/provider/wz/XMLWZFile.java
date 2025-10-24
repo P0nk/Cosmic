@@ -67,6 +67,12 @@ public class XMLWZFile implements DataProvider {
     public synchronized Data getData(String path) {
         Path dataFile = root.resolve(path + ".xml");
         Path imageDataDir = root.resolve(path);
+
+        System.out.println("[DEBUG][XMLWZFile] getData request: " + path);
+        System.out.println("   -> root: " + root.toAbsolutePath());
+        System.out.println("   -> dataFile: " + dataFile.toAbsolutePath());
+        System.out.println("   -> imageDataDir: " + imageDataDir.toAbsolutePath());
+
         if (!Files.exists(dataFile)) {
             return null;
         }

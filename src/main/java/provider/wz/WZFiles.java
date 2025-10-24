@@ -35,12 +35,38 @@ public enum WZFiles {
     }
 
     private static String getWzDirectory() {
-        // Either provide a custom directory path through the "wz-path" property when launching the .jar, or don't provide one to use the default "wz" directory
         String propertyPath = System.getProperty("wz-path");
+        String finalPath;
+
         if (propertyPath != null && Files.isDirectory(Path.of(propertyPath))) {
-            return propertyPath;
+            finalPath = propertyPath;
+            System.out.println("[DEBUG][WZFiles] Using custom WZ directory (via -Dwz-path): "
+                    + Path.of(propertyPath).toAbsolutePath());
+        } else {
+            finalPath = "wz";
+            System.out.println("[DEBUG][WZFiles] Using default relative directory: "
+                    + Path.of(finalPath).toAbsolutePath());
+            if (propertyPath != null) {
+                System.out.println("[DEBUG][WZFiles] Provided wz-path was invalid or not a directory: " + propertyPath);
+            }
         }
 
-        return "wz";
+        // Small extra check: list known WZ files
+        try {
+            Path dir = Path.of(finalPath);
+            if (Files.isDirectory(dir)) {
+                System.out.println("[DEBUG][WZFiles] Listing found WZ directories:");
+                Files.list(dir).filter(Files::isDirectory).forEach(f -> {
+                    System.out.println("    - " + f.getFileName());
+                });
+            } else {
+                System.out.println("[DEBUG][WZFiles] Directory does not exist: " + dir.toAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("[DEBUG][WZFiles] Error checking directory contents: " + e.getMessage());
+        }
+
+        return finalPath;
     }
+
 }
