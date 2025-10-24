@@ -101,8 +101,8 @@ public final class SummonDamageHandler extends AbstractDealDamageHandler {
             if (damage > maxDmg) {
                 AutobanFactory.DAMAGE_HACK.alert(c.getPlayer(), "Possible packet editing summon damage exploit.");
                 final String mobName = MonsterInformationProvider.getInstance().getMobNameFromId(mob.getId());
-                log.info("Possible exploit - chr {} used a summon of skillId {} to attack {} with damage {} (max: {})",
-                        c.getPlayer().getName(), summon.getSkill(), mobName, damage, maxDmg);
+//                log.info("Possible exploit - chr {} used a summon of skillId {} to attack {} with damage {} (max: {})", -- merogie removed spam on server
+//                        c.getPlayer().getName(), summon.getSkill(), mobName, damage, maxDmg);
                 damage = maxDmg;
             }
 
