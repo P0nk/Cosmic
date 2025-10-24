@@ -4608,7 +4608,7 @@ public class Character extends AbstractCharacterObject {
                         addHP(finalHeal);
 
                         // ✅ Debug log for console
-                        System.out.println("[Recovery] Heal tick: +" + finalHeal + " HP (X=" + finalX + ") for " + getName());
+//                        System.out.println("[Recovery] Heal tick: +" + finalHeal + " HP (X=" + finalX + ") for " + getName());
 
 //                        sendPacket(PacketCreator.showOwnRecovery(heal));
                         sendPacket(PacketCreator.showOwnRecovery((byte) finalHeal));
