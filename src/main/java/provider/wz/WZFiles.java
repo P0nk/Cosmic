@@ -40,14 +40,14 @@ public enum WZFiles {
 
         if (propertyPath != null && Files.isDirectory(Path.of(propertyPath))) {
             finalPath = propertyPath;
-            System.out.println("[DEBUG][WZFiles] Using custom WZ directory (via -Dwz-path): "
-                    + Path.of(propertyPath).toAbsolutePath());
+//            System.out.println("[DEBUG][WZFiles] Using custom WZ directory (via -Dwz-path): "
+//                    + Path.of(propertyPath).toAbsolutePath());
         } else {
             finalPath = "wz";
-            System.out.println("[DEBUG][WZFiles] Using default relative directory: "
-                    + Path.of(finalPath).toAbsolutePath());
+//            System.out.println("[DEBUG][WZFiles] Using default relative directory: "
+//                    + Path.of(finalPath).toAbsolutePath());
             if (propertyPath != null) {
-                System.out.println("[DEBUG][WZFiles] Provided wz-path was invalid or not a directory: " + propertyPath);
+//                System.out.println("[DEBUG][WZFiles] Provided wz-path was invalid or not a directory: " + propertyPath);
             }
         }
 
@@ -55,15 +55,15 @@ public enum WZFiles {
         try {
             Path dir = Path.of(finalPath);
             if (Files.isDirectory(dir)) {
-                System.out.println("[DEBUG][WZFiles] Listing found WZ directories:");
+//                System.out.println("[DEBUG][WZFiles] Listing found WZ directories:");
                 Files.list(dir).filter(Files::isDirectory).forEach(f -> {
-                    System.out.println("    - " + f.getFileName());
+//                    System.out.println("    - " + f.getFileName());
                 });
             } else {
-                System.out.println("[DEBUG][WZFiles] Directory does not exist: " + dir.toAbsolutePath());
+//                System.out.println("[DEBUG][WZFiles] Directory does not exist: " + dir.toAbsolutePath());
             }
         } catch (Exception e) {
-            System.out.println("[DEBUG][WZFiles] Error checking directory contents: " + e.getMessage());
+//            System.out.println("[DEBUG][WZFiles] Error checking directory contents: " + e.getMessage());
         }
 
         return finalPath;

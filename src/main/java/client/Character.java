@@ -11526,20 +11526,27 @@ public class Character extends AbstractCharacterObject {
 
         for (Item item : useItems) {
             int itemId = item.getItemId();
+            int fam = itemId / 10000;
             String itemName = ii.getName(itemId);
             if (itemName == null) itemName = "Unknown";
             scanned++;
 
-            System.out.println("[PotionBank] Scanning item " + itemId + " (" + itemName + ")");
+            System.out.println("[PotionBank] Scanning item " + itemId + " (" + itemName + "), family=" + fam);
 
-            // --- Step 1: Skip excluded ranges ---
+            // ✅ Only allow potions and food
+            if (fam != 200 && fam != 201 && fam != 202) {
+                System.out.println("   -> skipped (wrong family " + fam + ")");
+                skipped++;
+                continue;
+            }
+
+            // Exclude event potions etc.
             if (itemId >= 2002031 && itemId <= 2002036) {
                 System.out.println("   -> skipped (excluded range 2002031–2002036)");
                 skipped++;
                 continue;
             }
 
-            // --- Step 2: Retrieve item effect instead of XML only ---
             StatEffect effect = ii.getItemEffect(itemId);
             if (effect == null) {
                 System.out.println("   -> skipped (no item effect)");
@@ -11612,6 +11619,10 @@ public class Character extends AbstractCharacterObject {
 
         for (Item item : getInventory(InventoryType.USE).list()) {
             int itemId = item.getItemId();
+            int fam = itemId / 10000;
+
+            // ✅ Only scan potions / foods (0200–0202)
+            if (fam != 200 && fam != 201 && fam != 202) continue;
 
             // Skip excluded IDs
             if (itemId >= 2002031 && itemId <= 2002036) continue;
