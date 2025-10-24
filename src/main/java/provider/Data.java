@@ -32,4 +32,6 @@ public interface Data extends DataEntity, Iterable<Data> {
     List<Data> getChildren();
     Data getChildByPath(String path);
     Object getData();
+
+    Data getChild(String info);
 }

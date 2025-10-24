@@ -97,6 +97,8 @@ import net.server.world.PartyOperation;
 import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import provider.Data;
+import provider.DataTool;
 import scripting.AbstractPlayerInteraction;
 import scripting.event.EventInstanceManager;
 import scripting.item.ItemScriptManager;
@@ -148,6 +150,7 @@ import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.MonsterCarnivalParty;
 import server.partyquest.PartyQuest;
+import server.potionbank.PotionBankManager;
 import server.quest.Quest;
 import server.ItemBuybackManager;
 import server.ItemBuybackManager.BuybackEntry;
@@ -175,6 +178,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -10808,6 +10812,8 @@ public class Character extends AbstractCharacterObject {
             return false;
         }
 
+
+
         /*try (PreparedStatement ps = con.prepareStatement("UPDATE playernpcs SET name = ? WHERE name = ?")) {
             ps.setString(1, newName);
             ps.setString(2, oldName);
@@ -11503,6 +11509,179 @@ public class Character extends AbstractCharacterObject {
 
     public void setTotalDamageDealt(int damage) {
         totalDamageDealt = damage;
+    }
+
+    // ============================================================
+// Consolidate Healing Potions into Potion Bank
+// ============================================================
+    public void consolidatePotions() {
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        long hpTotal = 0;
+        long mpTotal = 0;
+        int scanned = 0, stored = 0, skipped = 0;
+
+        System.out.println("[PotionBank] ==== ConsolidatePotions() start for " + getName() + " ====");
+
+        List<Item> useItems = new ArrayList<>(getInventory(InventoryType.USE).list());
+
+        for (Item item : useItems) {
+            int itemId = item.getItemId();
+            String itemName = ii.getName(itemId);
+            if (itemName == null) itemName = "Unknown";
+            scanned++;
+
+            System.out.println("[PotionBank] Scanning item " + itemId + " (" + itemName + ")");
+
+            // --- Step 1: Skip excluded ranges ---
+            if (itemId >= 2002031 && itemId <= 2002036) {
+                System.out.println("   -> skipped (excluded range 2002031–2002036)");
+                skipped++;
+                continue;
+            }
+
+            // --- Step 2: Retrieve item effect instead of XML only ---
+            StatEffect effect = ii.getItemEffect(itemId);
+            if (effect == null) {
+                System.out.println("   -> skipped (no item effect)");
+                skipped++;
+                continue;
+            }
+
+            int hp = effect.getHp();
+            int mp = effect.getMp();
+            int hpR = effect.getHpR();
+            int mpR = effect.getMpR();
+
+            boolean heals = (hp > 0 || mp > 0 || hpR > 0 || mpR > 0);
+            if (!heals) {
+                System.out.println("   -> skipped (non-healing item)");
+                skipped++;
+                continue;
+            }
+
+            int healHP = hp + (hpR * 100);
+            int healMP = mp + (mpR * 100);
+            if (healHP == 0 && healMP == 0) {
+                System.out.println("   -> skipped (heal values zero)");
+                skipped++;
+                continue;
+            }
+
+            int qty = item.getQuantity();
+            long addHP = (long) healHP * qty;
+            long addMP = (long) healMP * qty;
+
+            hpTotal += addHP;
+            mpTotal += addMP;
+            stored++;
+
+            System.out.println("   -> accepted qty=" + qty +
+                    " healHP=" + healHP + " healMP=" + healMP +
+                    " addHP=" + addHP + " addMP=" + addMP);
+
+            InventoryManipulator.removeFromSlot(getClient(), InventoryType.USE, item.getPosition(), (short) qty, false);
+        }
+
+        System.out.println("[PotionBank] Finished scan: scanned=" + scanned +
+                " stored=" + stored + " skipped=" + skipped +
+                " totals HP=" + hpTotal + " MP=" + mpTotal);
+
+        if (hpTotal == 0 && mpTotal == 0) {
+            dropMessage(5, "[Potion Bank] No valid healing items found.");
+            System.out.println("[PotionBank] Nothing to add.");
+            return;
+        }
+
+        PotionBankManager.addBanked(this, hpTotal, mpTotal);
+        dropMessage(5, "[Potion Bank] Deposited " + hpTotal + " HP and " + mpTotal + " MP!");
+        System.out.println("[PotionBank] ==== ConsolidatePotions() end ====");
+    }
+
+
+
+    // ============================================================
+// Preview what would be consolidated
+// ============================================================
+    public Map<String, Object> previewConsolidatePotions() {
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+
+        long totalHP = 0L;
+        long totalMP = 0L;
+        StringBuilder details = new StringBuilder();
+        Map<String, Object> result = new HashMap<>();
+
+        for (Item item : getInventory(InventoryType.USE).list()) {
+            int itemId = item.getItemId();
+
+            // Skip excluded IDs
+            if (itemId >= 2002031 && itemId <= 2002036) continue;
+
+            StatEffect effect = ii.getItemEffect(itemId);
+            if (effect == null) continue;
+
+            int hp = effect.getHp();
+            int mp = effect.getMp();
+            int hpR = effect.getHpR();
+            int mpR = effect.getMpR();
+
+            boolean heals = (hp > 0 || mp > 0 || hpR > 0 || mpR > 0);
+            if (!heals) continue;
+
+            int healHP = hp + (hpR * 100);
+            int healMP = mp + (mpR * 100);
+            if (healHP == 0 && healMP == 0) continue;
+
+            int qty = item.getQuantity();
+            long addHP = (long) healHP * qty;
+            long addMP = (long) healMP * qty;
+
+            totalHP += addHP;
+            totalMP += addMP;
+
+            String itemName = ii.getName(itemId);
+            if (itemName == null) itemName = "Item " + itemId;
+
+            details.append(" - ").append(itemName)
+                    .append(" x").append(qty)
+                    .append(" (+").append(addHP).append(" HP, +")
+                    .append(addMP).append(" MP)\r\n");
+        }
+
+        if (totalHP == 0L && totalMP == 0L) {
+            return null;
+        }
+
+        result.put("totalHP", totalHP);
+        result.put("totalMP", totalMP);
+        result.put("detailText", details.toString());
+        return result;
+    }
+
+
+
+
+// ============================================================
+// Potion Bank Integration
+// ============================================================
+
+    public long getBankedHP() {
+        // Character object passes its ID to manager
+        return PotionBankManager.getBankedHP(getId());
+    }
+
+    public long getBankedMP() {
+        // Character object passes its ID to manager
+        return PotionBankManager.getBankedMP(getId());
+    }
+
+    public boolean withdrawHP(long amount) {
+        // Pass the Character instance itself to manager
+        return PotionBankManager.withdrawHP(this, amount);
+    }
+
+    public boolean withdrawMP(long amount) {
+        // Pass the Character instance itself to manager
+        return PotionBankManager.withdrawMP(this, amount);
     }
 
 }

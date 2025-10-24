@@ -294,7 +294,7 @@ public class ItemInformationProvider {
         return blockMouse;
     }
 
-    private Data getItemData(int itemId) {
+    public Data getItemData(int itemId) {
         Data ret = null;
         String idStr = "0" + itemId;
         DataDirectoryEntry root = itemData.getRoot();

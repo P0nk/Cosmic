@@ -1,3 +1,20 @@
+/*
+ * NPC: Menma (Dual-Service)
+ * Functionality:
+ *   1. Ore Pouch System - Store and withdraw ores, powders, stimulators.
+ *   2. Potion Bank System - Consolidate all healing potions/food into HP/MP storage and withdraw standardized potions.
+ *
+ * Author: MerogieMS (Tom)
+ * Notes:
+ *   - Fully backend-linked (no NPCConversationManager edits needed).
+ *   - Compatible with OrePouchManager.java and PotionBankManager.java.
+ *   - Uses ASCII/bold UI formatting (no emojis).
+ */
+
+// ============================================================================
+// == ORE POUCH SECTION ========================================================
+// ============================================================================
+
 // Friendly ore name mapping
 var oreNames = {
     4010000: "Bronze Ore",
@@ -243,16 +260,20 @@ var oreNames = {
 };
 
 // All ore item IDs
-var ores = Object.keys(oreNames).map(function(id) {
+var ores = Object.keys(oreNames).map(function (id) {
     return parseInt(id);
 });
 
-// Java short conversion
+// Java class helpers
 var JavaShort = Java.type("java.lang.Short");
+var ItemInfo = Packages.server.ItemInformationProvider.getInstance();
+var potionBank = Packages.server.potionbank.PotionBankManager;
 
 var status = 0;
 var selectedIndex = -1;
+var selectedService = -1;
 var withdrawAmount = 0;
+var prevSelection = -1;
 
 function start() {
     status = -1;
@@ -260,8 +281,6 @@ function start() {
 }
 
 function action(mode, type, selection) {
-    java.lang.System.out.println("[OrePouch] status = " + status + ", selection = " + selection);
-
     if (mode !== 1) {
         cm.dispose();
         return;
@@ -269,13 +288,30 @@ function action(mode, type, selection) {
 
     status++;
 
-    // Menu
+    // =========================================================================
+    // == MAIN MENU ============================================================
+    // =========================================================================
     if (status === 0) {
-        cm.sendSimple("Helloo I'm Menma! I can help hold on to your ores/powders and stimulators! Would you like my help?\r\n#L0#Deposit all items from inventory\r\n#L1#Withdraw items from pouch");
+        var text = "Hello, I'm Menma!\r\n\r\n";
+        text += "#bSelect a service to use:#k\r\n";
+        text += "#L0#Manage Ore Pouch\r\n";
+        text += "#L1#Access Potion Bank\r\n";
+        cm.sendSimple(text);
     }
 
-    // Deposit
+    // =========================================================================
+    // == ORE POUCH SERVICE ====================================================
+    // =========================================================================
     else if (status === 1 && selection === 0) {
+        selectedService = 0;
+        var text = "Ore Pouch Options:\r\n\r\n";
+        text += "#L10#Deposit all ores, powders, and stimulators\r\n";
+        text += "#L11#Withdraw items from pouch\r\n";
+        cm.sendSimple(text);
+    }
+
+    // Ore deposit
+    else if (status === 2 && selectedService === 0 && selection === 10) {
         var deposited = 0;
         var skipped = [];
         var pouch = cm.getPlayer().getOrePouch();
@@ -296,33 +332,29 @@ function action(mode, type, selection) {
             var maxAllowed = 32767 - pouchQty;
             if (maxAllowed <= 0) {
                 skipped.push(oreNames[id] || ("Ore (" + id + ")"));
-                java.lang.System.out.println("[OrePouch] Skipped " + id + ": pouch full");
                 continue;
             }
 
             var toDeposit = Math.min(inventoryQty, maxAllowed);
             cm.gainItem(id, JavaShort.valueOf(-toDeposit));
             cm.getPlayer().addOreToPouch(id, toDeposit);
-            java.lang.System.out.println("[OrePouch] Deposited " + id + " x" + toDeposit);
             deposited += toDeposit;
 
             if (toDeposit < inventoryQty) {
                 skipped.push((oreNames[id] || ("Ore (" + id + ")")) + " (partially deposited)");
-                java.lang.System.out.println("[OrePouch] Partially deposited " + id + ": " + toDeposit + " of " + inventoryQty);
             }
         }
 
-        var msg = "Deposited " + deposited + " items into your pouch.";
+        var msg = "Deposited " + deposited + " ores into your pouch.";
         if (skipped.length > 0) {
-            msg += "\r\nCannot store more of: " + skipped.join(", ") + " (limit 32,767 reached)";
+            msg += "\r\nCould not store: " + skipped.join(", ") + " (limit 32,767 each)";
         }
-
         cm.sendOk(msg);
         cm.dispose();
     }
 
-    // Withdraw menu
-    else if (status === 1 && selection === 1) {
+    // Ore withdraw menu
+    else if (status === 2 && selectedService === 0 && selection === 11) {
         var pouch = cm.getPlayer().getOrePouch();
         if (pouch.size() === 0) {
             cm.sendOk("Your Ore Pouch is empty.");
@@ -330,19 +362,18 @@ function action(mode, type, selection) {
             return;
         }
 
-        var text = "Select the ore you want to withdraw:\r\n";
+        var text = "Select the ore to withdraw:\r\n";
         for (var i = 0; i < pouch.size(); i++) {
             var item = pouch.get(i);
             var itemId = item.getItemId();
-            var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
-            text += "#L" + i + "##v" + itemId + "# "+ name +" (" + item.getQuantity() + ")\r\n";
+            var name = oreNames[itemId] || ItemInfo.getName(itemId);
+            text += "#L" + i + "##v" + itemId + "# " + name + " (" + item.getQuantity() + ")\r\n";
         }
-
         cm.sendSimple(text);
     }
 
-    // Quantity selection
-    else if (status === 2) {
+    // Ore quantity prompt
+    else if (status === 3 && selectedService === 0) {
         var pouch = cm.getPlayer().getOrePouch();
 
         if (selection < 0 || selection >= pouch.size()) {
@@ -351,38 +382,29 @@ function action(mode, type, selection) {
             return;
         }
 
-        var item = pouch.get(selection);
-        if (item == null) {
-            cm.sendOk("This item no longer exists in your pouch.");
-            cm.dispose();
-            return;
-        }
-
         selectedIndex = selection;
+        var item = pouch.get(selection);
         var itemId = item.getItemId();
+        var name = oreNames[itemId] || ItemInfo.getName(itemId);
         var quantity = item.getQuantity();
-        var name = oreNames[itemId] || ("Ore (" + itemId + ")");
 
-        // Default to max amount
-        cm.sendGetNumber("How many #b" + name + "#k would you like to withdraw?\r\n(Max: " + quantity + ")", quantity, 1, quantity);
+        cm.sendGetNumber("How many #b" + name + "#k to withdraw?\r\n(Max: " + quantity + ")", quantity, 1, quantity);
     }
 
-    // Perform withdrawal
-    else if (status === 3) {
+    // Ore withdrawal execution
+    else if (status === 4 && selectedService === 0) {
         withdrawAmount = selection;
-
         var pouch = cm.getPlayer().getOrePouch();
         var item = pouch.get(selectedIndex);
-
         if (item == null) {
-            cm.sendOk("This item no longer exists in your pouch.");
+            cm.sendOk("This item no longer exists.");
             cm.dispose();
             return;
         }
 
         var itemId = item.getItemId();
         var quantity = item.getQuantity();
-        var name = oreNames[itemId] || ("Ore (" + itemId + ")");
+        var name = oreNames[itemId] || ItemInfo.getName(itemId);
 
         if (withdrawAmount <= 0 || withdrawAmount > quantity) {
             cm.sendOk("Invalid quantity.");
@@ -392,20 +414,137 @@ function action(mode, type, selection) {
 
         if (cm.canHold(itemId, withdrawAmount)) {
             cm.gainItem(itemId, withdrawAmount);
-            java.lang.System.out.println("[OrePouch] Withdrawing: " + itemId + " x" + withdrawAmount);
-
             if (withdrawAmount === quantity) {
                 cm.getPlayer().removeOreFromPouch(itemId);
             } else {
                 item.setQuantity(quantity - withdrawAmount);
                 Packages.server.inventory.OrePouchManager.saveOrePouchItems(cm.getPlayer().getId(), pouch);
             }
-
-            cm.sendOk("Withdrawn " + withdrawAmount + " successfully.");
+            cm.sendOk("Withdrawn " + withdrawAmount + " of " + name + ".");
         } else {
-            cm.sendOk("Not enough space in your inventory.");
+            cm.sendOk("Not enough space in inventory.");
         }
-
         cm.dispose();
     }
+// =========================================================================
+// == POTION BANK SERVICE ==================================================
+// =========================================================================
+// 🔧 CHANGE: Removed "Check balance" option since summary already shows balance
+else if (status === 1 && selection === 1) {
+    selectedService = 1;
+    var hp = potionBank.getBankedHP(cm.getPlayer().getId());
+    var mp = potionBank.getBankedMP(cm.getPlayer().getId());
+    var text = "Potion Bank Summary:\r\n\r\n";
+    text += "Stored HP: #b" + hp + "#k\r\n";
+    text += "Stored MP: #b" + mp + "#k\r\n\r\n";
+    text += "#L20#Deposit all healing items\r\n";
+    text += "#L21#Withdraw potions\r\n";
+    cm.sendSimple(text);
+}
+
+// Deposit healing items - now shows preview before confirming
+// 🔧 CHANGE: use .get() for Java Map keys, improved formatting and warning
+else if (status === 2 && selectedService === 1 && selection === 20) {
+    prevSelection = selection; // remember this was a deposit action
+    var preview = cm.getPlayer().previewConsolidatePotions();
+    if (preview == null) {
+        cm.sendOk("No healing items found in your inventory.");
+        cm.dispose();
+        return;
+    }
+
+    var detail  = preview.get("detailText");
+    var totalHP = preview.get("totalHP");
+    var totalMP = preview.get("totalMP");
+
+    var msg = "These items will be consolidated into your Potion Bank:\r\n\r\n";
+    msg += detail + "\r\n";
+    msg += "#bEstimated HP gained: " + totalHP + "#k\r\n";
+    msg += "#bEstimated MP gained: " + totalMP + "#k\r\n";
+    msg += "\r\n#rWARNING: Any total exceeding 2,000,000,000 HP or MP will be voided!#k\r\n\r\n";
+    msg += "Proceed with consolidation?";
+    cm.sendYesNo(msg);
+}
+
+// Confirm deposit (only if player came from Deposit path)
+else if (status === 3 && selectedService === 1 && prevSelection === 20) {
+    cm.getPlayer().consolidatePotions();
+    cm.sendOk("All food and potions have been deposited into your Potion Bank.");
+    prevSelection = -1; // reset
+    cm.dispose();
+}
+
+// Withdraw potion menu
+else if (status === 2 && selectedService === 1 && selection === 21) {
+    prevSelection = 21; // track which branch player is in
+    var list = "Select a potion to withdraw:\r\n";
+    list += "-----------------------------------------\r\n";
+    list += "#L0##v2000000# Red Potion (50 HP)\r\n";
+    list += "#L1##v2000001# Orange Potion (150 HP)\r\n";
+    list += "#L2##v2000002# White Potion (300 HP)\r\n";
+    list += "#L3##v2000003# Blue Potion (100 MP)\r\n";
+    list += "#L4##v2000006# Mana Elixir (300 MP)\r\n";
+    cm.sendSimple(list);
+}
+
+// Potion type selection (withdraw)
+else if (status === 3 && selectedService === 1 && prevSelection === 21) {
+    var potions = [
+        [2000000, 50, "HP"],
+        [2000001, 150, "HP"],
+        [2000002, 300, "HP"],
+        [2000003, 100, "MP"],
+        [2000006, 300, "MP"]
+    ];
+    selectedIndex = selection;
+    var potion = potions[selectedIndex];
+    if (!potion) {
+        cm.sendOk("Invalid selection.");
+        cm.dispose();
+        return;
+    }
+    cm.sendGetNumber("How many #b" + ItemInfo.getName(potion[0]) + "#k would you like to withdraw?", 1, 1, 32000);
+}
+
+// Potion withdrawal execution (actual withdrawal)
+else if (status === 4 && selectedService === 1 && prevSelection === 21) {
+    var potions = [
+        [2000000, 50, "HP"],
+        [2000001, 150, "HP"],
+        [2000002, 300, "HP"],
+        [2000003, 100, "MP"],
+        [2000006, 300, "MP"]
+    ];
+    var potion = potions[selectedIndex];
+    var num = selection;
+    if (!potion) {
+        cm.sendOk("Invalid selection.");
+        cm.dispose();
+        return;
+    }
+
+    num = Math.max(1, Math.min(num, 32000));
+
+    var itemId = potion[0];
+    var heal = potion[1];
+    var type = potion[2];
+    var total = heal * num;
+
+    var success = (type === "HP")
+        ? potionBank.withdrawHP(cm.getPlayer(), total)
+        : potionBank.withdrawMP(cm.getPlayer(), total);
+
+    if (success) {
+        cm.gainItem(itemId, num);
+        cm.sendOk("Withdrawn " + num + "x " + ItemInfo.getName(itemId) +
+            ". Total " + type + " deducted: " + total + ".");
+    } else {
+        cm.sendOk("Not enough " + type + " stored.");
+    }
+    prevSelection = -1; // ✅ reset after transaction
+    cm.dispose();
+}
+
+
+
 }
