@@ -110,14 +110,49 @@ var lootTable = {
     ]
 };
 
+//// NOVEMBER NX GACHA LIST ////
+var lootTable = {
+    "COMMON": [
+        [2070019, "COMMON"], // Magic Throwing Knife
+        [2070020, "COMMON"], // Infinite Throwing Stars
+        [5013097, "COMMON"], // Effusive Exclamations
+        [5013094, "COMMON"], // Field of Flowers
+        [1006390, "COMMON"], // Qinglong Horns
+        [1103658, "COMMON"], // Qinglong Courage
+        [1073814, "COMMON"], // Qinglong Shoes
+        [1082588, "COMMON"], // Rainbow Marbles
+        [1004969, "COMMON"], // Pink Elephant Hat
+        [1082721, "COMMON"], // Pink Elephant Gloves
+        [1053186, "COMMON"], // Pink Elephant Outfit
+        [1072529, "COMMON"]  // Pink Elephant Slippers
+    ],
+    "RARE": [
+        [2070021, "RARE"], // Templar Throwing Stars
+        [5013095, "RARE"], // Shadow Self
+        [1703423, "RARE"], // Sweet Croffle
+        [1703421, "RARE"], // Orangey Rabbit
+        [1054082, "RARE"], // Qinglong Dress
+        [1054083, "RARE"], // Qinglong Jacket
+        [1054046, "RARE"], // The Curse of the red ghost
+        [1036330, "RARE"] // Rosy Dreams
+    ],
+    "ULTRA_RARE": [
+        [5000061, "ULTRA_RARE"], // Blue Bean
+        [2070022, "ULTRA_RARE"], // Dharma Throwing Stars
+        [5013206, "ULTRA_RARE"], // Dark Furry Tail Guardian Cat
+        [1702786, "ULTRA_RARE"]  // Blood Oath
+    ]
+};
+
+
 function start() {
     status = -1;
         // Debug print all variables
-        java.lang.System.out.println("==== NXT Gachapon Debug Start ====");
-        java.lang.System.out.println("costItem: " + costItem);
-        java.lang.System.out.println("costAmount: " + costAmount);
-        java.lang.System.out.println("rarityRates: " + JSON.stringify(rarityRates));
-        java.lang.System.out.println("lootTable: ");
+//        java.lang.System.out.println("==== NXT Gachapon Debug Start ====");
+//        java.lang.System.out.println("costItem: " + costItem);
+//        java.lang.System.out.println("costAmount: " + costAmount);
+//        java.lang.System.out.println("rarityRates: " + JSON.stringify(rarityRates));
+//        java.lang.System.out.println("lootTable: ");
 
         for (var rarity in lootTable) {
             java.lang.System.out.println(" - " + rarity + ": " + lootTable[rarity].length + " items");
@@ -125,7 +160,7 @@ function start() {
                 java.lang.System.out.println("   > " + lootTable[rarity][i][0] + " [" + lootTable[rarity][i][1] + "]");
             }
         }
-        java.lang.System.out.println("==== NXT Gachapon Debug End ====");
+//        java.lang.System.out.println("==== NXT Gachapon Debug End ====");
 
     action(1, 0, 0);
 }
@@ -162,14 +197,14 @@ function action(mode, type, selection) {
         var itemId = selected[0];
         var itemRarity = selected[1];
 
-        java.lang.System.out.println("==== can hold check Start ====");
+//        java.lang.System.out.println("==== can hold check Start ====");
         if (!cm.canHold(itemId)) {
-            java.lang.System.out.println("==== can hold check entered ====");
+//            java.lang.System.out.println("==== can hold check entered ====");
             cm.sendOk("Please ensure you have at least one free slot.");
             cm.dispose();
             return;
         }
-        java.lang.System.out.println("==== can hold check passed ====");
+//        java.lang.System.out.println("==== can hold check passed ====");
 
         cm.gainItem(itemId, 1);
         // Consume NXT
