@@ -87,16 +87,16 @@ public class ItemId {
     public static final int BEGINNER_THROWING_STAR_2 = 2070115;
 
     public static final int THROWING_STAR_MIN_1 = 2070000;
-    public static final int THROWING_STAR_MAX_1 = 2070017;
+    public static final int THROWING_STAR_MAX_1 = 2070022;
 
     public static final int THROWING_STAR_MIN_2 = 2070100;
-    public static final int THROWING_STAR_MAX_2 = 2070117;
+    public static final int THROWING_STAR_MAX_2 = 2070118;
 
     public static int[] allThrowingStarIds() {
 //        return IntStream.range(THROWING_STAR_MIN, THROWING_STAR_MAX + 1).toArray();
                     return IntStream.concat(
-                    IntStream.rangeClosed(THROWING_STAR_MIN_1, THROWING_STAR_MAX_1 + 1),
-                    IntStream.rangeClosed(THROWING_STAR_MIN_2, THROWING_STAR_MAX_2 + 1)
+                    IntStream.rangeClosed(THROWING_STAR_MIN_1, THROWING_STAR_MAX_1),
+                    IntStream.rangeClosed(THROWING_STAR_MIN_2, THROWING_STAR_MAX_2)
             ).toArray();
     }
 
