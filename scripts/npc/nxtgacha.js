@@ -133,11 +133,11 @@ var lootTable = {
         [1703421, "RARE"], // Orangey Rabbit
         [1054082, "RARE"], // Qinglong Dress
         [1054083, "RARE"], // Qinglong Jacket
-        [1054046, "RARE"], // The Curse of the red ghost
-        [1036330, "RARE"] // Rosy Dreams
+        [1054046, "RARE"] // The Curse of the red ghost
+//        [1036330, "RARE"] // Rosy Dreams
     ],
     "ULTRA_RARE": [
-        [5000061, "ULTRA_RARE"], // Blue Bean
+//        [5000061, "ULTRA_RARE"], // Blue Bean
         [2070022, "ULTRA_RARE"], // Dharma Throwing Stars
         [5013206, "ULTRA_RARE"], // Dark Furry Tail Guardian Cat
         [1702786, "ULTRA_RARE"]  // Blood Oath
