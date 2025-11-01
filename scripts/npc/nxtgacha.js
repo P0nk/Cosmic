@@ -71,44 +71,44 @@ var rarityRates = {
 //};
 
 //// OCTOBER NX GACHA LIST ////
-var lootTable = {
-    "COMMON": [
-        [1102819, "COMMON"], // Naughty Boy Backpack
-        [1052367, "COMMON"], // Crow Suit
-        [1052340, "COMMON"], // Lab Gear (M)
-        [1002468, "COMMON"], // Golden Bulldog Hat
-        [1002467, "COMMON"], // Horoscope Hat Capricon
-        [1082741, "COMMON"], // Fox Fire Sweeping Sleeve
-        [1073202, "COMMON"]  // Gatekeeper Boots
-    ],
-    "RARE": [
-        [1102858, "RARE"], // Eternal Clockwork
-        [1102868, "RARE"], // Triple Bat Cape
-        [1052083, "RARE"], // Son Wu Kong Robe
-        [1052601, "RARE"], // Kerning Technical high Uniform
-        [1051591, "RARE"], // Springtime Sprout Outfit (F)
-        [1004203, "RARE"], // Kitty Kitty Hat
-        [1003778, "RARE"], // Fluffy Cat Hood
-        [1003506, "RARE"], // Intergalactic Hat
-        [1802585, "RARE"], // Rosy Dreams
-        [1802586, "RARE"], // Idyllic Dreams
-        [1802587, "RARE"], // Hopeful Dreams
-        [1802708, "RARE"], // Baby Axol Crown
-        [1802709, "RARE"], // Baby Xolo Crown
-        [1802710, "RARE"], // Baby Lotl Crown
-    ],
-    "ULTRA_RARE": [
-        [1703248, "ULTRA_RARE"], // Manager's management
-        [1703394, "ULTRA_RARE"], // Scary Chainsaw
-        [1703489, "ULTRA_RARE"], // Popstar Keyboard Sword
-        [5000867, "ULTRA_RARE"], // Lucid
-        [5000868, "ULTRA_RARE"], // Lucid
-        [5000869, "ULTRA_RARE"], // Lucid
-        [5002060, "ULTRA_RARE"], // Baby Axol
-        [5002061, "ULTRA_RARE"], // Baby Xolo
-        [5002062, "ULTRA_RARE"]  // Baby Lotl
-    ]
-};
+//var lootTable = {
+//    "COMMON": [
+//        [1102819, "COMMON"], // Naughty Boy Backpack
+//        [1052367, "COMMON"], // Crow Suit
+//        [1052340, "COMMON"], // Lab Gear (M)
+//        [1002468, "COMMON"], // Golden Bulldog Hat
+//        [1002467, "COMMON"], // Horoscope Hat Capricon
+//        [1082741, "COMMON"], // Fox Fire Sweeping Sleeve
+//        [1073202, "COMMON"]  // Gatekeeper Boots
+//    ],
+//    "RARE": [
+//        [1102858, "RARE"], // Eternal Clockwork
+//        [1102868, "RARE"], // Triple Bat Cape
+//        [1052083, "RARE"], // Son Wu Kong Robe
+//        [1052601, "RARE"], // Kerning Technical high Uniform
+//        [1051591, "RARE"], // Springtime Sprout Outfit (F)
+//        [1004203, "RARE"], // Kitty Kitty Hat
+//        [1003778, "RARE"], // Fluffy Cat Hood
+//        [1003506, "RARE"], // Intergalactic Hat
+//        [1802585, "RARE"], // Rosy Dreams
+//        [1802586, "RARE"], // Idyllic Dreams
+//        [1802587, "RARE"], // Hopeful Dreams
+//        [1802708, "RARE"], // Baby Axol Crown
+//        [1802709, "RARE"], // Baby Xolo Crown
+//        [1802710, "RARE"], // Baby Lotl Crown
+//    ],
+//    "ULTRA_RARE": [
+//        [1703248, "ULTRA_RARE"], // Manager's management
+//        [1703394, "ULTRA_RARE"], // Scary Chainsaw
+//        [1703489, "ULTRA_RARE"], // Popstar Keyboard Sword
+//        [5000867, "ULTRA_RARE"], // Lucid
+//        [5000868, "ULTRA_RARE"], // Lucid
+//        [5000869, "ULTRA_RARE"], // Lucid
+//        [5002060, "ULTRA_RARE"], // Baby Axol
+//        [5002061, "ULTRA_RARE"], // Baby Xolo
+//        [5002062, "ULTRA_RARE"]  // Baby Lotl
+//    ]
+//};
 
 //// NOVEMBER NX GACHA LIST ////
 var lootTable = {
