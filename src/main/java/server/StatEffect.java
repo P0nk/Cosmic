@@ -770,7 +770,7 @@ public class StatEffect {
                     monsterStatus.put(MonsterStatus.WDEF, ret.y);
                     break;
                 case DragonKnight.DRAGON_ROAR:
-                    ret.hpR = -x / 100.0;
+//                    ret.hpR = -x / 100.0;
                     monsterStatus.put(MonsterStatus.STUN, 1);
                     break;
                 case Crusader.AXE_COMA:
