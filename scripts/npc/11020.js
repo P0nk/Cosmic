@@ -9,14 +9,22 @@ const BCOIN_ID = 3020002;
 const CURRENCY = "BCOIN";
 
 // Items priced in B-Coins
+
 const ITEMS = [
-    { id: 1103158, name: "[Sunny] Brown Plaid Pashmina", price: 2 },
-    { id: 1103159, name: "[Sunny] Green Plaid Pashmina", price: 2 },
-    { id: 1103160, name: "[Sunny] Pink Plaid Pashmina",  price: 2 },
-    { id: 1103161, name: "[Sunny] Purple Plaid Pashmina",price: 2 },
-    { id: 1103162, name: "[Sunny] Red Plaid Pashmina",   price: 2 },
-    { id: 1053638, name: "[Sunny] Crimson BTS Love Swan",price: 2 },
-    { id: 1053639, name: "[Sunny] Blackpink BTS Love Swan",price: 2 }
+    { id: 1103158, name: "[Sunny] Brown Plaid Pashmina",   price: 2 },
+    { id: 1103159, name: "[Sunny] Green Plaid Pashmina",   price: 2 },
+    { id: 1103160, name: "[Sunny] Pink Plaid Pashmina",    price: 2 },
+    { id: 1103161, name: "[Sunny] Purple Plaid Pashmina",  price: 2 },
+    { id: 1103162, name: "[Sunny] Red Plaid Pashmina",     price: 2 },
+    { id: 1103163, name: "[Sunny] Fuschia Plaid Pashmina", price: 2 },
+    { id: 1103164, name: "[Sunny] Ivory Plaid Pashmina",   price: 2 },
+    { id: 1103165, name: "[Sunny] Black Plaid Pashmina",   price: 2 },
+    { id: 1103166, name: "[Sunny] White Plaid Pashmina",   price: 2 },
+    { id: 1103167, name: "[Sunny] Grey Plaid Pashmina",    price: 2 },
+    { id: 1108000, name: "[Sunny] Gold Plaid Pashmina",    price: 2 },
+    { id: 1108001, name: "[Sunny] Lime Green Plaid Pashmina", price: 2 },
+    { id: 1053638, name: "[Sunny] Crimson BTS Love Swan",  price: 2 },
+    { id: 1053639, name: "[Sunny] Blackpink BTS Love Swan", price: 2 }
 ];
 
 function plural(n){ return n + " B-Coin" + (n>1?"s":""); }
