@@ -1,98 +1,47 @@
 /* 11021.js — Creator Shop Claim Board
- * Final: fixes large number display using safe Java formatter
+ * Rewards creators in B-Coins (#v3020002#)
  */
 
 const CreatorShopManager = Packages.server.creator_shop.CreatorShopManager;
-
-var status = 0;
-var selectedShop = null;
-var enteredPassword = null;
-var pendingReward = 0;
+const BCOIN_ID = 3020002;
+const CURRENCY = "BCOIN";
 
 const CREATOR_SHOPS = [
-    { npcId: 11020, name: "Sunny's Shop", share: 0.50, password: "SUNNY123" }
+    { npcId:11020, name:"Sunny's Shop", share:0.50, password:"SUNNY123" }
 ];
 
-// Safe long-number formatter
-function formatNumber(num) {
-    return java.text.NumberFormat.getInstance().format(num);
+function fmt(n){return java.text.NumberFormat.getInstance().format(n);}
+function plural(n){return n+" B-Coin"+(n>1?"s":"");}
+
+var s=0,shop=null,pwd=null,reward=0;
+
+function start(){
+    var t="#e[ Creator Shop Earnings Board ]#n\r\n";
+    for(var i=0;i<CREATOR_SHOPS.length;i++)
+        t+="#L"+i+"#View #b"+CREATOR_SHOPS[i].name+"#k#l\r\n";
+    cm.sendSimple(t);
 }
 
-function start() {
-    status = 0;
-    action(1, 0, 0);
-}
-
-function action(mode, type, selection) {
-    if (mode != 1) {
-        cm.dispose();
-        return;
-    }
-    status++;
-
-    if (status == 1) {
-        var text = "#e[ Creator Shop Earnings Board ]#n\r\n\r\n";
-        text += "Select a creator shop to manage.\r\n";
-        for (var i = 0; i < CREATOR_SHOPS.length; i++) {
-            text += "#L" + i + "#View #b" + CREATOR_SHOPS[i].name + "#k#l\r\n";
-        }
-        cm.sendSimple(text);
-    }
-
-    else if (status == 2) {
-        selectedShop = CREATOR_SHOPS[selection];
-        if (!selectedShop) {
-            cm.sendOk("Invalid shop.");
-            cm.dispose();
-            return;
-        }
-        cm.sendGetText("Please enter the password for #b" + selectedShop.name + "#k to proceed:");
-    }
-
-    else if (status == 3) {
-        enteredPassword = cm.getText();
-
-        if (enteredPassword !== selectedShop.password) {
-            cm.sendOk("❌ Incorrect password. Claim cancelled.");
-            cm.dispose();
-            return;
-        }
-
-        var total = CreatorShopManager.getUnclaimedTotal(selectedShop.npcId);
-        if (total <= 0) {
-            cm.sendOk("No unclaimed balance available for " + selectedShop.name + ".");
-            cm.dispose();
-            return;
-        }
-
-        pendingReward = Math.floor(total * selectedShop.share);
-
-        cm.sendYesNo(
-            "✅ Password verified!\r\n\r\n" +
-            "Total unclaimed earnings: #b" + formatNumber(total) + "#k mesos\r\n" +
-            "Your share (" + (selectedShop.share * 100) + "%): #b" +
-            formatNumber(pendingReward) + "#k mesos\r\n\r\n" +
-            "Would you like to claim your reward now?"
-        );
-    }
-
-    else if (status == 4) {
-        if (pendingReward <= 0 || selectedShop == null) {
-            cm.sendOk("No pending reward found.");
-            cm.dispose();
-            return;
-        }
-
-        cm.gainMeso(pendingReward);
-        CreatorShopManager.markClaimed(selectedShop.npcId);
-
-        cm.sendOk(
-            "💰 Successfully claimed #b" + formatNumber(pendingReward) +
-            "#k mesos for #b" + selectedShop.name + "#k!\r\nThank you for your contributions!"
-        );
-
-        pendingReward = 0;
-        selectedShop = null;
+function action(m,t,sel){
+    if(m!=1)return cm.dispose(); s++;
+    if(s==1){
+        shop=CREATOR_SHOPS[sel]; if(!shop)return cm.dispose();
+        cm.sendGetText("Enter password for #b"+shop.name+"#k:");
+    }else if(s==2){
+        pwd=cm.getText();
+        if(pwd!==shop.password){cm.sendOk("❌ Wrong password.");return cm.dispose();}
+        var tot=CreatorShopManager.getUnclaimedTotalByCurrency(shop.npcId,CURRENCY);
+        if(tot<=0){cm.sendOk("No unclaimed earnings for "+shop.name+".");return cm.dispose();}
+        reward=Math.floor(tot*shop.share);
+        cm.sendYesNo("✅ Password OK!\r\n\r\nTotal: #b"+fmt(tot)+"#k "+plural(tot)+
+                     "\r\nYour share ("+(shop.share*100)+"%): #b"+fmt(reward)+
+                     "#k "+plural(reward)+"\r\n\r\nClaim now?");
+    }else if(s==3){
+        if(reward<=0)return cm.dispose();
+        cm.gainItem(BCOIN_ID,reward);
+        CreatorShopManager.markClaimed(shop.npcId);
+        cm.sendOk("💰 Claimed #b"+fmt(reward)+"#k "+plural(reward)+
+                  " from #b"+shop.name+"#k!\r\nThank you!");
         cm.dispose();
     }
 }
