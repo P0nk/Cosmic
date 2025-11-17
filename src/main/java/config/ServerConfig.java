@@ -210,6 +210,7 @@ public class ServerConfig {
 
     //Quest Configuration
     public boolean USE_QUEST_RATE;
+    public int QUEST_MOB_COUNT_MODIFIER;
 
     //Quest Points Configuration
     public int QUEST_POINT_REPEATABLE_INTERVAL;

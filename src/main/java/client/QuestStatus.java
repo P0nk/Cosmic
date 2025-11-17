@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import config.YamlConfig;
+
 /**
  * @author Matze
  */
@@ -60,6 +62,7 @@ public class QuestStatus {
     }
 
     private final short questID;
+    private final Quest quest;
     private Status status;
     //private boolean updated;   //maybe this can be of use for someone?
     private final Map<Integer, String> progress = new LinkedHashMap<>();
@@ -70,6 +73,7 @@ public class QuestStatus {
     private String customData;
 
     public QuestStatus(Quest quest, Status status) {
+        this.quest = quest;
         this.questID = quest.getId();
         this.setStatus(status);
         this.completionTime = System.currentTimeMillis();
@@ -81,6 +85,7 @@ public class QuestStatus {
     }
 
     public QuestStatus(Quest quest, Status status, int npc) {
+        this.quest = quest;
         this.questID = quest.getId();
         this.setStatus(status);
         this.setNpc(npc);
@@ -93,7 +98,7 @@ public class QuestStatus {
     }
 
     public Quest getQuest() {
-        return Quest.getInstance(questID);
+        return this.quest;
     }
 
     public short getQuestID() {
@@ -131,7 +136,7 @@ public class QuestStatus {
     }
 
     private void registerMobs() {
-        for (int i : Quest.getInstance(questID).getRelevantMobs()) {
+        for (int i : this.quest.getRelevantMobs()) {
             progress.put(i, "000");
         }
         //this.setUpdated();
@@ -161,13 +166,19 @@ public class QuestStatus {
         }
 
         int current = Integer.parseInt(currentStr);
-        if (current >= this.getQuest().getMobAmountNeeded(id)) {
-            return false;
+        int maxNeeded = this.getQuest().getMobAmountNeeded(id);
+
+        int multiplier = YamlConfig.config.server.QUEST_MOB_COUNT_MODIFIER;
+
+        int newCount = current + multiplier;
+        if (newCount > maxNeeded) {
+            newCount = maxNeeded;
+        } else if (newCount < 0) {
+            newCount = 0;
         }
 
-        String str = StringUtil.getLeftPaddedStr(Integer.toString(++current), '0', 3);
+        String str = StringUtil.getLeftPaddedStr(Integer.toString(newCount), '0', 3);
         progress.put(id, str);
-        //this.setUpdated();
         return true;
     }
 

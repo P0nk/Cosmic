@@ -1,5 +1,6 @@
 package server.life;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,16 +19,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MobSkillFactoryTest {
 
     @TempDir
-    private Path wzPath;
+    static Path wzPath;
 
-    @BeforeEach
-    void setWzPath() {
-        MockitoAnnotations.openMocks(this);
-        writeTestFileToTempDir();
+    @BeforeAll
+    static void setWzPath() {
         System.setProperty("wz-path", "%s/wz".formatted(wzPath.toString()));
+        writeTestFileToTempDir();
     }
 
-    private void writeTestFileToTempDir() {
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    private static void writeTestFileToTempDir() {
         try {
             String testFileContents = readTestFileContents();
             writeTempDirFile(testFileContents);
@@ -36,15 +41,15 @@ class MobSkillFactoryTest {
         }
     }
 
-    private String readTestFileContents() throws IOException {
-        return new String(getClass()
+    private static String readTestFileContents() throws IOException {
+        return new String(MobSkillFactoryTest.class
                 .getClassLoader()
                 .getResourceAsStream("MobSkill-test.img.xml")
                 .readAllBytes()
         );
     }
 
-    private void writeTempDirFile(String fileContents) throws IOException {
+    private static void writeTempDirFile(String fileContents) throws IOException {
         Path tempDirDirectory = wzPath.resolve("wz/Skill.wz");
         Files.createDirectories(tempDirDirectory);
         Path tempDirFile = Files.createFile(tempDirDirectory.resolve("MobSkill.img.xml"));

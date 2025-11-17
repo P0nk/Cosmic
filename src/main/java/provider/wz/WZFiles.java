@@ -18,8 +18,6 @@ public enum WZFiles {
     SOUND("Sound"),
     UI("UI");
 
-    public static final String DIRECTORY = getWzDirectory();
-
     private final String fileName;
 
     WZFiles(String name) {
@@ -27,7 +25,7 @@ public enum WZFiles {
     }
 
     public Path getFile() {
-        return Path.of(DIRECTORY, fileName);
+        return Path.of(getWzDirectory(), fileName);
     }
 
     public String getFilePath() {
