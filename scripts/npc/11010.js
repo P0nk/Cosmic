@@ -99,6 +99,9 @@ var oreNames = {
     4130022: "Shield Production Stimulator",
     4130023: "Katara Forging Stimulator",
 
+};
+
+var foodName = {
 // ================= FOOD TIER ITEMS =================
     // Tier 1
     4036173: "Food_T1_01",
@@ -264,6 +267,11 @@ var ores = Object.keys(oreNames).map(function (id) {
     return parseInt(id);
 });
 
+// All food item IDs
+var food_ids = Object.keys(foodName).map(function (id) {
+    return parseInt(id);
+});
+
 // Java class helpers
 var JavaShort = Java.type("java.lang.Short");
 var ItemInfo = Packages.server.ItemInformationProvider.getInstance();
@@ -296,6 +304,7 @@ function action(mode, type, selection) {
         text += "#bSelect a service to use:#k\r\n";
         text += "#L0#Manage Ore Pouch\r\n";
         text += "#L1#Access Potion Bank\r\n";
+        text += "#L2#Access Food Bank\r\n";
         cm.sendSimple(text);
     }
 
@@ -307,6 +316,7 @@ function action(mode, type, selection) {
         var text = "Ore Pouch Options:\r\n\r\n";
         text += "#L10#Deposit all ores, powders, and stimulators\r\n";
         text += "#L11#Withdraw items from pouch\r\n";
+        text += "#L12#Withdraw all items from the pouch\r\n";
         cm.sendSimple(text);
     }
 
@@ -426,124 +436,362 @@ function action(mode, type, selection) {
         }
         cm.dispose();
     }
-// =========================================================================
-// == POTION BANK SERVICE ==================================================
-// =========================================================================
-// 🔧 CHANGE: Removed "Check balance" option since summary already shows balance
-else if (status === 1 && selection === 1) {
-    selectedService = 1;
-    var hp = potionBank.getBankedHP(cm.getPlayer().getId());
-    var mp = potionBank.getBankedMP(cm.getPlayer().getId());
-    var text = "Potion Bank Summary:\r\n\r\n";
-    text += "Stored HP: #b" + hp + "#k\r\n";
-    text += "Stored MP: #b" + mp + "#k\r\n\r\n";
-    text += "#L20#Deposit all healing items\r\n";
-    text += "#L21#Withdraw potions\r\n";
-    cm.sendSimple(text);
-}
 
-// Deposit healing items - now shows preview before confirming
-// 🔧 CHANGE: use .get() for Java Map keys, improved formatting and warning
-else if (status === 2 && selectedService === 1 && selection === 20) {
-    prevSelection = selection; // remember this was a deposit action
-    var preview = cm.getPlayer().previewConsolidatePotions();
-    if (preview == null) {
-        cm.sendOk("No healing items found in your inventory.");
+
+    // withdraw ALL items
+    else if (status === 2 && selectedService === 0 && selection === 12) {
+        var pouch = cm.getPlayer().getOrePouch();
+
+        var i = 0;
+        while (i < pouch.size() && !oreNames.hasOwnProperty(pouch.get(i).getItemId())) {
+            i++;
+        }
+
+        if (i === pouch.size()) {
+            cm.sendOk("Your ore pouch is empty.");
+            cm.dispose();
+            return;
+        }
+
+        var withdrawn = 0;
+
+        for (var j = pouch.size() - 1; j >= 0; j--) {
+            var item = pouch.get(j);
+            var itemId = item.getItemId();
+
+            if (!oreNames.hasOwnProperty(itemId)) {
+                continue;
+            }
+
+            var qty = item.getQuantity();
+
+            if (!cm.canHold(itemId, qty)) {
+                cm.sendOk("Not enough inventory space to withdraw all items from the pouch.");
+                cm.dispose();
+                return;
+            }
+
+            cm.gainItem(itemId, qty);
+            cm.getPlayer().removeOreFromPouch(itemId);
+            withdrawn += qty;
+        }
+
+        cm.sendOk("Withdrawn all items from the pouch.\r\nTotal items withdrawn: " + withdrawn + ".");
         cm.dispose();
-        return;
     }
 
-    var detail  = preview.get("detailText");
-    var totalHP = preview.get("totalHP");
-    var totalMP = preview.get("totalMP");
 
-    var msg = "These items will be consolidated into your Potion Bank:\r\n\r\n";
-    msg += detail + "\r\n";
-    msg += "#bEstimated HP gained: " + totalHP + "#k\r\n";
-    msg += "#bEstimated MP gained: " + totalMP + "#k\r\n";
-    msg += "\r\n#rWARNING: Any total exceeding 2,000,000,000 HP or MP will be voided!#k\r\n\r\n";
-    msg += "Proceed with consolidation?";
-    cm.sendYesNo(msg);
-}
+    // =========================================================================
+    // == POTION BANK SERVICE ==================================================
+    // =========================================================================
+    // 🔧 CHANGE: Removed "Check balance" option since summary already shows balance
+    else if (status === 1 && selection === 1) {
+        selectedService = 1;
+        var hp = potionBank.getBankedHP(cm.getPlayer().getId());
+        var mp = potionBank.getBankedMP(cm.getPlayer().getId());
+        var text = "Potion Bank Summary:\r\n\r\n";
+        text += "Stored HP: #b" + hp + "#k\r\n";
+        text += "Stored MP: #b" + mp + "#k\r\n\r\n";
+        text += "#L20#Deposit all healing items\r\n";
+        text += "#L21#Withdraw potions\r\n";
+        cm.sendSimple(text);
+    }
 
-// Confirm deposit (only if player came from Deposit path)
-else if (status === 3 && selectedService === 1 && prevSelection === 20) {
-    cm.getPlayer().consolidatePotions();
-    cm.sendOk("All food and potions have been deposited into your Potion Bank.");
-    prevSelection = -1; // reset
-    cm.dispose();
-}
+    // Deposit healing items - now shows preview before confirming
+    // 🔧 CHANGE: use .get() for Java Map keys, improved formatting and warning
+    else if (status === 2 && selectedService === 1 && selection === 20) {
+        prevSelection = selection; // remember this was a deposit action
+        var preview = cm.getPlayer().previewConsolidatePotions();
+        if (preview == null) {
+            cm.sendOk("No healing items found in your inventory.");
+            cm.dispose();
+            return;
+        }
 
-// Withdraw potion menu
-else if (status === 2 && selectedService === 1 && selection === 21) {
-    prevSelection = 21; // track which branch player is in
-    var list = "Select a potion to withdraw:\r\n";
-    list += "-----------------------------------------\r\n";
-    list += "#L0##v2000000# Red Potion (50 HP)\r\n";
-    list += "#L1##v2000001# Orange Potion (150 HP)\r\n";
-    list += "#L2##v2000002# White Potion (300 HP)\r\n";
-    list += "#L3##v2000003# Blue Potion (100 MP)\r\n";
-    list += "#L4##v2000006# Mana Elixir (300 MP)\r\n";
-    cm.sendSimple(list);
-}
+        var detail  = preview.get("detailText");
+        var totalHP = preview.get("totalHP");
+        var totalMP = preview.get("totalMP");
 
-// Potion type selection (withdraw)
-else if (status === 3 && selectedService === 1 && prevSelection === 21) {
-    var potions = [
-        [2000000, 50, "HP"],
-        [2000001, 150, "HP"],
-        [2000002, 300, "HP"],
-        [2000003, 100, "MP"],
-        [2000006, 300, "MP"]
-    ];
-    selectedIndex = selection;
-    var potion = potions[selectedIndex];
-    if (!potion) {
-        cm.sendOk("Invalid selection.");
+        var msg = "These items will be consolidated into your Potion Bank:\r\n\r\n";
+        msg += detail + "\r\n";
+        msg += "#bEstimated HP gained: " + totalHP + "#k\r\n";
+        msg += "#bEstimated MP gained: " + totalMP + "#k\r\n";
+        msg += "\r\n#rWARNING: Any total exceeding 2,000,000,000 HP or MP will be voided!#k\r\n\r\n";
+        msg += "Proceed with consolidation?";
+        cm.sendYesNo(msg);
+    }
+
+    // Confirm deposit (only if player came from Deposit path)
+    else if (status === 3 && selectedService === 1 && prevSelection === 20) {
+        cm.getPlayer().consolidatePotions();
+        cm.sendOk("All food and potions have been deposited into your Potion Bank.");
+        prevSelection = -1; // reset
         cm.dispose();
-        return;
     }
-    cm.sendGetNumber("How many #b" + ItemInfo.getName(potion[0]) + "#k would you like to withdraw?", 1, 1, 32000);
-}
 
-// Potion withdrawal execution (actual withdrawal)
-else if (status === 4 && selectedService === 1 && prevSelection === 21) {
-    var potions = [
-        [2000000, 50, "HP"],
-        [2000001, 150, "HP"],
-        [2000002, 300, "HP"],
-        [2000003, 100, "MP"],
-        [2000006, 300, "MP"]
-    ];
-    var potion = potions[selectedIndex];
-    var num = selection;
-    if (!potion) {
-        cm.sendOk("Invalid selection.");
+    // Withdraw potion menu
+    else if (status === 2 && selectedService === 1 && selection === 21) {
+        prevSelection = 21; // track which branch player is in
+        var list = "Select a potion to withdraw:\r\n";
+        list += "-----------------------------------------\r\n";
+        list += "#L0##v2000000# Red Potion (50 HP)\r\n";
+        list += "#L1##v2000001# Orange Potion (150 HP)\r\n";
+        list += "#L2##v2000002# White Potion (300 HP)\r\n";
+        list += "#L3##v2000003# Blue Potion (100 MP)\r\n";
+        list += "#L4##v2000006# Mana Elixir (300 MP)\r\n";
+        cm.sendSimple(list);
+    }
+
+    // Potion type selection (withdraw)
+    else if (status === 3 && selectedService === 1 && prevSelection === 21) {
+        var potions = [
+            [2000000, 50, "HP"],
+            [2000001, 150, "HP"],
+            [2000002, 300, "HP"],
+            [2000003, 100, "MP"],
+            [2000006, 300, "MP"]
+        ];
+        selectedIndex = selection;
+        var potion = potions[selectedIndex];
+        if (!potion) {
+            cm.sendOk("Invalid selection.");
+            cm.dispose();
+            return;
+        }
+        cm.sendGetNumber("How many #b" + ItemInfo.getName(potion[0]) + "#k would you like to withdraw?", 1, 1, 32000);
+    }
+
+    // Potion withdrawal execution (actual withdrawal)
+    else if (status === 4 && selectedService === 1 && prevSelection === 21) {
+        var potions = [
+            [2000000, 50, "HP"],
+            [2000001, 150, "HP"],
+            [2000002, 300, "HP"],
+            [2000003, 100, "MP"],
+            [2000006, 300, "MP"]
+        ];
+        var potion = potions[selectedIndex];
+        var num = selection;
+        if (!potion) {
+            cm.sendOk("Invalid selection.");
+            cm.dispose();
+            return;
+        }
+
+        num = Math.max(1, Math.min(num, 32000));
+
+        var itemId = potion[0];
+        var heal = potion[1];
+        var type = potion[2];
+        var total = heal * num;
+
+        var success = (type === "HP")
+            ? potionBank.withdrawHP(cm.getPlayer(), total)
+            : potionBank.withdrawMP(cm.getPlayer(), total);
+
+        if (success) {
+            cm.gainItem(itemId, num);
+            cm.sendOk("Withdrawn " + num + "x " + ItemInfo.getName(itemId) +
+                ". Total " + type + " deducted: " + total + ".");
+        } else {
+            cm.sendOk("Not enough " + type + " stored.");
+        }
+        prevSelection = -1; // ✅ reset after transaction
         cm.dispose();
-        return;
     }
 
-    num = Math.max(1, Math.min(num, 32000));
 
-    var itemId = potion[0];
-    var heal = potion[1];
-    var type = potion[2];
-    var total = heal * num;
 
-    var success = (type === "HP")
-        ? potionBank.withdrawHP(cm.getPlayer(), total)
-        : potionBank.withdrawMP(cm.getPlayer(), total);
-
-    if (success) {
-        cm.gainItem(itemId, num);
-        cm.sendOk("Withdrawn " + num + "x " + ItemInfo.getName(itemId) +
-            ". Total " + type + " deducted: " + total + ".");
-    } else {
-        cm.sendOk("Not enough " + type + " stored.");
+    // =========================================================================
+    // == FOOD BANK SERVICE ====================================================
+    // =========================================================================
+    else if (status === 1 && selection === 2) {
+        selectedService = 0;
+        var text = "Food bank Options:\r\n\r\n";
+        text += "#L20#Deposit all food\r\n";
+        text += "#L21#Withdraw food from bank\r\n";
+        text += "#L22#Withdraw all food\r\n";
+        cm.sendSimple(text);
     }
-    prevSelection = -1; // ✅ reset after transaction
-    cm.dispose();
-}
+
+    // deposit all food
+    else if (status === 2 && selectedService === 0 && selection === 20) {
+        var deposited = 0;
+        var skipped = [];
+        var pouch = cm.getPlayer().getOrePouch();
+
+        for (var i = 0; i < food_ids.length; i++) {
+            var id = food_ids[i];
+            var inventoryQty = cm.getPlayer().getItemQuantity(id, false);
+            if (inventoryQty <= 0) continue;
+
+            var pouchQty = 0;
+            for (var j = 0; j < pouch.size(); j++) {
+                if (pouch.get(j).getItemId() === id) {
+                    pouchQty = pouch.get(j).getQuantity();
+                    break;
+                }
+            }
+
+            var maxAllowed = 32767 - pouchQty;
+            if (maxAllowed <= 0) {
+                skipped.push(foodName[id] || ("Food (" + id + ")"));
+                continue;
+            }
+
+            var toDeposit = Math.min(inventoryQty, maxAllowed);
+            cm.gainItem(id, JavaShort.valueOf(-toDeposit));
+            cm.getPlayer().addOreToPouch(id, toDeposit);
+            deposited += toDeposit;
+
+            if (toDeposit < inventoryQty) {
+                skipped.push((foodName[id] || ("Food (" + id + ")")) + " (partially deposited)");
+            }
+        }
+
+        var msg = "Deposited " + deposited + " food into the food bank.";
+        if (skipped.length > 0) {
+            msg += "\r\nCould not store: " + skipped.join(", ") + " (limit 32,767 each)";
+        }
+        cm.sendOk(msg);
+        cm.dispose();
+    }
+
+    // single food withdraw menu
+    else if (status === 2 && selectedService === 0 && selection === 21) {
+        var pouch = cm.getPlayer().getOrePouch();
+
+        var i = 0;
+        var has_food = false;
+        while (i < pouch.size()) {
+            if (foodName.hasOwnProperty(pouch.get(i).getItemId())) { // break early so we dont waste time
+                has_food = true;
+                break;
+            }
+            i++;
+        }
+
+        if (!has_food) {
+            cm.sendOk("Your Food bank is empty.");
+            cm.dispose();
+            return;
+        }
+
+        var text = "Select the food to withdraw:\r\n";
+        for (var i = 0; i < pouch.size(); i++) {
+            var item = pouch.get(i);
+            var itemId = item.getItemId();
+            var name = foodName[itemId];
+            if (foodName.hasOwnProperty(itemId)) {
+                text += "#L" + i + "##v" + itemId + "# " + name + " (" + item.getQuantity() + ")\r\n";
+            }
+        }
+        cm.sendSimple(text);
+    }
+
+
+    // Food quantity prompt
+    else if (status === 3 && selectedService === 0) {
+        var pouch = cm.getPlayer().getOrePouch();
+
+        if (selection < 0 || selection >= pouch.size()) {
+            cm.sendOk("Invalid selection.");
+            cm.dispose();
+            return;
+        }
+
+        selectedIndex = selection;
+        var item = pouch.get(selection);
+        var itemId = item.getItemId();
+        var name = foodName[itemId] || ItemInfo.getName(itemId);
+        var quantity = item.getQuantity();
+
+        cm.sendGetNumber("How many #b" + name + "#k to withdraw?\r\n(Max: " + quantity + ")", quantity, 1, quantity);
+    }
+
+    // Food withdrawal execution
+    else if (status === 4 && selectedService === 0) {
+        withdrawAmount = selection;
+        var pouch = cm.getPlayer().getOrePouch();
+        var item = pouch.get(selectedIndex);
+        if (item == null) {
+            cm.sendOk("This item no longer exists.");
+            cm.dispose();
+            return;
+        }
+
+        var itemId = item.getItemId();
+        var quantity = item.getQuantity();
+        var name = foodName[itemId] || ItemInfo.getName(itemId);
+
+        if (withdrawAmount <= 0 || withdrawAmount > quantity) {
+            cm.sendOk("Invalid quantity.");
+            cm.dispose();
+            return;
+        }
+
+        if (cm.canHold(itemId, withdrawAmount)) {
+            cm.gainItem(itemId, withdrawAmount);
+            if (withdrawAmount === quantity) {
+                cm.getPlayer().removeOreFromPouch(itemId);
+            } else {
+                item.setQuantity(quantity - withdrawAmount);
+                Packages.server.inventory.OrePouchManager.saveOrePouchItems(cm.getPlayer().getId(), pouch);
+            }
+            cm.sendOk("Withdrawn " + withdrawAmount + " of " + name + ".");
+        } else {
+            cm.sendOk("Not enough space in inventory.");
+        }
+        cm.dispose();
+    }
+
+
+
+    // withdraw ALL food
+    else if (status === 2 && selectedService === 0 && selection === 22) {
+        var pouch = cm.getPlayer().getOrePouch();
+
+        var i = 0;
+        while (i < pouch.size() && !foodName.hasOwnProperty(pouch.get(i).getItemId())) {
+            i++;
+        }
+
+        if (i === pouch.size()) {
+            cm.sendOk("Your Food bank is empty.");
+            cm.dispose();
+            return;
+        }
+
+        var withdrawn = 0;
+
+        for (var j = pouch.size() - 1; j >= 0; j--) {
+            var item = pouch.get(j);
+            var itemId = item.getItemId();
+
+            if (!foodName.hasOwnProperty(itemId)) {
+                continue;
+            }
+
+            var qty = item.getQuantity();
+
+            if (!cm.canHold(itemId, qty)) {
+                cm.sendOk("Not enough inventory space to withdraw all food.");
+                cm.dispose();
+                return;
+            }
+
+            cm.gainItem(itemId, qty);
+            cm.getPlayer().removeOreFromPouch(itemId);
+            withdrawn += qty;
+        }
+
+        cm.sendOk("Withdrawn all food from the Food bank.\r\nTotal items withdrawn: " + withdrawn + ".");
+        cm.dispose();
+    }
+
+
+
+
 
 
 
