@@ -153,6 +153,127 @@ public class HiredMerchant extends AbstractMapObject {
         }
     }
 
+    private static void creditMerchantOfflineWithBCoinOverflow(int ownerId, int add) throws SQLException {
+        if (add <= 0) {
+            System.err.println("[HMERCH][DB] add<=0 skip. ownerId=" + ownerId);
+            return;
+        }
+
+        final int MESO_PER_BCOIN = 1_000_000_000;
+        final int BCOIN_ITEM_ID = 3020002;
+
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
+
+            int merchantMesos = 0;
+            try (PreparedStatement ps = con.prepareStatement("SELECT MerchantMesos FROM characters WHERE id = ?")) {
+                ps.setInt(1, ownerId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        merchantMesos = rs.getInt(1);
+                    }
+                }
+            }
+
+            long total = (long) merchantMesos + (long) add;
+            int coinsToAdd = (int) (total / MESO_PER_BCOIN);
+            int remainder = (int) (total % MESO_PER_BCOIN);
+
+            System.err.println("[HMERCH][DB] ownerId=" + ownerId
+                    + " merchantMesos(before)=" + merchantMesos
+                    + " add=" + add
+                    + " total=" + total
+                    + " coinsToAdd=" + coinsToAdd
+                    + " remainder=" + remainder);
+
+            // 1) update remainder into characters.MerchantMesos
+            try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET MerchantMesos = ? WHERE id = ?")) {
+                ps.setInt(1, remainder);
+                ps.setInt(2, ownerId);
+                int rows = ps.executeUpdate();
+                System.err.println("[HMERCH][DB] UPDATE characters rows=" + rows);
+            }
+
+            // 2) touch fredstorage timestamp (decay logic uses this)
+            int updated;
+            try (PreparedStatement ps = con.prepareStatement("UPDATE fredstorage SET timestamp = NOW() WHERE cid = ?")) {
+                ps.setInt(1, ownerId);
+                updated = ps.executeUpdate();
+                System.err.println("[HMERCH][DB] UPDATE fredstorage rows=" + updated);
+            }
+            if (updated == 0) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO fredstorage (cid, daynotes, timestamp) VALUES (?, 0, NOW())")) {
+                    ps.setInt(1, ownerId);
+                    int ins = ps.executeUpdate();
+                    System.err.println("[HMERCH][DB] INSERT fredstorage rows=" + ins);
+                }
+            }
+
+            // 3) insert BCoin items into merchant storage (type=6) + inventorymerchant bundles=1
+            if (coinsToAdd > 0) {
+                int inventoryItemId;
+
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO inventoryitems " +
+                                "(type, characterid, accountid, itemid, inventorytype, position, quantity, owner, petid, flag, expiration, giftFrom) " +
+                                "VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        PreparedStatement.RETURN_GENERATED_KEYS)) {
+
+                    ps.setInt(1, 6);
+                    ps.setInt(2, ownerId);
+                    ps.setInt(3, BCOIN_ITEM_ID);
+                    ps.setInt(4, InventoryType.ETC.getType());
+                    ps.setInt(5, 0);
+                    ps.setInt(6, coinsToAdd);
+                    ps.setString(7, "");
+                    ps.setInt(8, -1);
+                    ps.setInt(9, 0);
+                    ps.setLong(10, -1L);
+                    ps.setString(11, "");
+
+                    ps.executeUpdate();
+
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        if (!rs.next()) {
+                            throw new SQLException("No generated key for inventoryitems insert (BCoin).");
+                        }
+                        inventoryItemId = rs.getInt(1);
+                    }
+                }
+
+                System.err.println("[HMERCH][DB] Inserted BCoin inventoryitemid=" + inventoryItemId + " qty=" + coinsToAdd);
+
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO inventorymerchant (inventorymerchantid, inventoryitemid, characterid, bundles) VALUES (DEFAULT, ?, ?, ?)")) {
+                    ps.setInt(1, inventoryItemId);
+                    ps.setInt(2, ownerId);
+                    ps.setInt(3, 1);
+                    int rows = ps.executeUpdate();
+                    System.err.println("[HMERCH][DB] INSERT inventorymerchant rows=" + rows);
+                }
+            } else {
+                System.err.println("[HMERCH][DB] coinsToAdd=0, no BCoin insert required.");
+            }
+
+            con.commit();
+            System.err.println("[HMERCH][DB] COMMIT SUCCESS");
+        } catch (SQLException e) {
+            System.err.println("[HMERCH][DB][ERROR] rollback");
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ignore) {}
+            }
+            throw e;
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); } catch (SQLException ignore) {}
+                try { con.close(); } catch (SQLException ignore) {}
+            }
+        }
+    }
+
     public void removeVisitor(Character chr) {
         visitorLock.lock();
         try {
@@ -289,76 +410,108 @@ public class HiredMerchant extends AbstractMapObject {
 
             newItem.setQuantity((short) ((pItem.getItem().getQuantity() * quantity)));
             if (quantity < 1 || !pItem.isExist() || pItem.getBundles() < quantity) {
+                System.err.println("[HMERCH][BUY][FAIL] invalid qty/bundles buyer=" + c.getPlayer().getName()
+                        + " qty=" + quantity + " exist=" + pItem.isExist() + " bundles=" + pItem.getBundles());
+                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL invalid qty/bundles");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             } else if (newItem.getInventoryType().equals(InventoryType.EQUIP) && newItem.getQuantity() > 1) {
+                System.err.println("[HMERCH][BUY][FAIL] equip qty>1 buyer=" + c.getPlayer().getName()
+                        + " item=" + newItem.getItemId() + " qty=" + newItem.getQuantity());
+                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL equip qty>1");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             }
 
             KarmaManipulator.toggleKarmaFlagToUntradeable(newItem);
 
-            int price = (int) Math.min((float) pItem.getPrice() * quantity, Integer.MAX_VALUE);
-            if (c.getPlayer().getMeso() >= price) {
-                if (canBuy(c, newItem)) {
-                    c.getPlayer().gainMeso(-price, false);
-                    price -= Trade.getFee(price);  // thanks BHB for pointing out trade fees not applying here
+            // --- long-safe calc so we can SEE what happens for >=2b pricing tests ---
+            long rawPrice = (long) pItem.getPrice() * (long) quantity;
+            int price = rawPrice > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rawPrice;
 
-                    synchronized (sold) {
-                        sold.add(new SoldItem(c.getPlayer().getName(), pItem.getItem().getItemId(), newItem.getQuantity(), price));
-                    }
+            String hdr = "[HMERCH-DBG] buyer=" + c.getPlayer().getName()
+                    + " ownerName=" + ownerName
+                    + " ownerId=" + ownerId
+                    + " itemId=" + pItem.getItem().getItemId()
+                    + " unitPrice=" + pItem.getPrice()
+                    + " buyBundles=" + quantity
+                    + " rawPrice=" + rawPrice
+                    + " price(intCap)=" + price;
 
-                    pItem.setBundles((short) (pItem.getBundles() - quantity));
-                    if (pItem.getBundles() < 1) {
-                        pItem.setDoesExist(false);
-                    }
+            System.err.println(hdr);
+            c.getPlayer().dropMessage(6, hdr);
 
-                    if (YamlConfig.config.server.USE_ANNOUNCE_SHOPITEMSOLD) {   // idea thanks to Vcoc
-                        announceItemSold(newItem, price, getQuantityLeft(pItem.getItem().getItemId()));
-                    }
-
-                    Character owner = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterByName(ownerName);
-                    if (owner != null) {
-                        owner.addMerchantMesos(price);
-                    } else {
-                        try (Connection con = DatabaseConnection.getConnection()) {
-                            long merchantMesos = 0;
-                            try (PreparedStatement ps = con.prepareStatement("SELECT MerchantMesos FROM characters WHERE id = ?")) {
-                                ps.setInt(1, ownerId);
-                                try (ResultSet rs = ps.executeQuery()) {
-                                    if (rs.next()) {
-                                        merchantMesos = rs.getInt(1);
-                                    }
-                                }
-                            }
-                            merchantMesos += price;
-
-                            try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET MerchantMesos = ? WHERE id = ?", PreparedStatement.RETURN_GENERATED_KEYS)) {
-                                ps.setInt(1, (int) Math.min(merchantMesos, Integer.MAX_VALUE));
-                                ps.setInt(2, ownerId);
-                                ps.executeUpdate();
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } else {
-                    c.getPlayer().dropMessage(1, "Your inventory is full. Please clear a slot before buying this item.");
-                    c.sendPacket(PacketCreator.enableActions());
-                    return;
-                }
-            } else {
+            if (c.getPlayer().getMeso() < price) {
+                System.err.println("[HMERCH][BUY][FAIL] insufficient mesos buyer=" + c.getPlayer().getName()
+                        + " has=" + c.getPlayer().getMeso() + " need=" + price);
                 c.getPlayer().dropMessage(1, "You don't have enough mesos to purchase this item.");
+                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL insufficient mesos");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             }
+
+            boolean canBuyResult = canBuy(c, newItem);
+            System.err.println("[HMERCH][BUY] canBuy=" + canBuyResult);
+            c.getPlayer().dropMessage(6, "[HMERCH-DBG] canBuy=" + canBuyResult);
+
+            if (!canBuyResult) {
+                c.getPlayer().dropMessage(1, "Your inventory is full. Please clear a slot before buying this item.");
+                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL inventory full");
+                c.sendPacket(PacketCreator.enableActions());
+                return;
+            }
+
+            int beforeBuyer = c.getPlayer().getMeso();
+            c.getPlayer().gainMeso(-price, false);
+            int afterBuyer = c.getPlayer().getMeso();
+
+            int fee = Trade.getFee(price);
+            int afterFee = price - fee;
+            if (afterFee < 0) afterFee = 0;
+
+            System.err.println("[HMERCH][BUY] buyerMeso " + beforeBuyer + " -> " + afterBuyer
+                    + " fee=" + fee + " afterFee=" + afterFee);
+            c.getPlayer().dropMessage(6, "[HMERCH-DBG] fee=" + fee + " afterFee=" + afterFee);
+
+            synchronized (sold) {
+                sold.add(new SoldItem(c.getPlayer().getName(), pItem.getItem().getItemId(), newItem.getQuantity(), afterFee));
+            }
+
+            pItem.setBundles((short) (pItem.getBundles() - quantity));
+            if (pItem.getBundles() < 1) {
+                pItem.setDoesExist(false);
+            }
+
+            if (YamlConfig.config.server.USE_ANNOUNCE_SHOPITEMSOLD) {
+                announceItemSold(newItem, afterFee, getQuantityLeft(pItem.getItem().getItemId()));
+            }
+
+            // --- CREDIT TO MERCHANT STORAGE (BCoin overflow supported) ---
+            Character owner = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterByName(ownerName);
+            if (owner != null) {
+                owner.dropMessage(6, "[HMERCH-DBG] credited(afterFee)=" + afterFee + " via addMerchantMesosAsBCoinOverflow()");
+                System.err.println("[HMERCH][CREDIT] owner ONLINE -> addMerchantMesosAsBCoinOverflow(" + afterFee + ")");
+                owner.addMerchantMesosAsBCoinOverflow(afterFee);
+            } else {
+                System.err.println("[HMERCH][CREDIT] owner OFFLINE -> DB credit with BCoin overflow. afterFee=" + afterFee);
+                try {
+                    creditMerchantOfflineWithBCoinOverflow(ownerId, afterFee);
+                    System.err.println("[HMERCH][CREDIT] offline DB credit DONE");
+                } catch (Exception e) {
+                    System.err.println("[HMERCH][CREDIT][ERROR] offline DB credit failed");
+                    e.printStackTrace();
+                }
+            }
+
             try {
                 this.saveItems(false);
             } catch (Exception e) {
+                System.err.println("[HMERCH][BUY][ERROR] saveItems failed");
                 e.printStackTrace();
             }
         }
     }
+
 
     private void announceItemSold(Item item, int mesos, int inStore) {
         String qtyStr = (item.getQuantity() > 1) ? " x " + item.getQuantity() : "";

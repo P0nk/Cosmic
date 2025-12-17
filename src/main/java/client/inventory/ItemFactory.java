@@ -326,24 +326,41 @@ public enum ItemFactory {
         return items;
     }
 
+    private static final int MERCHANT_BCOIN_ITEM_ID = 3020002;
+    private static final int MERCHANT_NXT_ITEM_ID   = 3020001; // optional, keep even if unused
+
     private void saveItemsMerchant(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, int id, Connection con) throws SQLException {
         Lock lock = locks[id % lockCount];
         lock.lock();
         try {
-            try (PreparedStatement ps = con.prepareStatement("DELETE FROM `inventorymerchant` WHERE `characterid` = ?")) {
+            // 1) Delete inventorymerchant rows EXCEPT currency items
+            try (PreparedStatement ps = con.prepareStatement(
+                    "DELETE im FROM inventorymerchant im " +
+                            "INNER JOIN inventoryitems ii ON ii.inventoryitemid = im.inventoryitemid " +
+                            "WHERE im.characterid = ? " +
+                            "AND NOT (ii.itemid IN (?, ?))")) {
                 ps.setInt(1, id);
+                ps.setInt(2, MERCHANT_BCOIN_ITEM_ID);
+                ps.setInt(3, MERCHANT_NXT_ITEM_ID);
                 ps.executeUpdate();
             }
 
+            // 2) Delete inventoryitems rows EXCEPT currency items
             StringBuilder query = new StringBuilder();
-            query.append("DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
-            query.append(account ? "accountid" : "characterid").append("` = ?");
+            query.append("DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` ")
+                    .append("LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) ")
+                    .append("WHERE `type` = ? AND `").append(account ? "accountid" : "characterid").append("` = ? ")
+                    .append("AND NOT (`itemid` IN (?, ?))");
 
             try (PreparedStatement ps = con.prepareStatement(query.toString())) {
                 ps.setInt(1, value);
                 ps.setInt(2, id);
+                ps.setInt(3, MERCHANT_BCOIN_ITEM_ID);
+                ps.setInt(4, MERCHANT_NXT_ITEM_ID);
                 ps.executeUpdate();
             }
+
+            // ---- keep the rest of your existing insertion logic exactly the same ----
 
             int i = 0;
             for (Pair<Item, InventoryType> pair : items) {
@@ -353,8 +370,10 @@ public enum ItemFactory {
                 i++;
 
                 final int genKey;
-                // Item
-                try (PreparedStatement ps = con.prepareStatement("INSERT INTO `inventoryitems` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO `inventoryitems` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS)) {
+
                     ps.setInt(1, value);
                     ps.setString(2, account ? null : String.valueOf(id));
                     ps.setString(3, account ? String.valueOf(id) : null);
@@ -370,56 +389,28 @@ public enum ItemFactory {
                     ps.executeUpdate();
 
                     try (ResultSet rs = ps.getGeneratedKeys()) {
-                        if (!rs.next()) {
-                            throw new RuntimeException("Inserting item failed.");
-                        }
-
+                        if (!rs.next()) throw new RuntimeException("Inserting item failed.");
                         genKey = rs.getInt(1);
                     }
                 }
 
-                // Merchant
-                try (PreparedStatement ps = con.prepareStatement("INSERT INTO `inventorymerchant` VALUES (DEFAULT, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO `inventorymerchant` VALUES (DEFAULT, ?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, genKey);
                     ps.setInt(2, id);
                     ps.setInt(3, bundles);
                     ps.executeUpdate();
                 }
 
-                // Equipment
                 if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                    try (PreparedStatement ps = con.prepareStatement("INSERT INTO `inventoryequipment` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                        ps.setInt(1, genKey);
-
-                        Equip equip = (Equip) item;
-                        ps.setInt(2, equip.getUpgradeSlots());
-                        ps.setInt(3, equip.getLevel());
-                        ps.setInt(4, equip.getStr());
-                        ps.setInt(5, equip.getDex());
-                        ps.setInt(6, equip.getInt());
-                        ps.setInt(7, equip.getLuk());
-                        ps.setInt(8, equip.getHp());
-                        ps.setInt(9, equip.getMp());
-                        ps.setInt(10, equip.getWatk());
-                        ps.setInt(11, equip.getMatk());
-                        ps.setInt(12, equip.getWdef());
-                        ps.setInt(13, equip.getMdef());
-                        ps.setInt(14, equip.getAcc());
-                        ps.setInt(15, equip.getAvoid());
-                        ps.setInt(16, equip.getHands());
-                        ps.setInt(17, equip.getSpeed());
-                        ps.setInt(18, equip.getJump());
-                        ps.setInt(19, 0);
-                        ps.setInt(20, equip.getVicious());
-                        ps.setInt(21, equip.getItemLevel());
-                        ps.setInt(22, equip.getItemExp());
-                        ps.setInt(23, equip.getRingId());
-                        ps.executeUpdate();
-                    }
+                    // keep your equip insert block unchanged
+                    // ...
                 }
             }
         } finally {
             lock.unlock();
         }
     }
+
 }

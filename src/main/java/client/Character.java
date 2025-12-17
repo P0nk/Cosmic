@@ -9023,6 +9023,176 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    // Character.java
+// Add this method near your merchant meso methods.
+
+    public void addMerchantMesosAsBCoinOverflow(int add) {
+        if (add <= 0) {
+            return;
+        }
+
+        final int MESO_PER_BCOIN = 1_000_000_000;
+        final int BCOIN_ITEM_ID = 3020002;
+
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
+
+            long total = (long) merchantmeso + (long) add;
+            int coinsToAdd = (int) (total / MESO_PER_BCOIN);
+            int remainder = (int) (total % MESO_PER_BCOIN);
+
+            // 1) Update MerchantMesos remainder
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE characters SET MerchantMesos = ? WHERE id = ?")) {
+                ps.setInt(1, remainder);
+                ps.setInt(2, id);
+                ps.executeUpdate();
+            }
+            merchantmeso = remainder; // keep in-memory synced
+
+            // 2) Touch fredstorage timestamp (for decay logic)
+            int updated;
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE fredstorage SET timestamp = NOW() WHERE cid = ?")) {
+                ps.setInt(1, id);
+                updated = ps.executeUpdate();
+            }
+            if (updated == 0) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO fredstorage (cid, daynotes, timestamp) VALUES (?, 0, NOW())")) {
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                }
+            }
+
+            // 3) Convert overflow into stacked BCoins
+            if (coinsToAdd > 0) {
+                int keepInventoryItemId = -1;
+                long existingQty = 0;
+
+                // Locate existing BCoin merchant rows
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT ii.inventoryitemid, ii.quantity " +
+                                "FROM inventoryitems ii " +
+                                "JOIN inventorymerchant im ON im.inventoryitemid = ii.inventoryitemid " +
+                                "WHERE ii.type = 6 AND ii.characterid = ? AND ii.itemid = ? " +
+                                "ORDER BY ii.inventoryitemid ASC")) {
+                    ps.setInt(1, id);
+                    ps.setInt(2, BCOIN_ITEM_ID);
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            int iid = rs.getInt("inventoryitemid");
+                            int qty = rs.getInt("quantity");
+                            if (keepInventoryItemId == -1) {
+                                keepInventoryItemId = iid;
+                            }
+                            existingQty += qty;
+                        }
+                    }
+                }
+
+                if (keepInventoryItemId != -1) {
+                    // Stack into existing row
+                    long newQty = existingQty + coinsToAdd;
+                    if (newQty > Integer.MAX_VALUE) {
+                        newQty = Integer.MAX_VALUE;
+                    }
+
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "UPDATE inventoryitems SET quantity = ? WHERE inventoryitemid = ?")) {
+                        ps.setInt(1, (int) newQty);
+                        ps.setInt(2, keepInventoryItemId);
+                        ps.executeUpdate();
+                    }
+
+                    // Remove any duplicate rows (cleanup)
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "DELETE im FROM inventorymerchant im " +
+                                    "JOIN inventoryitems ii ON ii.inventoryitemid = im.inventoryitemid " +
+                                    "WHERE im.characterid = ? AND ii.type = 6 AND ii.itemid = ? AND ii.inventoryitemid <> ?")) {
+                        ps.setInt(1, id);
+                        ps.setInt(2, BCOIN_ITEM_ID);
+                        ps.setInt(3, keepInventoryItemId);
+                        ps.executeUpdate();
+                    }
+
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "DELETE FROM inventoryitems WHERE type = 6 AND characterid = ? AND itemid = ? AND inventoryitemid <> ?")) {
+                        ps.setInt(1, id);
+                        ps.setInt(2, BCOIN_ITEM_ID);
+                        ps.setInt(3, keepInventoryItemId);
+                        ps.executeUpdate();
+                    }
+
+                } else {
+                    // No existing BCoin row → create one
+                    int inventoryItemId;
+
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO inventoryitems " +
+                                    "(type, characterid, accountid, itemid, inventorytype, position, quantity, owner, petid, flag, expiration, giftFrom) " +
+                                    "VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            PreparedStatement.RETURN_GENERATED_KEYS)) {
+
+                        ps.setInt(1, 6);
+                        ps.setInt(2, id);
+                        ps.setInt(3, BCOIN_ITEM_ID);
+                        ps.setInt(4, InventoryType.ETC.getType());
+                        ps.setInt(5, 0);
+                        ps.setInt(6, coinsToAdd);
+                        ps.setString(7, "");
+                        ps.setInt(8, -1);
+                        ps.setInt(9, 0);
+                        ps.setLong(10, -1L);
+                        ps.setString(11, "");
+                        ps.executeUpdate();
+
+                        try (ResultSet rs = ps.getGeneratedKeys()) {
+                            if (!rs.next()) {
+                                throw new SQLException("Failed to create BCoin merchant item.");
+                            }
+                            inventoryItemId = rs.getInt(1);
+                        }
+                    }
+
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO inventorymerchant (inventorymerchantid, inventoryitemid, characterid, bundles) VALUES (DEFAULT, ?, ?, ?)")) {
+                        ps.setInt(1, inventoryItemId);
+                        ps.setInt(2, id);
+                        ps.setInt(3, 1);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+
+            con.commit();
+
+        } catch (Exception e) {
+            System.err.println("[MERCHANT][ERROR] Failed to credit BCoin overflow for CID=" + id);
+            e.printStackTrace();
+
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.err.println("[MERCHANT][ERROR] Rollback failed for CID=" + id);
+                    rollbackEx.printStackTrace();
+                }
+            }
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); } catch (SQLException ignore) {}
+                try { con.close(); } catch (SQLException ignore) {}
+            }
+        }
+    }
+
+
+
+
     public void setHiredMerchant(HiredMerchant merchant) {
         this.hiredMerchant = merchant;
     }
