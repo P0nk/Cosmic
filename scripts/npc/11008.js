@@ -310,7 +310,22 @@ function listInventory(rewardtype) {
         for (var slot = 1; slot <= limit; slot++) {
             var item = inv.getItem(slot);
             if (!item) continue;
-            if (item.getItemId() == item1Id) continue;
+
+            var itemId = item.getItemId();
+
+            // NOTE:
+            // 207xxxx (Throwing Stars) & 233xxxx (Bullets) are stack-based weapons.
+            // Allowing them as quest rewards causes duplication on withdrawal.
+            // DO NOT REMOVE THIS FILTER.
+            // 🚫 Block throwing stars & bullets
+            var prefix = Math.floor(itemId / 1000);
+            if (prefix === 207 || prefix === 233) {
+            continue;
+            }
+
+            // Prevent selecting same reward twice
+            if (itemId === item1Id) continue;
+
             var name = Packages.server.ItemInformationProvider
                        .getInstance().getName(item.getItemId());
             lines.push(
