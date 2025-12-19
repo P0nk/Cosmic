@@ -6859,15 +6859,31 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void addPlayerRing(Ring ring) {
-        int ringItemId = ring.getItemId();
+        if (ring == null) {
+            System.err.println("[RING][WARN] addPlayerRing called with null ring. " +
+                    "CID=" + this.id + " Name=" + this.name + " (skipping)");
+            return;
+        }
+
+        int ringItemId;
+        try {
+            ringItemId = ring.getItemId();
+        } catch (Exception e) {
+            System.err.println("[RING][ERROR] Failed reading ring itemId. " +
+                    "CID=" + this.id + " Name=" + this.name + " ring=" + ring + " (skipping)");
+            e.printStackTrace();
+            return;
+        }
+
         if (ItemId.isWeddingRing(ringItemId)) {
             this.addMarriageRing(ring);
-        } else if (ring.getItemId() > 1112012) {
+        } else if (ringItemId > 1112012) {
             this.addFriendshipRing(ring);
         } else {
             this.addCrushRing(ring);
         }
     }
+
 
     public static Character loadCharacterEntryFromDB(ResultSet rs, List<Item> equipped) {
         Character ret = new Character();
@@ -7090,14 +7106,50 @@ public class Character extends AbstractCharacterObject {
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
                             Equip equip = (Equip) item.getLeft();
                             if (equip.getRingId() > -1) {
-                                Ring ring = Ring.loadFromDb(equip.getRingId());
-                                if (item.getRight().equals(InventoryType.EQUIPPED)) {
-                                    ring.equip();
+                                int ringId = equip.getRingId();
+                                Ring ring = null;
+
+                                try {
+                                    ring = Ring.loadFromDb(ringId);
+                                } catch (Exception e) {
+                                    System.err.println("[RING][ERROR] Ring.loadFromDb threw exception. " +
+                                            "CID=" + ret.id + " ringId=" + ringId +
+                                            " invItemId=" + equip.getItemId() +
+                                            " invType=" + item.getRight() +
+                                            " position=" + equip.getPosition());
+                                    e.printStackTrace();
                                 }
 
-                                ret.addPlayerRing(ring);
+                                if (ring == null) {
+                                    // Minimal but very useful: tells you exactly which equip/ringId is bad.
+                                    System.err.println("[RING][WARN] Missing/invalid ring data. " +
+                                            "CID=" + ret.id +
+                                            " equipItemId=" + equip.getItemId() +
+                                            " ringId=" + ringId +
+                                            " invType=" + item.getRight() +
+                                            " position=" + equip.getPosition() +
+                                            " -> skipping ring attach");
+
+                                    // Optional: auto-heal the equip to prevent repeated warnings on every login.
+                                    // SAFEST DB fix is to detach ringid.
+                                    // equip.setRingId(-1);
+                                    // (If you want, I can show the clean way to persist this back to DB.)
+                                } else {
+                                    if (item.getRight().equals(InventoryType.EQUIPPED)) {
+                                        try {
+                                            ring.equip();
+                                        } catch (Exception e) {
+                                            System.err.println("[RING][ERROR] ring.equip() failed. " +
+                                                    "CID=" + ret.id + " ringId=" + ringId + " equipItemId=" + equip.getItemId());
+                                            e.printStackTrace();
+                                        }
+                                    }
+
+                                    ret.addPlayerRing(ring);
+                                }
                             }
                         }
+
                     }
 
                     if ((sandboxCheck & ItemConstants.SANDBOX) == ItemConstants.SANDBOX) {
