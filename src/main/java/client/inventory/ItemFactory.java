@@ -329,7 +329,13 @@ public enum ItemFactory {
     private static final int MERCHANT_BCOIN_ITEM_ID = 3020002;
     private static final int MERCHANT_NXT_ITEM_ID   = 3020001; // optional, keep even if unused
 
-    private void saveItemsMerchant(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, int id, Connection con) throws SQLException {
+    private void saveItemsMerchant(
+            List<Pair<Item, InventoryType>> items,
+            List<Short> bundlesList,
+            int id,
+            Connection con
+    ) throws SQLException {
+
         Lock lock = locks[id % lockCount];
         lock.lock();
         try {
@@ -345,12 +351,13 @@ public enum ItemFactory {
                 ps.executeUpdate();
             }
 
-            // 2) Delete inventoryitems rows EXCEPT currency items
+            // 2) Delete inventoryitems + inventoryequipment EXCEPT currency items
             StringBuilder query = new StringBuilder();
             query.append("DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` ")
                     .append("LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) ")
-                    .append("WHERE `type` = ? AND `").append(account ? "accountid" : "characterid").append("` = ? ")
-                    .append("AND NOT (`itemid` IN (?, ?))");
+                    .append("WHERE `type` = ? AND `")
+                    .append(account ? "accountid" : "characterid")
+                    .append("` = ? AND NOT (`itemid` IN (?, ?))");
 
             try (PreparedStatement ps = con.prepareStatement(query.toString())) {
                 ps.setInt(1, value);
@@ -360,18 +367,20 @@ public enum ItemFactory {
                 ps.executeUpdate();
             }
 
-            // ---- keep the rest of your existing insertion logic exactly the same ----
-
+            // 3) Re-insert merchant items
             int i = 0;
             for (Pair<Item, InventoryType> pair : items) {
                 final Item item = pair.getLeft();
-                final Short bundles = bundlesList.get(i);
+                final short bundles = bundlesList.get(i);
                 final InventoryType mit = pair.getRight();
                 i++;
 
-                final int genKey;
+                final int inventoryItemId;
+
+                // --- inventoryitems ---
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO `inventoryitems` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        "INSERT INTO inventoryitems VALUES " +
+                                "(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
 
                     ps.setInt(1, value);
@@ -389,28 +398,77 @@ public enum ItemFactory {
                     ps.executeUpdate();
 
                     try (ResultSet rs = ps.getGeneratedKeys()) {
-                        if (!rs.next()) throw new RuntimeException("Inserting item failed.");
-                        genKey = rs.getInt(1);
+                        if (!rs.next()) {
+                            throw new RuntimeException("Failed to insert inventoryitems");
+                        }
+                        inventoryItemId = rs.getInt(1);
                     }
                 }
 
+                // --- inventorymerchant ---
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO `inventorymerchant` VALUES (DEFAULT, ?, ?, ?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setInt(1, genKey);
+                        "INSERT INTO inventorymerchant VALUES (DEFAULT, ?, ?, ?)")) {
+                    ps.setInt(1, inventoryItemId);
                     ps.setInt(2, id);
                     ps.setInt(3, bundles);
                     ps.executeUpdate();
                 }
 
+                // --- inventoryequipment (if equip) ---
                 if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                    // keep your equip insert block unchanged
-                    // ...
+                    Equip equip = (Equip) item;
+
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO inventoryequipment VALUES " +
+                                    "(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+
+                        ps.setInt(1, inventoryItemId);
+                        ps.setInt(2, equip.getUpgradeSlots());
+                        ps.setInt(3, equip.getLevel());
+                        ps.setInt(4, equip.getStr());
+                        ps.setInt(5, equip.getDex());
+                        ps.setInt(6, equip.getInt());
+                        ps.setInt(7, equip.getLuk());
+                        ps.setInt(8, equip.getHp());
+                        ps.setInt(9, equip.getMp());
+                        ps.setInt(10, equip.getWatk());
+                        ps.setInt(11, equip.getMatk());
+                        ps.setInt(12, equip.getWdef());
+                        ps.setInt(13, equip.getMdef());
+                        ps.setInt(14, equip.getAcc());
+                        ps.setInt(15, equip.getAvoid());
+                        ps.setInt(16, equip.getHands());
+                        ps.setInt(17, equip.getSpeed());
+                        ps.setInt(18, equip.getJump());
+                        ps.setInt(19, 0); // locked
+                        ps.setInt(20, equip.getVicious());
+                        ps.setInt(21, equip.getItemLevel());
+                        ps.setInt(22, equip.getItemExp());
+                        ps.setInt(23, equip.getRingId());
+                        ps.executeUpdate();
+                    }
+
+                    // ---- DEBUG GUARDRAIL (error-only) ----
+                    try (PreparedStatement psCheck = con.prepareStatement(
+                            "SELECT COUNT(*) FROM inventoryequipment WHERE inventoryitemid = ?")) {
+                        psCheck.setInt(1, inventoryItemId);
+                        try (ResultSet rsCheck = psCheck.executeQuery()) {
+                            if (rsCheck.next() && rsCheck.getInt(1) == 0) {
+                                System.err.println(
+                                        "[MERCHANT][ERROR] Equip saved WITHOUT inventoryequipment row! " +
+                                                "CID=" + id +
+                                                " itemId=" + item.getItemId() +
+                                                " invItemId=" + inventoryItemId
+                                );
+                            }
+                        }
+                    }
                 }
             }
         } finally {
             lock.unlock();
         }
     }
+
 
 }

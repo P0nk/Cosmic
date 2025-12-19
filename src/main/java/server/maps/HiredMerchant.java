@@ -819,11 +819,9 @@ public class HiredMerchant extends AbstractMapObject {
             Item newItem = pItems.getItem();
             short newBundle = pItems.getBundles();
 
-            if (shutdown) { //is "shutdown" really necessary?
-                newItem.setQuantity(pItems.getItem().getQuantity());
-            } else {
-                newItem.setQuantity(pItems.getItem().getQuantity());
-            }
+            // Quantity handling unchanged
+            newItem.setQuantity(pItems.getItem().getQuantity());
+
             if (newBundle > 0) {
                 itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
                 bundles.add(newBundle);
@@ -831,11 +829,36 @@ public class HiredMerchant extends AbstractMapObject {
         }
 
         try (Connection con = DatabaseConnection.getConnection()) {
-            ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, this.ownerId, con);
+            boolean oldAutoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, this.ownerId, con);
+                con.commit();
+            } catch (Exception e) {
+                System.err.println(
+                        "[MERCHANT][FATAL] HiredMerchant.saveItems FAILED -> rollback. CID=" + ownerId
+                );
+                e.printStackTrace();
+
+                try {
+                    con.rollback();
+                } catch (SQLException re) {
+                    re.printStackTrace();
+                }
+
+                throw e;
+            } finally {
+                try {
+                    con.setAutoCommit(oldAutoCommit);
+                } catch (SQLException ignore) {}
+            }
         }
 
+        // Keep your existing Fredrick activity marker
         FredrickProcessor.insertFredrickLog(this.ownerId);
     }
+
 
     private static boolean check(Character chr, List<PlayerShopItem> items) {
         List<Pair<Item, InventoryType>> li = new ArrayList<>();
