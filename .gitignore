@@ -1,33 +1,46 @@
+# ======================
+# Secrets / Environment
+# ======================
+.env
+.env.*
+
+# ======================
+# Logs
+# ======================
 /logs/**
+
+# ======================
+# IDE / Editor
+# ======================
 .idea/*
 !.idea/codeStyles/
 *.iml
+.project
+.classpath
+.settings
+/out
+/nbproject/
+
+# ======================
+# Build Artifacts
+# ======================
 /target
-*.ymal
-*.yml
-
-/wz/
-
-# build files
 /build/
 /dist/
-/nbproject/
-/.settings
-/out
 *.onetoc2
 
-# Eclipse m2e generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
+# ======================
+# OS Files
+# ======================
+.DS_Store
 
-# Database
+# ======================
+# Database Volumes
+# ======================
 database/docker-db-data
 database/docker-pg-db-data
 
-# macOS files
-.DS_Store
-config.yaml
-
+# ======================
+# Game Assets
+# ======================
 /wz/
