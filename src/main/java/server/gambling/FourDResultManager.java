@@ -82,6 +82,8 @@ public class FourDResultManager {
             getBets.setDate(1, java.sql.Date.valueOf(date));
             ResultSet bets = getBets.executeQuery();
 
+            boolean hasWinner = false; // Flag to check if any winner is found
+
             while (bets.next()) {
                 int betId = bets.getInt("bet_id");
                 int charId = bets.getInt("char_id");
@@ -112,12 +114,13 @@ public class FourDResultManager {
 
                     // Broadcast 1st prize winners
                     if (number.equals(first)) {
+                        hasWinner = true; // At least one winner exists
                         String playerName = getCharacterNameById(charId);
                         if (playerName != null) {
                             String msg = "[★ Merogie Pools 4D Winner ★] " + playerName +
                                     " won " + totalPrize + " Meso BCoins with #" + number +
                                     " (" + tier + ", " + type + " bet) on draw " + date + "!";
-                            Packet packet = PacketCreator.serverNotice(6, msg);
+                            Packet packet = PacketCreator.serverNotice(6, msg); // Using type 6 for Lightblue Text
                             for (World world : Server.getInstance().getWorlds()) {
                                 Server.getInstance().broadcastMessage(world.getId(), packet);
                             }
@@ -131,10 +134,45 @@ public class FourDResultManager {
             getBets.close();
             getResult.close();
 
+            // Global announcement after the draw (even if no one won)
+            String resultAnnouncement = "[4D Draw Results] 1st Prize: " + first + " | 2nd Prize: " + second + " | 3rd Prize: " + third +
+                    "\r\nStarters: " + String.join(", ", starters) +
+                    "\r\nConsolations: " + String.join(", ", consolations) +
+                    "\r\nGood luck to all players!";
+
+            // If no one won, still announce the results to all players
+            if (!hasWinner) {
+                resultAnnouncement += "\r\nUnfortunately, there were no winners this time. Better luck next time!";
+            }
+
+            // Broadcast the result to all players
+            Packet broadcastPacket = PacketCreator.serverNotice(6, resultAnnouncement);  // Type 6 for Lightblue Text
+            for (World world : Server.getInstance().getWorlds()) {
+                Server.getInstance().broadcastMessage(world.getId(), broadcastPacket);
+            }
+
         } catch (SQLException e) {
             System.out.println("[FourDResultManager] Evaluation failed: " + e.getMessage());
         }
     }
+
+    /**
+     * Fetches the name of a character by their ID.
+     */
+    private static String getCharacterNameById(int id) {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT name FROM characters WHERE id = ?")) {
+
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getString("name");
+
+        } catch (SQLException e) {
+            System.out.println("[FourDResultManager] Failed to fetch player name: " + e.getMessage());
+        }
+        return null;
+    }
+
 
     /**
      * Retrieves draw result details for the specified date.
@@ -182,22 +220,5 @@ public class FourDResultManager {
             System.out.println("[FourDResultManager] Failed to fetch draw dates: " + e.getMessage());
         }
         return dates;
-    }
-
-    /**
-     * Fetches the name of a character by their ID.
-     */
-    private static String getCharacterNameById(int id) {
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT name FROM characters WHERE id = ?")) {
-
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getString("name");
-
-        } catch (SQLException e) {
-            System.out.println("[FourDResultManager] Failed to fetch player name: " + e.getMessage());
-        }
-        return null;
     }
 }
