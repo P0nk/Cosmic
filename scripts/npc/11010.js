@@ -534,22 +534,22 @@ function action(mode, type, selection) {
         prevSelection = 21; // track which branch player is in
         var list = "Select a potion to withdraw:\r\n";
         list += "-----------------------------------------\r\n";
-        list += "#L0##v2000000# Red Potion (50 HP)\r\n";
-        list += "#L1##v2000001# Orange Potion (150 HP)\r\n";
-        list += "#L2##v2000002# White Potion (300 HP)\r\n";
-        list += "#L3##v2000003# Blue Potion (100 MP)\r\n";
-        list += "#L4##v2000006# Mana Elixir (300 MP)\r\n";
+        list += "#L0##v2000007# Red Pill (50 HP)\r\n";
+        list += "#L1##v2000008# Orange Pill (150 HP)\r\n";
+        list += "#L2##v2000009# White Pill (300 HP)\r\n";
+        list += "#L3##v2000010# Blue Pill (100 MP)\r\n";
+        list += "#L4##v2000011# Mana Elixir Pill (300 MP)\r\n";
         cm.sendSimple(list);
     }
 
     // Potion type selection (withdraw)
     else if (status === 3 && selectedService === 1 && prevSelection === 21) {
         var potions = [
-            [2000000, 50, "HP"],
-            [2000001, 150, "HP"],
-            [2000002, 300, "HP"],
-            [2000003, 100, "MP"],
-            [2000006, 300, "MP"]
+            [2000007, 50, "HP"],
+            [2000008, 150, "HP"],
+            [2000009, 300, "HP"],
+            [2000010, 100, "MP"],
+            [2000011, 300, "MP"]
         ];
         selectedIndex = selection;
         var potion = potions[selectedIndex];
