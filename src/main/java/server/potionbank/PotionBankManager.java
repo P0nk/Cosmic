@@ -112,4 +112,5 @@ public class PotionBankManager {
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
+
 }
