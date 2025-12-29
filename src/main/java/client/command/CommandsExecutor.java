@@ -66,7 +66,7 @@ import client.command.commands.gm0.BuybackCommand;
 import client.command.commands.gm0.ToggleAutoPotCommand;
 import client.command.commands.gm0.CheckMyDmgCommand;
 import client.command.commands.gm0.EquipCashWeaponCommand;
-
+import client.command.commands.gm0.DonorRewardCommand;
 
 
 import client.command.commands.gm1.BossHpCommand;
@@ -238,7 +238,7 @@ import client.command.commands.gm6.SpawnAllPNpcsCommand;
 import client.command.commands.gm6.SupplyRateCouponCommand;
 import client.command.commands.gm6.TestMobHpCommand;
 import client.command.commands.gm6.WarpWorldCommand;
-
+import client.command.commands.gm6.RewardDonorCommand;
 import client.command.commands.gm6.Draw4DCommand;
 
 
@@ -429,7 +429,7 @@ public class CommandsExecutor {
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
         addCommand("stats", CheckMyDmgCommand.class);
         addCommand("equipcashweapon", EquipCashWeaponCommand.class);
-
+        addCommand("donor", DonorRewardCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
@@ -643,6 +643,7 @@ public class CommandsExecutor {
         addCommand("devtest", 6, DevtestCommand.class);
         addCommand("draw4d", 6, Draw4DCommand.class);
         addCommand("testmobhp", 6, TestMobHpCommand.class);
+        addCommand("rewarddonor", 6, RewardDonorCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }

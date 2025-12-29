@@ -16,11 +16,12 @@ public class LootCommand extends Command {
 
     private static final HashMap<Integer, Long> cooldowns = new HashMap<>();
     private static final HashMap<Integer, Integer> penalties = new HashMap<>();
-    private static final int BASE_COOLDOWN_TIME = 10000; // Base cooldown time in milliseconds (60 seconds)
-    private static final int PENALTY_TIME = 1000; // Initial penalty time in milliseconds (10 seconds)
+    private static final int BASE_COOLDOWN_TIME = 10000; // Base cooldown time in milliseconds (10 seconds)
+    private static final int PENALTY_TIME = 1000; // Initial penalty time in milliseconds (1 second)
+    private static final int MAX_PENALTY_TIME = 5000; // Cap penalty time to 5 seconds max
 
     {
-        setDescription("Loots all items that belong to you. Has a base cooldown of 60 seconds, with penalties for spamming that increase with repeated infractions.");
+        setDescription("Loots all items that belong to you. Has a base cooldown of 10 seconds, with penalties for spamming that increase with repeated infractions.");
     }
 
     @Override
@@ -28,7 +29,13 @@ public class LootCommand extends Command {
         Integer playerId = c.getPlayer().getId();
         long currentTime = System.currentTimeMillis();
         int currentPenaltyCount = penalties.getOrDefault(playerId, 0);
-        long effectiveCooldown = BASE_COOLDOWN_TIME + (currentPenaltyCount * PENALTY_TIME * currentPenaltyCount); // Penalty increases with the square of the number of infractions
+
+        // Cap the penalty time to avoid excessive cooldown
+        int penaltyTime = Math.min(currentPenaltyCount * PENALTY_TIME * currentPenaltyCount, MAX_PENALTY_TIME);
+        long effectiveCooldown = BASE_COOLDOWN_TIME + penaltyTime; // Apply penalty cooldown
+
+        // Remove expired cooldown entries
+        cooldowns.entrySet().removeIf(entry -> currentTime - entry.getValue() > BASE_COOLDOWN_TIME * 2); // Cleanup after a reasonable period
 
         if (cooldowns.containsKey(playerId)) {
             long timePassed = currentTime - cooldowns.get(playerId);
@@ -41,8 +48,6 @@ public class LootCommand extends Command {
                 return;
             }
         }
-
-
 
         List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
         for (MapObject item : items) {

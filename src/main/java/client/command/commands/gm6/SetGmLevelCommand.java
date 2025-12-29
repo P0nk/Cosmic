@@ -1,26 +1,3 @@
-/*
-    This file is part of the HeavenMS MapleStory Server, commands OdinMS-based
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/*
-   @Author: Arthur L - Refactored command content into modules
-*/
 package client.command.commands.gm6;
 
 import client.Character;
@@ -35,21 +12,59 @@ public class SetGmLevelCommand extends Command {
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
+
         if (params.length < 2) {
             player.yellowMessage("Syntax: !setgmlevel <playername> <newlevel>");
             return;
         }
 
-        int newLevel = Integer.parseInt(params[1]);
-        Character target = c.getChannelServer().getPlayerStorage().getCharacterByName(params[0]);
-        if (target != null) {
-            target.setGMLevel(newLevel);
-            target.getClient().setGMLevel(newLevel);
-
-            target.dropMessage("You are now a level " + newLevel + " GM. See @commands for a list of available commands.");
-            player.dropMessage(target + " is now a level " + newLevel + " GM.");
-        } else {
-            player.dropMessage("Player '" + params[0] + "' was not found on this channel.");
+        int newLevel;
+        try {
+            newLevel = Integer.parseInt(params[1]);
+        } catch (NumberFormatException e) {
+            player.dropMessage("GM level must be a number.");
+            return;
         }
+
+        Character target = c.getChannelServer()
+                .getPlayerStorage()
+                .getCharacterByName(params[0]);
+
+        if (target == null) {
+            player.dropMessage("Player '" + params[0] + "' was not found on this channel.");
+            return;
+        }
+
+        // Apply GM level
+        target.setGMLevel(newLevel);
+        target.getClient().setGMLevel(newLevel);
+
+        // Determine message
+        String message;
+        switch (newLevel) {
+            case 0:
+                message = "You are now a normal player.";
+                break;
+            case 1:
+                message = "You are now a donator.";
+                break;
+            case 2:
+                message = "You are now a Jr GM.";
+                break;
+            case 3:
+                message = "You are now a normal GM.";
+                break;
+            case 4:
+                message = "You are now a Super GM.";
+                break;
+            default:
+                message = "You are now a level " + newLevel +
+                        " GM. See @commands for a list of available commands.";
+                break;
+        }
+
+        // Notify target and executor
+        target.dropMessage(message);
+        player.dropMessage(target.getName() + " is now GM level " + newLevel + ".");
     }
 }
