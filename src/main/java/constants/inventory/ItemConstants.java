@@ -214,7 +214,7 @@ public final class ItemConstants {
     }
 
     public static boolean isWeapon(int itemId) {
-        return itemId >= 1302000 && itemId < 1493000;
+        return itemId >= 1210000 && itemId < 1700000;
     }
 
     public static boolean isEquipment(int itemId) {

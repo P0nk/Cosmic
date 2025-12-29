@@ -1760,6 +1760,33 @@ public class ItemInformationProvider {
         return YamlConfig.config.server.USE_ENFORCE_UNMERCHABLE_PET && ItemConstants.isPet(itemId);
     }
 
+    // --- Subordinate / rebirth req-level enforcement helpers ---
+    private int getBaseReqLevel(Equip equip) {
+        short ov = equip.getReqLevelOverride();
+        if (ov > 0) return ov;  // DB override
+        return getEquipLevelReq(equip.getItemId()); // WZ default
+    }
+
+    private int getEffectiveReqLevel(Character chr, Equip equip, boolean highfivestamp) {
+        int reqLevel = getBaseReqLevel(equip);
+
+        // Apply stamp first (if you want stamp to help AFTER override)
+        if (highfivestamp) {
+            reqLevel -= 5;
+            if (reqLevel < 0) reqLevel = 0;
+        }
+
+        // Apply your rebirth rule AFTER stamp so your enforced minimum wins
+        // hands == rebirth count (your existing design)
+        int rb = equip.getHands();
+        reqLevel = server.subordinate.SubordinateManager.getEffectiveReqLevel(reqLevel, rb);
+
+        return reqLevel;
+    }
+
+
+
+
     public Collection<Item> canWearEquipment(Character chr, Collection<Item> items) {
         Inventory inv = chr.getInventory(InventoryType.EQUIPPED);
         if (inv.checked()) {
@@ -1905,8 +1932,19 @@ public class ItemInformationProvider {
 
         if (i > 0) {
             equip.wear(false);
+
+            // Rebirth-specific level enforcement message
+            int enforcedLevel = getEffectiveReqLevel(chr, equip, highfivestamp);
+            if (chr.getLevel() < enforcedLevel) {
+                chr.dropMessage(5,
+                        "This rebirthed equipment is too strong for you to wield right now.\r\n" +
+                                "Try again when you reach level " + enforcedLevel + "."
+                );
+            }
+
             return false;
         }
+
         equip.wear(true);
         return true;
     }

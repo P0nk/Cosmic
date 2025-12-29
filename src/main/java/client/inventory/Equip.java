@@ -118,6 +118,7 @@ public class Equip extends Item {
         ret.setQuantity(getQuantity());
         ret.setExpiration(getExpiration());
         ret.setGiftFrom(getGiftFrom());
+        ret.setReqLevelOverride(reqLevelOverride);
         return ret;
     }
 
@@ -741,4 +742,15 @@ public class Equip extends Item {
     public byte getItemLevel() {
         return itemLevel;
     }
+    private short reqLevelOverride = 0;
+
+    public short getReqLevelOverride() {
+        return reqLevelOverride;
+    }
+
+    public void setReqLevelOverride(short lvl) {
+        this.reqLevelOverride = (lvl > 0 ? lvl : 0);
+    }
+
+
 }

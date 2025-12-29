@@ -23,6 +23,7 @@ package client.inventory;
 import tools.DatabaseConnection;
 import tools.Pair;
 
+import java.sql.Types;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -118,6 +119,12 @@ public enum ItemFactory {
         equip.setExpiration(rs.getLong("expiration"));
         equip.setGiftFrom(rs.getString("giftFrom"));
         equip.setRingId(rs.getInt("ringid"));
+
+        short req = rs.getShort("reqlevel");
+        if (!rs.wasNull() && req > 0) {
+            equip.setReqLevelOverride(req);
+        }
+
 
         return equip;
     }
@@ -228,7 +235,15 @@ public enum ItemFactory {
                         psItem.executeUpdate();
 
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                            try (PreparedStatement psEquip = con.prepareStatement("INSERT INTO `inventoryequipment` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            try (PreparedStatement psEquip = con.prepareStatement(
+                                    "INSERT INTO `inventoryequipment` (" +
+                                            "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
+                                            "`watk`, `matk`, `wdef`, `mdef`, `acc`, `avoid`, `hands`, `speed`, `jump`, `locked`, " +
+                                            "`vicious`, `itemlevel`, `itemexp`, `ringid`, `reqlevel`" +
+                                            ") VALUES (" +
+                                            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
+                                            ")")) {
+
                                 try (ResultSet rs = psItem.getGeneratedKeys()) {
                                     if (!rs.next()) {
                                         throw new RuntimeException("Inserting item failed.");
@@ -260,6 +275,13 @@ public enum ItemFactory {
                                 psEquip.setInt(21, equip.getItemLevel());
                                 psEquip.setInt(22, equip.getItemExp());
                                 psEquip.setInt(23, equip.getRingId());
+                                // NEW: reqlevel (nullable)
+                                short r = equip.getReqLevelOverride();
+                                if (r > 0) {
+                                    psEquip.setShort(24, r);
+                                } else {
+                                    psEquip.setNull(24, Types.SMALLINT);
+                                }
                                 psEquip.executeUpdate();
                             }
                         }
@@ -419,8 +441,14 @@ public enum ItemFactory {
                     Equip equip = (Equip) item;
 
                     try (PreparedStatement ps = con.prepareStatement(
-                            "INSERT INTO inventoryequipment VALUES " +
-                                    "(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                            "INSERT INTO `inventoryequipment` (" +
+                                    "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
+                                    "`watk`, `matk`, `wdef`, `mdef`, `acc`, `avoid`, `hands`, `speed`, `jump`, `locked`, " +
+                                    "`vicious`, `itemlevel`, `itemexp`, `ringid`, `reqlevel`" +
+                                    ") VALUES (" +
+                                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
+                                    ")")) {
+
 
                         ps.setInt(1, inventoryItemId);
                         ps.setInt(2, equip.getUpgradeSlots());
@@ -445,6 +473,13 @@ public enum ItemFactory {
                         ps.setInt(21, equip.getItemLevel());
                         ps.setInt(22, equip.getItemExp());
                         ps.setInt(23, equip.getRingId());
+                        // NEW: reqlevel (nullable)
+                        short r = equip.getReqLevelOverride();
+                        if (r > 0) {
+                            ps.setShort(24, r);
+                        } else {
+                            ps.setNull(24, Types.SMALLINT);
+                        }
                         ps.executeUpdate();
                     }
 

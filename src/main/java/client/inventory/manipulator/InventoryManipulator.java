@@ -21,6 +21,7 @@
  */
 package client.inventory.manipulator;
 
+import server.subordinate.SubordinateManager;
 import client.BuffStat;
 import client.Character;
 import client.Client;
@@ -528,10 +529,25 @@ public class InventoryManipulator {
         Inventory eqpdInv = chr.getInventory(InventoryType.EQUIPPED);
 
         Equip source = (Equip) eqpInv.getItem(src);
-        if (source == null || !ii.canWearEquipment(chr, source, dst)) {
+        if (source == null) {
             c.sendPacket(PacketCreator.enableActions());
             return;
-        } else if ((ItemId.isExplorerMount(source.getItemId()) && chr.isCygnus()) ||
+        }
+
+// === NEW: server-side rebirth req-level enforcement ===
+        int requiredLevel = SubordinateManager.getEffectiveReqLevelForEquip(source);
+        if (chr.getLevel() < requiredLevel) {
+            chr.dropMessage(5, "You must be level " + requiredLevel + " to equip this item.");
+            c.sendPacket(PacketCreator.enableActions());
+            return;
+        }
+
+// keep original wearable checks (jobs/stats/etc)
+        if (!ii.canWearEquipment(chr, source, dst)) {
+            c.sendPacket(PacketCreator.enableActions());
+            return;
+        }
+        else if ((ItemId.isExplorerMount(source.getItemId()) && chr.isCygnus()) ||
                 ((ItemId.isCygnusMount(source.getItemId())) && !chr.isCygnus())) {// Adventurer taming equipment
             return;
         }
