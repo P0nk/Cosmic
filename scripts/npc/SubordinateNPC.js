@@ -56,8 +56,8 @@ let ctx = null;
 
 function start() {
   ctx = freshCtx();
-  ctx.step = STEP.INTRO;
-  cm.sendNext("Hello! I'm Slimy's Subordinate! I facilitate Weapon Upgrading and Rebirths, what do you want to do today?");
+  ctx.step = STEP.MENU;  // Directly set to MENU instead of INTRO
+  return showMenu();     // Call the showMenu() function to display the menu
 }
 
 function freshCtx() {
@@ -122,14 +122,14 @@ function showMenu(selection) {
 const menu =
   "Good Day, I'm Subordinate. I provide item empowering and rebirthing service so long you can provide the necessary resources. Pick a service.\r\n\r\n" +
 
-  "#b#L0#[Regular]#k Each stat is rolled independently.\r\n" +
+  "#e#b#L0#[REGULAR]#k#n Each stat is rolled independently.\r\n" +
   "      Balanced results with natural variation across stats.#l\r\n\r\n" +
 
-  "#b#L1#[Premium]#k One roll applied to all stats.\r\n" +
+  "#e#r#L1#[PREMIUM]#k#n One roll applied to all stats.\r\n" +
   "      Higher consistency and better peak potential.#l\r\n\r\n" +
 
-  "#b#L2#[Salvage]#k Scrap an upgraded item for partial refunds.\r\n" +
-  "      Recover some mesos and materials based on progress.#l";
+  "#e#d#L2#[SALVAGE]#k#n Scrap an upgraded item for partial refunds.\r\n" +
+  "      Recover up to 30% of mesos and materials based on progress.#l";
 cm.sendSimple(menu);
 
     return;
@@ -182,7 +182,7 @@ function showItemList() {
   : (ctx.mode === "PREM") ? "It costs Item required level / 20 to preview each upgrade.\r\n"
   : "";
 
-  cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + lines.join("\r\n"));
+  cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] it will deduct your mesos if you click any item to preview its stats!#n#b \r\n"+ lines.join("\r\n"));
 }
 
 // ========================= PICK ITEM =========================
