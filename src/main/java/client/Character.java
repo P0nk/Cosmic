@@ -9610,7 +9610,7 @@ public class Character extends AbstractCharacterObject {
             inv.unlockInventory();
         }
 
-        return (mesoGain);
+        return (2*mesoGain);
     }
 
     public int standaloneSell(Client c, ItemInformationProvider ii, InventoryType type, short slot, short quantity) {
