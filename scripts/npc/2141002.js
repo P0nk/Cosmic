@@ -1,14 +1,15 @@
 /*
-    Pink Bean Restart NPC (inside boss map)
+    Pink Bean Lure NPC (inside boss map)
     NPC ID: 2141002
 
-    Allows leader to restart the fight without leaving.
+    Allows leader to summon a new Pink Bean using the Pink Poppin.
 */
 
 var status = 0;
 var entryMap = 270050100; // Pink Bean battleground
 var eventTime = 140; // minutes
 var eventName = "PinkBeanBattle";
+var pinkFishId = 4001189; // Pink Fish (Poppin) item ID
 
 function start() {
     status = -1;
@@ -29,8 +30,8 @@ function action(mode, type, selection) {
     }
 
     if (status == 0) {
-        cm.sendSimple("Do you wish to face #rPink Bean#k once again?\r\n\r\n"
-            + "#b#L0#Restart the battle here#l\r\n"
+        cm.sendSimple("Do you dare to face the mighty #rPink Bean#k once again?\r\n\r\n"
+            + "#b#L0#Lure out Pink Bean with the Pink Poppin!#l\r\n"
             + "#L1#Leave the expedition#l");
     } else if (status == 1) {
         if (selection == 0) {
@@ -38,15 +39,25 @@ function action(mode, type, selection) {
             var party = cm.getParty();
 
             if (party == null) {
-                cm.sendOk("You must be in a party.");
+                cm.sendOk("You must be in a party to summon Pink Bean.");
                 cm.dispose();
                 return;
             }
             if (party.getLeader().getId() != player.getId()) {
-                cm.sendOk("Only the party leader can restart the fight.");
+                cm.sendOk("Only the party leader can summon Pink Bean.");
                 cm.dispose();
                 return;
             }
+
+            // Check if the party leader has a Pink Fish (Poppin)
+            if (!cm.haveItem(pinkFishId)) {
+                cm.sendOk("You must possess the legendary #rPink Poppin#k to lure the great #rPink Bean#k. It is the only thing capable of attracting this interdimensional being.");
+                cm.dispose();
+                return;
+            }
+
+            // Consume one Pink Fish (Poppin)
+            cm.gainItem(pinkFishId, -1); // Remove one Pink Poppin from inventory
 
             var eim = player.getEventInstance();
             if (eim == null) {
@@ -79,9 +90,10 @@ function action(mode, type, selection) {
             eim.restartEventTimer(eventTime * 60000);
 
             // Trigger first wave
-            eim.dropMessage(5, "[Expedition] The battle has restarted! Prepare yourselves!");
+            eim.dropMessage(5, "#b[Expedition] You managed to lure out Pink Bean! Watch out, here he comes!!!");
             eim.schedule("startWave", 5000);
 
+            cm.sendOk("#rI can't believe you have it!#k Watch out, here he comes!!!");
             cm.dispose();
 
         } else if (selection == 1) {
