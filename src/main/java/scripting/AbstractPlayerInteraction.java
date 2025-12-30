@@ -566,6 +566,29 @@ public class AbstractPlayerInteraction {
         return evolved;
     }
 
+    public void gainItem(int id, int quantity) {
+        // Step 1: Determine if the quantity is negative or positive
+        boolean isNegative = quantity < 0;
+
+        // Step 2: Get the absolute value of the quantity
+        int absQuantity = Math.abs(quantity);
+
+        // Step 3: Compare with the short max value (32767)
+        while (absQuantity > Short.MAX_VALUE) {
+            // Process in chunks of Short.MAX_VALUE (32767)
+            short chunk = Short.MAX_VALUE;
+            // If it's negative, pass a negative chunk, else positive
+            gainItem(id, (isNegative ? (short) -chunk : chunk));
+            absQuantity -= Short.MAX_VALUE; // Decrease the remaining amount
+        }
+
+        // Step 4: Handle any remaining quantity that's less than Short.MAX_VALUE
+        if (absQuantity > 0) {
+            gainItem(id, (isNegative ? (short) -absQuantity : (short) absQuantity));
+        }
+    }
+
+
     public void gainItem(int id, short quantity) {
         gainItem(id, quantity, false, true);
     }
