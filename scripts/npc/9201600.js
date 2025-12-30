@@ -12,7 +12,7 @@ var VIPTpRockCost = 1000;
 var currentMapId;
 var blacklist = [280030000,280030100,280030101,280030102,280030103,280030104,280030105, // Zakum maps
                  240060000,240060100,240060200,240050400, // Horntail maps
-                 270050100, // Pinkbean
+                 270050100,270050000, // Pinkbean
                  211070100, // Von Leon maps
                  300000012 // Jail
                  ]
