@@ -219,6 +219,8 @@ import client.command.commands.gm5.SetCommand;
 import client.command.commands.gm5.ShowMoveLifeCommand;
 import client.command.commands.gm5.ShowPacketsCommand;
 import client.command.commands.gm5.ShowSessionsCommand;
+import client.command.commands.gm5.ScrollToggleCommand;
+
 
 import client.command.commands.gm6.ClearQuestCacheCommand;
 import client.command.commands.gm6.ClearQuestCommand;
@@ -617,6 +619,7 @@ public class CommandsExecutor {
         addCommand("showmovelife", 5, ShowMoveLifeCommand.class);
         addCommand("showsessions", 5, ShowSessionsCommand.class);
         addCommand("iplist", 5, IpListCommand.class);
+        addCommand("scrolltoggle", 5, ScrollToggleCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
