@@ -49,7 +49,7 @@ function action(m, t, s) {
                     // Redeem all Karma Points for AP
                     var result = KarmaRewardSystem.redeemKarmaPoints(cm.getPlayer());  // Redeem all Karma Points
                     if (result) {
-                        cm.sendOk("Thank you, my hero! For your good deeds, you have been awarded " + karmaPoints + " AP! Your efforts are a beacon of hope for all.");
+                        cm.sendOk("Thank you, my hero! For your good deeds, you have been awarded " + 2*karmaPoints + " AP! Your efforts are a beacon of hope for all.");
                         karmaPoints = KarmaRewardSystem.calculateKarmaPoints(cm.getPlayer());  // Update Karma Points
                     } else {
                         cm.sendOk("Ah, my dear hero, an error occurred while redeeming your Karma Points. Do not worry, you may try again.");
