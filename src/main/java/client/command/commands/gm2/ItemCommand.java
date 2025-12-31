@@ -72,6 +72,12 @@ public class ItemCommand extends Command {
                 long days = Math.max(1, Integer.parseInt(params[1]));
                 long expiration = System.currentTimeMillis() + DAYS.toMillis(days);
                 int petid = Pet.createPet(itemId);
+                System.out.println("c: " + c);
+                System.out.println("itemId: " + itemId);
+                System.out.println("quantity: " + quantity);
+                System.out.println("player.getName(): " + player.getName());
+                System.out.println("petid: " + petid);
+                System.out.println("expiration: " + expiration);
 
                 InventoryManipulator.addById(c, itemId, quantity, player.getName(), petid, expiration);
                 return;
