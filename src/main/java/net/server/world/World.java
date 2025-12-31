@@ -275,6 +275,12 @@ public class World {
         }
     }
 
+
+    // Getter for worldId
+    public int getWorldId() {
+        return id;
+    }
+
     public int getMobperspawntick() {
         return mobperspawntick;
     }
