@@ -226,7 +226,7 @@ public final class ItemConstants {
     }
 
     public static boolean isMedal(int itemId) {
-        return itemId >= 1140000 && itemId < 1143000;
+        return itemId >= 1140000 && itemId < 1145000;
     }
 
     public static boolean isFace(int itemId) {
