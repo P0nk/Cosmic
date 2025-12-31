@@ -2427,6 +2427,9 @@ public class Character extends AbstractCharacterObject {
     }
 
     private static void deleteQuestProgressWhereCharacterId(Connection con, int cid) throws SQLException {
+        // Keep queststatus intact so karma_redeemed (DB truth) is never lost.
+        // Only wipe dependent tables that are safe to rebuild from memory.
+
         try (PreparedStatement ps = con.prepareStatement("DELETE FROM medalmaps WHERE characterid = ?")) {
             ps.setInt(1, cid);
             ps.executeUpdate();
@@ -2437,11 +2440,10 @@ public class Character extends AbstractCharacterObject {
             ps.executeUpdate();
         }
 
-        try (PreparedStatement ps = con.prepareStatement("DELETE FROM queststatus WHERE characterid = ?")) {
-            ps.setInt(1, cid);
-            ps.executeUpdate();
-        }
+        // IMPORTANT: DO NOT delete from queststatus
+        // try (PreparedStatement ps = con.prepareStatement("DELETE FROM queststatus WHERE characterid = ?")) { ... }
     }
+
 
     private void deleteWhereCharacterId(Connection con, String sql) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -8762,44 +8764,130 @@ public class Character extends AbstractCharacterObject {
                     psEvent.executeBatch();
                 }
 
-                deleteQuestProgressWhereCharacterId(con, id);
+// ==========================
+// Quests and medals (DB is source of truth for karma_redeemed)
+// - Never deletes queststatus
+// - Never updates karma_redeemed (so autosave cannot reset it)
+// - Only updates core quest columns; inserts missing rows with karma_redeemed=0
+// ==========================
 
-                // Quests and medals
-                try (PreparedStatement psStatus = con.prepareStatement("INSERT INTO queststatus (`queststatusid`, `characterid`, `quest`, `status`, `time`, `expires`, `forfeited`, `completed`) VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-                     PreparedStatement psProgress = con.prepareStatement("INSERT INTO questprogress VALUES (DEFAULT, ?, ?, ?, ?)");
-                     PreparedStatement psMedal = con.prepareStatement("INSERT INTO medalmaps VALUES (DEFAULT, ?, ?, ?)")) {
-                    psStatus.setInt(1, id);
+// 1) Clear dependent tables ONLY (questprogress + medalmaps), keep queststatus untouched.
+                try (PreparedStatement psDelProgress = con.prepareStatement(
+                        "DELETE qp FROM questprogress qp " +
+                                "INNER JOIN queststatus qs ON qp.queststatusid = qs.queststatusid " +
+                                "WHERE qs.characterid = ?"
+                );
+                     PreparedStatement psDelMedals = con.prepareStatement(
+                             "DELETE mm FROM medalmaps mm " +
+                                     "INNER JOIN queststatus qs ON mm.queststatusid = qs.queststatusid " +
+                                     "WHERE qs.characterid = ?"
+                     )) {
+
+                    psDelProgress.setInt(1, id);
+                    psDelProgress.executeUpdate();
+
+                    psDelMedals.setInt(1, id);
+                    psDelMedals.executeUpdate();
+                }
+
+// 2) Update queststatus rows WITHOUT touching karma_redeemed/info.
+// 3) Insert if missing (new quest) with karma_redeemed=0 and info=0.
+// 4) Fetch queststatusid for saving questprogress/medals.
+                try (
+                        PreparedStatement psUpdateStatus = con.prepareStatement(
+                                "UPDATE queststatus SET " +
+                                        "`status` = ?, `time` = ?, `expires` = ?, `forfeited` = ?, `completed` = ? " +
+                                        "WHERE characterid = ? AND quest = ?"
+                        );
+
+                        PreparedStatement psInsertStatus = con.prepareStatement(
+                                "INSERT INTO queststatus " +
+                                        "(characterid, quest, status, time, expires, forfeited, completed, info, karma_redeemed) " +
+                                        "VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)",
+                                Statement.RETURN_GENERATED_KEYS
+                        );
+
+                        PreparedStatement psGetStatusId = con.prepareStatement(
+                                "SELECT queststatusid FROM queststatus WHERE characterid = ? AND quest = ?"
+                        );
+
+                        PreparedStatement psProgress = con.prepareStatement(
+                                "INSERT INTO questprogress VALUES (DEFAULT, ?, ?, ?, ?)"
+                        );
+
+                        PreparedStatement psMedal = con.prepareStatement(
+                                "INSERT INTO medalmaps VALUES (DEFAULT, ?, ?, ?)"
+                        )
+                ) {
 
                     for (QuestStatus qs : getQuests()) {
-                        psStatus.setInt(2, qs.getQuest().getId());
-                        psStatus.setInt(3, qs.getStatus().getId());
-                        psStatus.setInt(4, (int) (qs.getCompletionTime() / 1000));
-                        psStatus.setLong(5, qs.getExpirationTime());
-                        psStatus.setInt(6, qs.getForfeited());
-                        psStatus.setInt(7, qs.getCompleted());
-                        psStatus.executeUpdate();
+                        int questId = qs.getQuest().getId();
 
-                        try (ResultSet rs = psStatus.getGeneratedKeys()) {
-                            rs.next();
-                            for (int mob : qs.getProgress().keySet()) {
-                                psProgress.setInt(1, id);
-                                psProgress.setInt(2, rs.getInt(1));
-                                psProgress.setInt(3, mob);
-                                psProgress.setString(4, qs.getProgress(mob));
-                                psProgress.addBatch();
-                            }
-                            psProgress.executeBatch();
+                        // ---- UPDATE queststatus (does NOT touch karma_redeemed) ----
+                        psUpdateStatus.setInt(1, qs.getStatus().getId());
+                        psUpdateStatus.setInt(2, (int) (qs.getCompletionTime() / 1000));
+                        psUpdateStatus.setLong(3, qs.getExpirationTime());
+                        psUpdateStatus.setInt(4, qs.getForfeited());
+                        psUpdateStatus.setInt(5, qs.getCompleted());
+                        psUpdateStatus.setInt(6, id);
+                        psUpdateStatus.setInt(7, questId);
 
-                            for (int i = 0; i < qs.getMedalMaps().size(); i++) {
-                                psMedal.setInt(1, id);
-                                psMedal.setInt(2, rs.getInt(1));
-                                psMedal.setInt(3, qs.getMedalMaps().get(i));
-                                psMedal.addBatch();
+                        int updated = psUpdateStatus.executeUpdate();
+
+                        int questStatusId;
+
+                        if (updated == 0) {
+                            // ---- INSERT new queststatus row with karma_redeemed=0 (DB truth) ----
+                            psInsertStatus.setInt(1, id);
+                            psInsertStatus.setInt(2, questId);
+                            psInsertStatus.setInt(3, qs.getStatus().getId());
+                            psInsertStatus.setInt(4, (int) (qs.getCompletionTime() / 1000));
+                            psInsertStatus.setLong(5, qs.getExpirationTime());
+                            psInsertStatus.setInt(6, qs.getForfeited());
+                            psInsertStatus.setInt(7, qs.getCompleted());
+                            psInsertStatus.executeUpdate();
+
+                            try (ResultSet rs = psInsertStatus.getGeneratedKeys()) {
+                                if (!rs.next()) {
+                                    throw new SQLException("Failed to insert queststatus for quest " + questId);
+                                }
+                                questStatusId = rs.getInt(1);
                             }
-                            psMedal.executeBatch();
+                        } else {
+                            // ---- Fetch existing queststatusid ----
+                            psGetStatusId.setInt(1, id);
+                            psGetStatusId.setInt(2, questId);
+
+                            try (ResultSet rs = psGetStatusId.executeQuery()) {
+                                if (!rs.next()) {
+                                    throw new SQLException("Missing queststatus row after update for quest " + questId);
+                                }
+                                questStatusId = rs.getInt(1);
+                            }
                         }
+
+                        // ---- questprogress ----
+                        for (int mob : qs.getProgress().keySet()) {
+                            psProgress.setInt(1, id);
+                            psProgress.setInt(2, questStatusId);
+                            psProgress.setInt(3, mob);
+                            psProgress.setString(4, qs.getProgress(mob));
+                            psProgress.addBatch();
+                        }
+                        psProgress.executeBatch();
+
+                        // ---- medal maps ----
+                        for (int mapId : qs.getMedalMaps()) {
+                            psMedal.setInt(1, id);
+                            psMedal.setInt(2, questStatusId);
+                            psMedal.setInt(3, mapId);
+                            psMedal.addBatch();
+                        }
+                        psMedal.executeBatch();
                     }
                 }
+
+
 
                 FamilyEntry familyEntry = getFamilyEntry(); //save family rep
                 if (familyEntry != null) {
