@@ -306,12 +306,12 @@ function isDonor() {
 function guideText() {
     var msg = "#e#b[Food Enhancement Guide]#k#n\r\n\r\n";
     msg += "#dRules:#k\r\n";
-    msg += "• Any Food tier can be used on ANY equipment.\r\n";
-    msg += "• Does NOT consume scroll/upgrade slots.\r\n";
-    msg += "• Max enhancements per equip: #r+" + MAX_ENHANCE + "#k\r\n";
-    msg += "• Cost per attempt: " + FOOD_PER_ATTEMPT + " Food + #b" + fmt(NX_COST_PER_ATTEMPT) + " NX#k\r\n";
-    msg += "• #rFail consumes Food + NX.#k\r\n";
-    msg += "• #rCash equips cannot be upgraded.#k\r\n\r\n";
+    msg += "- Any Food tier can be used on ANY equipment.\r\n";
+    msg += "- Does NOT consume scroll/upgrade slots.\r\n";
+    msg += "- Max enhancements per equip: #r+" + MAX_ENHANCE + "#k\r\n";
+    msg += "- Cost per attempt: " + FOOD_PER_ATTEMPT + " Food + #b" + fmt(NX_COST_PER_ATTEMPT) + " NX#k\r\n";
+    msg += "- #rFail consumes Food + NX.#k\r\n";
+    msg += "- #rCash equips cannot be upgraded.#k\r\n\r\n";
 
     msg += "#dFail chance rule:#k\r\n";
     msg += "Fail(T1) = " + BASE_FAIL_RATE + "%\r\n";
@@ -335,7 +335,7 @@ function guideText() {
 
     if (isDonor()) {
         msg += "\r\n#dDonor Only:#k\r\n";
-        msg += "• Auto Food can loop until max is reached.\r\n";
+        msg += "- Auto Food can loop until max is reached.\r\n";
     }
 
     return msg;
