@@ -26,7 +26,7 @@ var CUTOFF_DATE = "2025-12-31";
 // Format: [ItemID, Quantity]
 var REDEMPTION_REWARDS = [
     [3015700, 1],   // Eggy New Year Chair
-//    [1142987, 1],   // MerogieMS Season 1 Medal
+    [1142987, 1],   // MerogieMS Season 1 Medal
     [3020001, 2]    // NXT
 ];
 
