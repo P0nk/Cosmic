@@ -46,7 +46,7 @@ public class TimerManager implements TimerManagerMBean {
 
     private ScheduledThreadPoolExecutor ses;
 
-    private TimerManager() {
+    public TimerManager() {
         MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
         try {
             mBeanServer.registerMBean(this, new ObjectName("server:type=TimerManger"));
