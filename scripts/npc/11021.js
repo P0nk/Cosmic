@@ -20,7 +20,7 @@ var CREATOR_SHOPS = [
 ];
 
 // --- CONFIGURATION: REDEMPTION ---
-var CUTOFF_DATE = "2026-01-01";
+var CUTOFF_DATE = "2026-01-07";
 
 // 1. FIXED REWARDS: Everyone gets these
 // Format: [ItemID, Quantity]
