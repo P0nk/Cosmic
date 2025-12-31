@@ -1,11 +1,7 @@
 /*
  * donorreward.js — Donor Rewards UI (Dashboard + Flat Shop + History)
  * v83 safe: no emoji/bullets that become '?'
- * Fixes:
- *  - Restores detailed HOME (milestones/rules/last credit/spend)
- *  - Restores SHOP category headers + currency max-buy info
- *  - Prevents crashes on insufficient DC (never calls Java)
- *  - Fixes "Purchase Failed" infinite loop via pendingJump
+ * Updated to support Item Duration/Period display
  */
 
 var DonorCreditManager = Java.type("server.donor.DonorCreditManager");
@@ -19,7 +15,8 @@ var allItems = [];
 var selectedRow = null;
 var selectedTimes = 1;
 
-// Only currency items get quantity prompt (NXT, BCoin)
+// Only currency items get quantity prompt (NXT, BCoin, etc)
+// Add IDs here if you want them to prompt for quantity "How many do you want to buy?"
 var CURRENCY_IDS = { "3020001": true, "3020002": true };
 
 function start() {
@@ -197,6 +194,7 @@ function shopFlow(sel) {
             var qty = Number(r.get("qty"));
             var price = Number(r.get("priceCents"));
             var stock = r.get("stock"); // may be null
+            var period = r.get("period"); // Read period from Java
 
             if (isNaN(price) || price <= 0) {
                 // bad data safety
@@ -204,9 +202,17 @@ function shopFlow(sel) {
                 continue;
             }
 
+            // --- Duration Text Logic ---
+            var durTxt = " #b(Perm)#k";
+            if (period != null && Number(period) > 0) {
+                 durTxt = " #b(" + period + " Days)#k";
+            }
+            // ---------------------------
+
             txt += "#L" + k + "#";
             txt += itemLine(itemId);
             txt += "  x" + qty + "  -  #r" + fmtCents(price) + " DC#k";
+            txt += durTxt; // Add the duration text
 
             // show max buy hint for currencies (like before)
             if (isCurrency(itemId)) {
@@ -293,6 +299,7 @@ function confirmFlow(sel) {
         var baseQty = Number(selectedRow.get("qty"));
         var priceEach = Number(selectedRow.get("priceCents"));
         var stock = selectedRow.get("stock");
+        var period = selectedRow.get("period"); // Get period for confirm screen
         var times = (selectedTimes <= 0 ? 1 : selectedTimes);
 
         if (isNaN(priceEach) || priceEach <= 0) {
@@ -326,6 +333,14 @@ function confirmFlow(sel) {
 
         var txt = "#eConfirm Purchase#n\r\n\r\n";
         txt += "Item: " + itemLine(itemId) + "\r\n";
+
+        // Show duration in confirm screen
+//        if (period != null && Number(period) > 0) {
+//             txt += "Duration: #b" + period + " Days#k\r\n";
+//        } else {
+//             txt += "Duration: #bPermanent#k\r\n";
+//        }
+
         txt += "Times: #b" + times + "#k\r\n";
         txt += "Total Quantity: #b" + totalQty + "#k\r\n";
         txt += "Total Cost: #r" + fmtCents(totalPrice) + " DC#k\r\n";

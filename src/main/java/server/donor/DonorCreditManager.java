@@ -2,7 +2,9 @@ package server.donor;
 
 import client.Client;
 import client.Character;
+import client.inventory.Pet;
 import client.inventory.manipulator.InventoryManipulator;
+import constants.inventory.ItemConstants;
 import tools.DatabaseConnection;
 
 import java.sql.*;
@@ -106,7 +108,8 @@ public final class DonorCreditManager {
 
     public static List<Map<String, Object>> getItemsByCategory(String category) {
         List<Map<String, Object>> list = new ArrayList<>();
-        String sql = "SELECT id, itemid, quantity, price_dc_cents, stock, sort_order, notes " +
+        // [FIX 1] Added 'period' to the SELECT statement
+        String sql = "SELECT id, itemid, quantity, price_dc_cents, stock, sort_order, notes, period " +
                 "FROM cosmic.donor_shop_items WHERE is_enabled = 1 AND category = ? " +
                 "ORDER BY sort_order ASC, id ASC";
 
@@ -123,6 +126,10 @@ public final class DonorCreditManager {
                     int stock = rs.getInt("stock");
                     r.put("stock", rs.wasNull() ? null : stock);
                     r.put("notes", rs.getString("notes"));
+
+                    // [FIX 2] Put period into the map so JS can read it
+                    r.put("period", rs.getInt("period"));
+
                     list.add(r);
                 }
             }
@@ -227,7 +234,6 @@ public final class DonorCreditManager {
         return buyFromShop(c, shopItemId, 1);
     }
 
-    /** Multi-buy overload. */
     public static PurchaseResult buyFromShop(Client c, int shopItemId, int times) throws SQLException {
         if (times <= 0) throw new SQLException("Invalid quantity.");
         if (times > 10000) throw new SQLException("Quantity too large.");
@@ -241,7 +247,7 @@ public final class DonorCreditManager {
             con.setAutoCommit(false);
 
             try {
-                // Lock ledger
+                // Lock ledger (same as before)
                 long bal;
                 String selLed = "SELECT dc_balance_cents FROM cosmic.donor_ledger WHERE account_id = ? FOR UPDATE";
                 try (PreparedStatement ps = con.prepareStatement(selLed)) {
@@ -252,14 +258,15 @@ public final class DonorCreditManager {
                     }
                 }
 
-                // Lock shop item row
-                int itemId, baseQty, priceCents;
+                // [FIX 3] Added 'period' variable and to SQL
+                int itemId, baseQty, priceCents, period;
                 Integer stock = null;
                 String cat;
                 String notes;
 
-                String selItem = "SELECT category, itemid, quantity, price_dc_cents, stock, notes " +
+                String selItem = "SELECT category, itemid, quantity, price_dc_cents, stock, notes, period " +
                         "FROM cosmic.donor_shop_items WHERE id = ? AND is_enabled = 1 FOR UPDATE";
+
                 try (PreparedStatement ps = con.prepareStatement(selItem)) {
                     ps.setInt(1, shopItemId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -268,6 +275,10 @@ public final class DonorCreditManager {
                         itemId = rs.getInt("itemid");
                         baseQty = rs.getInt("quantity");
                         priceCents = rs.getInt("price_dc_cents");
+
+                        // [FIX 4] Read period from DB (default 0 if null/missing)
+                        period = rs.getInt("period");
+
                         int s = rs.getInt("stock");
                         if (!rs.wasNull()) stock = s;
                         notes = rs.getString("notes");
@@ -284,14 +295,13 @@ public final class DonorCreditManager {
                 int totalQty = baseQty * times;
                 if (totalQty <= 0) throw new SQLException("Quantity overflow.");
 
-                // Inventory space check (safe before charging)
                 if (!InventoryManipulator.checkSpace(c, itemId, totalQty, "")) {
                     throw new SQLException("Not enough inventory space.");
                 }
 
                 long newBal = bal - totalPrice;
 
-                // Deduct balance
+                // Deduct balance (same as before)
                 String updLed = "UPDATE cosmic.donor_ledger SET " +
                         "dc_balance_cents = ?, " +
                         "dc_spent_cents_total = dc_spent_cents_total + ?, " +
@@ -304,7 +314,7 @@ public final class DonorCreditManager {
                     ps.executeUpdate();
                 }
 
-                // Decrement stock (if limited)
+                // Decrement stock (same as before)
                 if (stock != null) {
                     String updStock = "UPDATE cosmic.donor_shop_items SET stock = stock - ? WHERE id = ? AND stock >= ?";
                     try (PreparedStatement ps = con.prepareStatement(updStock)) {
@@ -316,7 +326,7 @@ public final class DonorCreditManager {
                     }
                 }
 
-                // Log txn
+                // Log txn (same as before)
                 String ref = "SHOP:" + cat + " itemId=" + itemId + " qty=" + baseQty + " x" + times +
                         (notes != null ? (" " + notes) : "");
                 String insTxn = "INSERT INTO cosmic.donor_txn (account_id, char_id, txn_type, dc_cents_delta, donation_amount_cents, milestone_bonus_cents, ref) " +
@@ -329,8 +339,8 @@ public final class DonorCreditManager {
                     ps.executeUpdate();
                 }
 
-                // Grant items
-                grantItem(c, itemId, totalQty);
+                // [FIX 5] Pass 'period' to the grantItem function
+                grantItem(c, itemId, (short) totalQty, period);
 
                 con.commit();
                 return new PurchaseResult(itemId, totalQty, totalPrice, newBal);
@@ -347,19 +357,41 @@ public final class DonorCreditManager {
         }
     }
 
+    public static void grantItem(Client c, int itemId, short quantity, int durationDays) {
+        // Parameter 1: Client (c) - Passed in directly
+        // Parameter 4: Owner Name - Retrieved from c.getPlayer().getName()
+        String ownerName = c.getPlayer().getName();
+
+        if (ItemConstants.isPet(itemId)) {
+            // --- PET HANDLING (The 6 Parameters Fix) ---
+
+            // Parameter 3: Quantity
+            // Force quantity to 1 for pets, regardless of input
+            short petQuantity = 1;
+
+            // Parameter 5: Unique ID (petId)
+            // CRITICAL: Must be generated by database first!
+            // Matches Printout: "petid: 21"
+            int uniqueId = Pet.createPet(itemId);
 
 
+            // Parameter 6: Expiration (Fixed 1 Year)
+            long expiration = System.currentTimeMillis() + java.util.concurrent.TimeUnit.DAYS.toMillis(365);
 
-    private static void grantItem(Client c, int itemId, int qty) throws SQLException {
-        boolean ok = InventoryManipulator.addById(
-                c,
-                itemId,
-                (short) qty,
-                -1L   // expiration: -1 = no expiry
-        );
+            // The Fix: Passing all 6 parameters exactly as ItemCommand does
+            InventoryManipulator.addById(
+                    c,              // 1. Client
+                    itemId,         // 2. Item ID (e.g., 5000042)
+                    petQuantity,    // 3. Quantity (Always 1)
+                    ownerName,      // 4. Owner Name (e.g., "Merogie")
+                    uniqueId,       // 5. Unique/Cash ID (e.g., 21)
+                    expiration      // 6. Expiration Timestamp
+            );
 
-        if (!ok) {
-            throw new SQLException("Not enough inventory space.");
+        } else {
+            // --- NON-PET HANDLING ---
+            // For regular items, uniqueId is usually -1 or 0, and expiration might be -1
+            InventoryManipulator.addById(c, itemId, quantity, ownerName, -1, -1);
         }
     }
 
