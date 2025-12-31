@@ -47,7 +47,7 @@ function action(m, t, s) {
                 // Spend all Karma Points to gain AP
                 if (karmaPoints >= 1) {
                     // Redeem all Karma Points for AP
-                    var result = KarmaRewardSystem.redeemKarmaPoints(cm.getPlayer(), karmaPoints);  // Redeem all Karma Points
+                    var result = KarmaRewardSystem.redeemKarmaPoints(cm.getPlayer());  // Redeem all Karma Points
                     if (result) {
                         cm.sendOk("Thank you, my hero! For your good deeds, you have been awarded " + karmaPoints + " AP! Your efforts are a beacon of hope for all.");
                         karmaPoints = KarmaRewardSystem.calculateKarmaPoints(cm.getPlayer());  // Update Karma Points
