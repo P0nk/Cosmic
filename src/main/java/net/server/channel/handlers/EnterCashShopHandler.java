@@ -87,9 +87,17 @@ public class EnterCashShopHandler extends AbstractPacketHandler {
             c.getChannelServer().removePlayer(mc);
             mc.getMap().removePlayer(mc);
             mc.getCashShop().open(true);
-            mc.saveCharToDB();
+
+            // Only save the character if no other save is in progress
+            if (!mc.isSaveInProgress()) {
+                mc.setSaveInProgress(true);  // Set the flag to true
+                mc.saveCharToDB();
+                mc.setSaveInProgress(false);  // Reset the flag after saving
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
+

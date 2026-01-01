@@ -370,9 +370,8 @@ public class Character extends AbstractCharacterObject {
     private boolean autopotEnabled = true; // default to true for backward compatibility
     // Damage tracker for boss maps
     private long totalDamageDealt = 0L;
-    public static final Set<Integer> DAMAGE_TRACKED_MAPS = new HashSet<>(Arrays.asList(
-            280030000 // Zakum Altar
-    ));
+    public static final Set<Integer> DAMAGE_TRACKED_MAPS = new HashSet<>(Arrays.asList(280030000));// Zakum Altar
+    private boolean isSaveInProgress = false;  // Add this variable in your Character class
 
 
 
@@ -437,6 +436,14 @@ public class Character extends AbstractCharacterObject {
         }
         quests = new LinkedHashMap<>();
         setPosition(new Point(0, 0));
+    }
+
+    public boolean isSaveInProgress() {
+        return isSaveInProgress;
+    }
+
+    public void setSaveInProgress(boolean inProgress) {
+        this.isSaveInProgress = inProgress;
     }
 
     private static Job getJobStyleInternal(int jobid, byte opt) {
