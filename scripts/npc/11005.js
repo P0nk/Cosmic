@@ -26,6 +26,14 @@ var SCROLL_BLACKLIST = {
     2049600: true  // Potential Scroll (example)
 };
 
+// ===================== RANDOM SPELL TRACE LOGIC =====================
+
+// Returns a random integer between min and max (inclusive)
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
 // Helper
 function isBlacklistedScroll(itemId) {
     return SCROLL_BLACKLIST[itemId] === true;
@@ -134,7 +142,7 @@ function action(mode, type, selection) {
         if (relationshipValue > 3000) {
             text += "#L5#Open Intermediate Shop (60% Success Rate)\r\n"; // Intermediate Shop
         }
-        if (relationshipValue > 10000) {
+        if (relationshipValue > 7500) {
             text += "#L6#Open Advanced Shop (10% Success Rate)\r\n"; // Advanced Shop
         }
         text += "#L7#Donate Spell Trace to Boost Relationships\r\n"; // Donate Spell Trace
@@ -338,7 +346,14 @@ else if (status === 1 && selection === 3) {
         }
 
         totalScrolls += qty;
-        totalSpellTrace += qty * SPELL_TRACE_PER_SCROLL;
+        var gained = 0;
+        for (var i = 0; i < qty; i++) {
+                gained += randInt(6, 14);
+            }
+
+        totalScrolls += qty;
+        totalSpellTrace += gained;
+
 
         // Remove scrolls
         cm.gainItem(itemId, -qty);
