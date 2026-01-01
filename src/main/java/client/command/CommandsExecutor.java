@@ -394,7 +394,29 @@ CommandsExecutor {
     private void registerLv0Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
 
+
         addCommand(new String[]{"help", "commands"}, HelpCommand.class);
+        addCommand("noobshop", 0, NoobShopCommand.class);
+        addCommand("whodrops", 0, WhoDropsCommand.class);
+        addCommand("whatdropsfrom", 0, WhatDropsFromCommand.class);
+        addCommand("donor", DonorRewardCommand.class);
+        addCommand("roll", 0, RollCommand.class);
+        addCommand("loot", LootCommand.class);
+        addCommand("world", 0, WorldChatCommand.class);
+//        addCommand("uni", 0, UniverseChatCommand.class);
+        addCommand("w", 0, WorldChatCommand.class);
+//        addCommand("u", 0, UniverseChatCommand.class);
+        addCommand("sellnobb", 0, SellItemsCommand.class);
+        addCommand("exp", 0, ExpGainCommand.class);
+        addCommand("powerup",  UnlockedBuffsCommand.class);
+        addCommand("tp",  TPCommand.class);
+        addCommand("inactiveguildmembers", InactiveGuildMembersCommand.class);
+        addCommand("sell",  SellAllCommand.class);
+        addCommand("buyback", BuybackCommand.class);
+        addCommand("toggleautopot", ToggleAutoPotCommand.class);
+        addCommand("stats", CheckMyDmgCommand.class);
+        addCommand("equipcashweapon", EquipCashWeaponCommand.class);
+        addCommand("listequip", ListEquipCommand.class);
         addCommand("droplimit", DropLimitCommand.class);
         addCommand("time", TimeCommand.class);
         addCommand("credits", StaffCommand.class);
@@ -420,27 +442,7 @@ CommandsExecutor {
         addCommand("mylawn", MapOwnerClaimCommand.class);
         addCommand("bosshp", BossHpCommand.class);
         addCommand("mobhp", MobHpCommand.class);
-        addCommand("noobshop", 0, NoobShopCommand.class);
-        addCommand("whodrops", 0, WhoDropsCommand.class);
-        addCommand("whatdropsfrom", 0, WhatDropsFromCommand.class);
-        addCommand("roll", 0, RollCommand.class);
-        addCommand("loot", LootCommand.class);
-        addCommand("world", 0, WorldChatCommand.class);
-//        addCommand("uni", 0, UniverseChatCommand.class);
-        addCommand("w", 0, WorldChatCommand.class);
-//        addCommand("u", 0, UniverseChatCommand.class);
-        addCommand("sellnobb", 0, SellItemsCommand.class);
-        addCommand("exp", 0, ExpGainCommand.class);
-        addCommand("powerup",  UnlockedBuffsCommand.class);
-        addCommand("tp",  TPCommand.class);
-        addCommand("inactiveguildmembers", InactiveGuildMembersCommand.class);
-        addCommand("sell",  SellAllCommand.class);
-        addCommand("buyback", BuybackCommand.class);
-        addCommand("toggleautopot", ToggleAutoPotCommand.class);
-        addCommand("stats", CheckMyDmgCommand.class);
-        addCommand("equipcashweapon", EquipCashWeaponCommand.class);
-        addCommand("donor", DonorRewardCommand.class);
-        addCommand("listequip", ListEquipCommand.class);
+
 
         commandsNameDesc.add(levelCommandsCursor);
     }

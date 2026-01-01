@@ -344,7 +344,7 @@ function action(mode, type, selection) {
 //            var selectedItemName = basicShopItems[selection][1]; // Get selected item name
             console.log("Selected item: " + selectedItemId + " (" + name + ")");
 
-            cm.sendGetText("How many of #i" +selectedItemId + "##l#e#k" + name + "#n#k would you like to buy using Spell Trace? They cost 40 each."); // Ask user how many to buy
+            cm.sendGetText("How many of #i" +selectedItemId + "##l#e#k" + name + "#n#k would you like to buy using Spell Trace? They cost 20 each."); // Ask user how many to buy
 //            status = 23; // Proceed to asking for the purchase amount
             console.log("name1: " + name );
         }
@@ -364,7 +364,7 @@ function action(mode, type, selection) {
             }
 
             // Check if player has enough Spell Trace to make the purchase
-            var itemPrice = 40; // Define the cost of each scroll (this is an example, modify as needed)
+            var itemPrice = 20; // Define the cost of each scroll (this is an example, modify as needed)
             var totalCost = purchaseAmount * itemPrice;
 
             if (spellTraceBalance < totalCost) {
@@ -439,7 +439,7 @@ function action(mode, type, selection) {
 //            var selectedItemName = basicShopItems[selection][1]; // Get selected item name
             console.log("Selected item: " + selectedItemId + " (" + name + ")");
 
-            cm.sendGetText("How many of #i" +selectedItemId + "##l#e#k" + name + "#n#k would you like to buy using Spell Trace? They cost 80 each."); // Ask user how many to buy
+            cm.sendGetText("How many of #i" +selectedItemId + "##l#e#k" + name + "#n#k would you like to buy using Spell Trace? They cost 40 each."); // Ask user how many to buy
 //            status = 23; // Proceed to asking for the purchase amount
             console.log("name1: " + name );
         }
@@ -459,7 +459,7 @@ function action(mode, type, selection) {
             }
 
             // Check if player has enough Spell Trace to make the purchase
-            var itemPrice = 80; // Define the cost of each scroll (this is an example, modify as needed)
+            var itemPrice = 40; // Define the cost of each scroll (this is an example, modify as needed)
             var totalCost = purchaseAmount * itemPrice;
 
             if (spellTraceBalance < totalCost) {
@@ -535,7 +535,7 @@ function action(mode, type, selection) {
 //            var selectedItemName = basicShopItems[selection][1]; // Get selected item name
             console.log("Selected item: " + selectedItemId + " (" + name + ")");
 
-            cm.sendGetText("How many of #i" +selectedItemId + "##l#e#k" + name + "#n#k would you like to buy using Spell Trace? They cost 120 each."); // Ask user how many to buy
+            cm.sendGetText("How many of #i" +selectedItemId + "##l#e#k" + name + "#n#k would you like to buy using Spell Trace? They cost 55 each."); // Ask user how many to buy
 //            status = 23; // Proceed to asking for the purchase amount
             console.log("name1: " + name );
         }
@@ -555,7 +555,7 @@ function action(mode, type, selection) {
             }
 
             // Check if player has enough Spell Trace to make the purchase
-            var itemPrice = 120; // Define the cost of each scroll (this is an example, modify as needed)
+            var itemPrice = 55; // Define the cost of each scroll (this is an example, modify as needed)
             var totalCost = purchaseAmount * itemPrice;
 
             if (spellTraceBalance < totalCost) {
