@@ -30,7 +30,7 @@ const FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 
 const FOOD_T7 = []; // WIP
 
 const FOOD_PER_UPGRADE = 1;
-const NX_COST_PER_ATTEMPT = 100000;
+const NX_COST_STEP = 10000; // T1=10k, T2=20k, ...
 const MAX_ENHANCE = 3;
 
 const BASE_FAIL_RATE = 10;      // T1 fail
@@ -46,6 +46,9 @@ function getNxCredit() {
     } catch (e) {
         return 0;
     }
+}
+function nxCostForTier(tier) {
+    return tierIndex(tier) * NX_COST_STEP;
 }
 
 // ================== STATS PER TIER =====================
@@ -218,7 +221,7 @@ function guide() {
     var msg = "#e#b[Food Enhancement Guide]#k#n\r\n\r\n";
     msg += "- Any Food tier works on any equipment.\r\n";
     msg += "- Max enhancement per equip: #r+" + MAX_ENHANCE + "#k\r\n";
-    msg += "- Cost per attempt (always consumed): #b" + fmt(NX_COST_PER_ATTEMPT) + " NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
+    msg += "- Cost per attempt (always consumed): #b(Tier × " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
     msg += "- #rFail consumes Food + NX#k (no stats gained).\r\n\r\n";
     msg += "#dFailure Rate Rule:#k\r\n";
     msg += "T1 fail = " + BASE_FAIL_RATE + "%\r\n";
@@ -238,7 +241,7 @@ function start() {
         "Feed me any Food and I’ll bless your equip… sometimes.\r\n\r\n"
         + "#d- Any Food tier works on any equipment.\r\n"
         + "- Max enhance per equip: #r+" + MAX_ENHANCE + "#k\r\n"
-        + "- Cost per attempt: #b" + fmt(NX_COST_PER_ATTEMPT) + " NX#k + " + FOOD_PER_UPGRADE + " Food\r\n"
+        + "- Cost per attempt: #b(Tier × " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n"
         + "- #rFail consumes Food + NX#k.\r\n"
         + "- No scroll slots are used.\r\n\r\n"
         + "#b#L0#Proceed#l\r\n"
@@ -328,7 +331,7 @@ function action(mode, type, selection) {
             menu += "#L" + i + "#"
                  + "#b" + t + "#k "
                  + "(Have: " + have
-                 + ", Cost: " + FOOD_PER_UPGRADE + " Food + " + fmt(NX_COST_PER_ATTEMPT) + " NX"
+                 + ", Cost: " + FOOD_PER_UPGRADE + " Food + " + fmt(nxCostForTier(t)) + " NX"
                  + ", Success: " + succ + "%)"
                  + "#l\r\n";
         }
@@ -364,13 +367,15 @@ function action(mode, type, selection) {
             return;
         }
 
+        var nxNeed = nxCostForTier(chosenTier);
         var nxBal = getNxCredit();
-        if (nxBal < NX_COST_PER_ATTEMPT) {
-            cm.sendOk("You need #b" + fmt(NX_COST_PER_ATTEMPT) + " NX#k per attempt.\r\n"
+        if (nxBal < nxNeed) {
+            cm.sendOk("You need #b" + fmt(nxNeed) + " NX#k for " + chosenTier + ".\r\n"
                 + "Your current NX: #r" + fmt(nxBal) + "#k");
             cm.dispose();
             return;
         }
+
 
         var weaponFlag = isWeapon(selectedItem);
         pendingDelta = tierDelta(chosenTier, weaponFlag);
@@ -387,7 +392,7 @@ function action(mode, type, selection) {
             + "Target:\r\n#v" + selectedItem.getItemId() + "# " + itemName + "\r\n\r\n"
             + "#dPreview:#k\r\n" + statSummary(selectedItem, pendingDelta) + "\r\n\r\n"
             + "#dCosts (always consumed):#k\r\n"
-            + fmt(NX_COST_PER_ATTEMPT) + " NX\r\n"
+            + fmt(nxNeed) + " NX\r\n"
             + FOOD_PER_UPGRADE + " x (any one of the following):\r\n"
             + foodListForTier(chosenTier, FOOD_PER_UPGRADE) + "\r\n\r\n"
             + "#dChance:#k\r\n"
@@ -433,22 +438,23 @@ function action(mode, type, selection) {
             return;
         }
 
+        var nxNeed2 = nxCostForTier(chosenTier);
         var nxBal2 = getNxCredit();
-        if (nxBal2 < NX_COST_PER_ATTEMPT) {
-            cm.sendOk("You need #b" + fmt(NX_COST_PER_ATTEMPT) + " NX#k per attempt.\r\n"
+        if (nxBal2 < nxNeed2) {
+            cm.sendOk("You need #b" + fmt(nxNeed2) + " NX#k for " + chosenTier + ".\r\n"
                 + "Your current NX: #r" + fmt(nxBal2) + "#k");
             cm.dispose();
             return;
         }
 
         // Consume NX first (fail still pays) — your 1-liner
-        cm.gainCash(-NX_COST_PER_ATTEMPT);
+        cm.gainCash(-nxNeed2);
 
         // Consume food (fail still pays)
         var ok3 = consumeTierFood(chosenTier, FOOD_PER_UPGRADE);
         if (!ok3) {
             // Refund NX if food consume failed (rare but fair)
-            cm.gainCash(NX_COST_PER_ATTEMPT);
+            cm.gainCash(nxNeed2);
             cm.sendOk("Couldn't consume the required Food for some reason.");
             cm.dispose();
             return;
