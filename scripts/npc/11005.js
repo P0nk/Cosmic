@@ -12,7 +12,7 @@ var name = "";
 var inv = "";
 var itemQty = "" ;
 var itemId = "" ;
-const RELATIONSHIP_EARN_RATE = 0.40; // 50% of spell trace spent
+const RELATIONSHIP_EARN_RATE = 0.50; // 50% of spell trace spent
 
 function awardRelationshipFromSpend(spendAmount) {
     if (spendAmount <= 0) return 0;
