@@ -67,6 +67,7 @@ import client.command.commands.gm0.ToggleAutoPotCommand;
 import client.command.commands.gm0.CheckMyDmgCommand;
 import client.command.commands.gm0.EquipCashWeaponCommand;
 import client.command.commands.gm0.DonorRewardCommand;
+import client.command.commands.gm0.ListEquipCommand;
 
 
 import client.command.commands.gm1.BossHpCommand;
@@ -242,6 +243,7 @@ import client.command.commands.gm6.TestMobHpCommand;
 import client.command.commands.gm6.WarpWorldCommand;
 import client.command.commands.gm6.RewardDonorCommand;
 import client.command.commands.gm6.Draw4DCommand;
+import client.command.commands.gm6.GiveEquipWeaponsCommand;
 
 
 import constants.id.MapId;
@@ -254,7 +256,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class CommandsExecutor {
+public class
+
+
+
+
+
+CommandsExecutor {
     private static final Logger log = LoggerFactory.getLogger(CommandsExecutor.class);
     private static final CommandsExecutor instance = new CommandsExecutor();
     private static final char USER_HEADING = '@';
@@ -432,6 +440,7 @@ public class CommandsExecutor {
         addCommand("stats", CheckMyDmgCommand.class);
         addCommand("equipcashweapon", EquipCashWeaponCommand.class);
         addCommand("donor", DonorRewardCommand.class);
+        addCommand("listequip", ListEquipCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
@@ -647,6 +656,7 @@ public class CommandsExecutor {
         addCommand("draw4d", 6, Draw4DCommand.class);
         addCommand("testmobhp", 6, TestMobHpCommand.class);
         addCommand("rewarddonor", 6, RewardDonorCommand.class);
+        addCommand("giveequipweapons", 6, GiveEquipWeaponsCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
