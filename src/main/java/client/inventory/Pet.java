@@ -109,6 +109,7 @@ public class Pet extends Item {
         }
     }
 
+
     public void saveToDb() {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("UPDATE pets SET name = ?, level = ?, closeness = ?, fullness = ?, summoned = ?, flag = ? WHERE petid = ?")) {
@@ -124,6 +125,21 @@ public class Pet extends Item {
             e.printStackTrace();
         }
     }
+
+    public void saveToDb(Connection con) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "UPDATE pets SET name = ?, level = ?, closeness = ?, fullness = ?, summoned = ?, flag = ? WHERE petid = ?")) {
+            ps.setString(1, getName());
+            ps.setInt(2, getLevel());
+            ps.setInt(3, getTameness());
+            ps.setInt(4, getFullness());
+            ps.setInt(5, isSummoned() ? 1 : 0);
+            ps.setInt(6, getPetAttribute());
+            ps.setInt(7, getUniqueId());
+            ps.executeUpdate();
+        }
+    }
+
 
     public static int createPet(int itemid) {
         try (Connection con = DatabaseConnection.getConnection();

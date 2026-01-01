@@ -8592,7 +8592,7 @@ public class Character extends AbstractCharacterObject {
                 }
 
                 for (Pet pet : petList) {
-                    pet.saveToDb();
+                    pet.saveToDb(con);
                 }
 
                 for (Entry<Integer, Set<Integer>> es : getExcluded().entrySet()) {    // this set is already protected

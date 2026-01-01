@@ -58,6 +58,7 @@ public class DatabaseConnection {
         config.setJdbcUrl(getDbUrl());
         config.setUsername(YamlConfig.config.server.DB_USER);
         config.setPassword(YamlConfig.config.server.DB_PASS);
+        config.setLeakDetectionThreshold(5000); // 5s: logs stack traces of leaked connections
 
         final int initFailTimeoutSeconds = YamlConfig.config.server.INIT_CONNECTION_POOL_TIMEOUT;
         config.setInitializationFailTimeout(SECONDS.toMillis(initFailTimeoutSeconds));
