@@ -12,6 +12,27 @@ var name = "";
 var inv = "";
 var itemQty = "" ;
 var itemId = "" ;
+const RELATIONSHIP_EARN_RATE = 0.40; // 50% of spell trace spent
+
+function awardRelationshipFromSpend(spendAmount) {
+    if (spendAmount <= 0) return 0;
+
+    // safest: always treat DB as source of truth
+    var cid = cm.getPlayer().getId();
+    var curRel = ScrollShopManager.getRelationshipValue(cid); // must exist in manager
+    if (curRel < 0) curRel = 0;
+
+    var gain = Math.floor(spendAmount * RELATIONSHIP_EARN_RATE);
+    if (gain <= 0) return 0;
+
+    var newRel = curRel + gain;
+    ScrollShopManager.updateRelationshipValue(cid, newRel);
+
+    // keep local cache in sync if you use relationshipValue elsewhere
+    relationshipValue = newRel;
+
+    return gain;
+}
 
 // ===================== SCROLL → SPELL TRACE CONFIG =====================
 
@@ -138,14 +159,18 @@ function action(mode, type, selection) {
         text += "#L1#Withdraw Spell Trace\r\n";
         text += "#L2#Convert Scrolls to Spell Trace (Select)\r\n";  // Convert scrolls to spell trace
         text += "#L3#Convert ALL Scrolls to Spell Trace\r\n";
-        text += "#L4#Open Basic Shop (100% Success Rate)\r\n"; // Basic Shop
-        if (relationshipValue > 3000) {
-            text += "#L5#Open Intermediate Shop (60% Success Rate)\r\n"; // Intermediate Shop
+        text += "#L4#Open Basic Shop (100% Scroll)\r\n"; // Basic Shop
+        if (relationshipValue > 2000) {
+            text += "#L5#Open Intermediate Shop (60% Scroll)\r\n"; // Intermediate Shop
         }
-        if (relationshipValue > 7500) {
-            text += "#L6#Open Advanced Shop (10% Success Rate)\r\n"; // Advanced Shop
+        if (relationshipValue > 5000) {
+            text += "#L6#Open Advanced Shop (10% Scroll)\r\n"; // Advanced Shop
         }
-        text += "#L7#Donate Spell Trace to Boost Relationships\r\n"; // Donate Spell Trace
+        if (relationshipValue > 10000) {
+            text += "#L7#Open Master Shop\r\n"; // Advanced Shop
+        }
+
+        text += "#L8#Donate Spell Trace to Boost Relationships\r\n"; // Donate Spell Trace
         cm.sendSimple(text);
     }
 
@@ -320,7 +345,6 @@ function action(mode, type, selection) {
 // == Convert ALL Scrolls to Spell Trace ===================================
 // =========================================================================
 else if (status === 1 && selection === 3) {
-    status = 70;
 
     var inv = cm.getInventory(2); // USE inventory
     var totalScrolls = 0;
@@ -351,7 +375,6 @@ else if (status === 1 && selection === 3) {
                 gained += randInt(6, 14);
             }
 
-        totalScrolls += qty;
         totalSpellTrace += gained;
 
 
@@ -473,13 +496,17 @@ else if (status === 1 && selection === 3) {
 
             // Deduct Spell Trace and complete the purchase
             spellTraceBalance -= totalCost;
-            ScrollShopManager.updateSpellTraceBalance(cm.getPlayer().getId(), spellTraceBalance); // Update balance in the database
-            cm.gainItem(selectedItemId, purchaseAmount); // Add purchased scrolls to the player's inventory
-            console.log("name3: " + name );
+            ScrollShopManager.updateSpellTraceBalance(cm.getPlayer().getId(), spellTraceBalance);
 
+            var relGain = awardRelationshipFromSpend(totalCost);
 
-            cm.sendOk("You have successfully purchased " + purchaseAmount + " " + name + "(s) for " + totalCost + " Spell Trace.");
-            cm.dispose(); // End the conversation
+            cm.gainItem(selectedItemId, purchaseAmount);
+
+            cm.sendOk("You have successfully purchased " + purchaseAmount + " " + name + "(s) for " + totalCost + " Spell Trace.\r\n"
+                + "#dRelationship gained:#k +" + relGain);
+            cm.dispose();
+            return;
+
         }
 
     // =========================================================================
@@ -576,13 +603,11 @@ else if (status === 1 && selection === 3) {
             cm.sendOk("You have successfully purchased " + purchaseAmount + " " + name + "(s) for " + totalCost + " Spell Trace.");
             cm.dispose(); // End the conversation
         }
-
-
     // =========================================================================
     // == Open Advance Shop ======================================================
     // =========================================================================
     else if (status === 1 && selection === 6) {
-        console.log("Open Intermediate Shop selected.");
+        console.log("Open Advance Shop selected.");
         status = 40;
         var text = "Please select an equipment category to view scrolls:\r\n";
         for (var i = 0; i < categoryNames.length; i++) {
@@ -673,10 +698,111 @@ else if (status === 1 && selection === 3) {
             cm.dispose(); // End the conversation
         }
 
+// =========================================================================
+// == Master Shop Menu (no categories) (status 51) =========================
+// =========================================================================
+else if (status === 1 && selection === 7) {
+    status = 50;
+    // Master shop: fixed 2 options only
+    // selection here is not used yet because we are showing the menu now.
+
+    var CHAOS_SCROLL = 2049100;
+    var WHITE_SCROLL = 2340000;
+    var PRICE = 100;
+
+    var text = "Master Scroll Shop\r\n";
+    text += "Your Spell Trace: #b" + spellTraceBalance + "#k\r\n\r\n";
+    text += "#L0##i" + CHAOS_SCROLL + "# #bChaos Scroll#k  #d(" + PRICE + " Spell Trace)#k#l\r\n";
+    text += "#L1##i" + WHITE_SCROLL + "# #bWhite Scroll#k  #d(" + PRICE + " Spell Trace)#k#l\r\n";
+
+    cm.sendSimple(text);
+}
+    // =========================================================================
+    // == Pick item -> ask quantity (show max affordable) (status 52) ===========
+    // =========================================================================
+    else if (status === 51) {
+        var CHAOS_SCROLL = 2049100;
+        var WHITE_SCROLL = 2340000;
+        var PRICE = 100;
+
+        // Map selection -> item
+        if (selection === 0) selectedItemId = CHAOS_SCROLL;
+        else if (selection === 1) selectedItemId = WHITE_SCROLL;
+        else {
+            cm.sendOk("Invalid selection.");
+            cm.dispose();
+            return;
+        }
+
+        name = Packages.server.ItemInformationProvider.getInstance().getName(selectedItemId);
+
+        var maxAffordable = Math.floor(spellTraceBalance / PRICE);
+
+        if (maxAffordable <= 0) {
+            cm.sendOk("You do not have enough Spell Trace.\r\n\r\n"
+                + "Cost: #b" + PRICE + "#k each\r\n"
+                + "You have: #r" + spellTraceBalance + "#k");
+            cm.dispose();
+            return;
+        }
+
+        // Let player choose quantity up to what they can afford
+        // sendGetNumber(prompt, default, min, max)
+        cm.sendGetNumber(
+            "How many of #i" + selectedItemId + "# #b" + name + "#k would you like to buy?\r\n\r\n"
+            + "Cost: #b" + PRICE + "#k Spell Trace each\r\n"
+            + "Your Spell Trace: #b" + spellTraceBalance + "#k\r\n"
+            + "You can afford up to: #e#b" + maxAffordable + "#n#k\r\n",
+            1, 1, maxAffordable
+        );
+    }
+
+    // =========================================================================
+    // == Finalize purchase (status 53) ========================================
+    // =========================================================================
+    else if (status === 52) {
+        var PRICE = 100;
+
+        var qty = selection; // sendGetNumber returns the number in 'selection'
+        if (qty <= 0) {
+            cm.sendOk("Invalid quantity.");
+            cm.dispose();
+            return;
+        }
+
+        var totalCost = qty * PRICE;
+
+        // Safety re-check (in case balance changed)
+        if (spellTraceBalance < totalCost) {
+            cm.sendOk("You do not have enough Spell Trace for that quantity.\r\n\r\n"
+                + "Total cost: #b" + totalCost + "#k\r\n"
+                + "You have: #r" + spellTraceBalance + "#k");
+            cm.dispose();
+            return;
+        }
+
+        // Deduct + grant
+        spellTraceBalance -= totalCost;
+        ScrollShopManager.updateSpellTraceBalance(cm.getPlayer().getId(), spellTraceBalance);
+
+        var relGain = awardRelationshipFromSpend(totalCost);
+        cm.gainItem(selectedItemId, qty);
+
+        var itemName = Packages.server.ItemInformationProvider.getInstance().getName(selectedItemId);
+
+        cm.sendOk("Purchased #b" + qty + "#k #i" + selectedItemId + "# #b" + itemName + "#k\r\n"
+            + "Cost: #b" + totalCost + "#k Spell Trace\r\n"
+            + "Remaining Spell Trace: #b" + spellTraceBalance + "#k");
+        cm.dispose();
+        return;
+    }
+
+
+
     // =========================================================================
     // == Relationship Empowerment ======================================================
     // =========================================================================
-    else if (status === 1 && selection === 7) {
+    else if (status === 1 && selection === 8) {
     // Prompt the player for the donation amount
     status = 60;
     cm.sendGetText("How many Spell Trace would you like to donate? Your current Spell Trace balance is: #b" + spellTraceBalance + "#k.");
@@ -698,22 +824,14 @@ else if (status === 61) {
     var newSpellTraceBalance = spellTraceBalance - withdrawAmount;
 
 // Function to determine the relationship message based on the value
-function getRelationshipMessage(newRelationshipValue) {
-    if (relationshipValue < 1000) {
-        return "Starting your journey, keep donating to grow your bond!";
-    } else if (relationshipValue < 2000) {
-        return "You're building a strong relationship, keep it up!";
-    } else if (relationshipValue < 3000) {
-        return "Your relationship is solid, you're on a great path!";
-    } else if (relationshipValue < 4000) {
-        return "You're well on your way, your bond is growing stronger!";
-    } else if (relationshipValue < 5000) {
-        return "You're becoming an important ally, great progress!";
-    } else if (relationshipValue < 10000) {
-        return "A valued partner, your relationship is truly remarkable!";
-    } else {
-        return "You're a legendary partner, your bond is unbreakable!";
-    }
+function getRelationshipMessage(val) {
+    if (val < 1000) return "Starting your journey, keep donating to grow your bond!";
+    if (val < 2000) return "You're building a strong relationship, keep it up!";
+    if (val < 3000) return "Your relationship is solid, you're on a great path!";
+    if (val < 4000) return "You're well on your way, your bond is growing stronger!";
+    if (val < 5000) return "You're becoming an important ally, great progress!";
+    if (val < 10000) return "A valued partner, your relationship is truly remarkable!";
+    return "You're a legendary partner, your bond is unbreakable!";
 }
 
 
