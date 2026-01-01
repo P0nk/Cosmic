@@ -13,6 +13,25 @@ var inv = "";
 var itemQty = "" ;
 var itemId = "" ;
 
+// ===================== SCROLL → SPELL TRACE CONFIG =====================
+
+// Spell Trace gained per scroll
+var SPELL_TRACE_PER_SCROLL = 10;
+
+// Scroll blacklist (never convertible)
+var SCROLL_BLACKLIST = {
+    2049100: true, // Chaos Scroll
+    2049300: true, // Clean Slate Scroll
+    2049400: true, // Innocence Scroll
+    2049600: true  // Potential Scroll (example)
+};
+
+// Helper
+function isBlacklistedScroll(itemId) {
+    return SCROLL_BLACKLIST[itemId] === true;
+}
+
+
 // List for category prefixes
 var categoryPrefix = [
     "20400", // Helmet
@@ -109,15 +128,16 @@ function action(mode, type, selection) {
         text += "Please choose an option:\r\n";
         text += "#L0#Deposit Spell Trace\r\n";
         text += "#L1#Withdraw Spell Trace\r\n";
-        text += "#L2#Convert Scrolls to Spell Trace\r\n";  // Convert scrolls to spell trace
-        text += "#L3#Open Basic Shop (100% Success Rate)\r\n"; // Basic Shop
+        text += "#L2#Convert Scrolls to Spell Trace (Select)\r\n";  // Convert scrolls to spell trace
+        text += "#L3#Convert ALL Scrolls to Spell Trace\r\n";
+        text += "#L4#Open Basic Shop (100% Success Rate)\r\n"; // Basic Shop
         if (relationshipValue > 3000) {
-            text += "#L4#Open Intermediate Shop (60% Success Rate)\r\n"; // Intermediate Shop
+            text += "#L5#Open Intermediate Shop (60% Success Rate)\r\n"; // Intermediate Shop
         }
         if (relationshipValue > 10000) {
-            text += "#L5#Open Advanced Shop (10% Success Rate)\r\n"; // Advanced Shop
+            text += "#L6#Open Advanced Shop (10% Success Rate)\r\n"; // Advanced Shop
         }
-        text += "#L6#Donate Spell Trace to Boost Relationships\r\n"; // Donate Spell Trace
+        text += "#L7#Donate Spell Trace to Boost Relationships\r\n"; // Donate Spell Trace
         cm.sendSimple(text);
     }
 
@@ -288,11 +308,74 @@ function action(mode, type, selection) {
         cm.dispose();
     }
 
+// =========================================================================
+// == Convert ALL Scrolls to Spell Trace ===================================
+// =========================================================================
+else if (status === 1 && selection === 3) {
+    status = 70;
+
+    var inv = cm.getInventory(2); // USE inventory
+    var totalScrolls = 0;
+    var totalSpellTrace = 0;
+    var skipped = [];
+
+    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+        var item = inv.getItem(slot);
+        if (!item) continue;
+
+        var itemId = item.getItemId();
+        var qty = item.getQuantity();
+
+        // Must be scroll
+        if (!itemId.toString().startsWith("204")) continue;
+
+        // Blacklist check
+        if (isBlacklistedScroll(itemId)) {
+            skipped.push(
+                Packages.server.ItemInformationProvider.getInstance().getName(itemId)
+            );
+            continue;
+        }
+
+        totalScrolls += qty;
+        totalSpellTrace += qty * SPELL_TRACE_PER_SCROLL;
+
+        // Remove scrolls
+        cm.gainItem(itemId, -qty);
+    }
+
+    if (totalScrolls === 0) {
+        cm.sendOk("You have no eligible scrolls to convert.");
+        cm.dispose();
+        return;
+    }
+
+    // Update balance (DB is source of truth)
+    spellTraceBalance += totalSpellTrace;
+    ScrollShopManager.updateSpellTraceBalance(
+        cm.getPlayer().getId(),
+        spellTraceBalance
+    );
+
+    var msg = "You converted #b" + totalScrolls + "#k scrolls into "
+            + "#r" + totalSpellTrace + "#k Spell Trace.\r\n\r\n"
+            + "New Balance: #b" + spellTraceBalance + "#k";
+
+    if (skipped.length > 0) {
+        msg += "\r\n\r\nSkipped (blacklisted):\r\n- " + skipped.join("\r\n- ");
+    }
+
+    cm.sendOk(msg);
+    cm.dispose();
+}
+
+
+
 
     // =========================================================================
     // == Open Basic Shop ======================================================
     // =========================================================================
-    else if (status === 1 && selection === 3) {
+    else if (status === 1 && selection === 4) {
         console.log("Open Basic Shop selected.");
         status = 20;
         var text = "Please select an equipment category to view scrolls:\r\n";
@@ -387,7 +470,7 @@ function action(mode, type, selection) {
     // =========================================================================
     // == Open Intermediate Shop ======================================================
     // =========================================================================
-    else if (status === 1 && selection === 4) {
+    else if (status === 1 && selection === 5) {
         console.log("Open Intermediate Shop selected.");
         status = 30;
         var text = "Please select an equipment category to view scrolls:\r\n";
@@ -483,7 +566,7 @@ function action(mode, type, selection) {
     // =========================================================================
     // == Open Advance Shop ======================================================
     // =========================================================================
-    else if (status === 1 && selection === 5) {
+    else if (status === 1 && selection === 6) {
         console.log("Open Intermediate Shop selected.");
         status = 40;
         var text = "Please select an equipment category to view scrolls:\r\n";
@@ -578,7 +661,7 @@ function action(mode, type, selection) {
     // =========================================================================
     // == Relationship Empowerment ======================================================
     // =========================================================================
-    else if (status === 1 && selection === 6) {
+    else if (status === 1 && selection === 7) {
     // Prompt the player for the donation amount
     status = 60;
     cm.sendGetText("How many Spell Trace would you like to donate? Your current Spell Trace balance is: #b" + spellTraceBalance + "#k.");
