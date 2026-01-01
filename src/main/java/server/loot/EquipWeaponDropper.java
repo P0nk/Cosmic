@@ -27,7 +27,7 @@ public final class EquipWeaponDropper {
 
     // Chance is in 1,000,000 rolls. BASE_CHANCE=2500 => 0.25% at drop_rate=1.
     private static final int ROLL_RANGE = 1_000_000;
-    private static final int BASE_CHANCE = 2500;
+    private static final int BASE_CHANCE = 0;
 
     // When job-specific pool exists, we can also allow a small chance to pick from ALL (all-jobs) pool.
     private static final int ALL_POOL_WEIGHT_PERCENT = 15; // 0..100
