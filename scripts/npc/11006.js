@@ -49,11 +49,11 @@ function action(mode, type, selection) {
         }
 
         msg += "\r\nLeaves stored: " + queued + " / " + maxCap + "\r\n";
-        msg += "(Every 10,000 leaves extends the event by 1 hour)\r\n\r\n";
+        msg += "(Every 5,000 leaves extends the event by 1 hour)\r\n\r\n";
 
         // Check if full
         if (queued >= maxCap) {
-            msg += "#rThe storage is full (40,000)! Please wait for the current leaves to be consumed.#k";
+            msg += "#rThe storage is full (20,000)! Please wait for the current leaves to be consumed.#k";
             cm.sendOk(msg);
             cm.dispose();
         } else {
@@ -102,7 +102,7 @@ function action(mode, type, selection) {
         cm.gainItem(leafItemId, -donationAmount);
         MapleLeafWorldBuffManager.handleDonation(donationAmount);
 
-        cm.sendOk("Donation successful! If the pool hit 10k, the timer has been extended.");
+        cm.sendOk("Donation successful! If the pool hit 5k, the timer has been extended.");
         cm.dispose();
     }
 }

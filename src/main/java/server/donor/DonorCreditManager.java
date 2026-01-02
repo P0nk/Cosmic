@@ -16,8 +16,29 @@ public final class DonorCreditManager {
 
     // ====== CONFIG ======
     // 10.00 DC bonus per $50 lifetime donated
-    private static final int MILESTONE_SGD_CENTS = 5000;     // $50.00
+    private static final int MILESTONE_SGD_CENTS = 5000;          // $50.00
     private static final int BONUS_DC_CENTS_PER_MILESTONE = 1000; // 10.00 DC
+
+    // ====== Key Alerts (rate-limited) ======
+    private static volatile long lastDbAlertAt = 0L;
+    private static volatile long lastLogicAlertAt = 0L;
+    private static final long ALERT_COOLDOWN_MS = 60_000L;
+
+    private static void alertDb(String msg, Throwable t) {
+        long now = System.currentTimeMillis();
+        if (now - lastDbAlertAt >= ALERT_COOLDOWN_MS) {
+            lastDbAlertAt = now;
+            System.err.println("[DonorCreditManager][DB] " + msg + (t != null ? " err=" + t.getMessage() : ""));
+        }
+    }
+
+    private static void alertLogic(String msg) {
+        long now = System.currentTimeMillis();
+        if (now - lastLogicAlertAt >= ALERT_COOLDOWN_MS) {
+            lastLogicAlertAt = now;
+            System.err.println("[DonorCreditManager][ALERT] " + msg);
+        }
+    }
 
     // ====== Status DTO via Map for easy JS usage ======
 
@@ -30,6 +51,7 @@ public final class DonorCreditManager {
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setInt(1, accountId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -54,12 +76,16 @@ public final class DonorCreditManager {
                     Timestamp ls = rs.getTimestamp("last_spend_at");
                     m.put("lastCreditAt", lc == null ? "" : lc.toString());
                     m.put("lastSpendAt", ls == null ? "" : ls.toString());
+                } else {
+                    // Should not happen if ensureLedgerRow works
+                    alertLogic("donor_ledger row missing after ensureLedgerRow. accountId=" + accountId);
                 }
             }
+
         } catch (SQLException e) {
-            // keep minimal, actionable error
-            System.err.println("[DonorCreditManager] getStatusByAccountId SQL error: " + e.getMessage());
+            alertDb("getStatusByAccountId failed. accountId=" + accountId, e);
         }
+
         return m;
     }
 
@@ -70,8 +96,10 @@ public final class DonorCreditManager {
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setInt(1, accountId);
             ps.setInt(2, Math.max(1, Math.min(limit, 20)));
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> r = new HashMap<>();
@@ -81,13 +109,16 @@ public final class DonorCreditManager {
                     r.put("donationCents", rs.getInt("donation_amount_cents"));
                     r.put("bonusCents", rs.getInt("milestone_bonus_cents"));
                     r.put("ref", rs.getString("ref"));
-                    r.put("at", rs.getTimestamp("created_at").toString());
+                    Timestamp ts = rs.getTimestamp("created_at");
+                    r.put("at", ts == null ? "" : ts.toString());
                     list.add(r);
                 }
             }
+
         } catch (SQLException e) {
-            System.err.println("[DonorCreditManager] getRecentTxns SQL error: " + e.getMessage());
+            alertDb("getRecentTxns failed. accountId=" + accountId + " limit=" + limit, e);
         }
+
         return list;
     }
 
@@ -99,23 +130,26 @@ public final class DonorCreditManager {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) cats.add(rs.getString(1));
+
         } catch (SQLException e) {
-            System.err.println("[DonorCreditManager] getCategories SQL error: " + e.getMessage());
+            alertDb("getCategories failed.", e);
         }
         return cats;
     }
 
     public static List<Map<String, Object>> getItemsByCategory(String category) {
         List<Map<String, Object>> list = new ArrayList<>();
-        // [FIX 1] Added 'period' to the SELECT statement
         String sql = "SELECT id, itemid, quantity, price_dc_cents, stock, sort_order, notes, period " +
                 "FROM cosmic.donor_shop_items WHERE is_enabled = 1 AND category = ? " +
                 "ORDER BY sort_order ASC, id ASC";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, category);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> r = new HashMap<>();
@@ -123,18 +157,18 @@ public final class DonorCreditManager {
                     r.put("itemid", rs.getInt("itemid"));
                     r.put("qty", rs.getInt("quantity"));
                     r.put("priceCents", rs.getInt("price_dc_cents"));
+
                     int stock = rs.getInt("stock");
                     r.put("stock", rs.wasNull() ? null : stock);
+
                     r.put("notes", rs.getString("notes"));
-
-                    // [FIX 2] Put period into the map so JS can read it
                     r.put("period", rs.getInt("period"));
-
                     list.add(r);
                 }
             }
+
         } catch (SQLException e) {
-            System.err.println("[DonorCreditManager] getItemsByCategory SQL error: " + e.getMessage());
+            alertDb("getItemsByCategory failed. category=" + category, e);
         }
         return list;
     }
@@ -159,10 +193,10 @@ public final class DonorCreditManager {
                 long bonusCents;
                 long baseCents = donationAmountCents;
 
-                // Lock ledger row
-                String sel = "SELECT lifetime_cents, dc_balance_cents FROM cosmic.donor_ledger WHERE account_id = ? FOR UPDATE";
                 long oldBal;
 
+                // Lock ledger row
+                String sel = "SELECT lifetime_cents, dc_balance_cents FROM cosmic.donor_ledger WHERE account_id = ? FOR UPDATE";
                 try (PreparedStatement ps = con.prepareStatement(sel)) {
                     ps.setInt(1, accountId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -196,7 +230,11 @@ public final class DonorCreditManager {
                     ps.setLong(2, newBal);
                     ps.setLong(3, creditedTotal);
                     ps.setInt(4, accountId);
-                    ps.executeUpdate();
+                    int updated = ps.executeUpdate();
+                    if (updated <= 0) {
+                        alertLogic("creditDonation updated 0 rows. accountId=" + accountId);
+                        throw new SQLException("Failed to update ledger.");
+                    }
                 }
 
                 // Insert txn
@@ -212,8 +250,8 @@ public final class DonorCreditManager {
                 }
 
                 con.commit();
-
                 return new CreditResult(donationAmountCents, (int) bonusCents, creditedTotal, newBal, newLifetime);
+
             } catch (SQLException e) {
                 con.rollback();
                 throw e;
@@ -224,10 +262,6 @@ public final class DonorCreditManager {
     }
 
     // ====== Purchase (Atomic spend + item grant) ======
-
-
-
-// ====== Purchase (Atomic spend + item grant) ======
 
     /** Single-buy wrapper (keeps old API for scripts that call 2-arg version). */
     public static PurchaseResult buyFromShop(Client c, int shopItemId) throws SQLException {
@@ -247,7 +281,7 @@ public final class DonorCreditManager {
             con.setAutoCommit(false);
 
             try {
-                // Lock ledger (same as before)
+                // Lock ledger
                 long bal;
                 String selLed = "SELECT dc_balance_cents FROM cosmic.donor_ledger WHERE account_id = ? FOR UPDATE";
                 try (PreparedStatement ps = con.prepareStatement(selLed)) {
@@ -258,7 +292,6 @@ public final class DonorCreditManager {
                     }
                 }
 
-                // [FIX 3] Added 'period' variable and to SQL
                 int itemId, baseQty, priceCents, period;
                 Integer stock = null;
                 String cat;
@@ -275,8 +308,6 @@ public final class DonorCreditManager {
                         itemId = rs.getInt("itemid");
                         baseQty = rs.getInt("quantity");
                         priceCents = rs.getInt("price_dc_cents");
-
-                        // [FIX 4] Read period from DB (default 0 if null/missing)
                         period = rs.getInt("period");
 
                         int s = rs.getInt("stock");
@@ -292,8 +323,12 @@ public final class DonorCreditManager {
                 long totalPrice = (long) priceCents * (long) times;
                 if (bal < totalPrice) throw new SQLException("Insufficient Donor Credits.");
 
-                int totalQty = baseQty * times;
-                if (totalQty <= 0) throw new SQLException("Quantity overflow.");
+                long totalQtyLong = (long) baseQty * (long) times;
+                if (totalQtyLong <= 0 || totalQtyLong > Short.MAX_VALUE) {
+                    // InventoryManipulator.addById uses short quantity in grantItem below
+                    throw new SQLException("Quantity overflow.");
+                }
+                int totalQty = (int) totalQtyLong;
 
                 if (!InventoryManipulator.checkSpace(c, itemId, totalQty, "")) {
                     throw new SQLException("Not enough inventory space.");
@@ -301,7 +336,7 @@ public final class DonorCreditManager {
 
                 long newBal = bal - totalPrice;
 
-                // Deduct balance (same as before)
+                // Deduct balance
                 String updLed = "UPDATE cosmic.donor_ledger SET " +
                         "dc_balance_cents = ?, " +
                         "dc_spent_cents_total = dc_spent_cents_total + ?, " +
@@ -311,10 +346,14 @@ public final class DonorCreditManager {
                     ps.setLong(1, newBal);
                     ps.setLong(2, totalPrice);
                     ps.setInt(3, accountId);
-                    ps.executeUpdate();
+                    int updated = ps.executeUpdate();
+                    if (updated <= 0) {
+                        alertLogic("buyFromShop updated 0 ledger rows. accountId=" + accountId);
+                        throw new SQLException("Failed to deduct balance.");
+                    }
                 }
 
-                // Decrement stock (same as before)
+                // Decrement stock
                 if (stock != null) {
                     String updStock = "UPDATE cosmic.donor_shop_items SET stock = stock - ? WHERE id = ? AND stock >= ?";
                     try (PreparedStatement ps = con.prepareStatement(updStock)) {
@@ -326,7 +365,7 @@ public final class DonorCreditManager {
                     }
                 }
 
-                // Log txn (same as before)
+                // Log txn
                 String ref = "SHOP:" + cat + " itemId=" + itemId + " qty=" + baseQty + " x" + times +
                         (notes != null ? (" " + notes) : "");
                 String insTxn = "INSERT INTO cosmic.donor_txn (account_id, char_id, txn_type, dc_cents_delta, donation_amount_cents, milestone_bonus_cents, ref) " +
@@ -339,7 +378,7 @@ public final class DonorCreditManager {
                     ps.executeUpdate();
                 }
 
-                // [FIX 5] Pass 'period' to the grantItem function
+                // Grant item (pass period)
                 grantItem(c, itemId, (short) totalQty, period);
 
                 con.commit();
@@ -350,6 +389,7 @@ public final class DonorCreditManager {
                 throw e;
             } catch (Exception e) {
                 con.rollback();
+                alertLogic("buyFromShop unexpected error. accountId=" + accountId + " shopItemId=" + shopItemId + " err=" + e.getMessage());
                 throw new SQLException("Purchase failed: " + e.getMessage());
             } finally {
                 con.setAutoCommit(true);
@@ -357,45 +397,52 @@ public final class DonorCreditManager {
         }
     }
 
+    /**
+     * Grants an item to player. durationDays applies to non-pets (expiration).
+     * Dependency-safe: signature unchanged.
+     */
     public static void grantItem(Client c, int itemId, short quantity, int durationDays) {
-        // Parameter 1: Client (c) - Passed in directly
-        // Parameter 4: Owner Name - Retrieved from c.getPlayer().getName()
+        if (c == null || c.getPlayer() == null) {
+            alertLogic("grantItem called with null client/player. itemId=" + itemId);
+            return;
+        }
+
         String ownerName = c.getPlayer().getName();
 
-        if (ItemConstants.isPet(itemId)) {
-            // --- PET HANDLING (The 6 Parameters Fix) ---
+        // Compute expiration for non-pets if durationDays > 0.
+        long expiration = -1L;
+        if (durationDays > 0) {
+            expiration = System.currentTimeMillis() + java.util.concurrent.TimeUnit.DAYS.toMillis(durationDays);
+        }
 
-            // Parameter 3: Quantity
-            // Force quantity to 1 for pets, regardless of input
-            short petQuantity = 1;
+        try {
+            if (ItemConstants.isPet(itemId)) {
+                // Pets: force qty 1 + create unique id, fixed expiry 1 year (keep your current logic)
+                short petQuantity = 1;
 
-            // Parameter 5: Unique ID (petId)
-            // CRITICAL: Must be generated by database first!
-            // Matches Printout: "petid: 21"
-            int uniqueId = Pet.createPet(itemId);
+                int uniqueId = Pet.createPet(itemId);
+                if (uniqueId <= 0) {
+                    alertLogic("Pet.createPet returned invalid uniqueId=" + uniqueId + " itemId=" + itemId);
+                    return;
+                }
 
+                long petExpiration = System.currentTimeMillis() + java.util.concurrent.TimeUnit.DAYS.toMillis(365);
 
-            // Parameter 6: Expiration (Fixed 1 Year)
-            long expiration = System.currentTimeMillis() + java.util.concurrent.TimeUnit.DAYS.toMillis(365);
-
-            // The Fix: Passing all 6 parameters exactly as ItemCommand does
-            InventoryManipulator.addById(
-                    c,              // 1. Client
-                    itemId,         // 2. Item ID (e.g., 5000042)
-                    petQuantity,    // 3. Quantity (Always 1)
-                    ownerName,      // 4. Owner Name (e.g., "Merogie")
-                    uniqueId,       // 5. Unique/Cash ID (e.g., 21)
-                    expiration      // 6. Expiration Timestamp
-            );
-
-        } else {
-            // --- NON-PET HANDLING ---
-            // For regular items, uniqueId is usually -1 or 0, and expiration might be -1
-            InventoryManipulator.addById(c, itemId, quantity, ownerName, -1, -1);
+                InventoryManipulator.addById(
+                        c,
+                        itemId,
+                        petQuantity,
+                        ownerName,
+                        uniqueId,
+                        petExpiration
+                );
+            } else {
+                InventoryManipulator.addById(c, itemId, quantity, ownerName, -1, expiration);
+            }
+        } catch (Exception e) {
+            alertLogic("grantItem failed. charId=" + c.getPlayer().getId() + " itemId=" + itemId + " qty=" + quantity + " err=" + e.getMessage());
         }
     }
-
-
 
     private static void ensureLedgerRow(int accountId) {
         String ins = "INSERT IGNORE INTO cosmic.donor_ledger (account_id) VALUES (?)";
@@ -404,7 +451,7 @@ public final class DonorCreditManager {
             ps.setInt(1, accountId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("[DonorCreditManager] ensureLedgerRow SQL error: " + e.getMessage());
+            alertDb("ensureLedgerRow failed. accountId=" + accountId, e);
         }
     }
 
@@ -438,6 +485,5 @@ public final class DonorCreditManager {
             this.priceCents = priceCents;
             this.newBalanceCents = newBalanceCents;
         }
-
     }
 }

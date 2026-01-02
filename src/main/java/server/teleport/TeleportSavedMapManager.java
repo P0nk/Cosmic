@@ -19,14 +19,17 @@ public final class TeleportSavedMapManager {
 
     private TeleportSavedMapManager() {}
 
-    // Cache provider so we don't reload for every call
+    // Providers (cached)
     private static final DataProvider MAP_PROVIDER =
-            DataProviderFactory.getDataProvider(WZFiles.MAP);
-
+            DataProviderFactory.getDataProvider(WZFiles.MAP);     // kept in case you want existence checks later
     private static final DataProvider STRING_PROVIDER =
             DataProviderFactory.getDataProvider(WZFiles.STRING);
 
+    // MapId -> resolved display name
     private static final Map<Integer, String> MAP_NAME_CACHE = new ConcurrentHashMap<>();
+
+    // Toggle if you want occasional diagnostics without spam
+    private static final boolean LOG_MAPNAME_MISS = true;
 
     // ============================== Account lookup ==============================
 
@@ -89,9 +92,12 @@ public final class TeleportSavedMapManager {
         return false;
     }
 
+    /**
+     * @return true if inserted, false if already existed (or duplicate-race)
+     */
     public static boolean saveCurrentMap(int accountId, int mapId) {
         if (hasSavedMap(accountId, mapId)) {
-            return false; // already saved
+            return false;
         }
 
         try (Connection con = DatabaseConnection.getConnection();
@@ -168,92 +174,66 @@ public final class TeleportSavedMapManager {
     // ============================== Map name lookup ==============================
 
     /**
-     * Returns map name for a given mapId using Map.wz data.
-     * Works even when player is not currently in that map.
+     * Resolves map display name via String.wz -> Map.img -> <region> -> <mapId>
+     * Returns "Unknown Map" if not found.
      */
     public static String getMapName(int mapId) {
-        // Fast cache
         String cached = MAP_NAME_CACHE.get(mapId);
         if (cached != null) {
-            System.out.println("[TP][MapName] (cache hit) mapId=" + mapId + " -> " + cached);
             return cached;
         }
 
-        System.out.println("[TP][MapName] ===== START =====");
-        System.out.println("[TP][MapName] mapId = " + mapId);
+        String resolved = resolveMapNameFromStringWz(mapId);
+        MAP_NAME_CACHE.put(mapId, resolved);
 
+        if (LOG_MAPNAME_MISS && "Unknown Map".equals(resolved)) {
+            System.out.println("[TP][MapName] Unknown mapId=" + mapId + " (not found in String.wz/Map.img)");
+        }
+
+        return resolved;
+    }
+
+    private static String resolveMapNameFromStringWz(int mapId) {
         try {
             Data mapImgRoot = STRING_PROVIDER.getData("Map.img");
-            System.out.println("[TP][MapName] Map.img found? " + (mapImgRoot != null));
-
             if (mapImgRoot == null) {
-                System.out.println("[TP][MapName] Map.img is null -> Unknown Map");
-                return cacheAndReturn(mapId, "Unknown Map");
+                return "Unknown Map";
             }
 
-            // Your Map.img structure is: Map.img/<regionName>/<mapId>
-            // Example regions: maple, victoria, ossyria, elin, etc...
             Data foundNode = null;
-            String foundRegion = null;
 
-            // Print root children (regions)
-            System.out.println("[TP][MapName] Scanning region folders under Map.img...");
+            // Map.img/<regionName>/<mapId>
             for (Data region : mapImgRoot.getChildren()) {
                 if (region == null) continue;
 
-                String regionName = region.getName();
-                System.out.println("[TP][MapName] - region: " + regionName);
-
-                // Try mapId directly under this region folder
                 Data candidate = region.getChildByPath(String.valueOf(mapId));
                 if (candidate != null) {
                     foundNode = candidate;
-                    foundRegion = regionName;
-                    System.out.println("[TP][MapName] FOUND mapId under region: " + foundRegion);
                     break;
                 }
             }
 
-            System.out.println("[TP][MapName] foundNode? " + (foundNode != null));
-
             if (foundNode == null) {
-                System.out.println("[TP][MapName] No entry for mapId in any region folder -> Unknown Map");
-                return cacheAndReturn(mapId, "Unknown Map");
+                return "Unknown Map";
             }
 
-            // In String.wz Map.img nodes: streetName / mapName (no "info/")
             String streetName = DataTool.getString("streetName", foundNode, "");
             String mapName = DataTool.getString("mapName", foundNode, "");
 
-            System.out.println("[TP][MapName] region     = " + foundRegion);
-            System.out.println("[TP][MapName] streetName = '" + streetName + "'");
-            System.out.println("[TP][MapName] mapName    = '" + mapName + "'");
-
-            String result;
             if (!streetName.isEmpty() && !mapName.isEmpty()) {
-                result = streetName + " : " + mapName;
-            } else if (!mapName.isEmpty()) {
-                result = mapName;
-            } else if (!streetName.isEmpty()) {
-                result = streetName;
-            } else {
-                result = "Unknown Map";
+                return streetName + " : " + mapName;
             }
+            if (!mapName.isEmpty()) return mapName;
+            if (!streetName.isEmpty()) return streetName;
 
-            System.out.println("[TP][MapName] RESULT = " + result);
-            return cacheAndReturn(mapId, result);
+            return "Unknown Map";
 
         } catch (Exception e) {
-            System.out.println("[TP][MapName] EXCEPTION:");
-            e.printStackTrace();
-            return cacheAndReturn(mapId, "Unknown Map");
+            // Keep a single meaningful print, instead of spamming every lookup.
+            if (LOG_MAPNAME_MISS) {
+                System.out.println("[TP][MapName] Exception resolving mapId=" + mapId + ": " + e.getMessage());
+            }
+            return "Unknown Map";
         }
     }
-
-    private static String cacheAndReturn(int mapId, String name) {
-        // Avoid caching "Unknown Map" forever if you’d like; but for now cache everything.
-        MAP_NAME_CACHE.put(mapId, name);
-        return name;
-    }
-
 }

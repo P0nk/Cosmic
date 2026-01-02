@@ -11848,25 +11848,25 @@ public class Character extends AbstractCharacterObject {
             if (itemName == null) itemName = "Unknown";
             scanned++;
 
-            System.out.println("[PotionBank] Scanning item " + itemId + " (" + itemName + "), family=" + fam);
+//            System.out.println("[PotionBank] Scanning item " + itemId + " (" + itemName + "), family=" + fam);
 
             // ✅ Only allow potions and food
             if (fam != 200 && fam != 201 && fam != 202) {
-                System.out.println("   -> skipped (wrong family " + fam + ")");
+//                System.out.println("   -> skipped (wrong family " + fam + ")");
                 skipped++;
                 continue;
             }
 
             // Exclude event potions etc.
             if (itemId >= 2002031 && itemId <= 2002036) {
-                System.out.println("   -> skipped (excluded range 2002031–2002036)");
+//                System.out.println("   -> skipped (excluded range 2002031–2002036)");
                 skipped++;
                 continue;
             }
 
             StatEffect effect = ii.getItemEffect(itemId);
             if (effect == null) {
-                System.out.println("   -> skipped (no item effect)");
+//                System.out.println("   -> skipped (no item effect)");
                 skipped++;
                 continue;
             }
@@ -11878,7 +11878,7 @@ public class Character extends AbstractCharacterObject {
 
             boolean heals = (hp > 0 || mp > 0 || hpR > 0 || mpR > 0);
             if (!heals) {
-                System.out.println("   -> skipped (non-healing item)");
+//                System.out.println("   -> skipped (non-healing item)");
                 skipped++;
                 continue;
             }
@@ -11886,7 +11886,7 @@ public class Character extends AbstractCharacterObject {
             int healHP = hp + (hpR * 100);
             int healMP = mp + (mpR * 100);
             if (healHP == 0 && healMP == 0) {
-                System.out.println("   -> skipped (heal values zero)");
+//                System.out.println("   -> skipped (heal values zero)");
                 skipped++;
                 continue;
             }
@@ -11912,13 +11912,13 @@ public class Character extends AbstractCharacterObject {
 
         if (hpTotal == 0 && mpTotal == 0) {
             dropMessage(5, "[Potion Bank] No valid healing items found.");
-            System.out.println("[PotionBank] Nothing to add.");
+//            System.out.println("[PotionBank] Nothing to add.");
             return;
         }
 
         PotionBankManager.addBanked(this, hpTotal, mpTotal);
         dropMessage(5, "[Potion Bank] Deposited " + hpTotal + " HP and " + mpTotal + " MP!");
-        System.out.println("[PotionBank] ==== ConsolidatePotions() end ====");
+//        System.out.println("[PotionBank] ==== ConsolidatePotions() end ====");
     }
 
 

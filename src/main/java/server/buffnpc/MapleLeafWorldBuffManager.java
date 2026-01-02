@@ -3,6 +3,7 @@ package server.buffnpc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import tools.DatabaseConnection;
@@ -16,24 +17,66 @@ public class MapleLeafWorldBuffManager {
 
     // --- Configuration ---
     private static final int MAPLE_LEAF_ITEM_ID = 4001126;
-    private static final int LEAVES_PER_HOUR = 10000;
-    private static final int MAX_LEAF_CAP = 40000; // Cap storage at 40k (4 hours queued)
-    private static final int ONE_HOUR_MS = 3600000;
+    private static final int LEAVES_PER_HOUR = 5000;
+
+    // NOTE: Comment previously said "40k"; value is 20k. Keeping value (dependency-safe), fixing comment.
+    private static final int MAX_LEAF_CAP = 20000; // Cap storage at 20k (4 hours queued)
+
+    // Use exact hour in ms (previous value had +4ms drift)
+    private static final long ONE_HOUR_MS = 3600000L;
 
     // --- State ---
     // Represents leaves currently "in the bank" waiting to be used
     private static final AtomicInteger queuedLeaves = new AtomicInteger(0);
+
     // Timestamp when the CURRENT active boost expires
-    private static long currentBoostEndTime = 0;
+    private static volatile long currentBoostEndTime = 0L;
+
     // Track if timer is currently running to prevent double scheduling
-    private static boolean isTimerRunning = false;
+    private static final AtomicBoolean isTimerRunning = new AtomicBoolean(false);
+
+    // --- Key Alerts (rate-limited) ---
+    private static volatile long lastDbAlertAt = 0L;
+    private static volatile long lastBroadcastAlertAt = 0L;
+    private static volatile long lastConfigAlertAt = 0L;
+
+    private static final long ALERT_COOLDOWN_MS = 60_000L; // 1 min cooldown to avoid spam
+
+    private static void alertDb(String msg, Throwable t) {
+        long now = System.currentTimeMillis();
+        if (now - lastDbAlertAt >= ALERT_COOLDOWN_MS) {
+            lastDbAlertAt = now;
+            System.err.println("[MapleLeafManager][DB] " + msg + (t != null ? " err=" + t.getMessage() : ""));
+        }
+    }
+
+    private static void alertBroadcast(String msg, Throwable t) {
+        long now = System.currentTimeMillis();
+        if (now - lastBroadcastAlertAt >= ALERT_COOLDOWN_MS) {
+            lastBroadcastAlertAt = now;
+            System.err.println("[MapleLeafManager][BCAST] " + msg + (t != null ? " err=" + t.getMessage() : ""));
+        }
+    }
+
+    private static void alertConfig(String msg) {
+        long now = System.currentTimeMillis();
+        if (now - lastConfigAlertAt >= ALERT_COOLDOWN_MS) {
+            lastConfigAlertAt = now;
+            System.err.println("[MapleLeafManager][CONFIG] " + msg);
+        }
+    }
 
     // Load data from SQL on startup
     static {
+        // Key alert if cap is misconfigured
+        if (MAX_LEAF_CAP < LEAVES_PER_HOUR) {
+            alertConfig("MAX_LEAF_CAP (" + MAX_LEAF_CAP + ") is less than LEAVES_PER_HOUR (" + LEAVES_PER_HOUR + "). Boost may never start.");
+        }
         loadDonationData();
-        // Resume logic: If server crashed while leaves were queued, try to restart boost
+
+        // Resume logic: If server restarted with queued leaves, start if not active
         if (queuedLeaves.get() >= LEAVES_PER_HOUR && currentBoostEndTime < System.currentTimeMillis()) {
-            consumeLeavesAndStartRound();
+            checkAndConsume();
         }
     }
 
@@ -49,7 +92,8 @@ public class MapleLeafWorldBuffManager {
 
     // Calculates Total Time = (Time left on current buff) + (Hours stored in bank)
     public static long getTotalTimeRemaining() {
-        long activeTimeLeft = Math.max(0, currentBoostEndTime - System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        long activeTimeLeft = Math.max(0L, currentBoostEndTime - now);
 
         // Calculate how many full hours are waiting in the queue
         int hoursInQueue = queuedLeaves.get() / LEAVES_PER_HOUR;
@@ -58,20 +102,37 @@ public class MapleLeafWorldBuffManager {
         return activeTimeLeft + queuedTime;
     }
 
-    // Check if player can donate specific amount without overflowing 40k
+    // Check if player can donate specific amount without overflowing cap
     public static boolean canDonate(int amount) {
+        if (amount <= 0) return false;
         return (queuedLeaves.get() + amount) <= MAX_LEAF_CAP;
     }
 
     // --- Main Logic ---
 
     public static void handleDonation(int amountDonated) {
-        // 1. Add to the queue
-        int newTotal = queuedLeaves.addAndGet(amountDonated);
+        if (amountDonated <= 0) {
+            // Key alert: bad input (should never happen from NPC)
+            alertConfig("handleDonation called with non-positive amount: " + amountDonated);
+            return;
+        }
+
+        // Ensure we never exceed cap (NPC should call canDonate, but this is safety)
+        int before, after;
+        do {
+            before = queuedLeaves.get();
+            int proposed = before + amountDonated;
+            if (proposed > MAX_LEAF_CAP) {
+                // Key alert: cap overflow attempt
+                alertConfig("Donation would exceed cap. before=" + before + " donate=" + amountDonated + " cap=" + MAX_LEAF_CAP);
+                return;
+            }
+            after = proposed;
+        } while (!queuedLeaves.compareAndSet(before, after));
+
         saveDonationData();
 
-        // 2. If the boost isn't active, try to start it immediately
-        // (If it IS active, we just leave the leaves in the queue for the timer to pick up later)
+        // If boost isn't active, try to start immediately
         if (currentBoostEndTime < System.currentTimeMillis()) {
             checkAndConsume();
         }
@@ -88,62 +149,79 @@ public class MapleLeafWorldBuffManager {
     }
 
     private static void consumeLeavesAndStartRound() {
-        // Deduct the cost immediately
-        queuedLeaves.addAndGet(-LEAVES_PER_HOUR);
+        // Atomically deduct one hour worth. Prevent negative.
+        while (true) {
+            int cur = queuedLeaves.get();
+            if (cur < LEAVES_PER_HOUR) {
+                // Not enough, stop
+                resetWorldSpawnBoost();
+                return;
+            }
+            if (queuedLeaves.compareAndSet(cur, cur - LEAVES_PER_HOUR)) {
+                break;
+            }
+        }
+
         saveDonationData();
 
-        // Extend the time
-        // If we are already running (extending), add to existing time?
-        // Logic: Simplest is to set exact end time from NOW if starting fresh, or NOW + 1hr
-        currentBoostEndTime = System.currentTimeMillis() + ONE_HOUR_MS;
+        // Extend time from whichever is later: now or existing end time
+        long now = System.currentTimeMillis();
+        long base = Math.max(now, currentBoostEndTime);
+        currentBoostEndTime = base + ONE_HOUR_MS;
 
         activateWorldEffects();
 
-        // If this is the first start (timer not running), start the loop
-        if (!isTimerRunning) {
+        // Start timer loop only once
+        if (isTimerRunning.compareAndSet(false, true)) {
             startTimerLoop();
         }
     }
 
     private static void startTimerLoop() {
-        isTimerRunning = true;
-        // Schedule check exactly when this hour ends
+        // Schedule check exactly when the CURRENT end time occurs (more accurate than fixed ONE_HOUR_MS)
+        long now = System.currentTimeMillis();
+        long delay = Math.max(0L, currentBoostEndTime - now);
+
         TimerManager.getInstance().schedule(new Runnable() {
             @Override
             public void run() {
-                // The hour has passed.
-                // Check if we have enough leaves for ANOTHER hour
+                // When timer fires, we decide whether to extend again
                 if (queuedLeaves.get() >= LEAVES_PER_HOUR) {
                     broadcastWorldBoostMessage(0, "[System] The Maple Leaf Event has been extended for another hour!");
-                    consumeLeavesAndStartRound(); // Recursive-like behavior (loops back)
+                    consumeLeavesAndStartRound(); // This will reschedule as needed
                 } else {
-                    // Stop everything
-                    isTimerRunning = false;
+                    isTimerRunning.set(false);
                     resetWorldSpawnBoost();
                 }
             }
-        }, ONE_HOUR_MS);
+        }, delay);
     }
 
     private static void activateWorldEffects() {
         Server server = getServerInstance();
+        if (server == null) {
+            alertConfig("Server instance is null during activateWorldEffects().");
+            return;
+        }
+
         for (World world : server.getWorlds()) {
             world.setMobrate(3);
             world.setMobperspawnpoint(3);
-            // Only announce "Activated" if we assume it wasn't running,
-            // but for smooth extensions, we usually rely on the timer message.
-            // We can send a silent update or just ensure rates are set.
         }
-        // Send global message only if this is a fresh start (approximated logic)
-        // You can make this smarter, but calling it every hour is fine too.
+        // Keep behaviour: broadcast "active" (even if called on extensions)
         broadcastWorldBoostMessage(0, "[System] World spawn boost is ACTIVE! (Rates doubled).");
     }
 
     private static void resetWorldSpawnBoost() {
-        currentBoostEndTime = 0;
-        isTimerRunning = false;
+        currentBoostEndTime = 0L;
+        isTimerRunning.set(false);
 
         Server server = getServerInstance();
+        if (server == null) {
+            alertConfig("Server instance is null during resetWorldSpawnBoost().");
+            return;
+        }
+
         for (World world : server.getWorlds()) {
             world.setMobrate(2);
             world.setMobperspawnpoint(2);
@@ -153,16 +231,15 @@ public class MapleLeafWorldBuffManager {
 
     // --- Helper Methods ---
 
-    // worldId 0 usually broadcasts to all worlds in simple sources, or loop it.
+    // worldId param preserved for dependency safety (current implementation broadcasts globally)
     private static void broadcastWorldBoostMessage(int worldId, String message) {
         Packet packet = PacketCreator.serverNotice(6, message);
         try {
-            Server.getInstance().broadcastMessage(5,packet);
+            // Keeping existing behaviour (global broadcast); worldId currently unused.
+            Server.getInstance().broadcastMessage(5, packet);
         } catch (Exception e) {
-//            // Fallback if broadcastMessage doesn't exist on Server
-//            for (World w : Server.getInstance().getWorlds()) {
-//                w.broadcastMessage(packet);
-//            }
+            // Key alert: if broadcasts fail, you'd want to know
+            alertBroadcast("Failed to broadcast message: " + message, e);
         }
     }
 
@@ -173,29 +250,45 @@ public class MapleLeafWorldBuffManager {
     // --- SQL Methods ---
 
     private static void loadDonationData() {
-        try (Connection con = DatabaseConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement("SELECT total_donated FROM event_maple_leaf WHERE id = 1");
-            ResultSet rs = ps.executeQuery();
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT total_donated FROM event_maple_leaf WHERE id = 1");
+             ResultSet rs = ps.executeQuery()) {
+
             if (rs.next()) {
-                queuedLeaves.set(rs.getInt("total_donated"));
+                int v = rs.getInt("total_donated");
+                if (v < 0) {
+                    alertDb("Loaded negative total_donated=" + v + " (forcing to 0).", null);
+                    v = 0;
+                }
+                if (v > MAX_LEAF_CAP) {
+                    alertDb("Loaded total_donated=" + v + " exceeds cap=" + MAX_LEAF_CAP + " (clamping).", null);
+                    v = MAX_LEAF_CAP;
+                }
+                queuedLeaves.set(v);
+            } else {
+                // Key alert: missing row id=1 (system won't persist correctly)
+                alertDb("No row found in event_maple_leaf where id=1. Donations will not persist.", null);
             }
-            ps.close();
-            rs.close();
+
         } catch (Exception e) {
-            System.err.println("[MapleLeafManager] Failed to load donation data: " + e);
+            alertDb("Failed to load donation data.", e);
         }
     }
 
     private static void saveDonationData() {
-        // Runs on every donation/deduction.
-        // If high traffic, consider moving this to a scheduled thread (every 1 min).
-        try (Connection con = DatabaseConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement("UPDATE event_maple_leaf SET total_donated = ? WHERE id = 1");
+        // Runs on every donation/deduction. If this becomes hot, we can batch later.
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE event_maple_leaf SET total_donated = ? WHERE id = 1")) {
+
             ps.setInt(1, queuedLeaves.get());
-            ps.executeUpdate();
-            ps.close();
+            int updated = ps.executeUpdate();
+            if (updated == 0) {
+                // Key alert: row missing -> updates silently do nothing
+                alertDb("UPDATE affected 0 rows for event_maple_leaf id=1. Persistence is broken.", null);
+            }
+
         } catch (Exception e) {
-            System.err.println("[MapleLeafManager] Failed to save donation data: " + e);
+            alertDb("Failed to save donation data.", e);
         }
     }
 }

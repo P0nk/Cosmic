@@ -95,14 +95,12 @@ function start() {
 }
 
 function action(mode, type, selection) {
-//    console.log(`Action called with mode: ${mode}, type: ${type}, selection: ${selection}`);
     if (mode === -1 || (mode === 0 && status === 0)) {
         cm.dispose();
         return;
     }
 
     status += (mode === 1) ? 1 : -1;
-//    console.log("Status updated: " + status);
 
     if (status === 0) {
         cm.sendSimple("Welcome! I can help you unlock powerful skills or contribute to world buffs.\r\n#L0##bUnlock powerful skills#l\r\n#L1##bContribute to world buffs#l");
@@ -118,11 +116,8 @@ function action(mode, type, selection) {
     } else if (status === 3) {
         finalizeSkillUnlock(mode);  // Finalize skill unlock for self buff
     } else if (status === 11) {  // World Buff donation flow starts at status 10
-        console.log("selection: " + selection);
         savedBuffChoice = selection;
-        console.log("savedBuffChoice: " + savedBuffChoice);
         proceedToDonationDetails(selection);
-
     } else if (status === 12) {
         processDonation(selection);  // Process the donation after input for world buff
     } else if (status === 13) {
@@ -132,9 +127,6 @@ function action(mode, type, selection) {
 
 // Proceed to donation details for world buff
 function proceedToDonationDetails(selection) {
-//    console.log(`Proceeding with donation for buff option: ${selection}`);
-
-    // Validate selection
     if (selection !== 0 && selection !== 1) {
         cm.sendOk("Invalid selection. Please choose a valid buff option.");
         cm.dispose();
@@ -143,13 +135,9 @@ function proceedToDonationDetails(selection) {
 
     let buffChoice = (selection === 0) ? BUFF_OPTIONS["STANDARD"] : BUFF_OPTIONS["SUPER"];
 
-    console.log("Selected buff choice: " + JSON.stringify(buffChoice));
-
     const currentProgress = cm.getBuffProgress(buffChoice.id);
-            console.log("currentProgress: " + currentProgress);
     const threshold = buffChoice.cost;
     const NEEDED = Math.max(0, threshold - currentProgress);
-//    console.log(`Current progress for ${buffChoice.name}: ${currentProgress} / ${threshold}, NEEDED: ${NEEDED}`);
 
     if (NEEDED === 0) {
         cm.sendOk(`Looks like the ${buffChoice.name} goal is already met! Try again in a bit.`);
@@ -168,52 +156,32 @@ function proceedToDonationDetails(selection) {
 
 // Handle world buff donation options
 function showBuffOptions() {
-//    console.log("Showing buff donation options.");
     let msg = "Which world buff would you like to contribute to?\r\n";
     msg += `#L0##bDonate to Standard World Buff (Cost: 5 Billion Coins)#l\r\n`;
     msg += `#L1##bDonate to Super World Buff (Cost: 25 Billion Coins)#l\r\n`;
     cm.sendSimple(msg);
 }
 
-
-
 function processDonation(mode) {
-    console.log(`Proceeding with donation, mode: ${mode}`);
-
     if (mode === 0) {
         cm.sendOk("Come back when you're ready to donate.");
         cm.dispose();
         return;
     }
 
-    // Retrieve the selected buff based on current status
-    console.log("savedBuffChoice: " + savedBuffChoice);
     const buffChoice = (savedBuffChoice === 0) ? BUFF_OPTIONS["STANDARD"] : BUFF_OPTIONS["SUPER"];
-    console.log("Buff choice (retrieved from status): " + JSON.stringify(buffChoice));
 
-    // Log donation mode and other parameters
-    console.log("Donation Mode: " + mode);
-    console.log("Buff Choice: " + JSON.stringify(buffChoice));
-
-    // Retrieve the donation amount from user input
     const donationAmount = parseInt(cm.getText());
-    console.log("Donation amount entered: " + donationAmount);
 
-    // Check if donation amount is valid
     if (isNaN(donationAmount) || donationAmount <= 0) {
         cm.sendOk("Please enter a valid positive number of coins to donate.");
         cm.dispose();
         return;
     }
 
-    // Log the current buff progress and the threshold needed
     const currentProgress = cm.getBuffProgress(buffChoice.id);
     const threshold = buffChoice.cost;
-    console.log(`Current progress: ${currentProgress}, Threshold: ${threshold}`);
-
-    // Calculate how many more coins are needed for the buff to be unlocked
     const NEEDED = Math.max(0, threshold - currentProgress);
-    console.log(`NEEDED (remaining): ${NEEDED}`);
 
     if (donationAmount > NEEDED) {
         cm.sendOk("You're donating more than needed. Please enter a valid amount.");
@@ -221,9 +189,7 @@ function processDonation(mode) {
         return;
     }
 
-    // Ensure the player has enough coins
     const hasCoins = cm.haveItem(BILLION_COIN_ID, donationAmount);
-    console.log(`Does the player have enough coins? ${hasCoins}`);
 
     if (!hasCoins) {
         cm.sendOk(`You don't have ${donationAmount} #t${BILLION_COIN_ID}#(s).`);
@@ -231,24 +197,16 @@ function processDonation(mode) {
         return;
     }
 
-    // Deduct the donation amount from the player
-    console.log(`Deducting ${donationAmount} #t${BILLION_COIN_ID}#(s) from the player.`);
     cm.gainItem(BILLION_COIN_ID, -donationAmount);
-
-    // Log the updated progress after the donation
     cm.updateBuffProgress(buffChoice.id, donationAmount);
     const newTotalProgress = cm.getBuffProgress(buffChoice.id);
-    console.log(`New total progress after donation: ${newTotalProgress} / ${threshold}`);
 
-    // If the donation goal is met, apply the buffs and finalize
     if (newTotalProgress >= threshold) {
-        console.log("Donation goal reached, applying buffs.");
         cm.sendOk(`Thanks for your contribution of ${donationAmount} #t${BILLION_COIN_ID}#(s)! The ${buffChoice.name} goal has been reached! Buffs will be applied shortly.`);
         cm.broadcastWorldMessage(5, `${cm.getPlayer().getName()} has completed the funding for the ${buffChoice.name}! Buffs incoming!`);
         cm.applyGlobalBuff(buffChoice.skills);
         cm.resetBuffProgress(buffChoice.id);
     } else {
-        console.log("Donation goal not yet met.");
         cm.sendOk(`Thanks for donating ${donationAmount} #t${BILLION_COIN_ID}#(s)! ${buffChoice.name} is now at ${newTotalProgress} / ${threshold}.`);
     }
 
@@ -257,7 +215,6 @@ function processDonation(mode) {
 
 // Show skills for self buff
 function showSkills() {
-//    console.log("Showing skills for selection.");
     let msg = "Choose a skill to unlock (requires items):\r\n";
     skills.forEach((s, i) => {
         msg += `#L${i}##b${s.name}#l\r\n`;
@@ -267,7 +224,6 @@ function showSkills() {
 
 // Proceed with self buff skill unlock
 function proceedToSkillUnlock(selection) {
-//    console.log(`Proceeding with skill unlock for selection: ${selection}`);
     selectedSkillIndex = selection;
     const skill = skills[selection];
     let costMsg = `To unlock #b${skill.name}#k, bring me the following items:\r\n`;
@@ -279,15 +235,12 @@ function proceedToSkillUnlock(selection) {
 }
 
 function finalizeSkillUnlock(mode) {
-
-    // Player pressed "No"
     if (mode === 0) {
         cm.sendOk("Come back when you're ready.");
         cm.dispose();
         return;
     }
 
-    // Safety
     if (selectedSkillIndex < 0 || selectedSkillIndex >= skills.length) {
         cm.sendOk("Something went wrong (invalid skill selection). Try again.");
         cm.dispose();
@@ -297,7 +250,6 @@ function finalizeSkillUnlock(mode) {
     const player = cm.getPlayer();
     const skill = skills[selectedSkillIndex];
 
-    // Already unlocked? (DB check)
     var already = SelfBuffSkillUpgradeManager.hasSkill(player, skill.id);
     if (already) {
         cm.sendOk("You already have unlocked this skill.");
@@ -305,7 +257,6 @@ function finalizeSkillUnlock(mode) {
         return;
     }
 
-    // Has required items?
     const hasAll = skill.costItems.every(item => cm.haveItem(item.itemId, item.quantity));
     if (!hasAll) {
         cm.sendOk("You don't have all the required items. Come back when you have collected them all.");
@@ -313,13 +264,10 @@ function finalizeSkillUnlock(mode) {
         return;
     }
 
-    // Deduct items
     skill.costItems.forEach(item => cm.gainItem(item.itemId, -item.quantity));
 
-    // Save unlock
     var success = SelfBuffSkillUpgradeManager.unlockSkill(player, skill.id);
     if (!success) {
-        // If insert failed for any reason, refund items would be messy; simplest is to message.
         cm.sendOk("Something went wrong while saving. Please contact a GM.");
         cm.dispose();
         return;

@@ -13,6 +13,27 @@ import java.util.List;
  */
 public class OrePouchManager {
 
+    // --- Key Alerts (rate-limited) ---
+    private static volatile long lastDbAlertAt = 0L;
+    private static volatile long lastDataAlertAt = 0L;
+    private static final long ALERT_COOLDOWN_MS = 60_000L;
+
+    private static void alertDb(String msg, Throwable t) {
+        long now = System.currentTimeMillis();
+        if (now - lastDbAlertAt >= ALERT_COOLDOWN_MS) {
+            lastDbAlertAt = now;
+            System.err.println("[OrePouchManager][DB] " + msg + (t != null ? " err=" + t.getMessage() : ""));
+        }
+    }
+
+    private static void alertData(String msg) {
+        long now = System.currentTimeMillis();
+        if (now - lastDataAlertAt >= ALERT_COOLDOWN_MS) {
+            lastDataAlertAt = now;
+            System.err.println("[OrePouchManager][ALERT] " + msg);
+        }
+    }
+
     /**
      * Loads the list of ore items from the database for a given character.
      *
@@ -22,18 +43,35 @@ public class OrePouchManager {
     public static List<Item> loadOrePouchItems(int characterId) {
         List<Item> ores = new ArrayList<>();
 
-        // Connect to the database and fetch ore pouch rows
+        String sql = "SELECT itemid, quantity FROM ore_pouch WHERE character_id = ?";
+
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "SELECT * FROM ore_pouch WHERE character_id = ?"
-             )) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, characterId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     int itemId = rs.getInt("itemid");
-                    short quantity = (short) rs.getInt("quantity");
+                    int qtyInt = rs.getInt("quantity");
+
+                    if (itemId <= 0) {
+                        alertData("Invalid itemId in ore_pouch. characterId=" + characterId + " itemId=" + itemId);
+                        continue;
+                    }
+
+                    // Clamp quantity into short range (Item uses short quantity)
+                    if (qtyInt <= 0) {
+                        alertData("Non-positive quantity in ore_pouch. characterId=" + characterId + " itemId=" + itemId + " qty=" + qtyInt);
+                        continue;
+                    }
+
+                    int clamped = Math.min(qtyInt, Short.MAX_VALUE);
+                    if (clamped != qtyInt) {
+                        alertData("Quantity overflow in ore_pouch (clamped). characterId=" + characterId + " itemId=" + itemId + " qty=" + qtyInt);
+                    }
+
+                    short quantity = (short) clamped;
 
                     // Create a basic stackable item (ETC ores)
                     Item item = new Item(itemId, (byte) 0, quantity);
@@ -42,7 +80,7 @@ public class OrePouchManager {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            alertDb("Failed to load ore pouch items. characterId=" + characterId, e);
         }
 
         return ores;
@@ -56,32 +94,71 @@ public class OrePouchManager {
      * @param items       list of Item objects to save
      */
     public static void saveOrePouchItems(int characterId, List<Item> items) {
-        try (Connection con = DatabaseConnection.getConnection()) {
+        if (items == null) items = new ArrayList<>();
 
-            // First, delete any existing pouch entries for this character
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
+
+            // Delete existing pouch entries
             try (PreparedStatement ps = con.prepareStatement(
-                    "DELETE FROM ore_pouch WHERE character_id = ?"
-            )) {
+                    "DELETE FROM ore_pouch WHERE character_id = ?")) {
                 ps.setInt(1, characterId);
                 ps.executeUpdate();
             }
 
-            // Now insert the new list of ores
-            try (PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO ore_pouch (character_id, itemid, quantity) VALUES (?, ?, ?)"
-            )) {
-                for (Item item : items) {
-                    ps.setInt(1, characterId);
-                    ps.setInt(2, item.getItemId());
-                    ps.setInt(3, item.getQuantity());
-                    ps.addBatch(); // Add to batch for performance
-                }
+            // Insert new entries (skip if empty)
+            if (!items.isEmpty()) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO ore_pouch (character_id, itemid, quantity) VALUES (?, ?, ?)")) {
 
-                ps.executeBatch(); // Execute all inserts at once
+                    for (Item item : items) {
+                        if (item == null) continue;
+
+                        int itemId = item.getItemId();
+                        int qty = item.getQuantity();
+
+                        if (itemId <= 0 || qty <= 0) {
+                            alertData("Skipping invalid ore pouch item on save. characterId=" + characterId +
+                                    " itemId=" + itemId + " qty=" + qty);
+                            continue;
+                        }
+
+                        // DB column is int; still keep it sane
+                        if (qty > Short.MAX_VALUE) {
+                            alertData("Ore pouch save qty overflow (clamped). characterId=" + characterId +
+                                    " itemId=" + itemId + " qty=" + qty);
+                            qty = Short.MAX_VALUE;
+                        }
+
+                        ps.setInt(1, characterId);
+                        ps.setInt(2, itemId);
+                        ps.setInt(3, qty);
+                        ps.addBatch();
+                    }
+
+                    ps.executeBatch();
+                }
             }
 
+            con.commit();
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (SQLException re) {
+                    alertDb("Rollback failed while saving ore pouch. characterId=" + characterId, re);
+                }
+            }
+            alertDb("Failed to save ore pouch items. characterId=" + characterId, e);
+
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); } catch (SQLException ignore) {}
+                try { con.close(); } catch (SQLException ignore) {}
+            }
         }
     }
 }

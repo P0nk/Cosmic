@@ -5,6 +5,7 @@ import tools.DatabaseConnection;
 import java.sql.*;
 import java.util.List;
 import java.util.ArrayList;
+
 /**
  * ScrollShopManager
  * ----------------------------------------------------------------
@@ -103,7 +104,6 @@ public class ScrollShopManager {
         }
     }
 
-
     /**
      * Retrieves scrolls from the basic shop filtered by the given success rate and equipment type prefix.
      * @param success The success rate (e.g., 100, 60, 10).
@@ -127,7 +127,6 @@ public class ScrollShopManager {
      */
     private static List<Object[]> getScrollsFromDatabase(String sql, String categoryPrefix, int success) {
         List<Object[]> scrollList = new ArrayList<>();
-        System.out.println("Executing SQL Query: " + sql);  // Print the SQL query being executed
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -136,23 +135,18 @@ public class ScrollShopManager {
             ps.setString(1, categoryPrefix + "%");
             ps.setInt(2, success);
 
-            System.out.println("Database connection established.");  // Print confirmation of DB connection
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     int itemId = rs.getInt("itemid");
-                    System.out.println("itemId: " + itemId);  // Print the itemId for each row retrieved
 
                     StringBuilder summary = new StringBuilder();
-                    System.out.println("Initializing summary for item ID: " + itemId);  // Debugging point for summary initialization
+                    summary.append("#e#k").append(rs.getString("name")).append(" (").append(itemId).append(")#n\r\n#k#e");
 
-                    summary.append("#e#k").append(rs.getString("name")).append(" (").append(Integer.toString(itemId)).append(")#n\r\n#k#e");
-                    // List of fields to retrieve
                     String[] fieldNames = {
                             "incMAD", "incPAD", "incINT", "incSTR", "incLUK",
-                            "incDEX","incACC","incEVA","incJump","incSpeed","incMDD",
-                            "incPDD", "incMMP","incMHP","cursed",
-                            "recover", "reqRUC", "randstat","preventsSlip","warmsupport"
+                            "incDEX", "incACC", "incEVA", "incJump", "incSpeed", "incMDD",
+                            "incPDD", "incMMP", "incMHP", "cursed",
+                            "recover", "reqRUC", "randstat", "preventsSlip", "warmsupport"
                     };
 
                     // Iterate over each field and append non-null values to the summary
@@ -165,11 +159,8 @@ public class ScrollShopManager {
 
                     // Add the itemId and the summary to the scroll list
                     scrollList.add(new Object[] {itemId, summary.toString()});
-                    System.out.println("Added item ID " + itemId + " to the scroll list.");  // Confirm item added
                 }
             }
-
-            System.out.println("Query execution completed. Scroll list size: " + scrollList.size());  // Final confirmation of the result size
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -177,7 +168,6 @@ public class ScrollShopManager {
 
         return scrollList;
     }
-
 
     /**
      * Toggles the toSell value for a given item in the scrollshopitems table.
@@ -215,5 +205,4 @@ public class ScrollShopManager {
 
         return result;
     }
-
 }
