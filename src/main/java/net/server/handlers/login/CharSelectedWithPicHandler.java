@@ -40,7 +40,8 @@ public class CharSelectedWithPicHandler extends AbstractPacketHandler {
         try {
             hwid = Hwid.fromHostString(hostString);
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid host string: {}", hostString, e);
+            log.warn("Login blocked: invalid hostString for accId={}, charId={}, ip={}. hostString={}",
+                    c.getAccID(), charId, c.getRemoteIP(), hostString, e);
             c.sendPacket(PacketCreator.getAfterLoginError(17));
             return;
         }
@@ -49,65 +50,76 @@ public class CharSelectedWithPicHandler extends AbstractPacketHandler {
         c.updateHwid(hwid);
 
         String ip = c.getRemoteIP();
-        if (ip != null && !ip.equals("null")) {
+        if (ip != null && !"null".equals(ip)) {
             c.updateIP(ip);
         }
 
         if (c.hasBannedMac()) {
-            System.out.println("Pin hasBannedMac");
+            log.warn("Login blocked: banned MAC. accId={}, charId={}, ip={}", c.getAccID(), charId, c.getRemoteIP());
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
         }
 
         if (c.hasBannedHWID()) {
-            System.out.println("Pin hasBannedHWID");
+            log.warn("Login blocked: banned HWID. accId={}, charId={}, ip={}, hwid={}", c.getAccID(), charId, c.getRemoteIP(), hwid);
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
         }
 
         Server server = Server.getInstance();
         if (!server.haveCharacterEntry(c.getAccID(), charId)) {
-            System.out.println("Pin haveCharacterEntry");
+            log.warn("Login blocked: character not owned by account. accId={}, charId={}, ip={}", c.getAccID(), charId, c.getRemoteIP());
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
         }
 
-        if (c.checkPic(pic)) {
-            c.setWorld(server.getCharacterWorld(charId));
-            World wserv = c.getWorldServer();
-            if (wserv == null || wserv.isWorldCapacityFull()) {
-                System.out.println("Pin isWorldCapacityFull");
-                c.sendPacket(PacketCreator.getAfterLoginError(10));
-                return;
-            }
-
-            String[] socket = server.getInetSocket(c, c.getWorld(), c.getChannel());
-            if (socket == null) {
-                System.out.println("Pin socket == null");
-                c.sendPacket(PacketCreator.getAfterLoginError(10));
-                return;
-            }
-
-            AntiMulticlientResult res = SessionCoordinator.getInstance().attemptGameSession(c, c.getAccID(), hwid);
-            if (res != AntiMulticlientResult.SUCCESS) {
-                System.out.println("Pin AntiMulticlientResult");
-                c.sendPacket(PacketCreator.getAfterLoginError(parseAntiMulticlientError(res)));
-                return;
-            }
-
-            server.unregisterLoginState(c);
-            c.setCharacterOnSessionTransitionState(charId);
-
-            try {
-                System.out.println("Pin Try Statement");
-                c.sendPacket(PacketCreator.getServerIP(InetAddress.getByName(socket[0]), Integer.parseInt(socket[1]), charId));
-            } catch (UnknownHostException | NumberFormatException e) {
-                System.out.println("Pin Catch Statement");
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("Pin else Statement");
+        if (!c.checkPic(pic)) {
+            // Not an operational alert; just a normal user mistake.
             c.sendPacket(PacketCreator.wrongPic());
+            return;
+        }
+
+        c.setWorld(server.getCharacterWorld(charId));
+        World wserv = c.getWorldServer();
+        if (wserv == null || wserv.isWorldCapacityFull()) {
+            log.warn("Login blocked: world unavailable/full. accId={}, charId={}, world={}, channel={}, ip={}",
+                    c.getAccID(), charId, c.getWorld(), c.getChannel(), c.getRemoteIP());
+            c.sendPacket(PacketCreator.getAfterLoginError(10));
+            return;
+        }
+
+        String[] socket = server.getInetSocket(c, c.getWorld(), c.getChannel());
+        if (socket == null) {
+            log.error("Login failed: null game socket. accId={}, charId={}, world={}, channel={}, ip={}",
+                    c.getAccID(), charId, c.getWorld(), c.getChannel(), c.getRemoteIP());
+            c.sendPacket(PacketCreator.getAfterLoginError(10));
+            return;
+        }
+
+        AntiMulticlientResult res = SessionCoordinator.getInstance().attemptGameSession(c, c.getAccID(), hwid);
+        if (res != AntiMulticlientResult.SUCCESS) {
+            log.warn("Login blocked: anti-multiclient. accId={}, charId={}, ip={}, hwid={}, result={}",
+                    c.getAccID(), charId, c.getRemoteIP(), hwid, res);
+            c.sendPacket(PacketCreator.getAfterLoginError(parseAntiMulticlientError(res)));
+            return;
+        }
+
+        server.unregisterLoginState(c);
+        c.setCharacterOnSessionTransitionState(charId);
+
+        try {
+            c.sendPacket(PacketCreator.getServerIP(
+                    InetAddress.getByName(socket[0]),
+                    Integer.parseInt(socket[1]),
+                    charId
+            ));
+        } catch (UnknownHostException | NumberFormatException e) {
+            log.error("Login failed: invalid socket endpoint. accId={}, charId={}, world={}, channel={}, ip={}, socketHost={}, socketPort={}",
+                    c.getAccID(), charId, c.getWorld(), c.getChannel(), c.getRemoteIP(),
+                    (socket.length > 0 ? socket[0] : "null"),
+                    (socket.length > 1 ? socket[1] : "null"),
+                    e);
+            c.sendPacket(PacketCreator.getAfterLoginError(10));
         }
     }
 }
