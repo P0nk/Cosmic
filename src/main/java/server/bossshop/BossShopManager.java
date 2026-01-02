@@ -98,13 +98,13 @@ public class BossShopManager {
         // Debugging: print the material ID and the corresponding purchase limit
         int limit = 0;
         if (materialId == 4001017) { // Zakum Eye of Fire
-            limit = 10;  // Max 10 purchases per day
+            limit = 100;  // Max 10 purchases per day
         } else if (materialId == 4021032) { // Horntail Mana Crystal
-            limit = 10;  // Max 10 purchases per day
+            limit = 100;  // Max 10 purchases per day
         } else if (materialId == 4001189) { // Pink Poppin (Pink Bean)
-            limit = 10;  // Max 10 purchases per day
+            limit = 100;  // Max 10 purchases per day
         } else if (materialId == 4001694) { // Von Leon Ticket
-            limit = 10;  // Max 10 purchases per day
+            limit = 100;  // Max 10 purchases per day
         }
 
         System.out.println("[BossShopManager] Material ID " + materialId + " Purchase Limit: " + limit);
