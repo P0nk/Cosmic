@@ -2,6 +2,7 @@ var status = -1;
 var currentHandler = null;
 var savedBuffChoice = 2;
 const BILLION_COIN_ID = 3020002; // Item ID for "Billion Coin"
+var selectedSkillIndex = -1; // which self-buff skill player selected
 
 var skills = [
     {
@@ -115,7 +116,7 @@ function action(mode, type, selection) {
     } else if (status === 2) {
         proceedToSkillUnlock(selection);  // Proceed with skill unlock for self buff
     } else if (status === 3) {
-        finalizeSkillUnlock();  // Finalize skill unlock for self buff
+        finalizeSkillUnlock(mode);  // Finalize skill unlock for self buff
     } else if (status === 11) {  // World Buff donation flow starts at status 10
         console.log("selection: " + selection);
         savedBuffChoice = selection;
@@ -267,6 +268,7 @@ function showSkills() {
 // Proceed with self buff skill unlock
 function proceedToSkillUnlock(selection) {
 //    console.log(`Proceeding with skill unlock for selection: ${selection}`);
+    selectedSkillIndex = selection;
     const skill = skills[selection];
     let costMsg = `To unlock #b${skill.name}#k, bring me the following items:\r\n`;
     skill.costItems.forEach(item => {
@@ -274,4 +276,55 @@ function proceedToSkillUnlock(selection) {
     });
     costMsg += "\r\nDo you want to proceed and trade these items for power?";
     cm.sendYesNo(costMsg);
+}
+
+function finalizeSkillUnlock(mode) {
+
+    // Player pressed "No"
+    if (mode === 0) {
+        cm.sendOk("Come back when you're ready.");
+        cm.dispose();
+        return;
+    }
+
+    // Safety
+    if (selectedSkillIndex < 0 || selectedSkillIndex >= skills.length) {
+        cm.sendOk("Something went wrong (invalid skill selection). Try again.");
+        cm.dispose();
+        return;
+    }
+
+    const player = cm.getPlayer();
+    const skill = skills[selectedSkillIndex];
+
+    // Already unlocked? (DB check)
+    var already = SelfBuffSkillUpgradeManager.hasSkill(player, skill.id);
+    if (already) {
+        cm.sendOk("You already have unlocked this skill.");
+        cm.dispose();
+        return;
+    }
+
+    // Has required items?
+    const hasAll = skill.costItems.every(item => cm.haveItem(item.itemId, item.quantity));
+    if (!hasAll) {
+        cm.sendOk("You don't have all the required items. Come back when you have collected them all.");
+        cm.dispose();
+        return;
+    }
+
+    // Deduct items
+    skill.costItems.forEach(item => cm.gainItem(item.itemId, -item.quantity));
+
+    // Save unlock
+    var success = SelfBuffSkillUpgradeManager.unlockSkill(player, skill.id);
+    if (!success) {
+        // If insert failed for any reason, refund items would be messy; simplest is to message.
+        cm.sendOk("Something went wrong while saving. Please contact a GM.");
+        cm.dispose();
+        return;
+    }
+
+    cm.sendOk(`Excellent! You have earned the skill #b${skill.name}#k.`);
+    cm.dispose();
 }
