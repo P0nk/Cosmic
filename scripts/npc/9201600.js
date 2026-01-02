@@ -1,9 +1,10 @@
 /* Cootie the Really Small – Teleport NPC (DROP-IN)
  *
  * - Uses TeleportSavedMapManager (server.teleport) for:
- *   getAccountIdByCharacterName, getSavedMaps, saveCurrentMap, getMapLimit, increaseMapLimit, removeSavedMap
+ *   getAccountIdByCharacterName, getSavedMaps, saveCurrentMap, getMapLimit, increaseMapLimit, removeSavedMap, getMapName
  *
  * - Prevents duplicate saved map PK errors by relying on manager-side existence check.
+ * - Patched: no more cm.getMapName(...) calls (since helpers removed from NPCConversationManager).
  */
 
 var TeleportSavedMapManager = Java.type("server.teleport.TeleportSavedMapManager");
@@ -106,11 +107,11 @@ function action(mode, type, selection) {
           return;
         }
 
-        currentMapId = cm.getMapId(); // ensure map name resolves properly
+        currentMapId = cm.getMapId();
         var saved = TeleportSavedMapManager.saveCurrentMap(accountId, currentMapId);
 
         if (saved) {
-          cm.sendOk("Saved current map: " + cm.getMapName(currentMapId));
+          cm.sendOk("Saved current map: " + TeleportSavedMapManager.getMapName(currentMapId));
         } else {
           cm.sendOk("That map is already saved.");
         }
@@ -191,7 +192,10 @@ function action(mode, type, selection) {
 
     if (mapIdToRemove && mapIdToRemove > 0) {
       TeleportSavedMapManager.removeSavedMap(accountId, mapIdToRemove);
-      cm.sendOk("Removed map: #m" + mapIdToRemove + "#");
+
+      // Prefer manager name lookup (works even if player is not in that map)
+      var removedName = TeleportSavedMapManager.getMapName(mapIdToRemove);
+      cm.sendOk("Removed map: " + removedName + " (#" + mapIdToRemove + ")");
     } else {
       cm.sendOk("Invalid selection.");
     }

@@ -5,24 +5,33 @@ import tools.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * TeleportSavedMapManager
- * - Handles account-based saved teleport locations + limit management.
- *
- * Tables assumed:
- *  1) cosmic.tp_locations (accountid INT, mapid INT, PRIMARY KEY(accountid, mapid))
- *  2) cosmic.tp_limits    (accountid INT PRIMARY KEY, tplimit INT)
- */
+// WZ map name lookup
+import provider.Data;
+import provider.DataProvider;
+import provider.DataProviderFactory;
+import provider.DataTool;
+import provider.wz.WZFiles;
+
 public final class TeleportSavedMapManager {
 
     private TeleportSavedMapManager() {}
+
+    // Cache provider so we don't reload for every call
+    private static final DataProvider MAP_PROVIDER =
+            DataProviderFactory.getDataProvider(WZFiles.MAP);
+
+    private static final DataProvider STRING_PROVIDER =
+            DataProviderFactory.getDataProvider(WZFiles.STRING);
+
+    private static final Map<Integer, String> MAP_NAME_CACHE = new ConcurrentHashMap<>();
 
     // ============================== Account lookup ==============================
 
     public static int getAccountIdByCharacterName(String characterName) {
         int accountId = -1;
-
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT accountid FROM cosmic.characters WHERE name = ?")) {
@@ -38,7 +47,6 @@ public final class TeleportSavedMapManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return accountId;
     }
 
@@ -46,7 +54,6 @@ public final class TeleportSavedMapManager {
 
     public static List<Integer> getSavedMaps(int accountId) {
         List<Integer> maps = new ArrayList<>();
-
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT mapid FROM cosmic.tp_locations WHERE accountid = ? ORDER BY mapid")) {
@@ -58,17 +65,12 @@ public final class TeleportSavedMapManager {
                     maps.add(rs.getInt("mapid"));
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return maps;
     }
 
-    /**
-     * Returns true if (accountid, mapid) already exists.
-     */
     public static boolean hasSavedMap(int accountId, int mapId) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
@@ -87,19 +89,11 @@ public final class TeleportSavedMapManager {
         return false;
     }
 
-    /**
-     * Safe save: checks for existing PK combo first.
-     * Returns:
-     *  - true  => inserted successfully
-     *  - false => already existed OR failed
-     */
     public static boolean saveCurrentMap(int accountId, int mapId) {
-        // Fast path: if already exists, do nothing (prevents duplicate PK error)
         if (hasSavedMap(accountId, mapId)) {
-            return false;
+            return false; // already saved
         }
 
-        // Insert (extra safety: could also use INSERT IGNORE if you prefer)
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "INSERT INTO cosmic.tp_locations (accountid, mapid) VALUES (?, ?)")) {
@@ -110,8 +104,8 @@ public final class TeleportSavedMapManager {
             return true;
 
         } catch (SQLException e) {
-            // In case of race condition (double-click / double call), ignore dup PK cleanly
-            if (isDuplicateKey(e)) {
+            // Double-click / race condition safety (MySQL dup key)
+            if ("23000".equals(e.getSQLState()) || e.getErrorCode() == 1062) {
                 return false;
             }
             e.printStackTrace();
@@ -137,48 +131,33 @@ public final class TeleportSavedMapManager {
 
     public static int getMapLimit(int accountId) {
         int limit = 10;
-
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT tplimit FROM cosmic.tp_limits WHERE accountid = ?")) {
 
             ps.setInt(1, accountId);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     limit = rs.getInt("tplimit");
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return limit;
     }
 
-    /**
-     * Increases tplimit by increment; inserts row if missing.
-     */
     public static void increaseMapLimit(int accountId, int increment) {
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "INSERT INTO cosmic.tp_limits (accountid, tplimit) VALUES (?, ?) " +
-                             "ON DUPLICATE KEY UPDATE tplimit = tplimit + VALUES(tplimit) - tplimit + ?")) {
-            // The UPDATE expression above looks weird, so let's keep it simple:
-            // We'll just do: tplimit = tplimit + ?
-        }
-        catch(SQLException ignored){}
-        // Re-implement cleanly below:
+        int base = 10;
+
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "INSERT INTO cosmic.tp_limits (accountid, tplimit) VALUES (?, ?) " +
                              "ON DUPLICATE KEY UPDATE tplimit = tplimit + ?")) {
 
             ps.setInt(1, accountId);
-            ps.setInt(2, 10 + increment); // if first time, base default 10 + increment
+            ps.setInt(2, base + increment);
             ps.setInt(3, increment);
-
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -186,17 +165,95 @@ public final class TeleportSavedMapManager {
         }
     }
 
-    // ============================== Utilities ==============================
+    // ============================== Map name lookup ==============================
 
     /**
-     * Use this for logging / debug messages; your JS can call cm.getMap().getMapName() already,
-     * but if you want a backend map name, you need WZ lookup or map factory, NOT getMap().getMapName().
-     *
-     * So I’m intentionally NOT implementing "getMapName(mapId)" here,
-     * because the correct implementation depends on your server’s map factory / data provider.
+     * Returns map name for a given mapId using Map.wz data.
+     * Works even when player is not currently in that map.
      */
-    public static boolean isDuplicateKey(SQLException e) {
-        // MySQL dup key SQLState is usually "23000" and error code 1062
-        return "23000".equals(e.getSQLState()) || e.getErrorCode() == 1062;
+    public static String getMapName(int mapId) {
+        // Fast cache
+        String cached = MAP_NAME_CACHE.get(mapId);
+        if (cached != null) {
+            System.out.println("[TP][MapName] (cache hit) mapId=" + mapId + " -> " + cached);
+            return cached;
+        }
+
+        System.out.println("[TP][MapName] ===== START =====");
+        System.out.println("[TP][MapName] mapId = " + mapId);
+
+        try {
+            Data mapImgRoot = STRING_PROVIDER.getData("Map.img");
+            System.out.println("[TP][MapName] Map.img found? " + (mapImgRoot != null));
+
+            if (mapImgRoot == null) {
+                System.out.println("[TP][MapName] Map.img is null -> Unknown Map");
+                return cacheAndReturn(mapId, "Unknown Map");
+            }
+
+            // Your Map.img structure is: Map.img/<regionName>/<mapId>
+            // Example regions: maple, victoria, ossyria, elin, etc...
+            Data foundNode = null;
+            String foundRegion = null;
+
+            // Print root children (regions)
+            System.out.println("[TP][MapName] Scanning region folders under Map.img...");
+            for (Data region : mapImgRoot.getChildren()) {
+                if (region == null) continue;
+
+                String regionName = region.getName();
+                System.out.println("[TP][MapName] - region: " + regionName);
+
+                // Try mapId directly under this region folder
+                Data candidate = region.getChildByPath(String.valueOf(mapId));
+                if (candidate != null) {
+                    foundNode = candidate;
+                    foundRegion = regionName;
+                    System.out.println("[TP][MapName] FOUND mapId under region: " + foundRegion);
+                    break;
+                }
+            }
+
+            System.out.println("[TP][MapName] foundNode? " + (foundNode != null));
+
+            if (foundNode == null) {
+                System.out.println("[TP][MapName] No entry for mapId in any region folder -> Unknown Map");
+                return cacheAndReturn(mapId, "Unknown Map");
+            }
+
+            // In String.wz Map.img nodes: streetName / mapName (no "info/")
+            String streetName = DataTool.getString("streetName", foundNode, "");
+            String mapName = DataTool.getString("mapName", foundNode, "");
+
+            System.out.println("[TP][MapName] region     = " + foundRegion);
+            System.out.println("[TP][MapName] streetName = '" + streetName + "'");
+            System.out.println("[TP][MapName] mapName    = '" + mapName + "'");
+
+            String result;
+            if (!streetName.isEmpty() && !mapName.isEmpty()) {
+                result = streetName + " : " + mapName;
+            } else if (!mapName.isEmpty()) {
+                result = mapName;
+            } else if (!streetName.isEmpty()) {
+                result = streetName;
+            } else {
+                result = "Unknown Map";
+            }
+
+            System.out.println("[TP][MapName] RESULT = " + result);
+            return cacheAndReturn(mapId, result);
+
+        } catch (Exception e) {
+            System.out.println("[TP][MapName] EXCEPTION:");
+            e.printStackTrace();
+            return cacheAndReturn(mapId, "Unknown Map");
+        }
     }
+
+    private static String cacheAndReturn(int mapId, String name) {
+        // Avoid caching "Unknown Map" forever if you’d like; but for now cache everything.
+        MAP_NAME_CACHE.put(mapId, name);
+        return name;
+    }
+
 }
