@@ -658,7 +658,7 @@ CommandsExecutor {
         addCommand("draw4d", 6, Draw4DCommand.class);
         addCommand("testmobhp", 6, TestMobHpCommand.class);
         addCommand("rewarddonor", 6, RewardDonorCommand.class);
-        addCommand("giveequipweapons", 6, GiveEquipWeaponsCommand.class);
+        addCommand("gew", 6, GiveEquipWeaponsCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }

@@ -106,7 +106,7 @@ public class GiveEquipWeaponsCommand extends Command {
         int displayFrom = startIdx + 1; // 1-based for user message
         int displayTo = endIdxExclusive;
 
-        player.yellowMessage("GiveEquipWeapons: " + group + " band " + band +
+        player.yellowMessage("GEW: " + group + " band " + band +
                 " | page " + page + " | items " + displayFrom + "-" + displayTo +
                 " of " + itemIds.length + " => given " + given + ", skipped " + skipped + ".");
     }
