@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class BossShopManager {
 
-    private static final int MAX_PURCHASE_PER_DAY = 10;  // Max purchase per material per day (can be configurable)
+    private static final int MAX_PURCHASE_PER_DAY = 100;  // Max purchase per material per day (can be configurable)
 
     /**
      * Tracks a purchase for a player.
