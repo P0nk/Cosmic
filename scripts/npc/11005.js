@@ -9,9 +9,14 @@ var basicShopItems = [];
 var selectedCategoryPrefix = "";
 var selectedItemId = -1;  // To track the selected item ID for purchase
 var name = "";
-var inv = "";
-var itemQty = "" ;
-var itemId = "" ;
+var inv = null;          // inventory object
+var selectedSlot = -1;   // store the slot player selected
+var selectedItem = null; // selected item object
+var itemQty = 0;
+var itemId = 0;
+var item = null;
+
+
 const RELATIONSHIP_EARN_RATE = 0.50; // 50% of spell trace spent
 
 function awardRelationshipFromSpend(spendAmount) {
@@ -41,7 +46,7 @@ var SPELL_TRACE_PER_SCROLL = 10;
 
 // Scroll blacklist (never convertible)
 var SCROLL_BLACKLIST = {
-    2049100: true, // Chaos Scroll
+    2049100: false, // Chaos Scroll
     2049300: true, // Clean Slate Scroll
     2049400: true, // Innocence Scroll
     2049600: true  // Potential Scroll (example)
@@ -249,13 +254,13 @@ function action(mode, type, selection) {
         status = 10;
         console.log("Convert Scroll to Spell Trace selected.");
         inv = cm.getInventory(2); // Check inventory for scrolls (2 is the inventory type)
-//        console.log("Inventory retrieved: " + inv);  // Print inventory object to check
+        console.log("Inventory retrieved: " + inv);  // Print inventory object to check
         var lines = [];  // Array to store the scroll options
 //        console.log("Lines initialized: " + lines);  // Print lines array to check
 
         // Loop through all inventory slots
         for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
-            var item = inv.getItem(slot);
+              item = inv.getItem(slot);
 //            console.log("Checking slot " + slot + ": " + item); // Print each item for debugging
             if (!item) continue;  // Skip if no item in the slot
 
@@ -282,29 +287,56 @@ function action(mode, type, selection) {
         }
     }
 
-    // =========================================================================
-    // == Select Item to Convert and Ask for Conversion Quantity =================
-    // =========================================================================
-    else if (status === 11) {
-        selectedItem = inv.getItem(selection);  // Get selected item from inventory
-           console.log("selectedItem: " + selectedItem );
-        itemId = selectedItem.getItemId();
-                  console.log("itemId: " + itemId );
-        var itemName = Packages.server.ItemInformationProvider.getInstance().getName(itemId);
-                  console.log("itemName: " + itemName );
-            itemQty = selectedItem.getQuantity(); // Get item quantity
-          console.log("itemQty: " + itemQty );
-        // Print the selected item for debugging
-        console.log("Selected Item: " + itemName + " (Item ID: " + itemId + ", Quantity: " + itemQty + ")");
-
-        // Ask how many of the selected item the player wants to convert
-        cm.sendGetText("How many #i"+ itemId+"##e#k" + itemName + "#n do you want to convert to Spell Trace? You have " + itemQty + " available.");
+else if (status === 11) {
+    // IMPORTANT: do not rely on 'inv' stored from prior status
+    var invNow = cm.getInventory(2);
+    if (invNow == null) {
+        cm.sendOk("Session expired. Please try again.");
+        cm.dispose();
+        return;
     }
+
+    selectedSlot = selection; // selection is slot number because you used #Lslot#
+    selectedItem = invNow.getItem(selectedSlot);
+
+    if (selectedItem == null) {
+        cm.sendOk("That slot is empty. Please try again.");
+        cm.dispose();
+        return;
+    }
+
+    itemId = selectedItem.getItemId();
+    console.log("itemId1: " + itemId);  // Print conversion result
+    itemQty = selectedItem.getQuantity();
+    name = Packages.server.ItemInformationProvider.getInstance().getName(itemId);
+
+    // Must be a scroll
+    if (!itemId.toString().startsWith("204")) {
+        cm.sendOk("That is not a scroll.");
+        cm.dispose();
+        return;
+    }
+
+    // Blacklist check
+    if (isBlacklistedScroll(itemId)) {
+        cm.sendOk("This scroll is not eligible for conversion.");
+        cm.dispose();
+        return;
+    }
+
+    cm.sendGetText(
+        "How many #i" + itemId + "# #b" + name + "#k do you want to convert?\r\n" +
+        "You have: #b" + itemQty + "#k"
+    );
+}
+
+
 
     // =========================================================================
     // == Handle the Conversion Amount and Calculate Spell Trace =================
     // =========================================================================
     else if (status === 12) {
+            console.log("itemId2: " + itemId);  // Print conversion result
             console.log("cm.getText(): " + cm.getText() );
         var conversionAmount = parseInt(cm.getText());
         console.log("conversionAmount: " + conversionAmount );
@@ -324,7 +356,11 @@ function action(mode, type, selection) {
         }
 
         // Calculate the Spell Trace generated based on the conversion amount
-        var spellTraceGenerated = conversionAmount * 10; // Example conversion rate: 10 Spell Trace per scroll
+        var spellTraceGenerated = 0;
+        for (var i = 0; i < conversionAmount; i++) {
+            spellTraceGenerated += randInt(6, 14);
+        }
+
         console.log("Spell Trace generated: " + spellTraceGenerated);  // Print conversion result
 
         // Update the player's Spell Trace balance
@@ -352,10 +388,10 @@ else if (status === 1 && selection === 3) {
     var skipped = [];
 
     for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
-        var item = inv.getItem(slot);
+            item = inv.getItem(slot);
         if (!item) continue;
 
-        var itemId = item.getItemId();
+            itemId = item.getItemId();
         var qty = item.getQuantity();
 
         // Must be scroll
@@ -445,7 +481,7 @@ else if (status === 1 && selection === 3) {
 
             var text = "Available Scrolls for your selection:\r\n";
             for (var i = 0; i < basicShopItems.length; i++) {
-                var item = basicShopItems[i];
+                    item = basicShopItems[i];
                 itemId = item[0];
                 var summary = item[1];
 
@@ -544,7 +580,7 @@ else if (status === 1 && selection === 3) {
 
             var text = "Available Scrolls for your selection:\r\n";
             for (var i = 0; i < basicShopItems.length; i++) {
-                var item = basicShopItems[i];
+                    item = basicShopItems[i];
                 itemId = item[0];
                 var summary = item[1];
 
@@ -638,7 +674,7 @@ else if (status === 1 && selection === 3) {
 
             var text = "Available Scrolls for your selection:\r\n";
             for (var i = 0; i < basicShopItems.length; i++) {
-                var item = basicShopItems[i];
+                    item = basicShopItems[i];
                 itemId = item[0];
                 var summary = item[1];
 
