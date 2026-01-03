@@ -1,12 +1,14 @@
 /*
- * Subordinate 3.5 — Cash Filter Added
- * Fixes: Excludes Cash items and non-weapons using provided filter logic.
+ * Subordinate 3.5 — Cash Filter Fixed & Rebirth Sync
+ * - Fixed syntax errors in 'isWeapon' filter.
+ * - Strictly excludes Cash items (ID 170xxxx).
+ * - Syncs Rebirth logic with the new Java Manager.
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
 var ItemInformationProvider = Java.type("server.ItemInformationProvider");
 const ItemConstants = Packages.constants.inventory.ItemConstants;
-const CashShop = Packages.server.CashShop; // for NX_CREDIT
+const CashShop = Packages.server.CashShop;
 
 // ========================= CONFIG =========================
 
@@ -23,7 +25,8 @@ const matValues = Object.values(materials);
 const FEES    = [5e6, 15e6, 45e6, 95e6];
 const AMOUNTS = [1, 2, 3, 3];
 
-const RB_LEVELS = [70, 120, 160, 180, 225, 250];
+// Rebirth Levels (Must match Java RB_MIN_LVL constants roughly for display)
+const RB_LEVELS = [70, 110, 140, 160, 180, 200];
 
 const MIN_RATE_BASE = 1.20;
 const MAX_RATE_BASE = 1.45;
@@ -109,13 +112,14 @@ function action(mode, type, selection) {
 function showMenu(selection) {
     if (selection === undefined || selection === null) {
         const menu =
-            "Good Day, I'm Subordinate. I provide item empowering and rebirthing service so long you can provide the necessary resources. Pick a service.\r\n\r\n" +
-            "#e#b#L0#[REGULAR]#k#n Each stat is rolled independently.\r\n" +
-            "      Balanced results with natural variation across stats.#l\r\n\r\n" +
-            "#e#r#L1#[PREMIUM]#k#n One roll applied to all stats.\r\n" +
+            "Good Day, I'm Subordinate. I provide item empowering and rebirthing services.\r\n\r\n" +
+            "#e#b#L0#[REGULAR]#k#n Independent Stat Rolling.\r\n" +
+            "      Balanced results with variation.#l\r\n\r\n" +
+            "#e#r#L1#[PREMIUM]#k#n Unified Stat Rolling.\r\n" +
             "      Higher consistency and better peak potential.#l\r\n\r\n" +
-            "#e#d#L2#[SALVAGE]#k#n Scrap an upgraded item for partial refunds.\r\n" +
-            "      Recover up to 30% of mesos and materials based on progress.#l";
+            "#e#d#L2#[SALVAGE]#k#n Scrap upgraded items.\r\n" +
+            "      Recover up to 30% of mesos and materials.#l";
+            // Note: RESET Removed from menu as it wasn't fully implemented in logic flow
         cm.sendSimple(menu);
         return;
     }
@@ -123,7 +127,6 @@ function showMenu(selection) {
     if (selection === 0) ctx.mode = "REG";
     else if (selection === 1) ctx.mode = "PREM";
     else if (selection === 2) ctx.mode = "SALVAGE";
-    else if (selection === 3) ctx.mode = "RESET";
     else return cm.dispose();
 
     ctx.step = STEP.PICK_ITEM;
@@ -131,7 +134,7 @@ function showMenu(selection) {
 }
 
 function showItemList() {
-    const inv = cm.getInventory(1);
+    const inv = cm.getInventory(1); // Equip Inventory
     const limit = inv.getSlotLimit();
     const lines = [];
 
@@ -139,69 +142,61 @@ function showItemList() {
         const item = inv.getItem(s);
         if (!item) continue;
 
-        // Apply strict Weapon/Not-Cash Filter
+        // --- FILTERING ---
         if (!isWeapon(item)) continue;
+        // -----------------
 
         const itemId = item.getItemId();
         const name = ItemInformationProvider.getInstance().getName(itemId);
 
-        // Additional Logic Specific Filters
+        // Mode Specific Filters
         if (ctx.mode === "SALVAGE") {
-            if (cm.checkBlacklistedItem(s)) continue;
+            // Cannot salvage clean items
+            if (item.getItemLevel() === 0 && item.getHands() === 0) continue;
         } else if (ctx.mode === "REG" || ctx.mode === "PREM") {
-            // Hide items that are fully maxed out (Hand 5, Lv 5)
-            if (item.getHands() >= 5 && item.getItemLevel() === 5) continue;
+            // Hide items that are fully maxed out (Hand 6+, Lv 5)
+            // Note: Checking Hand >= 6 assuming 6 is max rebirth
+            if (item.getHands() >= 6 && item.getItemLevel() === 5) continue;
         }
 
         lines.push(
             "#L" + s + "#"
             + "#v" + itemId + "# " + name
-            + " (Lv " + item.getItemLevel() + ")"
+            + " (RB: " + item.getHands() + " | Lv: " + item.getItemLevel() + ")"
             + "#l"
         );
     }
 
     if (!lines.length) {
-        cm.sendOk("You have no valid upgradable weapons to select.");
+        cm.sendOk("You have no valid upgradable weapons in your inventory.");
         return cm.dispose();
     }
 
     const hint =
-        (ctx.mode === "REG") ? "It costs Item required level / 2 to preview each upgrade.\r\n"
-            : (ctx.mode === "PREM") ? "It costs Item required level / 20 to preview each upgrade.\r\n"
+        (ctx.mode === "REG") ? "Cost: Req Level / 2 to preview.\r\n"
+            : (ctx.mode === "PREM") ? "Cost: Req Level / 2 to preview (Premium).\r\n"
             : "";
 
-    cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] it will deduct your mesos if you click any item to preview its stats!#n#b \r\n"+ lines.join("\r\n"));
+    cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] Mesos are deducted upon previewing stats!#n#b \r\n"+ lines.join("\r\n"));
 }
 
-// ========================= ITEM FILTER HELPER =========================
+// ========================= ITEM FILTER HELPER (FIXED) =========================
 
 function isWeapon(item) {
     var itemId = item.getItemId();
 
-    // Basic Weapon Check from Source Constants
-    var baseWeapon = ItemConstants.isWeapon(itemId);
-    var inWeaponRange = (itemId >= 1300000 && itemId < 1500000);
+    // 1. Check if it is a Cash Weapon (Starts with 170)
+    var isCashWeapon = Math.floor(itemId / 10000) === 170;
+    if (isCashWeapon) return false;
 
-    // Exclusion Checks
-    var isAccessory = ItemConstants.isAccessory(itemId);
-    var isOverall = false;
-    // Note: ItemConstants.isOverall might not exist in all sources,
-    // safe manual check for Overall range (105xxxx) if needed:
-    if (itemId >= 1050000 && itemId < 1060000) isOverall = true;
+    // 2. Standard Weapon Check (Using Server Constants)
+    var isStandardWeapon = ItemConstants.isWeapon(itemId);
 
-    var isMedal = false;
-    // Safe manual check for medals (114xxxx)
-    if (itemId >= 1140000 && itemId < 1150000) isMedal = true;
+    // 3. Manual Range Check (Backup if ItemConstants is flaky)
+    // 121xxxx to 159xxxx covers most weapons
+    var isWeaponRange = (itemId >= 1210000 && itemId < 1600000);
 
-    var isShield = (itemId >= 1092000 && itemId < 1100000);
-    var inArmorRange = (itemId >= 1000000 && itemId < 1300000); // Hats, Gloves, Shoes, etc.
-    var inCashWeaponRange = (itemId >= 1700000 && itemId < 1800000);
-
-    var excluded = ( inCashWeaponRange);// inArmorRange || isShield || isAccessory || isOverall || isMedal ||
-
-    // Must be a weapon AND not excluded
-    return  !excluded; //(inWeaponRange || baseWeapon) &&
+    return isStandardWeapon || isWeaponRange;
 }
 
 // ========================= PICK ITEM =========================
@@ -213,10 +208,6 @@ function handlePickItem(slot) {
     if (!ctx.selectedItem) {
         cm.sendOk("Invalid selection.");
         return cm.dispose();
-    }
-
-    if (ctx.mode === "RESET") {
-        return doReset(slot);
     }
 
     if (ctx.mode === "SALVAGE") {
@@ -239,23 +230,33 @@ function doPreview() {
 
     ctx.maxRate = MAX_RATE_BASE;
 
-    // Rebirth prompt
-    if (lvl === 5 && hands <= 5) {
-        const rebirthMat = matValues[hands + 1];
+    // --- REBIRTH CHECK ---
+    // If Item is Level 5 (Max Upgrades), offer Rebirth
+    if (lvl === 5) {
+        // Prevent Rebirth if already at Max Rebirth (e.g., 6)
+        if (hands >= 6) {
+            cm.sendOk("This item has reached its absolute limit (Rebirth 6).");
+            return cm.dispose();
+        }
+
+        const rebirthMat = matValues[hands + 1] || 4001126; // Default to maple leaf if out of bounds
         const rebirthNxCost = Math.trunc(curvedScale(hands));
-        const nextReqLvl = (hands < RB_LEVELS.length) ? RB_LEVELS[hands] : 250;
+        const nextReqLvl = (hands < RB_LEVELS.length) ? RB_LEVELS[hands] : 200;
 
         ctx.step = STEP.REBIRTH_CONFIRM;
         cm.sendYesNo(
-            "Your item has reached its max upgrades. I can reset it with a base stat boost.\r\n\r\n"
-            + "#e#r[WARNING] Upon Rebirth, the item Required Level will increase to Lv. " + nextReqLvl + "!#k#n\r\n\r\n"
+            "Your item has reached max upgrades (Lv 5). You can Rebirth it now.\r\n\r\n"
+            + "#e#b[Rebirth Effects]#k#n\r\n"
+            + "- Stats reset, but you carry over a percentage of previous stats.\r\n"
+            + "- Item Required Level increases to #r" + nextReqLvl + "#k.\r\n\r\n"
             + "Cost: 1x#v" + rebirthMat + "# + " + Math.trunc(rebirthNxCost / 1000) + "k NX. Proceed?"
         );
         return;
     }
+    // ---------------------
 
     const mat = matValues[hands];
-    const amt = AMOUNTS[lvl - 1];
+    const amt = AMOUNTS[lvl - 1] || 1;
 
     if (!cm.haveItem(mat, amt)) {
         cm.sendOk("You lack " + amt + "x#v" + mat + "#.");
@@ -263,64 +264,60 @@ function doPreview() {
     }
 
     if (ctx.nxMultiplier && cm.getCashShop().getCash(1) < NX_MULT_COST) {
-        cm.sendOk("You turned on NX Multiplier but don't have enough NX to roll.");
+        cm.sendOk("You turned on NX Multiplier but don't have enough NX.");
         return cm.dispose();
     }
 
-    // Roll preview stats
-    ctx.newStats = (ctx.mode === "REG")
-        ? calcNewStats(item, ctx.nxMultiplier, ctx.maxRate)
-        : calcBetterNewStats(item, ctx.nxMultiplier, ctx.maxRate);
-
-    // Fee Calc
-    let calculatedFee = (ctx.mode === "REG")
-        ? (iiReq / 2) * 100_000
-        : (iiReq / 2) * 1_000_000;
+    // Calculate Fees
+    let calculatedFee = (iiReq / 2) * 100_000; // Regular
+    if (ctx.mode === "PREM") calculatedFee = (iiReq / 2) * 1_000_000; // Premium
 
     ctx.previewFee = Math.max(calculatedFee, MIN_PREVIEW_FEE);
 
-    const autoMsg = (ctx.mode === "PREM") ? runPremiumAutoRerollIfEnabled() : "";
+    const needMesos = ctx.previewFee + (FEES[lvl - 1] || 0);
 
-    if (lvl < 1 || lvl > 4 || hands > 6) {
-        cm.sendOk("No upgrade path configured for this item.");
-        return cm.dispose();
-    }
-
-    const needMesos = ctx.previewFee + FEES[lvl - 1];
+    // Check Mesos
     if (cm.getMeso() < needMesos) {
         if (cm.haveItem(BCOIN_ITEM_ID, 1)) {
             cm.gainItem(BCOIN_ITEM_ID, -1);
             cm.gainMeso(BCOIN_VALUE);
+            cm.sendOk("Consumed 1 Billion Coin for Mesos. Please try again.");
+            return cm.dispose();
         } else {
-            cm.sendOk("You need at least " + format(needMesos) + " mesos to preview and perform this upgrade.");
+            cm.sendOk("You need at least " + format(needMesos) + " mesos.");
             return cm.dispose();
         }
     }
 
+    // Roll Stats
+    ctx.newStats = (ctx.mode === "REG")
+        ? calcNewStats(item, ctx.nxMultiplier, ctx.maxRate)
+        : calcBetterNewStats(item, ctx.nxMultiplier, ctx.maxRate);
+
+    // Apply Cost
     cm.gainMeso(-ctx.previewFee);
     if (ctx.nxMultiplier) {
         cm.gainCash(-NX_MULT_COST);
-        cm.getPlayer().dropMessage(5, "You have used 2mil NX. Remaining NX: " + cm.numberWithCommas(cm.getCashShop().getCash(1)));
+        cm.getPlayer().dropMessage(5, "Used 2mil NX for Preview.");
     }
 
+    const autoMsg = (ctx.mode === "PREM") ? runPremiumAutoRerollIfEnabled() : "";
     const s = ctx.newStats;
-    const warning = (lvl === 4) ? "\r\nWARNING: 1% chance to destroy your item!" : "";
+    const warning = (lvl === 4) ? "\r\n#rWARNING: 1% chance to destroy your item!#k" : "";
 
     const msg =
-        "Upgrading will change stats as follows:\r\n" +
-        "STR: " + item.getStr()  + " to " + s.str  + " (x" + s.mult[0].toFixed(3) + ")\r\n" +
-        "DEX: " + item.getDex()  + " to " + s.dex  + " (x" + s.mult[1].toFixed(3) + ")\r\n" +
-        "INT: " + item.getInt()  + " to " + s.int  + " (x" + s.mult[2].toFixed(3) + ")\r\n" +
-        "LUK: " + item.getLuk()  + " to " + s.luk  + " (x" + s.mult[3].toFixed(3) + ")\r\n" +
-        "WATK: " + item.getWatk() + " to " + s.watk + " (x" + s.mult[4].toFixed(3) + ")\r\n" +
-        "MATK: " + item.getMatk() + " to " + s.matk + " (x" + s.mult[5].toFixed(3) + ")\r\n" +
-        "WDEF: " + item.getWdef() + " to " + s.wdef + "\r\n" +
-        "MDEF: " + item.getMdef() + " to " + s.mdef + "\r\n" +
+        "Previewing Upgrade (Lv " + (lvl) + " -> " + (lvl+1) + "):\r\n" +
+        "STR: " + item.getStr()  + " > #b" + s.str  + " (x" + s.mult[0].toFixed(2) + ")#k\r\n" +
+        "DEX: " + item.getDex()  + " > #b" + s.dex  + " (x" + s.mult[1].toFixed(2) + ")#k\r\n" +
+        "INT: " + item.getInt()  + " > #b" + s.int  + " (x" + s.mult[2].toFixed(2) + ")#k\r\n" +
+        "LUK: " + item.getLuk()  + " > #b" + s.luk  + " (x" + s.mult[3].toFixed(2) + ")#k\r\n" +
+        "WATK: " + item.getWatk() + " > #b" + s.watk + " (x" + s.mult[4].toFixed(2) + ")#k\r\n" +
+        "MATK: " + item.getMatk() + " > #b" + s.matk + " (x" + s.mult[5].toFixed(2) + ")#k\r\n" +
         "Cost: " + format(FEES[lvl - 1]) + " + " + amt + "x#v" + mat + "#";
 
     let menu =
-        "\r\n#L0#Reroll preview stats#l" +
-        "\r\n#L1#Proceed with upgrade#l";
+        "\r\n#L0#Reroll stats (Pay Preview Fee again)#l" +
+        "\r\n#L1#Confirm Upgrade#l";
 
     if (ctx.mode === "PREM") {
         menu += "\r\n#L2#Auto re-roll to target#l";
@@ -335,7 +332,7 @@ function handlePreviewChoice(selection) {
 
     if (selection === 2 && ctx.mode === "PREM") {
         ctx.step = STEP.AUTO_TARGET_INPUT;
-        cm.sendGetText("Enter your target rate (" + MIN_RATE_BASE + " to " + (ctx.maxRate - 0.01) + "), e.g. 1.42:");
+        cm.sendGetText("Enter your target rate (e.g., 1.42). Max: " + (ctx.maxRate - 0.01));
         return;
     }
 
@@ -345,39 +342,39 @@ function handlePreviewChoice(selection) {
 function handleAutoTargetEntered() {
     const rate = parseFloat(String(cm.getText()));
     if (isNaN(rate) || rate < MIN_RATE_BASE || rate > ctx.maxRate) {
-        cm.sendOk("Please enter a valid number between " + MIN_RATE_BASE + " and " + ctx.maxRate + ".");
+        cm.sendOk("Invalid number. Range: " + MIN_RATE_BASE + " - " + ctx.maxRate);
         return cm.dispose();
     }
 
     ctx.autoRerollEnabled = true;
     ctx.autoRerollTarget = rate;
-
     ctx.step = STEP.PREVIEW;
     return doPreview();
 }
 
-// ========================= UPGRADE / REBIRTH =========================
+// ========================= UPGRADE LOGIC (0-4 -> 5) =========================
 
 function doUpgrade(newStats) {
     const item = ctx.selectedItem;
     const lvl = item.getItemLevel();
     const hands = item.getHands();
 
-    if (lvl === 5) return doRebirth();
+    // Safety check: if level is 5, we should be rebirthing, not upgrading
+    if (lvl >= 5) return doRebirth();
 
     const mat = matValues[hands];
-    const amt = AMOUNTS[lvl - 1];
+    const amt = AMOUNTS[lvl - 1] || 1;
 
     if (!cm.haveItem(mat, amt)) {
-        cm.sendOk("You lack " + amt + "x#v" + mat + "#.");
+        cm.sendOk("You lack materials.");
         return cm.dispose();
     }
 
     cm.gainMeso(-FEES[lvl - 1]);
     cm.gainItem(mat, -amt);
 
-    const successRate = 1 - 0.1 * (lvl - 2);
-    const boomChance  = (lvl === 4 ? 0.005 : 0);
+    const successRate = 1 - 0.1 * (lvl - 2); // Drops as level increases
+    const boomChance  = (lvl === 4 ? 0.01 : 0); // 1% boom at last step
 
     const roll = Math.random();
     const success = (roll < successRate);
@@ -388,8 +385,10 @@ function doUpgrade(newStats) {
         cm.scrollPass(cm.getPlayer().getId());
         cm.getPlayer().dropMessage(5, "Upgrade succeeded!");
 
-        if (hands === 5 && lvl === 4) return cm.dispose();
+        // If we just hit Lv 5, we stop so they can choose Rebirth next
+        if (item.getItemLevel() === 5) return cm.dispose();
 
+        // Otherwise allow continuous upgrading
         ctx.step = STEP.PREVIEW;
         return doPreview();
     }
@@ -397,14 +396,14 @@ function doUpgrade(newStats) {
     if (boom) {
         if (cm.haveItem(BOOM_PROTECT_SCROLL, 1)) {
             cm.gainItem(BOOM_PROTECT_SCROLL, -1);
-            cm.getPlayer().dropMessage(5, "Your item would have boomed, but Protection saved it!");
+            cm.getPlayer().dropMessage(5, "Item protected from destruction!");
             ctx.step = STEP.PREVIEW;
             return doPreview();
         }
 
         SubordinateManager.removeEquipFromSlot(cm.getClient(), item.getPosition());
         cm.scrollBoom(cm.getPlayer().getId());
-        cm.sendOk("BOOM! Your item exploded.");
+        cm.sendOk("BOOM! Your item was destroyed.");
         return cm.dispose();
     }
 
@@ -429,19 +428,16 @@ function applyNewStats(ns) {
     cm.getPlayer().forceUpdateItem(item);
 }
 
+// ========================= REBIRTH LOGIC (JAVA HANDLED) =========================
+
 function handleRebirthConfirm() {
     return doRebirth();
 }
 
 function doRebirth() {
     const item = ctx.selectedItem;
-
-    if (item.getItemId() === 1402180 || item.getItemId() === 1382235) {
-        cm.sendOk("Hello! Your item is already so op, you can't rebirth it!");
-        return cm.dispose();
-    }
-
     const hands = item.getHands();
+
     const rebirthMat = matValues[hands + 1];
     const rebirthNxCost = Math.trunc(curvedScale(hands));
 
@@ -451,16 +447,18 @@ function doRebirth() {
     }
 
     if (cm.getCashShop().getCash(1) < rebirthNxCost) {
-        cm.sendOk("You need " + Math.trunc(rebirthNxCost / 1000) + "k NX to rebirth your item.");
+        cm.sendOk("You need " + Math.trunc(rebirthNxCost / 1000) + "k NX to rebirth.");
         return cm.dispose();
     }
 
+    // Call the Java Manager to calculate stats and swap items
     SubordinateManager.rebirthItem(cm.getClient(), cm.getPlayer(), item.getPosition());
 
     cm.gainItem(rebirthMat, -1);
     cm.gainCash(-rebirthNxCost);
-    cm.scrollPass(cm.getPlayer().getId());
-    cm.sendOk("Your item has been reborn. Go get stronger!");
+    cm.scrollPass(cm.getPlayer().getId()); // Play sound
+
+    cm.sendOk("Rebirth Successful! Check your inventory for your renewed item.");
     return cm.dispose();
 }
 
@@ -469,50 +467,24 @@ function doRebirth() {
 function runPremiumAutoRerollIfEnabled() {
     if (!ctx.autoRerollEnabled) return "";
 
-    if (ctx.autoRerollTarget < MIN_RATE_BASE || ctx.autoRerollTarget > ctx.maxRate) {
-        ctx.autoRerollEnabled = false;
-        return "";
-    }
-
     const item = ctx.selectedItem;
     const iiReq = ItemInformationProvider.getInstance().getEquipLevelReq(item.getItemId());
     let rollFee = (iiReq / 2) * 1_000_000;
     rollFee = Math.max(rollFee, MIN_PREVIEW_FEE);
-    const perAutoCost = Math.floor(rollFee * 1.05);
+    const perAutoCost = Math.floor(rollFee * 1.05); // 5% extra for convenience
 
     let iterations = 0;
     let extraMesosSpent = 0;
-    let extraNxSpent = 0;
-
     let best = getBestMult(ctx.newStats);
-    let rollCount = 0;
 
     let virtualMeso = cm.getMeso();
-    let virtualNx = cm.getCashShop().getCash(1);
 
     while (best < ctx.autoRerollTarget) {
-        if (rollCount >= MAX_AUTO_ROLLS) {
-            cm.getPlayer().dropMessage(5, "Limit reached.");
-            break;
-        }
+        if (iterations >= MAX_AUTO_ROLLS) break;
 
         if (virtualMeso < perAutoCost) {
-            if (cm.haveItem(BCOIN_ITEM_ID, 1)) {
-                cm.getPlayer().dropMessage(5, "Auto-roll stopped: Insufficient raw Mesos.");
-                break;
-            } else {
-                cm.getPlayer().dropMessage(5, "You are declared bankrupt!");
-                break;
-            }
-        }
-
-        if (ctx.nxMultiplier) {
-            if (virtualNx < NX_MULT_COST) {
-                cm.getPlayer().dropMessage(5, "Auto re-roll stopped: not enough NX.");
-                break;
-            }
-            virtualNx -= NX_MULT_COST;
-            extraNxSpent += NX_MULT_COST;
+            cm.getPlayer().dropMessage(5, "Auto-roll stopped: Insufficient Mesos.");
+            break;
         }
 
         virtualMeso -= perAutoCost;
@@ -520,30 +492,27 @@ function runPremiumAutoRerollIfEnabled() {
 
         ctx.newStats = calcBetterNewStats(item, ctx.nxMultiplier, ctx.maxRate);
         iterations++;
-        rollCount++;
         best = getBestMult(ctx.newStats);
     }
 
     if (extraMesosSpent > 0) cm.gainMeso(-extraMesosSpent);
-    if (extraNxSpent > 0) cm.gainCash(-extraNxSpent);
 
     ctx.autoRerollEnabled = false;
 
-    if (iterations <= 0) return "";
+    if (iterations === 0) return "";
 
     return (
-        "\r\n\r\n#d[Auto Re-roll Summary]#k\r\n" +
-        "Target: x" + ctx.autoRerollTarget.toFixed(3) + "\r\n" +
+        "\r\n#d[Auto Results]#k\r\n" +
+        "Target: x" + ctx.autoRerollTarget + "\r\n" +
+        "Best Hit: x" + best.toFixed(3) + "\r\n" +
         "Attempts: " + iterations + "\r\n" +
-        "Best roll reached: x" + best.toFixed(3) + (best >= ctx.autoRerollTarget ? " #g(OK)#k" : " #r(Stopped)#k") + "\r\n" +
-        "Extra mesos spent: " + format(extraMesosSpent) + "\r\n" +
-        (ctx.nxMultiplier ? ("Extra NX spent: " + cm.numberWithCommas(extraNxSpent) + "\r\n") : "")
+        "Mesos Spent: " + format(extraMesosSpent) + "\r\n"
     );
 }
 
 function getBestMult(statsObj) {
-    if (!statsObj || !Array.isArray(statsObj.mult) || !statsObj.mult.length) return 1.0;
-    return Math.max.apply(null, statsObj.mult);
+    if (!statsObj || !Array.isArray(statsObj.mult)) return 1.0;
+    return statsObj.mult[0]; // Since Premium has all stats same mult, just take first
 }
 
 // ========================= SALVAGE =========================
@@ -552,203 +521,114 @@ function salvageSelection(slot) {
     ctx.selectedItem = cm.getInventory(1).getItem(slot);
     const item = ctx.selectedItem;
 
-    if (!item) {
-        cm.sendOk("Invalid selection.");
-        return cm.dispose();
-    }
-
-    const lvl = item.getItemLevel();
-    const hands = item.getHands();
-    const totals = getTotals(lvl, hands);
-
-    const matsToReturn = {};
-    Object.keys(totals.totalMats).forEach(id => {
-        matsToReturn[id] = (matsToReturn[id] || 0) + (totals.totalMats[id] || 0);
-    });
-
-    const refundMesos = Math.floor((totals.totalFee + REBIRTH_BUCKET_MESOS * hands) * REFUND_RATE);
-
-    let msg = "We will refund you " + format(refundMesos) + "\r\n";
-    Object.entries(matsToReturn).forEach(([id, amt]) => {
-        msg += amt + "x #v" + id + "#\r\n";
-    });
-    msg += "Are you sure you want to salvage this equip?";
-
-    ctx.step = STEP.SALVAGE_CONFIRM;
-    cm.sendYesNo(msg);
-}
-
-function handleSalvageConfirm() {
-    return salvageItem();
-}
-
-function salvageItem() {
-    const item = ctx.selectedItem;
     if (!item) return cm.dispose();
 
     const lvl = item.getItemLevel();
     const hands = item.getHands();
     const totals = getTotals(lvl, hands);
 
-    const matsToReturn = {};
-    Object.keys(totals.totalMats).forEach(id => {
-        matsToReturn[id] = (matsToReturn[id] || 0) + (totals.totalMats[id] || 0);
-    });
+    const refundMesos = Math.floor((totals.totalFee + REBIRTH_BUCKET_MESOS * hands) * REFUND_RATE);
 
+    let msg = "Salvaging this item will return:\r\n";
+    msg += "#b" + format(refundMesos) + "#k in Mesos.\r\n";
+    msg += "And a portion of materials used.\r\n\r\nConfirm salvage?";
+
+    ctx.step = STEP.SALVAGE_CONFIRM;
+    cm.sendYesNo(msg);
+}
+
+function handleSalvageConfirm() {
+    const item = ctx.selectedItem;
+    const lvl = item.getItemLevel();
+    const hands = item.getHands();
+    const totals = getTotals(lvl, hands);
+
+    // Calculate Refunds
     const refundMesos = Math.floor((totals.totalFee + REBIRTH_BUCKET_MESOS * hands) * REFUND_RATE);
 
     cm.gainMeso(refundMesos);
-    Object.entries(matsToReturn).forEach(([id, amt]) => {
-        cm.gainItem(parseInt(id, 10), amt);
+
+    // Return Materials
+    Object.keys(totals.totalMats).forEach(function(matId) {
+        var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
+        if (amt > 0) cm.gainItem(parseInt(matId), amt);
     });
 
     SubordinateManager.removeEquipFromSlot(cm.getClient(), item.getPosition());
+    cm.sendOk("Salvage complete.");
     return cm.dispose();
 }
 
 function getTotals(uptoLevel, hands) {
     let totalFee = 0;
     const totalMats = {};
-    const maxLevelPerHand = 4;
 
+    // 1. Calculate previous hands fully maxed
     for (let h = 0; h < hands; h++) {
-        const matId = matValues[h];
-        for (let l = 1; l <= maxLevelPerHand; l++) {
-            totalFee += (FEES[l - 1] || 0);
-            const amt = (AMOUNTS[l - 1] || 0);
-            if (matId && amt > 0) totalMats[matId] = (totalMats[matId] || 0) + amt;
+        let matId = matValues[h];
+        if (matId) {
+            // 4 levels per hand
+            totalMats[matId] = (totalMats[matId] || 0) + (1+2+3+3);
+            totalFee += (5e6 + 15e6 + 45e6 + 95e6);
         }
     }
 
-    const currentMatId = matValues[hands];
-    const doneLevelsThisHand = Math.max(0, Math.min(maxLevelPerHand, (uptoLevel - 1)));
-    for (let l = 1; l <= doneLevelsThisHand; l++) {
-        totalFee += (FEES[l - 1] || 0);
-        const amt = (AMOUNTS[l - 1] || 0);
-        if (currentMatId && amt > 0) totalMats[currentMatId] = (totalMats[currentMatId] || 0) + amt;
+    // 2. Calculate current hand partial progress
+    let matIdCurrent = matValues[hands];
+    for (let l = 1; l < uptoLevel; l++) { // < because current level is already paid for
+        totalFee += (FEES[l-1] || 0);
+        if (matIdCurrent) {
+            totalMats[matIdCurrent] = (totalMats[matIdCurrent] || 0) + (AMOUNTS[l-1] || 0);
+        }
     }
 
-    return { totalFee, totalMats };
+    return { totalFee: totalFee, totalMats: totalMats };
 }
 
-// ========================= RESET (explicit manager) =========================
-
-function doReset(slot) {
-    if (cm.getCashShop().getCash(1) < 100_000) {
-        cm.sendOk("You need 100k NX to reset your item.");
-        return cm.dispose();
-    }
-
-    const newSlot = SubordinateManager.replaceWithCleanCopy(cm.getClient(), cm.getPlayer(), slot);
-    if (newSlot <= 0) {
-        cm.sendOk("Failed to reset item (no slot?).");
-        return cm.dispose();
-    }
-
-    cm.gainCash(-100_000);
-
-    const newItem = cm.getInventory(1).getItem(newSlot);
-    ctx.slot = newSlot;
-    ctx.step = STEP.RESET_RESULT;
-
-    cm.sendSimple(
-        "Item has been reset. Item Stats:\r\n" +
-        listNonZeroStats(newItem) +
-        "\r\n#b#L0#Roll again...#l\r\n#b#L1#thats good enough!#l"
-    );
-}
-
-function handleResetResult(selection) {
-    if (selection === 0) {
-        ctx.step = STEP.PICK_ITEM;
-        ctx.mode = "RESET";
-        return doReset(ctx.slot);
-    }
-
-    cm.sendOk("See you again!");
-    return cm.dispose();
-}
-
-// ========================= Stat Rollers =========================
+// ========================= UTILS =========================
 
 function calcNewStats(item, nxMultiplier, maxRate) {
-    let mm;
-    if (nxMultiplier) {
-        mm = () => MIN_RATE_BASE + Math.random() * 0.42;
-    } else {
-        mm = () => MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE);
-    }
+    // Regular: Random mult for each stat
+    const roll = function() { return MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE); };
+    const defRoll = function() { return 1.1 + Math.random() * 0.1; };
 
-    const dm = () => 1.1 + Math.random() * 0.1;
-    const values = Array.from({ length: 6 }, mm);
+    const m = [roll(), roll(), roll(), roll(), roll(), roll()]; // S,D,I,L,W,M
 
     return {
-        str:  Math.floor(item.getStr()  * values[0]),
-        dex:  Math.floor(item.getDex()  * values[1]),
-        int:  Math.floor(item.getInt()  * values[2]),
-        luk:  Math.floor(item.getLuk()  * values[3]),
-        watk: Math.floor(item.getWatk() * values[4]),
-        matk: Math.floor(item.getMatk() * values[5]),
-        wdef: Math.floor(item.getWdef() * dm()),
-        mdef: Math.floor(item.getMdef() * dm()),
+        str:  Math.floor(item.getStr()  * m[0]),
+        dex:  Math.floor(item.getDex()  * m[1]),
+        int:  Math.floor(item.getInt()  * m[2]),
+        luk:  Math.floor(item.getLuk()  * m[3]),
+        watk: Math.floor(item.getWatk() * m[4]),
+        matk: Math.floor(item.getMatk() * m[5]),
+        wdef: Math.floor(item.getWdef() * defRoll()),
+        mdef: Math.floor(item.getMdef() * defRoll()),
         lvl:  item.getItemLevel() + 1,
         hiddenlvl: item.getLevel() + 1,
-        mult: values
+        mult: m
     };
 }
 
 function calcBetterNewStats(item, nxMultiplier, maxRate) {
-    let roll;
-    if (nxMultiplier) {
-        roll = MIN_RATE_BASE + Math.random() * 0.42;
-    } else {
-        roll = MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE);
-    }
+    // Premium: One roll applied to all
+    const roll = MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE);
+    const defRoll = 1.1 + Math.random() * 0.1;
 
-    const dm = 1.1 + Math.random() * 0.1;
-    const values = new Array(6).fill(roll);
+    const m = [roll, roll, roll, roll, roll, roll];
 
     return {
-        str:  Math.floor(item.getStr()  * values[0]),
-        dex:  Math.floor(item.getDex()  * values[1]),
-        int:  Math.floor(item.getInt()  * values[2]),
-        luk:  Math.floor(item.getLuk()  * values[3]),
-        watk: Math.floor(item.getWatk() * values[4]),
-        matk: Math.floor(item.getMatk() * values[5]),
-        wdef: Math.floor(item.getWdef() * dm),
-        mdef: Math.floor(item.getMdef() * dm),
+        str:  Math.floor(item.getStr()  * m[0]),
+        dex:  Math.floor(item.getDex()  * m[1]),
+        int:  Math.floor(item.getInt()  * m[2]),
+        luk:  Math.floor(item.getLuk()  * m[3]),
+        watk: Math.floor(item.getWatk() * m[4]),
+        matk: Math.floor(item.getMatk() * m[5]),
+        wdef: Math.floor(item.getWdef() * defRoll),
+        mdef: Math.floor(item.getMdef() * defRoll),
         lvl:  item.getItemLevel() + 1,
         hiddenlvl: item.getLevel() + 1,
-        mult: values
+        mult: m
     };
-}
-
-function listNonZeroStats(item) {
-    if (!item) return "(no item)";
-    const stats = [
-        ["STR", () => item.getStr()],
-        ["DEX", () => item.getDex()],
-        ["INT", () => item.getInt()],
-        ["LUK", () => item.getLuk()],
-        ["WATK", () => item.getWatk()],
-        ["MATK", () => item.getMatk()],
-        ["HP", () => item.getHp()],
-        ["MP", () => item.getMp()],
-        ["WDEF", () => item.getWdef()],
-        ["MDEF", () => item.getMdef()],
-        ["Speed", () => item.getSpeed()],
-        ["Jump", () => item.getJump()],
-        ["Acc", () => item.getAcc()],
-        ["Avoid", () => item.getAvoid()],
-    ];
-
-    const lines = [];
-    for (let i = 0; i < stats.length; i++) {
-        const label = stats[i][0];
-        const val = stats[i][1]();
-        if (val !== 0) lines.push(label + ": " + val);
-    }
-    return lines.join("\r\n");
 }
 
 function format(n) {
@@ -756,10 +636,6 @@ function format(n) {
 }
 
 function curvedScale(hands) {
-    const start = 100_000.0;
-    const end = 500_000_000.0;
-    const p = 1.3;
-    const t = hands / 7.0;
-    const r = end / start;
-    return start * Math.pow(r, Math.pow(t, p));
+    // NX Cost scaler
+    return 100000 * Math.pow(5000, hands / 7.0);
 }

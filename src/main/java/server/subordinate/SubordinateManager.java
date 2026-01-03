@@ -8,33 +8,63 @@ import client.inventory.InventoryType;
 import client.inventory.manipulator.InventoryManipulator;
 import server.ItemInformationProvider;
 
-import java.util.Objects;
+public class SubordinateManager {
 
-public final class SubordinateManager {
+    // ==========================================
+    //           CONFIGURATION SECTION
+    // ==========================================
 
-    private SubordinateManager() {}
+    // 1. Base Carry-Over for Non-Attack Stats & DEFENSE (STR, DEX, INT, LUK, WDEF, MDEF)
+    private static final double RATE_BASE_STATS = 0.17; // 17%
 
-    /* =========================
-       Rebirth Min-Level Rules
-       =========================
-       hands == rebirth count (your code uses hands as RB count)
-       Example interpretation of your request:
-       - RB1: minimum required level becomes RB_MIN_LVL_RB1
-       - RB2: minimum required level becomes RB_MIN_LVL_RB2 (higher than RB1)
-       - RB3+: you can extend later
-    */
-// SubordinateManager.java
+    // 2. Custom Attack Rate Configuration (By Item Type)
+    public static double getAttackRateForType(int type) {
+        switch (type) {
+            // --- WEAPONS ---
+            case 130: return 0.18; // 1H Sword
+            case 131: return 0.18; // 1H Axe
+            case 132: return 0.18; // 1H Blunt
+            case 133: return 0.18; // Dagger
+            case 137: return 0.18; // Wand
+            case 138: return 0.18; // Staff
+            case 140: return 0.175; // 2H Sword
+            case 141: return 0.175; // 2H Axe
+            case 142: return 0.175; // 2H Blunt
+            case 143: return 0.175; // Spear
+            case 144: return 0.175; // Polearm
+            case 145: return 0.19; // Bow
+            case 146: return 0.19; // Crossbow
+            case 147: return 0.20; // Claw
+            case 148: return 0.18; // Knuckle
+            case 149: return 0.20; // Gun
 
+            // --- ARMORS ---
+            case 100: return 0.15; // Hats
+            case 108: return 0.20; // Gloves
+            case 105: return 0.15; // Overall
+            case 110: return 0.15; // Cape
+
+            // --- DEFAULT ---
+            default: return 0.17;
+        }
+    }
+
+    // 3. System Limits
+    private static final int MAX_STAT_CAP = 32767;
+    private static final boolean DEBUG_MODE = true;
+
+    // ==========================================
+    //           CONSTANTS & HELPERS
+    // ==========================================
     public static final int RB_MIN_LVL_RB1 = 70;
-    public static final int RB_MIN_LVL_RB2 = 120;
-    public static final int RB_MIN_LVL_RB3 = 160;
-    public static final int RB_MIN_LVL_RB4 = 180;
-    public static final int RB_MIN_LVL_RB5 = 225;
-    public static final int RB_MIN_LVL_RB6 = 250;
+    public static final int RB_MIN_LVL_RB2 = 110;
+    public static final int RB_MIN_LVL_RB3 = 140;
+    public static final int RB_MIN_LVL_RB4 = 160;
+    public static final int RB_MIN_LVL_RB5 = 180;
+    public static final int RB_MIN_LVL_RB6 = 200;
 
     public static int getEffectiveReqLevel(int baseReqLevel, int rebirthCount) {
         int enforced = baseReqLevel;
-
         switch (rebirthCount) {
             case 1: enforced = Math.max(enforced, RB_MIN_LVL_RB1); break;
             case 2: enforced = Math.max(enforced, RB_MIN_LVL_RB2); break;
@@ -45,131 +75,125 @@ public final class SubordinateManager {
                 if (rebirthCount >= 6) enforced = Math.max(enforced, RB_MIN_LVL_RB6);
                 break;
         }
-
         return enforced;
     }
 
-
-    /* =========================
-       Helpers migrated from NPCConversationManager
-       ========================= */
-
-    public static void removeEquipFromSlot(Client c, short itemSlot) {
-        InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, itemSlot, (short) 1, false);
-    }
-
-    public static boolean isBlacklistedItem(ItemInformationProvider ii, int itemId, String itemName) {
-        // You can keep your original logic; passing name in avoids re-looking up
-        return itemName.contains("Reverse")
-                || itemName.contains("Timeless")
-                || itemName.contains("Fearless")
-                || itemName.contains("Balrog's Fur Shoes");
-    }
-
-    public static short replaceWithCleanCopy(Client c, Character chr, short slot) {
-        Inventory eqpInv = chr.getInventory(InventoryType.EQUIP);
-        Equip old = (Equip) eqpInv.getItem(slot);
-        if (old == null) return -1;
-
-        int itemId = old.getItemId();
-
-        // remove old
-        InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, slot, (short) 1, false);
-
-        // decide where new item will land
-        short newSlot = eqpInv.getNextFreeSlot();
-        if (newSlot <= 0) return -1;
-
-        // add clean copy
-        InventoryManipulator.addById(c, itemId, (short) 1, "", -1);
-
-        // =========================
-        // 🔹 CLEAR REQ LEVEL OVERRIDE HERE 🔹
-        // =========================
-        Equip newItem = (Equip) eqpInv.getItem(newSlot);
-        if (newItem != null) {
-            newItem.setReqLevelOverride((short) 0); // 0 = fallback to WZ req level
-            chr.forceUpdateItem(newItem);
-        }
-
-        return newSlot;
-    }
-
-
-    /** This is your existing rebirthItem() logic, moved here with minimal changes. */
-    public static void rebirthItem(Client c, Character chr, short itemSlot) {
-        Inventory eqpInv = chr.getInventory(InventoryType.EQUIP);
-        Equip selectedItem = (Equip) eqpInv.getItem(itemSlot);
-        if (selectedItem == null) return;
-
-        int newItemId = selectedItem.getItemId();
-        int newItemType = newItemId / 10000;
-        int hands = selectedItem.getHands(); // your rebirth count
-
-        // remove old equip
-        InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, itemSlot, (short) 1, false);
-
-        // pick destination slot
-        short newItemSlot = eqpInv.getNextFreeSlot();
-        if (newItemSlot <= 0) return;
-
-        // add fresh equip
-        InventoryManipulator.addById(c, newItemId, (short) 1, "", -1);
-
-        // fetch the newly created equip
-        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
-        if (newItem == null) return;
-
-// ... keep your existing stat math exactly the same ...
-
-// hands is the CURRENT rebirth count on the old item
-        int newRebirthCount = hands + 1;
-
-// apply rebirth count
-        newItem.setHands((short) newRebirthCount);
-
-// set req level override based on base reqlevel from WZ + your RB rules
-        ItemInformationProvider ii = ItemInformationProvider.getInstance();
-        int baseReq = ii.getEquipLevelReq(newItemId);
-        int enforcedReq = getEffectiveReqLevel(baseReq, newRebirthCount);
-        newItem.setReqLevelOverride((short) enforcedReq);
-
-// persist + update client
-        chr.forceUpdateItem(newItem);
-
-    }
-
-
-    public static String getWeaponType(int itemId) {
-        int prefix = itemId / 10000;
-        switch (prefix) {
-            case 130: return "One-Handed Sword";
-            case 131: return "One-Handed Axe";
-            case 132: return "One-Handed Mace";
-            case 133: return "Dagger";
-            case 137: return "Wand";
-            case 138: return "Staff";
-            case 140: return "Two-Handed Sword";
-            case 141: return "Two-Handed Axe";
-            case 142: return "Two-Handed Mace";
-            case 143: return "Spear";
-            case 144: return "Pole Arm";
-            case 145: return "Bow";
-            case 146: return "Crossbow";
-            case 147: return "Claw";
-            case 148: return "Knuckle";
-            case 149: return "Gun";
-            default:  return "Unknown";
-        }
-    }
     public static int getEffectiveReqLevelForEquip(Equip eq) {
         int base;
         short ov = eq.getReqLevelOverride();
         if (ov > 0) base = ov;
         else base = ItemInformationProvider.getInstance().getEquipLevelReq(eq.getItemId());
-
-        int rebirthCount = eq.getHands(); // your RB count storage
-        return getEffectiveReqLevel(base, rebirthCount);
+        return getEffectiveReqLevel(base, eq.getHands());
     }
 
+    // ==========================================
+    //           LEVEL UP LOGIC
+    // ==========================================
+    public static void applyUpgrade(Character chr, Equip item, SubordinateMath.StatsResult stats) {
+        item.setStr(stats.str);
+        item.setDex(stats.dex);
+        item.setInt(stats.int_);
+        item.setLuk(stats.luk);
+        item.setWatk(stats.watk);
+        item.setMatk(stats.matk);
+        item.setWdef(stats.wdef);
+        item.setMdef(stats.mdef);
+        item.setItemLevel(stats.level);
+        item.setLevel(stats.hiddenLevel);
+        chr.forceUpdateItem(item);
+    }
+
+    // ==========================================
+    //           REBIRTH LOGIC
+    // ==========================================
+    public static void rebirthItem(Client c, Character chr, short itemSlot) {
+        Inventory eqpInv = chr.getInventory(InventoryType.EQUIP);
+        Equip selectedItem = (Equip) eqpInv.getItem(itemSlot);
+        if (selectedItem == null) return;
+
+        // Save old stats for Debug
+        short oldWatk = selectedItem.getWatk();
+        short oldWdef = selectedItem.getWdef(); // Debugging purposes
+        int oldHands = selectedItem.getHands();
+        int newItemId = selectedItem.getItemId();
+
+        // Determine Type
+        int newItemType = newItemId / 10000;
+
+        // 1. Swap Item
+        InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, itemSlot, (short) 1, false);
+        short newItemSlot = eqpInv.getNextFreeSlot();
+        InventoryManipulator.addById(c, newItemId, (short) 1, null, -1);
+        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
+        if (newItem == null) return;
+
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        int itemReqLevel = ii.getEquipLevelReq(newItemId);
+
+        short addStr = 0, addDex = 0, addInt = 0, addLuk = 0, addWatk = 0, addMatk = 0;
+        short addWdef = 0, addMdef = 0; // New vars for Def
+        int nextHands = oldHands + 1;
+
+        // --- FORMULA START ---
+
+        // Get custom rate
+        double currentTypeAttackRate = getAttackRateForType(newItemType);
+
+        if (newItemType >= 130) { // Is Weapon
+            // Base Stats (17%)
+            addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
+            addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
+            addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
+            addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
+
+            // Attack Stats (Custom + Flat)
+            addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
+            addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
+        } else {
+            // Is Armor
+            // Base Stats (17%)
+            addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
+            addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
+            addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
+            addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
+
+            // Attack Stats (Custom Only)
+            addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
+            addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
+        }
+
+        // --- DEFENSE CALCULATION (Percentage Based) ---
+        // This applies to both Weapons and Armor.
+        // If the item had 0 def, it carries 0. If it had 200, it carries 17% (approx 34).
+        addWdef = (short) (selectedItem.getWdef() * RATE_BASE_STATS);
+        addMdef = (short) (selectedItem.getMdef() * RATE_BASE_STATS);
+
+        // --- FORMULA END ---
+
+        // Apply Stats with Safety Cap
+        newItem.setStr((short) Math.min(MAX_STAT_CAP, newItem.getStr() + addStr));
+        newItem.setDex((short) Math.min(MAX_STAT_CAP, newItem.getDex() + addDex));
+        newItem.setInt((short) Math.min(MAX_STAT_CAP, newItem.getInt() + addInt));
+        newItem.setLuk((short) Math.min(MAX_STAT_CAP, newItem.getLuk() + addLuk));
+        newItem.setWatk((short) Math.min(MAX_STAT_CAP, newItem.getWatk() + addWatk));
+        newItem.setMatk((short) Math.min(MAX_STAT_CAP, newItem.getMatk() + addMatk));
+
+        // Apply Defense
+        newItem.setWdef((short) Math.min(MAX_STAT_CAP, newItem.getWdef() + addWdef));
+        newItem.setMdef((short) Math.min(MAX_STAT_CAP, newItem.getMdef() + addMdef));
+
+        // Finalize
+        newItem.setHands((short) nextHands);
+        int enforcedReq = getEffectiveReqLevel(itemReqLevel, nextHands);
+        newItem.setReqLevelOverride((short) enforcedReq);
+
+        // Debug Log
+        if (DEBUG_MODE) {
+            System.out.println("[Rebirth Debug] Type: " + newItemType + " | AtkRate: " + (currentTypeAttackRate * 100) + "%");
+            System.out.println("Watk: " + oldWatk + " -> " + newItem.getWatk());
+            System.out.println("Wdef: " + oldWdef + " -> " + newItem.getWdef() + " (Added: " + addWdef + ")");
+        }
+
+        chr.forceUpdateItem(newItem);
+    }
 }
