@@ -1,43 +1,38 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v4 - uses cm.gainCash(-amount))
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v5)
  *
- * Rules:
- * - Any Food Tier can be used on ANY equipment.
- * - Max enhancement per equip = 3 (tracked via Owner tag: [F+X])
- * - Each attempt consumes:
- *     1x Food (from chosen tier) + 100,000 NX (NX_CREDIT)
- *   Even on FAIL.
- * - Failure rate increases by 13% per tier:
- *     Fail(T1)=BASE_FAIL
- *     Fail(T2)=BASE_FAIL+13
- *     ...
- * - Does NOT consume scroll slots.
+ * Updates:
+ * - Symbol fixes (ASCII only).
+ * - Cash Item exclusion implemented.
+ * - MAX_ENHANCE exploit checks reinforced.
+ * - Stat Delta values updated.
  */
 
 var status = 0;
 var selectedSlot = -1;
-var selectedItem = null;
+var selectedItem = null; // Snapshot of item
+var selectedItemId = -1; // To verify identity on execute
 
 var chosenTier = null;
 var pendingDelta = null;
 
 // ======================= CONFIG ========================
-const FOOD_T1 = [4036173, 4036174];
-const FOOD_T2 = [4036175, 4036176, 4036177];
-const FOOD_T3 = [4036178, 4036179, 4036180, 4036181, 4036182, 4036183];
-const FOOD_T4 = [4036184, 4036185, 4036186, 4036187, 4036188, 4036189];
-const FOOD_T5 = [4036190, 4036191, 4036192, 4036193, 4036194, 4036195, 4036196, 4036197, 4036198, 4036199, 4036200];
-const FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 4036208, 4036209, 4036210];
-const FOOD_T7 = []; // WIP
+var FOOD_T1 = [4036173, 4036174];
+var FOOD_T2 = [4036175, 4036176, 4036177];
+var FOOD_T3 = [4036178, 4036179, 4036180, 4036181, 4036182, 4036183];
+var FOOD_T4 = [4036184, 4036185, 4036186, 4036187, 4036188, 4036189];
+var FOOD_T5 = [4036190, 4036191, 4036192, 4036193, 4036194, 4036195, 4036196, 4036197, 4036198, 4036199, 4036200];
+var FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 4036208, 4036209, 4036210];
+var FOOD_T7 = [];
 
-const FOOD_PER_UPGRADE = 1;
-const NX_COST_STEP = 10000; // T1=10k, T2=20k, ...
-const MAX_ENHANCE = 3;
+var FOOD_PER_UPGRADE = 1;
+var NX_COST_STEP = 10000; // T1=10k, T2=20k, ...
+var MAX_ENHANCE = 3;
 
-const BASE_FAIL_RATE = 10;      // T1 fail
-const FAIL_STEP_PER_TIER = 13;  // +13% fail each tier
+var BASE_FAIL_RATE = 10;      // T1 fail
+var FAIL_STEP_PER_TIER = 13;  // +13% fail each tier
 
-const ItemConstants = Packages.constants.inventory.ItemConstants;
-const CashShop = Packages.server.CashShop; // for NX_CREDIT
+var ItemConstants = Packages.constants.inventory.ItemConstants;
+var CashShop = Packages.server.CashShop;
 
 // ================== NX HELPERS ==================
 function getNxCredit() {
@@ -51,27 +46,27 @@ function nxCostForTier(tier) {
     return tierIndex(tier) * NX_COST_STEP;
 }
 
-// ================== STATS PER TIER =====================
+// ================== STATS PER TIER (UPDATED) =====================
 function tierDelta(tier, isWeapon) {
     switch (tier) {
         case 'T1':
-            return isWeapon ? {str:1, dex:1, int:1, luk:1, watk:1, matk:1}
-                            : {str:2, dex:2, int:2, luk:2, watk:0, matk:0};
+            return isWeapon ? {str:0, dex:0, int:0, luk:0, watk:1, matk:1}
+                            : {str:1, dex:1, int:1, luk:1, watk:0, matk:0};
         case 'T2':
-            return isWeapon ? {str:2, dex:2, int:2, luk:2, watk:2, matk:2}
+            return isWeapon ? {str:1, dex:1, int:1, luk:1, watk:2, matk:2}
                             : {str:3, dex:3, int:3, luk:3, watk:0, matk:0};
         case 'T3':
-            return isWeapon ? {str:3, dex:3, int:3, luk:3, watk:3, matk:3}
-                            : {str:4, dex:4, int:4, luk:4, watk:0, matk:0};
-        case 'T4':
-            return isWeapon ? {str:4, dex:4, int:4, luk:4, watk:4, matk:4}
+            return isWeapon ? {str:2, dex:2, int:2, luk:2, watk:3, matk:3}
                             : {str:5, dex:5, int:5, luk:5, watk:0, matk:0};
-        case 'T5':
-            return isWeapon ? {str:5, dex:5, int:5, luk:5, watk:5, matk:5}
-                            : {str:6, dex:6, int:6, luk:6, watk:0, matk:0};
-        case 'T6':
-            return isWeapon ? {str:6, dex:6, int:6, luk:6, watk:6, matk:6}
+        case 'T4':
+            return isWeapon ? {str:3, dex:3, int:3, luk:3, watk:4, matk:4}
                             : {str:7, dex:7, int:7, luk:7, watk:0, matk:0};
+        case 'T5':
+            return isWeapon ? {str:4, dex:4, int:4, luk:4, watk:5, matk:5}
+                            : {str:9, dex:9, int:9, luk:9, watk:0, matk:0};
+        case 'T6':
+            return isWeapon ? {str:5, dex:5, int:5, luk:5, watk:6, matk:6}
+                            : {str:11, dex:11, int:11, luk:11, watk:0, matk:0};
         case 'T7':
             return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
     }
@@ -90,6 +85,7 @@ function getEnhanceLevel(item) {
 function setEnhanceLevel(item, lvl) {
     var owner = item.getOwner();
     if (!owner) owner = "";
+    // Remove old tag
     owner = owner.replace(/\s*\[F\+\d+\]\s*/g, " ").trim();
     var tag = "[F+" + lvl + "]";
     item.setOwner(owner.length > 0 ? (owner + " " + tag) : tag);
@@ -146,8 +142,28 @@ function consumeTierFood(tier, qty) {
     return remaining === 0;
 }
 
+function isCashItem(itemId) {
+    // 1. Check ID ranges standard for Cash items
+    if (itemId >= 5000000) return true; // Cash items / pets
+    if (itemId >= 1700000 && itemId < 1800000) return true; // Cash weapons
+
+    // 2. Check ItemInformationProvider for isCash property if available
+    // (Adjust this line if your source uses a different method name)
+    try {
+        if (Packages.server.ItemInformationProvider.getInstance().isCash(itemId)) return true;
+    } catch(e) {
+        // Fallback if method doesn't exist
+    }
+
+    return false;
+}
+
 function isWeapon(item) {
     var itemId = item.getItemId();
+
+    // Explicit exclusions
+    if (isCashItem(itemId)) return false;
+
     var baseWeapon = ItemConstants.isWeapon(itemId);
     var inWeaponRange = (itemId >= 1300000 && itemId < 1500000);
 
@@ -156,6 +172,8 @@ function isWeapon(item) {
     var isMedal = ItemConstants.isMedal(itemId);
     var isShield = (itemId >= 1092000 && itemId < 1100000);
     var inArmorRange = (itemId >= 1000000 && itemId < 1300000);
+
+    // Double check specific cash weapon range just in case
     var inCashWeaponRange = (itemId >= 1700000 && itemId < 1800000);
 
     var excluded = (inArmorRange || isShield || isAccessory || isOverall || isMedal || inCashWeaponRange);
@@ -173,7 +191,7 @@ function applyStats(item, d) {
 
 function statSummary(item, d) {
     function line(label, cur, add) {
-        return label + ": " + cur + " → " + (cur + add) + (add ? " (+" + add + ")" : "");
+        return label + ": " + cur + " -> " + (cur + add) + (add ? " (+" + add + ")" : "");
     }
     return [
         line("STR", item.getStr(), d.str),
@@ -221,7 +239,7 @@ function guide() {
     var msg = "#e#b[Food Enhancement Guide]#k#n\r\n\r\n";
     msg += "- Any Food tier works on any equipment.\r\n";
     msg += "- Max enhancement per equip: #r+" + MAX_ENHANCE + "#k\r\n";
-    msg += "- Cost per attempt (always consumed): #b(Tier × " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
+    msg += "- Cost per attempt (always consumed): #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
     msg += "- #rFail consumes Food + NX#k (no stats gained).\r\n\r\n";
     msg += "#dFailure Rate Rule:#k\r\n";
     msg += "T1 fail = " + BASE_FAIL_RATE + "%\r\n";
@@ -234,14 +252,15 @@ function start() {
     status = 0;
     selectedSlot = -1;
     selectedItem = null;
+    selectedItemId = -1;
     chosenTier = null;
     pendingDelta = null;
 
     cm.sendSimple(
-        "Feed me any Food and I’ll bless your equip… sometimes.\r\n\r\n"
+        "Feed me any Food and I will bless your equip... sometimes.\r\n\r\n"
         + "#d- Any Food tier works on any equipment.\r\n"
         + "- Max enhance per equip: #r+" + MAX_ENHANCE + "#k\r\n"
-        + "- Cost per attempt: #b(Tier × " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n"
+        + "- Cost per attempt: #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n"
         + "- #rFail consumes Food + NX#k.\r\n"
         + "- No scroll slots are used.\r\n\r\n"
         + "#b#L0#Proceed#l\r\n"
@@ -280,14 +299,18 @@ function action(mode, type, selection) {
             if (!it) continue;
 
             var itemId = it.getItemId();
+
+            // EXPLOIT FIX: Filter out Cash Items strictly
+            if (isCashItem(itemId)) continue;
+
             var name = iip.getName(itemId);
             var enh = getEnhanceLevel(it);
 
             lines.push("#L" + s + "##v" + itemId + "# " + name + "  #d[Food +" + enh + "/" + MAX_ENHANCE + "]#k#l");
         }
 
-        if (!lines.length) {
-            cm.sendOk("You don't seem to have any equips with you.");
+        if (lines.length === 0) {
+            cm.sendOk("You don't have any upgradeable equips. (Cash items are excluded)");
             cm.dispose();
             return;
         }
@@ -310,6 +333,15 @@ function action(mode, type, selection) {
         selectedItem = inv2.getItem(selectedSlot);
         if (!selectedItem) {
             cm.sendOk("Invalid selection.");
+            cm.dispose();
+            return;
+        }
+
+        selectedItemId = selectedItem.getItemId(); // save ID for verification later
+
+        // Double check cash status
+        if (isCashItem(selectedItemId)) {
+            cm.sendOk("You cannot upgrade Cash items.");
             cm.dispose();
             return;
         }
@@ -350,6 +382,13 @@ function action(mode, type, selection) {
             return;
         }
 
+        // Re-verify item hasn't changed or been maxed
+        if (selectedItem.getItemId() !== selectedItemId) {
+             cm.sendOk("Item error. Please try again.");
+             cm.dispose();
+             return;
+        }
+
         var curEnh2 = getEnhanceLevel(selectedItem);
         if (curEnh2 >= MAX_ENHANCE) {
             cm.sendOk("This equip is already at #bFood Enhance +" + curEnh2 + "#k.\r\nMax is #r+" + MAX_ENHANCE + "#k.");
@@ -388,7 +427,7 @@ function action(mode, type, selection) {
 
         var msg =
             "Tier chosen: #b" + chosenTier + "#k\r\n"
-            + "Enhance: #b+" + curEnh2 + "#k → #b+" + (curEnh2 + 1) + "#k (Max +" + MAX_ENHANCE + ")\r\n\r\n"
+            + "Enhance: #b+" + curEnh2 + "#k -> #b+" + (curEnh2 + 1) + "#k (Max +" + MAX_ENHANCE + ")\r\n\r\n"
             + "Target:\r\n#v" + selectedItem.getItemId() + "# " + itemName + "\r\n\r\n"
             + "#dPreview:#k\r\n" + statSummary(selectedItem, pendingDelta) + "\r\n\r\n"
             + "#dCosts (always consumed):#k\r\n"
@@ -419,8 +458,17 @@ function action(mode, type, selection) {
             cm.dispose();
             return;
         }
+
+        // EXPLOIT FIX: Verify item identity one last time
+        if (liveItem.getItemId() !== selectedItemId) {
+            cm.sendOk("The item in this slot seems to have changed.");
+            cm.dispose();
+            return;
+        }
+
         selectedItem = liveItem;
 
+        // EXPLOIT FIX: Verify max enhance ONE LAST TIME
         var curEnh3 = getEnhanceLevel(selectedItem);
         if (curEnh3 >= MAX_ENHANCE) {
             cm.sendOk("This equip is already at #bFood Enhance +" + curEnh3 + "#k.\r\nMax is #r+" + MAX_ENHANCE + "#k.");
@@ -447,7 +495,7 @@ function action(mode, type, selection) {
             return;
         }
 
-        // Consume NX first (fail still pays) — your 1-liner
+        // Consume NX first (fail still pays)
         cm.gainCash(-nxNeed2);
 
         // Consume food (fail still pays)
