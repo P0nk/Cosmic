@@ -34,10 +34,7 @@ public final class ScrollHandler extends AbstractPacketHandler {
                 // Reading the packet data
                 p.readInt();  // Placeholder read, no usage
                 short scrollSlot = p.readShort();
-                System.out.println("scrollSlot: " + scrollSlot); // Print after declaring
                 short equipSlot = p.readShort();
-                System.out.println("equipSlot: " + equipSlot); // Print after declaring
-
                 byte ws = (byte) p.readShort();  // White scroll status
                 boolean whiteScroll = false; // white scroll being used?
                 boolean legendarySpirit = false; // legendary spirit skill
@@ -46,33 +43,23 @@ public final class ScrollHandler extends AbstractPacketHandler {
                 if ((ws & 2) == 2) {
                     whiteScroll = true;
                 }
-                System.out.println("whiteScroll: " + whiteScroll); // Print after declaring
 
                 // Initialize necessary objects
                 ItemInformationProvider ii = ItemInformationProvider.getInstance();
-                System.out.println("ItemInformationProvider instance: " + ii); // Print after declaring
                 Character chr = c.getPlayer();
-                System.out.println("Character: " + chr); // Print after declaring
                 Equip toScroll = (Equip) chr.getInventory(InventoryType.EQUIPPED).getItem(equipSlot);
-                System.out.println("toScroll: " + toScroll); // Print after declaring
                 Skill LegendarySpirit = SkillFactory.getSkill(1003);
-                System.out.println("LegendarySpirit skill: " + LegendarySpirit); // Print after declaring
 
                 // Check if the Legendary Spirit skill is active
                 if (chr.getSkillLevel(LegendarySpirit) > 0 && equipSlot >= 0) {
                     legendarySpirit = true;
                     toScroll = (Equip) chr.getInventory(InventoryType.EQUIP).getItem(equipSlot);
-                    System.out.println("legendarySpirit: " + legendarySpirit); // Print after declaring
                 }
 
                 byte oldLevel = toScroll.getLevel();  // Old level of the item
-                System.out.println("oldLevel: " + oldLevel); // Print after declaring
                 byte oldSlots = toScroll.getUpgradeSlots();  // Old upgrade slots of the item
-                System.out.println("oldSlots: " + oldSlots); // Print after declaring
                 Inventory useInventory = chr.getInventory(InventoryType.USE);
-                System.out.println("useInventory: " + useInventory); // Print after declaring
                 Item scroll = useInventory.getItem(scrollSlot);
-                System.out.println("scroll: " + scroll); // Print after declaring
                 Item wscroll = null;
 
                 // Check if Clean Slate can be used
@@ -81,13 +68,12 @@ public final class ScrollHandler extends AbstractPacketHandler {
                     return;
                 } else if (!ItemConstants.isModifierScroll(scroll.getItemId()) && toScroll.getUpgradeSlots() < 1) {
                     // Check if the scroll is valid and upgrade slots are available
-                    announceCannotScroll(c, legendarySpirit);  // thanks onechord for noticing zero upgrade slots freezing Legendary Scroll UI
+                    announceCannotScroll(c, legendarySpirit);
                     return;
                 }
 
                 // Get scroll requirements
                 List<Integer> scrollReqs = ii.getScrollReqs(scroll.getItemId());
-                System.out.println("scrollReqs: " + scrollReqs); // Print after declaring
                 if (scrollReqs.size() > 0 && !scrollReqs.contains(toScroll.getItemId())) {
                     announceCannotScroll(c, legendarySpirit);
                     return;
@@ -99,11 +85,9 @@ public final class ScrollHandler extends AbstractPacketHandler {
                     if (wscroll == null) {
                         whiteScroll = false;
                     }
-                    System.out.println("wscroll: " + wscroll); // Print after declaring
                 }
 
                 // Check if the scroll can be applied to the item
-                System.out.println("canScroll check: " + canScroll(scroll.getItemId(), toScroll.getItemId())); // Print before using method
                 if (!ItemConstants.isChaosScroll(scroll.getItemId()) && !ItemConstants.isCleanSlate(scroll.getItemId()) && !canScroll(scroll.getItemId(), toScroll.getItemId())) {
                     announceCannotScroll(c, legendarySpirit);
                     return;
@@ -112,13 +96,11 @@ public final class ScrollHandler extends AbstractPacketHandler {
                 // Apply the scroll
                 Equip scrolled = (Equip) ii.scrollEquipWithId(toScroll, scroll.getItemId(), whiteScroll, 0, chr.isGM());
                 ScrollResult scrollSuccess = Equip.ScrollResult.FAIL;  // fail by default
-                System.out.println("scrolled: " + scrolled); // Print after declaring
                 if (scrolled == null) {
                     scrollSuccess = Equip.ScrollResult.CURSE;  // Curse outcome
                 } else if (scrolled.getLevel() > oldLevel || (ItemConstants.isCleanSlate(scroll.getItemId()) && scrolled.getUpgradeSlots() == oldSlots + 1) || ItemConstants.isFlagModifier(scroll.getItemId(), scrolled.getFlag())) {
                     scrollSuccess = Equip.ScrollResult.SUCCESS;  // Success outcome
                 }
-                System.out.println("scrollSuccess: " + scrollSuccess); // Print after declaring
 
                 // Lock the inventory to prevent concurrent changes
                 useInventory.lockInventory();
@@ -212,8 +194,6 @@ public final class ScrollHandler extends AbstractPacketHandler {
     private static boolean canScroll(int scrollid, int itemid) {
         // Determine if the scroll can be applied to the item
         int sid = scrollid / 100;
-
-        System.out.println("Checking if scroll " + scrollid + " can be used on item " + itemid); // Print before returning result
         switch (sid) {
             case 20492: // Scroll for accessory (pendant, belt, ring)
                 return canScroll(ItemId.RING_STR_100_SCROLL, itemid) || canScroll(ItemId.DRAGON_STONE_SCROLL, itemid) ||
