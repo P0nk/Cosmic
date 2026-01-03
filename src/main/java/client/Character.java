@@ -8590,7 +8590,7 @@ public class Character extends AbstractCharacterObject {
                     }
                 }
 // [DEBUG] Log Stats Time
-                log.info("[Save-DEBUG] Stats & Monsterbook saved in {}ms", (System.currentTimeMillis() - stepStart));
+//                log.info("[Save-DEBUG] Stats & Monsterbook saved in {}ms", (System.currentTimeMillis() - stepStart));
                 stepStart = System.currentTimeMillis(); // Reset timer for next step
 
                 List<Pet> petList = new LinkedList<>();
@@ -8683,7 +8683,7 @@ public class Character extends AbstractCharacterObject {
                 ItemFactory.INVENTORY.saveItems(itemsWithType, id, con);
 
                 // [DEBUG] Log Inventory Time
-                log.info("[Save-DEBUG] Inventory saved in {}ms", (System.currentTimeMillis() - stepStart));
+//                log.info("[Save-DEBUG] Inventory saved in {}ms", (System.currentTimeMillis() - stepStart));
                 stepStart = System.currentTimeMillis(); // Reset timer for next step
 
                 // Skills
@@ -8911,7 +8911,7 @@ public class Character extends AbstractCharacterObject {
                 }
 
                 // [DEBUG] Log Quest Time
-                log.info("[Save-DEBUG] Quests saved in {}ms", (System.currentTimeMillis() - questStart));
+//                log.info("[Save-DEBUG] Quests saved in {}ms", (System.currentTimeMillis() - questStart));
                 stepStart = System.currentTimeMillis();
 
 
@@ -8946,7 +8946,7 @@ public class Character extends AbstractCharacterObject {
 
                 long commitStart = System.currentTimeMillis();
                 con.commit();
-                log.info("[Save-DEBUG] Commit took {}ms", (System.currentTimeMillis() - commitStart));
+//                log.info("[Save-DEBUG] Commit took {}ms", (System.currentTimeMillis() - commitStart));
 
                 // [DEBUG] Total Time
                 log.info("[Save-DEBUG] TOTAL save time for {}: {}ms", name, (System.currentTimeMillis() - globalStart));
