@@ -8790,17 +8790,23 @@ public class Character extends AbstractCharacterObject {
                 // Strategy: Pre-fetch IDs to avoid SELECTs in loop, and batch all UPDATES/INSERTS.
                 // ==========================
 
-// 1) Clear dependent tables ONLY (questprogress + medalmaps), keep queststatus untouched.
+                // 1) PRE-FETCH: Load existing queststatus IDs into a Map.
+                // This replaces the slow "SELECT... WHERE quest=?" that ran inside the loop 800 times.
+                Map<Integer, Integer> questIdMap = new HashMap<>();
+                try (PreparedStatement psGetIds = con.prepareStatement("SELECT quest, queststatusid FROM queststatus WHERE characterid = ?")) {
+                    psGetIds.setInt(1, id);
+                    try (ResultSet rs = psGetIds.executeQuery()) {
+                        while (rs.next()) {
+                            questIdMap.put(rs.getInt("quest"), rs.getInt("queststatusid"));
+                        }
+                    }
+                }
+
+                // 2) DELETE DEPENDENCIES: Clear progress/medals so we can cleanly insert new state.
                 try (PreparedStatement psDelProgress = con.prepareStatement(
-                        "DELETE qp FROM questprogress qp " +
-                                "INNER JOIN queststatus qs ON qp.queststatusid = qs.queststatusid " +
-                                "WHERE qs.characterid = ?"
-                );
+                        "DELETE qp FROM questprogress qp INNER JOIN queststatus qs ON qp.queststatusid = qs.queststatusid WHERE qs.characterid = ?");
                      PreparedStatement psDelMedals = con.prepareStatement(
-                             "DELETE mm FROM medalmaps mm " +
-                                     "INNER JOIN queststatus qs ON mm.queststatusid = qs.queststatusid " +
-                                     "WHERE qs.characterid = ?"
-                     )) {
+                             "DELETE mm FROM medalmaps mm INNER JOIN queststatus qs ON mm.queststatusid = qs.queststatusid WHERE qs.characterid = ?")) {
 
                     psDelProgress.setInt(1, id);
                     psDelProgress.executeUpdate();
@@ -8809,54 +8815,46 @@ public class Character extends AbstractCharacterObject {
                     psDelMedals.executeUpdate();
                 }
 
-// 2) Update queststatus rows WITHOUT touching karma_redeemed/info.
-// 3) Insert if missing (new quest) with karma_redeemed=0 and info=0.
-// 4) Fetch queststatusid for saving questprogress/medals.
+                // 3) BATCH OPERATIONS
                 try (
+                        // Update existing quests
                         PreparedStatement psUpdateStatus = con.prepareStatement(
-                                "UPDATE queststatus SET " +
-                                        "`status` = ?, `time` = ?, `expires` = ?, `forfeited` = ?, `completed` = ? " +
-                                        "WHERE characterid = ? AND quest = ?"
-                        );
+                                "UPDATE queststatus SET `status` = ?, `time` = ?, `expires` = ?, `forfeited` = ?, `completed` = ? WHERE queststatusid = ?");
 
+                        // Insert new quests (Rare - only happens when starting a new quest)
                         PreparedStatement psInsertStatus = con.prepareStatement(
-                                "INSERT INTO queststatus " +
-                                        "(characterid, quest, status, time, expires, forfeited, completed, info, karma_redeemed) " +
-                                        "VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)",
-                                Statement.RETURN_GENERATED_KEYS
-                        );
+                                "INSERT INTO queststatus (characterid, quest, status, time, expires, forfeited, completed, info, karma_redeemed) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)", Statement.RETURN_GENERATED_KEYS);
 
-                        PreparedStatement psGetStatusId = con.prepareStatement(
-                                "SELECT queststatusid FROM queststatus WHERE characterid = ? AND quest = ?"
-                        );
-
+                        // Insert Progress (Batched for ALL quests at once)
                         PreparedStatement psProgress = con.prepareStatement(
-                                "INSERT INTO questprogress VALUES (DEFAULT, ?, ?, ?, ?)"
-                        );
+                                "INSERT INTO questprogress VALUES (DEFAULT, ?, ?, ?, ?)");
 
+                        // Insert Medals (Batched for ALL quests at once)
                         PreparedStatement psMedal = con.prepareStatement(
-                                "INSERT INTO medalmaps VALUES (DEFAULT, ?, ?, ?)"
-                        )
+                                "INSERT INTO medalmaps VALUES (DEFAULT, ?, ?, ?)")
                 ) {
+                    boolean hasUpdates = false;
+                    boolean hasProgress = false;
+                    boolean hasMedals = false;
 
                     for (QuestStatus qs : getQuests()) {
                         int questId = qs.getQuest().getId();
+                        Integer dbId = questIdMap.get(questId);
 
-                        // ---- UPDATE queststatus (does NOT touch karma_redeemed) ----
-                        psUpdateStatus.setInt(1, qs.getStatus().getId());
-                        psUpdateStatus.setInt(2, (int) (qs.getCompletionTime() / 1000));
-                        psUpdateStatus.setLong(3, qs.getExpirationTime());
-                        psUpdateStatus.setInt(4, qs.getForfeited());
-                        psUpdateStatus.setInt(5, qs.getCompleted());
-                        psUpdateStatus.setInt(6, id);
-                        psUpdateStatus.setInt(7, questId);
-
-                        int updated = psUpdateStatus.executeUpdate();
-
-                        int questStatusId;
-
-                        if (updated == 0) {
-                            // ---- INSERT new queststatus row with karma_redeemed=0 (DB truth) ----
+                        // --- STATUS: UPDATE vs INSERT ---
+                        if (dbId != null) {
+                            // Quest exists -> Add to UPDATE batch
+                            psUpdateStatus.setInt(1, qs.getStatus().getId());
+                            psUpdateStatus.setInt(2, (int) (qs.getCompletionTime() / 1000));
+                            psUpdateStatus.setLong(3, qs.getExpirationTime());
+                            psUpdateStatus.setInt(4, qs.getForfeited());
+                            psUpdateStatus.setInt(5, qs.getCompleted());
+                            psUpdateStatus.setInt(6, dbId); // Use the pre-fetched ID directly
+                            psUpdateStatus.addBatch();
+                            hasUpdates = true;
+                        } else {
+                            // Quest is new -> INSERT immediately to get the ID
+                            // (We don't batch inserts because we need the generated Key for the child tables immediately)
                             psInsertStatus.setInt(1, id);
                             psInsertStatus.setInt(2, questId);
                             psInsertStatus.setInt(3, qs.getStatus().getId());
@@ -8870,38 +8868,44 @@ public class Character extends AbstractCharacterObject {
                                 if (!rs.next()) {
                                     throw new SQLException("Failed to insert queststatus for quest " + questId);
                                 }
-                                questStatusId = rs.getInt(1);
-                            }
-                        } else {
-                            // ---- Fetch existing queststatusid ----
-                            psGetStatusId.setInt(1, id);
-                            psGetStatusId.setInt(2, questId);
-
-                            try (ResultSet rs = psGetStatusId.executeQuery()) {
-                                if (!rs.next()) {
-                                    throw new SQLException("Missing queststatus row after update for quest " + questId);
-                                }
-                                questStatusId = rs.getInt(1);
+                                dbId = rs.getInt(1); // We have the new ID
                             }
                         }
 
-                        // ---- questprogress ----
+                        // --- PROGRESS & MEDALS (Global Batching) ---
+                        // Note: We are NOT executing these batches inside the loop. We just queue them up.
+
+                        // Batch Progress
                         for (int mob : qs.getProgress().keySet()) {
                             psProgress.setInt(1, id);
-                            psProgress.setInt(2, questStatusId);
+                            psProgress.setInt(2, dbId);
                             psProgress.setInt(3, mob);
                             psProgress.setString(4, qs.getProgress(mob));
                             psProgress.addBatch();
+                            hasProgress = true;
                         }
-                        psProgress.executeBatch();
 
-                        // ---- medal maps ----
+                        // Batch Medals
                         for (int mapId : qs.getMedalMaps()) {
                             psMedal.setInt(1, id);
-                            psMedal.setInt(2, questStatusId);
+                            psMedal.setInt(2, dbId);
                             psMedal.setInt(3, mapId);
                             psMedal.addBatch();
+                            hasMedals = true;
                         }
+                    }
+
+                    // 4) EXECUTE BATCHES
+                    // This sends ~800 updates in ONE network packet
+                    if (hasUpdates) {
+                        psUpdateStatus.executeBatch();
+                    }
+                    // This sends ALL progress for ALL quests in ONE network packet
+                    if (hasProgress) {
+                        psProgress.executeBatch();
+                    }
+                    // This sends ALL medal data in ONE network packet
+                    if (hasMedals) {
                         psMedal.executeBatch();
                     }
                 }
@@ -8909,7 +8913,6 @@ public class Character extends AbstractCharacterObject {
                 // [DEBUG] Log Quest Time
                 log.info("[Save-DEBUG] Quests saved in {}ms", (System.currentTimeMillis() - questStart));
                 stepStart = System.currentTimeMillis();
-
 
 
                 FamilyEntry familyEntry = getFamilyEntry(); //save family rep
