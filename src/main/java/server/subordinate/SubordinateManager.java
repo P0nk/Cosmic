@@ -14,7 +14,7 @@ public class SubordinateManager {
     //           CONFIGURATION SECTION
     // ==========================================
 
-    // 1. Base Carry-Over for Non-Attack Stats & DEFENSE (STR, DEX, INT, LUK, WDEF, MDEF)
+    // 1. Base Carry-Over for Non-Attack Stats & DEFENSE
     private static final double RATE_BASE_STATS = 0.17; // 17%
 
     // 2. Custom Attack Rate Configuration (By Item Type)
@@ -38,7 +38,7 @@ public class SubordinateManager {
             case 146: return 0.19;  // Crossbow
 
             case 147: return 0.20;  // Claw
-            case 148: return 0.18;  // Knuckle (Melee balance)
+            case 148: return 0.18;  // Knuckle
             case 149: return 0.20;  // Gun
 
             // --- ARMORS ---
@@ -48,7 +48,7 @@ public class SubordinateManager {
             case 110: return 0.15;  // Cape
 
             // --- DEFAULT ---
-            default: return 0.17;   // Fallback for unlisted items
+            default: return 0.17;
         }
     }
 
@@ -139,47 +139,37 @@ public class SubordinateManager {
 
         // --- FORMULA START ---
 
-        // Get custom rate
         double currentTypeAttackRate = getAttackRateForType(newItemType);
 
         if (newItemType >= 130) { // Is Weapon
-            // Base Stats (17%)
             addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
             addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
             addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
             addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
-
-            // Attack Stats (Custom Rate + Flat Level Bonus)
             addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
             addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
-        } else {
-            // Is Armor
-            // Base Stats (17%)
+        } else { // Is Armor
             addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
             addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
             addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
             addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
-
-            // Attack Stats (Custom Rate Only, No Flat Bonus)
             addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
             addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
         }
 
-        // --- DEFENSE CALCULATION (Percentage Based) ---
+        // Defense
         addWdef = (short) (selectedItem.getWdef() * RATE_BASE_STATS);
         addMdef = (short) (selectedItem.getMdef() * RATE_BASE_STATS);
 
         // --- FORMULA END ---
 
-        // Apply Stats with Safety Cap
+        // Apply Stats
         newItem.setStr((short) Math.min(MAX_STAT_CAP, newItem.getStr() + addStr));
         newItem.setDex((short) Math.min(MAX_STAT_CAP, newItem.getDex() + addDex));
         newItem.setInt((short) Math.min(MAX_STAT_CAP, newItem.getInt() + addInt));
         newItem.setLuk((short) Math.min(MAX_STAT_CAP, newItem.getLuk() + addLuk));
         newItem.setWatk((short) Math.min(MAX_STAT_CAP, newItem.getWatk() + addWatk));
         newItem.setMatk((short) Math.min(MAX_STAT_CAP, newItem.getMatk() + addMatk));
-
-        // Apply Defense
         newItem.setWdef((short) Math.min(MAX_STAT_CAP, newItem.getWdef() + addWdef));
         newItem.setMdef((short) Math.min(MAX_STAT_CAP, newItem.getMdef() + addMdef));
 
@@ -192,9 +182,15 @@ public class SubordinateManager {
         if (DEBUG_MODE) {
             System.out.println("[Rebirth Debug] Item Type: " + newItemType + " | Atk Rate: " + (currentTypeAttackRate * 100) + "%");
             System.out.println("Watk: " + oldWatk + " -> " + newItem.getWatk());
-            System.out.println("Wdef: " + oldWdef + " -> " + newItem.getWdef() + " (Carry Over: " + addWdef + ")");
         }
 
         chr.forceUpdateItem(newItem);
+    }
+
+    // ==========================================
+    //        HELPER FOR SALVAGE / BOOM
+    // ==========================================
+    public static void removeEquipFromSlot(Client c, short slot) {
+        InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, slot, (short) 1, false);
     }
 }
