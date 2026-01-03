@@ -1,8 +1,8 @@
 /*
- * Subordinate 3.6 — Guide Added & Logic Synced
- * - Added In-Game Rate Guide for players.
- * - Synced Rebirth Levels with Java Constants.
- * - Strictly excludes Cash items (ID 170xxxx).
+ * Subordinate 3.7 — Pricing Fixed
+ * - Adjusted Preview Pricing to be more affordable.
+ * - Regular: Level * 10,000 (e.g. 1.5m for Lv 150).
+ * - Premium: Level * 150,000 (e.g. 22.5m for Lv 150).
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
@@ -25,7 +25,7 @@ const matValues = Object.values(materials);
 const FEES    = [5e6, 15e6, 45e6, 95e6];
 const AMOUNTS = [1, 2, 3, 3];
 
-// Rebirth Levels (Must match Java RB_MIN_LVL constants roughly for display)
+// Rebirth Levels
 const RB_LEVELS = [70, 110, 140, 160, 180, 200];
 
 const MIN_RATE_BASE = 1.20;
@@ -136,7 +136,6 @@ function showMenu(selection) {
 }
 
 function showGuide() {
-    // This matches the Java Logic updated in SubordinateManager.java
     var msg = "#e#b[Subordinate Rebirth Carry-Over Rates]#k#n\r\n" +
               "When you Rebirth (Lv 5 -> Clean), you keep a % of stats.\r\n\r\n" +
               "#bBASE STATS (STR/DEX/INT/LUK/DEF):#k 17%\r\n" +
@@ -157,7 +156,7 @@ function showGuide() {
 }
 
 function showItemList() {
-    const inv = cm.getInventory(1); // Equip Inventory
+    const inv = cm.getInventory(1);
     const limit = inv.getSlotLimit();
     const lines = [];
 
@@ -165,19 +164,14 @@ function showItemList() {
         const item = inv.getItem(s);
         if (!item) continue;
 
-        // --- FILTERING ---
         if (!isWeapon(item)) continue;
-        // -----------------
 
         const itemId = item.getItemId();
         const name = ItemInformationProvider.getInstance().getName(itemId);
 
-        // Mode Specific Filters
         if (ctx.mode === "SALVAGE") {
-            // Cannot salvage clean items
             if (item.getItemLevel() === 0 && item.getHands() === 0) continue;
         } else if (ctx.mode === "REG" || ctx.mode === "PREM") {
-            // Hide items that are fully maxed out (Hand 6+, Lv 5)
             if (item.getHands() >= 6 && item.getItemLevel() === 5) continue;
         }
 
@@ -195,32 +189,22 @@ function showItemList() {
     }
 
     const hint =
-        (ctx.mode === "REG") ? "Cost: Req Level / 2 to preview.\r\n"
-            : (ctx.mode === "PREM") ? "Cost: Req Level / 2 to preview (Premium).\r\n"
+        (ctx.mode === "REG") ? "Cost: Item Lv * 10k mesos to preview.\r\n"
+            : (ctx.mode === "PREM") ? "Cost: Item Lv * 150k mesos to preview.\r\n"
             : "";
 
     cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] Mesos are deducted upon previewing stats!#n#b \r\n"+ lines.join("\r\n"));
 }
 
-// ========================= ITEM FILTER HELPER (FIXED) =========================
+// ========================= ITEM FILTER HELPER =========================
 
 function isWeapon(item) {
     var itemId = item.getItemId();
-
-    // 1. Check if it is a Cash Item (Starts with 170)
-    // Strictly exclude 170xxxx range to be safe
     var isCashItem = Math.floor(itemId / 10000) === 170;
     if (isCashItem) return false;
 
-    // 2. Standard Weapon Check (Using Server Constants)
     var isStandardWeapon = ItemConstants.isWeapon(itemId);
-
-    // 3. Manual Range Check (Backup if ItemConstants is flaky)
-    // 121xxxx to 159xxxx covers most weapons
     var isWeaponRange = (itemId >= 1210000 && itemId < 1600000);
-
-    // 4. Also allow specific armors if you want them upgradeable
-    // (Optional: remove if you ONLY want weapons)
     var isArmorRange = (itemId >= 1000000 && itemId < 1140000);
 
     return isStandardWeapon || isWeaponRange || isArmorRange;
@@ -242,7 +226,6 @@ function handlePickItem(slot) {
         return salvageSelection(slot);
     }
 
-    // REG/PREM
     ctx.step = STEP.PREVIEW;
     return doPreview();
 }
@@ -258,15 +241,13 @@ function doPreview() {
     ctx.maxRate = MAX_RATE_BASE;
 
     // --- REBIRTH CHECK ---
-    // If Item is Level 5 (Max Upgrades), offer Rebirth
     if (lvl === 5) {
-        // Prevent Rebirth if already at Max Rebirth (e.g., 6)
         if (hands >= 6) {
             cm.sendOk("This item has reached its absolute limit (Rebirth 6).");
             return cm.dispose();
         }
 
-        const rebirthMat = matValues[hands + 1] || 4001126; // Default to maple leaf if out of bounds
+        const rebirthMat = matValues[hands + 1] || 4001126;
         const rebirthNxCost = Math.trunc(curvedScale(hands));
         const nextReqLvl = (hands < RB_LEVELS.length) ? RB_LEVELS[hands] : 200;
 
@@ -281,7 +262,6 @@ function doPreview() {
         );
         return;
     }
-    // ---------------------
 
     const mat = matValues[hands];
     const amt = AMOUNTS[lvl - 1] || 1;
@@ -296,15 +276,20 @@ function doPreview() {
         return cm.dispose();
     }
 
-    // Calculate Fees
-    let calculatedFee = ((iiReq / 2) * 100_000)/3; // Regular
-    if (ctx.mode === "PREM") calculatedFee = (iiReq / 2) * 1_000_000; // Premium
+    // --- FEE CALCULATION (UPDATED) ---
+    // Multipliers: 10k for Regular, 150k for Premium
+    let baseMult = (ctx.mode === "REG") ? 10000 : 150000;
 
+    // Example: Lv 150 * 10,000 = 1.5 Million
+    // Example: Lv 150 * 150,000 = 22.5 Million
+    let calculatedFee = iiReq * baseMult;
+
+    // Ensure it doesn't drop below minimum
     ctx.previewFee = Math.max(calculatedFee, MIN_PREVIEW_FEE);
+    // ---------------------------------
 
     const needMesos = ctx.previewFee + (FEES[lvl - 1] || 0);
 
-    // Check Mesos
     if (cm.getMeso() < needMesos) {
         if (cm.haveItem(BCOIN_ITEM_ID, 1)) {
             cm.gainItem(BCOIN_ITEM_ID, -1);
@@ -387,7 +372,6 @@ function doUpgrade(newStats) {
     const lvl = item.getItemLevel();
     const hands = item.getHands();
 
-    // Safety check: if level is 5, we should be rebirthing, not upgrading
     if (lvl >= 5) return doRebirth();
 
     const mat = matValues[hands];
@@ -401,8 +385,8 @@ function doUpgrade(newStats) {
     cm.gainMeso(-FEES[lvl - 1]);
     cm.gainItem(mat, -amt);
 
-    const successRate = 1 - 0.1 * (lvl - 2); // Drops as level increases
-    const boomChance  = (lvl === 4 ? 0.01 : 0); // 1% boom at last step
+    const successRate = 1 - 0.1 * (lvl - 2);
+    const boomChance  = (lvl === 4 ? 0.01 : 0);
 
     const roll = Math.random();
     const success = (roll < successRate);
@@ -413,10 +397,8 @@ function doUpgrade(newStats) {
         cm.scrollPass(cm.getPlayer().getId());
         cm.getPlayer().dropMessage(5, "Upgrade succeeded!");
 
-        // If we just hit Lv 5, we stop so they can choose Rebirth next
         if (item.getItemLevel() === 5) return cm.dispose();
 
-        // Otherwise allow continuous upgrading
         ctx.step = STEP.PREVIEW;
         return doPreview();
     }
@@ -479,12 +461,11 @@ function doRebirth() {
         return cm.dispose();
     }
 
-    // Call the Java Manager to calculate stats and swap items
     SubordinateManager.rebirthItem(cm.getClient(), cm.getPlayer(), item.getPosition());
 
     cm.gainItem(rebirthMat, -1);
     cm.gainCash(-rebirthNxCost);
-    cm.scrollPass(cm.getPlayer().getId()); // Play sound
+    cm.scrollPass(cm.getPlayer().getId());
 
     cm.sendOk("Rebirth Successful! Check your inventory for your renewed item.");
     return cm.dispose();
@@ -497,9 +478,11 @@ function runPremiumAutoRerollIfEnabled() {
 
     const item = ctx.selectedItem;
     const iiReq = ItemInformationProvider.getInstance().getEquipLevelReq(item.getItemId());
-    let rollFee = (iiReq / 2) * 1_000_000;
+
+    // Updated Auto-Reroll Fee Calculation to match new rates
+    let rollFee = iiReq * 150000; // Premium Multiplier
     rollFee = Math.max(rollFee, MIN_PREVIEW_FEE);
-    const perAutoCost = Math.floor(rollFee * 1.05); // 5% extra for convenience
+    const perAutoCost = Math.floor(rollFee * 1.05);
 
     let iterations = 0;
     let extraMesosSpent = 0;
@@ -540,7 +523,7 @@ function runPremiumAutoRerollIfEnabled() {
 
 function getBestMult(statsObj) {
     if (!statsObj || !Array.isArray(statsObj.mult)) return 1.0;
-    return statsObj.mult[0]; // Since Premium has all stats same mult, just take first
+    return statsObj.mult[0];
 }
 
 // ========================= SALVAGE =========================
@@ -571,12 +554,10 @@ function handleSalvageConfirm() {
     const hands = item.getHands();
     const totals = getTotals(lvl, hands);
 
-    // Calculate Refunds
     const refundMesos = Math.floor((totals.totalFee + REBIRTH_BUCKET_MESOS * hands) * REFUND_RATE);
 
     cm.gainMeso(refundMesos);
 
-    // Return Materials
     Object.keys(totals.totalMats).forEach(function(matId) {
         var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
         if (amt > 0) cm.gainItem(parseInt(matId), amt);
@@ -591,19 +572,16 @@ function getTotals(uptoLevel, hands) {
     let totalFee = 0;
     const totalMats = {};
 
-    // 1. Calculate previous hands fully maxed
     for (let h = 0; h < hands; h++) {
         let matId = matValues[h];
         if (matId) {
-            // 4 levels per hand
             totalMats[matId] = (totalMats[matId] || 0) + (1+2+3+3);
             totalFee += (5e6 + 15e6 + 45e6 + 95e6);
         }
     }
 
-    // 2. Calculate current hand partial progress
     let matIdCurrent = matValues[hands];
-    for (let l = 1; l < uptoLevel; l++) { // < because current level is already paid for
+    for (let l = 1; l < uptoLevel; l++) {
         totalFee += (FEES[l-1] || 0);
         if (matIdCurrent) {
             totalMats[matIdCurrent] = (totalMats[matIdCurrent] || 0) + (AMOUNTS[l-1] || 0);
@@ -616,11 +594,10 @@ function getTotals(uptoLevel, hands) {
 // ========================= UTILS =========================
 
 function calcNewStats(item, nxMultiplier, maxRate) {
-    // Regular: Random mult for each stat
     const roll = function() { return MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE); };
     const defRoll = function() { return 1.1 + Math.random() * 0.1; };
 
-    const m = [roll(), roll(), roll(), roll(), roll(), roll()]; // S,D,I,L,W,M
+    const m = [roll(), roll(), roll(), roll(), roll(), roll()];
 
     return {
         str:  Math.floor(item.getStr()  * m[0]),
@@ -638,7 +615,6 @@ function calcNewStats(item, nxMultiplier, maxRate) {
 }
 
 function calcBetterNewStats(item, nxMultiplier, maxRate) {
-    // Premium: One roll applied to all
     const roll = MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE);
     const defRoll = 1.1 + Math.random() * 0.1;
 
@@ -664,6 +640,5 @@ function format(n) {
 }
 
 function curvedScale(hands) {
-    // NX Cost scaler
     return 100000 * Math.pow(5000, hands / 7.0);
 }
