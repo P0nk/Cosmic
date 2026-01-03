@@ -8456,12 +8456,16 @@ public class Character extends AbstractCharacterObject {
         log.debug("Attempting to {} chr {}", notAutosave ? "save" : "autosave", name);
 
         Server.getInstance().updateCharacterEntry(this);
+        // [DEBUG] Start Global Timer
+        long globalStart = System.currentTimeMillis();
+        long stepStart = globalStart;
 
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);
             con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
 
             try {
+                log.info("[Save-DEBUG] Starting save for character: {}", name);
                 try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?, dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?, ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?, hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?, mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?, etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?, finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?, matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?, jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?, partySearch = ?, autopotEnabled = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, level);    // thanks CanIGetaPR for noticing an unnecessary "level" limitation when persisting DB data
                     ps.setInt(2, fame);
@@ -8585,6 +8589,9 @@ public class Character extends AbstractCharacterObject {
                         throw new RuntimeException("Character not in database (" + id + ")");
                     }
                 }
+// [DEBUG] Log Stats Time
+                log.info("[Save-DEBUG] Stats & Monsterbook saved in {}ms", (System.currentTimeMillis() - stepStart));
+                stepStart = System.currentTimeMillis(); // Reset timer for next step
 
                 List<Pet> petList = new LinkedList<>();
                 petLock.lock();
@@ -8674,6 +8681,10 @@ public class Character extends AbstractCharacterObject {
 
                 // Items
                 ItemFactory.INVENTORY.saveItems(itemsWithType, id, con);
+
+                // [DEBUG] Log Inventory Time
+                log.info("[Save-DEBUG] Inventory saved in {}ms", (System.currentTimeMillis() - stepStart));
+                stepStart = System.currentTimeMillis(); // Reset timer for next step
 
                 // Skills
                 try (PreparedStatement psSkill = con.prepareStatement("REPLACE INTO skills (characterid, skillid, skilllevel, masterlevel, expiration) VALUES (?, ?, ?, ?, ?)")) {
@@ -8770,6 +8781,9 @@ public class Character extends AbstractCharacterObject {
 
                     psEvent.executeBatch();
                 }
+
+// [DEBUG] Start Quest Timer
+                long questStart = System.currentTimeMillis();
 
 // ==========================
 // Quests and medals (DB is source of truth for karma_redeemed)
@@ -8893,6 +8907,9 @@ public class Character extends AbstractCharacterObject {
                         psMedal.executeBatch();
                     }
                 }
+                // [DEBUG] Log Quest Time
+                log.info("[Save-DEBUG] Quests saved in {}ms", (System.currentTimeMillis() - questStart));
+                stepStart = System.currentTimeMillis(); // Reset timer for next step
 
 
 
@@ -8925,7 +8942,13 @@ public class Character extends AbstractCharacterObject {
                     usedStorage = false;
                 }
 
+                long commitStart = System.currentTimeMillis();
                 con.commit();
+                log.info("[Save-DEBUG] Commit took {}ms", (System.currentTimeMillis() - commitStart));
+
+                // [DEBUG] Total Time
+                log.info("[Save-DEBUG] TOTAL save time for {}: {}ms", name, (System.currentTimeMillis() - globalStart));
+
             } catch (Exception e) {
                 con.rollback();
                 throw e;
