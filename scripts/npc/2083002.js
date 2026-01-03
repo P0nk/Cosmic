@@ -102,7 +102,7 @@ function spawnHorntailWithScalingHP() {
 
     // +15% HP per clear, max +90%
 //    var multiplier = 0.15 * cappedClears;
-    var multiplier = 0.15 * cappedClears;
+    var multiplier = 0 * cappedClears;
 
     map.spawnHorntailOnGroundBelow(new Point(90, 0), multiplier);
 }
