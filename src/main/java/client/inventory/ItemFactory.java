@@ -205,7 +205,6 @@ public enum ItemFactory {
         Lock lock = locks[id % lockCount];
         lock.lock();
         try {
-            // 1. DELETE OLD ITEMS
             StringBuilder query = new StringBuilder();
             query.append("DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
             query.append(account ? "accountid" : "characterid").append("` = ?");
@@ -216,31 +215,11 @@ public enum ItemFactory {
                 ps.executeUpdate();
             }
 
-            if (items.isEmpty()) {
-                return;
-            }
-
-            // 2. PREPARE STATEMENTS ONCE (Huge Performance Boost)
-            // We prepare the equip statement OUTSIDE the loop so we only compile it once.
-            String itemSql = "INSERT INTO `inventoryitems` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            String equipSql = "INSERT INTO `inventoryequipment` (" +
-                    "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
-                    "`watk`, `matk`, `wdef`, `mdef`, `acc`, `avoid`, `hands`, `speed`, `jump`, `locked`, " +
-                    "`vicious`, `itemlevel`, `itemexp`, `ringid`, `reqlevel`" +
-                    ") VALUES (" +
-                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
-                    ")";
-
-            try (PreparedStatement psItem = con.prepareStatement(itemSql, Statement.RETURN_GENERATED_KEYS);
-                 PreparedStatement psEquip = con.prepareStatement(equipSql)) {
-
-                // --- PASS 1: EQUIPS (Must be one-by-one to get Generated Keys) ---
-                for (Pair<Item, InventoryType> pair : items) {
-                    InventoryType mit = pair.getRight();
-                    if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
+            try (PreparedStatement psItem = con.prepareStatement("INSERT INTO `inventoryitems` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                if (!items.isEmpty()) {
+                    for (Pair<Item, InventoryType> pair : items) {
                         Item item = pair.getLeft();
-
-                        // Set Base Item Values
+                        InventoryType mit = pair.getRight();
                         psItem.setInt(1, value);
                         psItem.setString(2, account ? null : String.valueOf(id));
                         psItem.setString(3, account ? String.valueOf(id) : null);
@@ -249,83 +228,64 @@ public enum ItemFactory {
                         psItem.setInt(6, item.getPosition());
                         psItem.setInt(7, item.getQuantity());
                         psItem.setString(8, item.getOwner());
-                        psItem.setInt(9, item.getPetId());
+                        psItem.setInt(9, item.getPetId());      // thanks Daddy Egg for alerting a case of unique petid constraint breach getting raised
                         psItem.setInt(10, item.getFlag());
                         psItem.setLong(11, item.getExpiration());
                         psItem.setString(12, item.getGiftFrom());
+                        psItem.executeUpdate();
 
-                        psItem.executeUpdate(); // Execute immediately to get ID
+                        if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
+                            try (PreparedStatement psEquip = con.prepareStatement(
+                                    "INSERT INTO `inventoryequipment` (" +
+                                            "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
+                                            "`watk`, `matk`, `wdef`, `mdef`, `acc`, `avoid`, `hands`, `speed`, `jump`, `locked`, " +
+                                            "`vicious`, `itemlevel`, `itemexp`, `ringid`, `reqlevel`" +
+                                            ") VALUES (" +
+                                            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
+                                            ")")) {
 
-                        try (ResultSet rs = psItem.getGeneratedKeys()) {
-                            if (!rs.next()) {
-                                throw new RuntimeException("Inserting item failed.");
+                                try (ResultSet rs = psItem.getGeneratedKeys()) {
+                                    if (!rs.next()) {
+                                        throw new RuntimeException("Inserting item failed.");
+                                    }
+
+                                    psEquip.setInt(1, rs.getInt(1));
+                                }
+
+                                Equip equip = (Equip) item;
+                                psEquip.setInt(2, equip.getUpgradeSlots());
+                                psEquip.setInt(3, equip.getLevel());
+                                psEquip.setInt(4, equip.getStr());
+                                psEquip.setInt(5, equip.getDex());
+                                psEquip.setInt(6, equip.getInt());
+                                psEquip.setInt(7, equip.getLuk());
+                                psEquip.setInt(8, equip.getHp());
+                                psEquip.setInt(9, equip.getMp());
+                                psEquip.setInt(10, equip.getWatk());
+                                psEquip.setInt(11, equip.getMatk());
+                                psEquip.setInt(12, equip.getWdef());
+                                psEquip.setInt(13, equip.getMdef());
+                                psEquip.setInt(14, equip.getAcc());
+                                psEquip.setInt(15, equip.getAvoid());
+                                psEquip.setInt(16, equip.getHands());
+                                psEquip.setInt(17, equip.getSpeed());
+                                psEquip.setInt(18, equip.getJump());
+                                psEquip.setInt(19, 0);
+                                psEquip.setInt(20, equip.getVicious());
+                                psEquip.setInt(21, equip.getItemLevel());
+                                psEquip.setInt(22, equip.getItemExp());
+                                psEquip.setInt(23, equip.getRingId());
+                                // NEW: reqlevel (nullable)
+                                short r = equip.getReqLevelOverride();
+                                if (r > 0) {
+                                    psEquip.setShort(24, r);
+                                } else {
+                                    psEquip.setNull(24, Types.SMALLINT);
+                                }
+                                psEquip.executeUpdate();
                             }
-                            // Set Equip Values using the reused psEquip statement
-                            psEquip.setInt(1, rs.getInt(1));
                         }
-
-                        Equip equip = (Equip) item;
-                        psEquip.setInt(2, equip.getUpgradeSlots());
-                        psEquip.setInt(3, equip.getLevel());
-                        psEquip.setInt(4, equip.getStr());
-                        psEquip.setInt(5, equip.getDex());
-                        psEquip.setInt(6, equip.getInt());
-                        psEquip.setInt(7, equip.getLuk());
-                        psEquip.setInt(8, equip.getHp());
-                        psEquip.setInt(9, equip.getMp());
-                        psEquip.setInt(10, equip.getWatk());
-                        psEquip.setInt(11, equip.getMatk());
-                        psEquip.setInt(12, equip.getWdef());
-                        psEquip.setInt(13, equip.getMdef());
-                        psEquip.setInt(14, equip.getAcc());
-                        psEquip.setInt(15, equip.getAvoid());
-                        psEquip.setInt(16, equip.getHands());
-                        psEquip.setInt(17, equip.getSpeed());
-                        psEquip.setInt(18, equip.getJump());
-                        psEquip.setInt(19, 0);
-                        psEquip.setInt(20, equip.getVicious());
-                        psEquip.setInt(21, equip.getItemLevel());
-                        psEquip.setInt(22, equip.getItemExp());
-                        psEquip.setInt(23, equip.getRingId());
-
-                        short r = equip.getReqLevelOverride();
-                        if (r > 0) {
-                            psEquip.setShort(24, r);
-                        } else {
-                            psEquip.setNull(24, Types.SMALLINT);
-                        }
-                        psEquip.executeUpdate();
                     }
-                }
-
-                // --- PASS 2: EVERYTHING ELSE (Batch Update) ---
-                boolean hasBatch = false;
-                for (Pair<Item, InventoryType> pair : items) {
-                    InventoryType mit = pair.getRight();
-                    // Skip equips, we already saved them
-                    if (!mit.equals(InventoryType.EQUIP) && !mit.equals(InventoryType.EQUIPPED)) {
-                        Item item = pair.getLeft();
-
-                        psItem.setInt(1, value);
-                        psItem.setString(2, account ? null : String.valueOf(id));
-                        psItem.setString(3, account ? String.valueOf(id) : null);
-                        psItem.setInt(4, item.getItemId());
-                        psItem.setInt(5, mit.getType());
-                        psItem.setInt(6, item.getPosition());
-                        psItem.setInt(7, item.getQuantity());
-                        psItem.setString(8, item.getOwner());
-                        psItem.setInt(9, item.getPetId());
-                        psItem.setInt(10, item.getFlag());
-                        psItem.setLong(11, item.getExpiration());
-                        psItem.setString(12, item.getGiftFrom());
-
-                        psItem.addBatch(); // Queue it up!
-                        hasBatch = true;
-                    }
-                }
-
-                if (hasBatch) {
-                    psItem.executeBatch(); // Send all potions/etc in one packet
                 }
             }
         } finally {
