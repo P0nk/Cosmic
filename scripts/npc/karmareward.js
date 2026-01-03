@@ -36,6 +36,12 @@ function action(m, t, s) {
             var msg = "#e[ Empress Cygnus ]#n\r\n";
             msg += "Ah, noble hero... Your heart shines with kindness...\r\n\r\n";
             msg += "Do not be discouraged, my brave one. Continue your journey and #e#bcomplete more quests#n#k to aid Maple World and its citizens.\r\n";
+
+            // ADDED: Progress Display
+                        msg += "#dYour Progress:#k\r\n";
+                        msg += " - Total Quests Completed: #b" + completedQuests + "#k\r\n";
+                        msg += " - Quests until next Milestone: " + questsToNext + "\r\n\r\n";
+
             msg += "When your deeds are complete, I shall reward you with the power to become even stronger.\r\n";
             msg += "\r\n#b#L99#I understand, I will continue to help the world.#l#n";
             cm.sendSimple(msg);
