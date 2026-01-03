@@ -39,7 +39,7 @@ function action(m, t, s) {
 
             // ADDED: Progress Display
                         msg += "#dYour Progress:#k\r\n";
-                        msg += " - Total Quests Completed: #b" + questsToNext + "#k\r\n";
+                        msg += " - Total Quests Completed: #b" +  questsToNext+ "#k\r\n";
                         msg += " - Quests until next Milestone: " + completedQuests + "\r\n\r\n";
 
             msg += "When your deeds are complete, I shall reward you with the power to become even stronger.\r\n";
