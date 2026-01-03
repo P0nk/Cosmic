@@ -21,31 +21,34 @@ public class SubordinateManager {
     public static double getAttackRateForType(int type) {
         switch (type) {
             // --- WEAPONS ---
-            case 130: return 0.18; // 1H Sword
-            case 131: return 0.18; // 1H Axe
-            case 132: return 0.18; // 1H Blunt
-            case 133: return 0.18; // Dagger
-            case 137: return 0.18; // Wand
-            case 138: return 0.18; // Staff
+            case 130: return 0.18;  // 1H Sword
+            case 131: return 0.18;  // 1H Axe
+            case 132: return 0.18;  // 1H Blunt
+            case 133: return 0.18;  // Dagger
+            case 137: return 0.18;  // Wand
+            case 138: return 0.18;  // Staff
+
             case 140: return 0.175; // 2H Sword
             case 141: return 0.175; // 2H Axe
             case 142: return 0.175; // 2H Blunt
             case 143: return 0.175; // Spear
             case 144: return 0.175; // Polearm
-            case 145: return 0.19; // Bow
-            case 146: return 0.19; // Crossbow
-            case 147: return 0.20; // Claw
-            case 148: return 0.18; // Knuckle
-            case 149: return 0.20; // Gun
+
+            case 145: return 0.19;  // Bow
+            case 146: return 0.19;  // Crossbow
+
+            case 147: return 0.20;  // Claw
+            case 148: return 0.18;  // Knuckle (Melee balance)
+            case 149: return 0.20;  // Gun
 
             // --- ARMORS ---
-            case 100: return 0.15; // Hats
-            case 108: return 0.20; // Gloves
-            case 105: return 0.15; // Overall
-            case 110: return 0.15; // Cape
+            case 100: return 0.15;  // Hats
+            case 108: return 0.20;  // Gloves
+            case 105: return 0.15;  // Overall
+            case 110: return 0.15;  // Cape
 
             // --- DEFAULT ---
-            default: return 0.17;
+            default: return 0.17;   // Fallback for unlisted items
         }
     }
 
@@ -113,7 +116,7 @@ public class SubordinateManager {
 
         // Save old stats for Debug
         short oldWatk = selectedItem.getWatk();
-        short oldWdef = selectedItem.getWdef(); // Debugging purposes
+        short oldWdef = selectedItem.getWdef();
         int oldHands = selectedItem.getHands();
         int newItemId = selectedItem.getItemId();
 
@@ -131,7 +134,7 @@ public class SubordinateManager {
         int itemReqLevel = ii.getEquipLevelReq(newItemId);
 
         short addStr = 0, addDex = 0, addInt = 0, addLuk = 0, addWatk = 0, addMatk = 0;
-        short addWdef = 0, addMdef = 0; // New vars for Def
+        short addWdef = 0, addMdef = 0;
         int nextHands = oldHands + 1;
 
         // --- FORMULA START ---
@@ -146,7 +149,7 @@ public class SubordinateManager {
             addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
             addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
 
-            // Attack Stats (Custom + Flat)
+            // Attack Stats (Custom Rate + Flat Level Bonus)
             addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
             addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
         } else {
@@ -157,14 +160,12 @@ public class SubordinateManager {
             addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
             addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
 
-            // Attack Stats (Custom Only)
+            // Attack Stats (Custom Rate Only, No Flat Bonus)
             addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
             addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
         }
 
         // --- DEFENSE CALCULATION (Percentage Based) ---
-        // This applies to both Weapons and Armor.
-        // If the item had 0 def, it carries 0. If it had 200, it carries 17% (approx 34).
         addWdef = (short) (selectedItem.getWdef() * RATE_BASE_STATS);
         addMdef = (short) (selectedItem.getMdef() * RATE_BASE_STATS);
 
@@ -189,9 +190,9 @@ public class SubordinateManager {
 
         // Debug Log
         if (DEBUG_MODE) {
-            System.out.println("[Rebirth Debug] Type: " + newItemType + " | AtkRate: " + (currentTypeAttackRate * 100) + "%");
+            System.out.println("[Rebirth Debug] Item Type: " + newItemType + " | Atk Rate: " + (currentTypeAttackRate * 100) + "%");
             System.out.println("Watk: " + oldWatk + " -> " + newItem.getWatk());
-            System.out.println("Wdef: " + oldWdef + " -> " + newItem.getWdef() + " (Added: " + addWdef + ")");
+            System.out.println("Wdef: " + oldWdef + " -> " + newItem.getWdef() + " (Carry Over: " + addWdef + ")");
         }
 
         chr.forceUpdateItem(newItem);

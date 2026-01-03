@@ -1,8 +1,8 @@
 /*
- * Subordinate 3.5 — Cash Filter Fixed & Rebirth Sync
- * - Fixed syntax errors in 'isWeapon' filter.
+ * Subordinate 3.6 — Guide Added & Logic Synced
+ * - Added In-Game Rate Guide for players.
+ * - Synced Rebirth Levels with Java Constants.
  * - Strictly excludes Cash items (ID 170xxxx).
- * - Syncs Rebirth logic with the new Java Manager.
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
@@ -118,8 +118,9 @@ function showMenu(selection) {
             "#e#r#L1#[PREMIUM]#k#n Unified Stat Rolling.\r\n" +
             "      Higher consistency and better peak potential.#l\r\n\r\n" +
             "#e#d#L2#[SALVAGE]#k#n Scrap upgraded items.\r\n" +
-            "      Recover up to 30% of mesos and materials.#l";
-            // Note: RESET Removed from menu as it wasn't fully implemented in logic flow
+            "      Recover up to 30% of mesos and materials.#l\r\n\r\n" +
+            "#L3#[GUIDE] Check Rebirth Rates#l";
+
         cm.sendSimple(menu);
         return;
     }
@@ -127,10 +128,32 @@ function showMenu(selection) {
     if (selection === 0) ctx.mode = "REG";
     else if (selection === 1) ctx.mode = "PREM";
     else if (selection === 2) ctx.mode = "SALVAGE";
+    else if (selection === 3) return showGuide();
     else return cm.dispose();
 
     ctx.step = STEP.PICK_ITEM;
     return showItemList();
+}
+
+function showGuide() {
+    // This matches the Java Logic updated in SubordinateManager.java
+    var msg = "#e#b[Subordinate Rebirth Carry-Over Rates]#k#n\r\n" +
+              "When you Rebirth (Lv 5 -> Clean), you keep a % of stats.\r\n\r\n" +
+              "#bBASE STATS (STR/DEX/INT/LUK/DEF):#k 17%\r\n" +
+              "---------------------------------\r\n" +
+              "#bATTACK RATES (WATK/MATK):#k\r\n" +
+              " Claw, Gun: #r20%#k\r\n" +
+              " Bow, XBow: #r19%#k\r\n" +
+              " 1H Weps, Mage, Knuckle: #r18%#k\r\n" +
+              " 2H Weps, Spear, Polearm: #r17.5%#k\r\n" +
+              " Others: #r17%#k\r\n" +
+              "---------------------------------\r\n" +
+              "#bARMOR ATTACK RATES:#k\r\n" +
+              " Gloves, Shoes: #d20%#k\r\n" +
+              " Hats, Capes, Overalls: #d15%#k";
+
+    cm.sendOk(msg);
+    cm.dispose();
 }
 
 function showItemList() {
@@ -155,7 +178,6 @@ function showItemList() {
             if (item.getItemLevel() === 0 && item.getHands() === 0) continue;
         } else if (ctx.mode === "REG" || ctx.mode === "PREM") {
             // Hide items that are fully maxed out (Hand 6+, Lv 5)
-            // Note: Checking Hand >= 6 assuming 6 is max rebirth
             if (item.getHands() >= 6 && item.getItemLevel() === 5) continue;
         }
 
@@ -168,7 +190,7 @@ function showItemList() {
     }
 
     if (!lines.length) {
-        cm.sendOk("You have no valid upgradable weapons in your inventory.");
+        cm.sendOk("You have no valid upgradable items in your inventory.");
         return cm.dispose();
     }
 
@@ -185,9 +207,10 @@ function showItemList() {
 function isWeapon(item) {
     var itemId = item.getItemId();
 
-    // 1. Check if it is a Cash Weapon (Starts with 170)
-    var isCashWeapon = Math.floor(itemId / 10000) === 170;
-    if (isCashWeapon) return false;
+    // 1. Check if it is a Cash Item (Starts with 170)
+    // Strictly exclude 170xxxx range to be safe
+    var isCashItem = Math.floor(itemId / 10000) === 170;
+    if (isCashItem) return false;
 
     // 2. Standard Weapon Check (Using Server Constants)
     var isStandardWeapon = ItemConstants.isWeapon(itemId);
@@ -196,7 +219,11 @@ function isWeapon(item) {
     // 121xxxx to 159xxxx covers most weapons
     var isWeaponRange = (itemId >= 1210000 && itemId < 1600000);
 
-    return isStandardWeapon || isWeaponRange;
+    // 4. Also allow specific armors if you want them upgradeable
+    // (Optional: remove if you ONLY want weapons)
+    var isArmorRange = (itemId >= 1000000 && itemId < 1140000);
+
+    return isStandardWeapon || isWeaponRange || isArmorRange;
 }
 
 // ========================= PICK ITEM =========================
@@ -247,7 +274,8 @@ function doPreview() {
         cm.sendYesNo(
             "Your item has reached max upgrades (Lv 5). You can Rebirth it now.\r\n\r\n"
             + "#e#b[Rebirth Effects]#k#n\r\n"
-            + "- Stats reset, but you carry over a percentage of previous stats.\r\n"
+            + "- Stats reset to Clean.\r\n"
+            + "- You carry over a % of your stats (Check Guide for rates).\r\n"
             + "- Item Required Level increases to #r" + nextReqLvl + "#k.\r\n\r\n"
             + "Cost: 1x#v" + rebirthMat + "# + " + Math.trunc(rebirthNxCost / 1000) + "k NX. Proceed?"
         );
@@ -269,7 +297,7 @@ function doPreview() {
     }
 
     // Calculate Fees
-    let calculatedFee = (iiReq / 2) * 100_000; // Regular
+    let calculatedFee = ((iiReq / 2) * 100_000)/3; // Regular
     if (ctx.mode === "PREM") calculatedFee = (iiReq / 2) * 1_000_000; // Premium
 
     ctx.previewFee = Math.max(calculatedFee, MIN_PREVIEW_FEE);
