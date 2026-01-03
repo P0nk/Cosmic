@@ -4131,7 +4131,7 @@ public class MapleMap {
                 var hp = m.getHp();
                 var addedHP = (long)(hp * addedHPModifier);
                 m.addHp(addedHP);
-                System.out.println(m.getHp());
+//                System.out.println(m.getHp());
             }
 
             m.addListener(new MonsterListener() {

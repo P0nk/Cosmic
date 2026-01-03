@@ -98,9 +98,10 @@ function spawnHorntailWithScalingHP() {
 
     // Get clear count (cap at 6 runs)
     var clears = eim.getClearCount();
-    var cappedClears = Math.min(clears, 6);
+    var cappedClears = Math.min(clears, 2);
 
     // +15% HP per clear, max +90%
+//    var multiplier = 0.15 * cappedClears;
     var multiplier = 0.15 * cappedClears;
 
     map.spawnHorntailOnGroundBelow(new Point(90, 0), multiplier);
