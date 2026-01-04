@@ -8507,7 +8507,7 @@ public class Character extends AbstractCharacterObject {
                         " finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?," +
                         " matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?," +
                         " jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?," +
-                        " partySearch = ?, autopotEnabled = ? + passive_watk = ?, passive_matk = ?, passive_wdef = ?," +
+                        " partySearch = ?, autopotEnabled = ?, passive_watk = ?, passive_matk = ?, passive_wdef = ?," +
                         " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?  WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, level);    // thanks CanIGetaPR for noticing an unnecessary "level" limitation when persisting DB data
                     ps.setInt(2, fame);
