@@ -73,6 +73,7 @@ import server.quest.Quest;
 import service.NoteService;
 import tools.DatabaseConnection;
 import tools.Pair;
+import tools.RankingScheduler; // <--- Add this line
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -950,7 +951,10 @@ public class Server {
 
         ThreadManager.getInstance().start();
         initializeTimelyTasks(channelDependencies);    // aggregated method for timely tasks thanks to lxconan
-
+        // --- ADD THIS LINE HERE ---
+        RankingScheduler.start();
+        log.info("Daily Ranking Announcer scheduled.");
+        // ------------------------
         try {
             for (int i = 0; i < worldCount; i++) {
                 initWorld();
