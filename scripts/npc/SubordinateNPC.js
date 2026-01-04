@@ -320,12 +320,12 @@ function doPreview() {
 
     const msg =
         "Previewing Upgrade (Lv " + (lvl) + " -> " + (lvl+1) + "):\r\n" +
-        "STR: " + item.getStr()  + " > #b" + s.str  + " (x" + s.mult[0].toFixed(2) + ")#k\r\n" +
-        "DEX: " + item.getDex()  + " > #b" + s.dex  + " (x" + s.mult[1].toFixed(2) + ")#k\r\n" +
-        "INT: " + item.getInt()  + " > #b" + s.int  + " (x" + s.mult[2].toFixed(2) + ")#k\r\n" +
-        "LUK: " + item.getLuk()  + " > #b" + s.luk  + " (x" + s.mult[3].toFixed(2) + ")#k\r\n" +
-        "WATK: " + item.getWatk() + " > #b" + s.watk + " (x" + s.mult[4].toFixed(2) + ")#k\r\n" +
-        "MATK: " + item.getMatk() + " > #b" + s.matk + " (x" + s.mult[5].toFixed(2) + ")#k\r\n" +
+        "STR: " + item.getStr()  + " > #b" + s.str  + " (x" + s.mult[0].toFixed(3) + ")#k\r\n" +
+        "DEX: " + item.getDex()  + " > #b" + s.dex  + " (x" + s.mult[1].toFixed(3) + ")#k\r\n" +
+        "INT: " + item.getInt()  + " > #b" + s.int  + " (x" + s.mult[2].toFixed(3) + ")#k\r\n" +
+        "LUK: " + item.getLuk()  + " > #b" + s.luk  + " (x" + s.mult[3].toFixed(3) + ")#k\r\n" +
+        "WATK: " + item.getWatk() + " > #b" + s.watk + " (x" + s.mult[4].toFixed(3) + ")#k\r\n" +
+        "MATK: " + item.getMatk() + " > #b" + s.matk + " (x" + s.mult[5].toFixed(3) + ")#k\r\n" +
         "Cost: " + format(FEES[lvl - 1]) + " + " + amt + "x#v" + mat + "#";
 
     let menu =
