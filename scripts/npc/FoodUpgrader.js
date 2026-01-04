@@ -1,6 +1,7 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v5)
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v6 - Inverted Menu)
  *
  * Updates:
+ * - Menu order inverted (Highest Tier First).
  * - Symbol fixes (ASCII only).
  * - Cash Item exclusion implemented.
  * - MAX_ENHANCE exploit checks reinforced.
@@ -353,7 +354,9 @@ function action(mode, type, selection) {
             return;
         }
 
-        var tiers = ["T1","T2","T3","T4","T5","T6"];
+        // --- CHANGED: Reversed array for display (Highest Tier First) ---
+        var tiers = ["T6","T5","T4","T3","T2","T1"];
+
         var menu = "Choose which Food Tier to use (any tier works on any equip):\r\n\r\n";
         for (var i = 0; i < tiers.length; i++) {
             var t = tiers[i];
@@ -374,7 +377,9 @@ function action(mode, type, selection) {
 
     // status 3: tier chosen -> preview + confirm
     if (status === 3) {
-        var tiers2 = ["T1","T2","T3","T4","T5","T6"];
+        // --- CHANGED: Reversed array here too so selection index matches ---
+        var tiers2 = ["T6","T5","T4","T3","T2","T1"];
+
         chosenTier = tiers2[selection];
         if (!chosenTier) {
             cm.sendOk("Invalid tier selection.");
