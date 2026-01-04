@@ -25,7 +25,7 @@ public class WorldChatCommand extends Command {
         Character player = c.getPlayer();
         int characterId = player.getId();
 
-        // 1) Ban check (unchanged)
+        // 1) Ban check
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT banned, period, `on` FROM worldchatban WHERE characterid = ? AND banned = TRUE")) {
@@ -40,10 +40,7 @@ public class WorldChatCommand extends Command {
 
                     if (now < banEndMillis) {
                         long minutesRemaining = (banEndMillis - now) / 60000;
-                        player.yellowMessage(
-                                "You are banned from world chat for another "
-                                        + minutesRemaining + " minute(s)."
-                        );
+                        player.yellowMessage("You are banned from world chat for another " + minutesRemaining + " minute(s).");
                         return;
                     }
                 }
@@ -54,34 +51,48 @@ public class WorldChatCommand extends Command {
             return;
         }
 
-        // 2) Build message
+        // 2) Broadcast in-game
         String message = player.getLastCommandMessage();
         String inGameText = "[" + player.getName() + "]: " + message;
 
-        // 3) Broadcast in-game
         Server.getInstance().broadcastMessage(
                 c.getWorld(),
                 PacketCreator.serverNotice(6, inGameText)
         );
 
-        // 4) Send to Discord (env-based, async)
+        // 3) Send to Discord (Rich Embed)
+        // We use the specific World Chat webhook for player chatter
         String webhook = EnvLoader.get("DISCORD_WORLDCHAT_WEBHOOK");
-        if (webhook != null) {
-            String discordText =
-                    "**[World " + c.getWorld() + "]** "
-                            + player.getName()
-                            + ": "
-                            + sanitize(message);
 
-            DiscordWebhook.sendAsync(webhook, discordText);
+        if (webhook != null && !webhook.isEmpty()) {
+            // A. Sanitize Logic (Length & Discord Abuse)
+            String logicSafeMessage = sanitizeForLogic(message);
+
+            // B. Sanitize Syntax (JSON Special Chars like quotes and slashes)
+            // We use the helper we added to DiscordWebhook.java previously
+            String jsonSafeMessage = DiscordWebhook.escape(logicSafeMessage);
+            String jsonSafeName = DiscordWebhook.escape(player.getName());
+
+            // C. Construct the JSON Payload for the Embed
+            String jsonPayload = "{"
+                    + "\"username\": \"World Chat\","
+                    + "\"embeds\": [{"
+                    +    "\"author\": { \"name\": \"" + jsonSafeName + "\" },"
+                    +    "\"description\": \"" + jsonSafeMessage + "\","
+                    +    "\"color\": 3447003," // Blue Color (0x3498DB)
+                    +    "\"footer\": { \"text\": \"World " + c.getWorld() + "\" }"
+                    + "}]"
+                    + "}";
+
+            DiscordWebhook.sendEmbedAsync(webhook, jsonPayload);
         }
     }
 
-    private static String sanitize(String s) {
+    // Handles game-logic cleaning (truncating length, removing @everyone)
+    private static String sanitizeForLogic(String s) {
         if (s == null) return "";
-        s = s.replace("@", "@\u200B"); // prevent @everyone abuse
-        s = s.replace("\r", " ").replace("\n", " ");
-        if (s.length() > 1800) s = s.substring(0, 1800) + "...";
+        s = s.replace("@", "@\u200B"); // Zero-width space to prevent pings
+        if (s.length() > 1000) s = s.substring(0, 1000) + "..."; // Discord limit is usually 2000, 1000 is safe for embed desc
         return s;
     }
 }

@@ -373,6 +373,17 @@ public class Character extends AbstractCharacterObject {
     public static final Set<Integer> DAMAGE_TRACKED_MAPS = new HashSet<>(Arrays.asList(280030000));// Zakum Altar
     private boolean isSaveInProgress = false;  // Add this variable in your Character class
 
+    // Monster Book Passive Stats
+    private int passiveWatk = 0;
+    private int passiveMatk = 0;
+    private int passiveWdef = 0;
+    private int passiveMdef = 0;
+    private int passiveAcc = 0;
+    private int passiveEva = 0;
+
+    // Daily Playtime for Leaderboard
+    private int dailyPlaytime = 0;
+
 
 
     private Character() {
@@ -7089,6 +7100,19 @@ public class Character extends AbstractCharacterObject {
                     ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
                     ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
                     ret.setAutopotEnabled(rs.getBoolean("autopotEnabled"));
+                    // ... existing loading code (e.g. ret.level = rs.getInt("level");)
+
+                    ret.passiveWatk = rs.getInt("passive_watk");
+                    ret.passiveMatk = rs.getInt("passive_matk");
+                    ret.passiveWdef = rs.getInt("passive_wdef");
+                    ret.passiveMdef = rs.getInt("passive_mdef");
+                    ret.passiveAcc = rs.getInt("passive_acc");
+                    ret.passiveEva = rs.getInt("passive_eva");
+
+                    ret.dailyPlaytime = rs.getInt("dailyPlaytime");
+
+                    // ... continue loading code
+
 
                     wserv = Server.getInstance().getWorld(ret.world);
 
@@ -7858,6 +7882,14 @@ public class Character extends AbstractCharacterObject {
 
             recalcEquipStats();
 
+// -        -- START NEW CODE ---
+            // Add Monster Book Innate Stats
+            localwatk += passiveWatk;
+            localmagic += passiveMatk;
+            // Note: This source file calculates Accuracy/Avoid/Def elsewhere (likely in getters),
+            // so we only update ATK/MATK here because 'localwatk' and 'localmagic' are defined variables.
+            // --- END NEW CODE ---
+
             localmagic = localmagic;
             //localmagic = Math.min(localmagic, 2000);
 
@@ -8144,12 +8176,12 @@ public class Character extends AbstractCharacterObject {
                 case 1300:
                 case 400:
                 case 1400:
-                    tdex = 25;
+                    tluk = 25;
                     tsp += ((getLevel() - 10) * 3);
                     break;
                 case 500:
                 case 1500:
-                    tluk = 35;
+                    tdex = 25;
                     tsp += ((getLevel() - 10) * 3);
                     break;
             }
@@ -8466,7 +8498,17 @@ public class Character extends AbstractCharacterObject {
 
             try {
                 log.info("[Save-DEBUG] Starting save for character: {}", name);
-                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?, dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?, ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?, hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?, mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?, etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?, finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?, matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?, jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?, partySearch = ?, autopotEnabled = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?," +
+                        " dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?," +
+                        " ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?," +
+                        " hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?," +
+                        " mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?," +
+                        " etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?," +
+                        " finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?," +
+                        " matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?," +
+                        " jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?," +
+                        " partySearch = ?, autopotEnabled = ? + passive_watk = ?, passive_matk = ?, passive_wdef = ?," +
+                        " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?  WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, level);    // thanks CanIGetaPR for noticing an unnecessary "level" limitation when persisting DB data
                     ps.setInt(2, fame);
 
@@ -8581,7 +8623,14 @@ public class Character extends AbstractCharacterObject {
                     ps.setInt(54, ariantPoints);
                     ps.setBoolean(55, canRecvPartySearchInvite);
                     ps.setBoolean(56, autopotEnabled);
-                    ps.setInt(57, id);
+                    ps.setInt(57, passiveWatk); // Replace 50 with the actual next number
+                    ps.setInt(58, passiveMatk);
+                    ps.setInt(59, passiveWdef);
+                    ps.setInt(60, passiveMdef);
+                    ps.setInt(61, passiveAcc);
+                    ps.setInt(62, passiveEva);
+                    ps.setInt(63, dailyPlaytime);
+                    ps.setInt(64, id);
 
 
                     int updateRows = ps.executeUpdate();
