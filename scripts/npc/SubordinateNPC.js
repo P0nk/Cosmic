@@ -1,8 +1,8 @@
 /*
- * Subordinate 3.9 — Salvage Fix
- * - Fixed getTotals loop ignoring the current level's cost.
- * - Improved Salvage Menu to list exact items returning.
- * - Pity logic ensures RB0/Lv1 always returns 1 Diamond.
+ * Subordinate 4.0 — Pity Fixed (Hard Override)
+ * - Strict Override for Lv 1 Salvage: Always returns 1 Diamond + 1.5m Mesos.
+ * - Auto-Roll enabled for Regular & Premium.
+ * - Pricing logic finalized.
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
@@ -564,24 +564,33 @@ function salvageSelection(slot) {
 
     const lvl = item.getItemLevel();
     const hands = item.getHands();
-    const totals = getTotals(lvl, hands);
 
+    // --- SPECIAL PITY CHECK FOR LV 1 / RB 0 ---
+    if (hands === 0 && lvl === 1) {
+        // Hard-coded refund for single upgrade
+        const pityMeso = Math.floor(5000000 * REFUND_RATE); // 1.5m
+        let msg = "Salvaging this item will return:\r\n";
+        msg += "#b" + format(pityMeso) + "#k in Mesos.\r\n";
+        msg += "Items to be returned:\r\n";
+        msg += "- 1x #v" + materials.zakDiamond + "# #d(Pity Refund)#k\r\n";
+        msg += "\r\nConfirm salvage?";
+
+        ctx.step = STEP.SALVAGE_CONFIRM;
+        cm.sendYesNo(msg);
+        return;
+    }
+    // ------------------------------------------
+
+    const totals = getTotals(lvl, hands);
     const refundMesos = Math.floor((totals.totalFee + REBIRTH_BUCKET_MESOS * hands) * REFUND_RATE);
 
     let msg = "Salvaging this item will return:\r\n";
     msg += "#b" + format(refundMesos) + "#k in Mesos.\r\n";
     msg += "Items to be returned:\r\n";
 
-    // Explicitly list materials
     var hasMaterials = false;
     Object.keys(totals.totalMats).forEach(function(matId) {
         var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
-
-        // Pity Logic Display Check
-        if (hands === 0 && lvl === 1 && parseInt(matId) === materials.zakDiamond && amt < 1) {
-            amt = 1; // Show 1 for pity
-        }
-
         if (amt > 0) {
             msg += "- " + amt + "x #v" + matId + "#\r\n";
             hasMaterials = true;
@@ -600,22 +609,28 @@ function handleSalvageConfirm() {
     const item = ctx.selectedItem;
     const lvl = item.getItemLevel();
     const hands = item.getHands();
-    const totals = getTotals(lvl, hands);
 
+    // --- SPECIAL PITY ACTION FOR LV 1 / RB 0 ---
+    if (hands === 0 && lvl === 1) {
+        // Refund 30% of 5m = 1.5m
+        cm.gainMeso(1500000);
+        // Force refund 1 Diamond
+        cm.gainItem(materials.zakDiamond, 1);
+        cm.getPlayer().dropMessage(5, "Pity Refund: Returned 1x Zakum Diamond.");
+
+        SubordinateManager.removeEquipFromSlot(cm.getClient(), item.getPosition());
+        cm.sendOk("Salvage complete.");
+        return cm.dispose();
+    }
+    // -------------------------------------------
+
+    const totals = getTotals(lvl, hands);
     const refundMesos = Math.floor((totals.totalFee + REBIRTH_BUCKET_MESOS * hands) * REFUND_RATE);
 
     cm.gainMeso(refundMesos);
 
     Object.keys(totals.totalMats).forEach(function(matId) {
         var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
-
-        // --- PITY LOGIC: FORCE RETURN 1 DIAMOND FOR Lv1 ITEM ---
-        if (hands === 0 && lvl === 1 && parseInt(matId) === materials.zakDiamond && amt < 1) {
-            amt = 1;
-            cm.getPlayer().dropMessage(5, "Pity Refund: Returned 1x Zakum Diamond.");
-        }
-        // --------------------------------------------------------
-
         if (amt > 0) cm.gainItem(parseInt(matId), amt);
     });
 
@@ -637,7 +652,6 @@ function getTotals(uptoLevel, hands) {
     }
 
     let matIdCurrent = matValues[hands];
-    // FIXED LOOP: l <= uptoLevel ensures we count the CURRENT level's cost
     for (let l = 1; l <= uptoLevel; l++) {
         totalFee += (FEES[l-1] || 0);
         if (matIdCurrent) {
