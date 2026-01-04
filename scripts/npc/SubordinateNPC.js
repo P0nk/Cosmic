@@ -1,8 +1,8 @@
 /*
- * Subordinate 3.7 — Pricing Fixed
- * - Adjusted Preview Pricing to be more affordable.
- * - Regular: Level * 10,000 (e.g. 1.5m for Lv 150).
- * - Premium: Level * 150,000 (e.g. 22.5m for Lv 150).
+ * Subordinate 3.8 — Auto-Roll Expanded & Pity Salvage
+ * - Regular Auto-Roll added (Target specific stat).
+ * - Auto-Roll Surcharges: Regular (30%), Premium (10%).
+ * - Salvage Pity: Refunds 1 Zak Diamond for RB0/Lv1 items.
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
@@ -25,7 +25,6 @@ const matValues = Object.values(materials);
 const FEES    = [5e6, 15e6, 45e6, 95e6];
 const AMOUNTS = [1, 2, 3, 3];
 
-// Rebirth Levels
 const RB_LEVELS = [70, 110, 140, 160, 180, 200];
 
 const MIN_RATE_BASE = 1.20;
@@ -51,6 +50,7 @@ const STEP = {
     MENU: "MENU",
     PICK_ITEM: "PICK_ITEM",
     PREVIEW: "PREVIEW",
+    AUTO_STAT_SELECT: "AUTO_STAT_SELECT", // New Step
     AUTO_TARGET_INPUT: "AUTO_TARGET_INPUT",
     REBIRTH_CONFIRM: "REBIRTH_CONFIRM",
     SALVAGE_CONFIRM: "SALVAGE_CONFIRM",
@@ -77,6 +77,7 @@ function freshCtx() {
         previewFee: 0,
         autoRerollEnabled: false,
         autoRerollTarget: 0,
+        autoRerollStatIndex: 0 // 0=STR, 1=DEX, etc (Used for Regular Mode)
     };
 }
 
@@ -93,6 +94,8 @@ function action(mode, type, selection) {
             return handlePickItem(selection);
         case STEP.PREVIEW:
             return handlePreviewChoice(selection);
+        case STEP.AUTO_STAT_SELECT:
+            return handleAutoStatSelect(selection);
         case STEP.AUTO_TARGET_INPUT:
             return handleAutoTargetEntered();
         case STEP.REBIRTH_CONFIRM:
@@ -196,8 +199,6 @@ function showItemList() {
     cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] Mesos are deducted upon previewing stats!#n#b \r\n"+ lines.join("\r\n"));
 }
 
-// ========================= ITEM FILTER HELPER =========================
-
 function isWeapon(item) {
     var itemId = item.getItemId();
     var isCashItem = Math.floor(itemId / 10000) === 170;
@@ -276,17 +277,10 @@ function doPreview() {
         return cm.dispose();
     }
 
-    // --- FEE CALCULATION (UPDATED) ---
-    // Multipliers: 10k for Regular, 150k for Premium
+    // --- FEE CALCULATION ---
     let baseMult = (ctx.mode === "REG") ? 10000 : 150000;
-
-    // Example: Lv 150 * 10,000 = 1.5 Million
-    // Example: Lv 150 * 150,000 = 22.5 Million
     let calculatedFee = iiReq * baseMult;
-
-    // Ensure it doesn't drop below minimum
     ctx.previewFee = Math.max(calculatedFee, MIN_PREVIEW_FEE);
-    // ---------------------------------
 
     const needMesos = ctx.previewFee + (FEES[lvl - 1] || 0);
 
@@ -314,27 +308,26 @@ function doPreview() {
         cm.getPlayer().dropMessage(5, "Used 2mil NX for Preview.");
     }
 
-    const autoMsg = (ctx.mode === "PREM") ? runPremiumAutoRerollIfEnabled() : "";
+    // Call generic auto-reroll
+    const autoMsg = runAutoRerollIfEnabled();
     const s = ctx.newStats;
     const warning = (lvl === 4) ? "\r\n#rWARNING: 1% chance to destroy your item!#k" : "";
 
     const msg =
         "Previewing Upgrade (Lv " + (lvl) + " -> " + (lvl+1) + "):\r\n" +
-        "STR: " + item.getStr()  + " > #b" + s.str  + " (x" + s.mult[0].toFixed(3) + ")#k\r\n" +
-        "DEX: " + item.getDex()  + " > #b" + s.dex  + " (x" + s.mult[1].toFixed(3) + ")#k\r\n" +
-        "INT: " + item.getInt()  + " > #b" + s.int  + " (x" + s.mult[2].toFixed(3) + ")#k\r\n" +
-        "LUK: " + item.getLuk()  + " > #b" + s.luk  + " (x" + s.mult[3].toFixed(3) + ")#k\r\n" +
-        "WATK: " + item.getWatk() + " > #b" + s.watk + " (x" + s.mult[4].toFixed(3) + ")#k\r\n" +
-        "MATK: " + item.getMatk() + " > #b" + s.matk + " (x" + s.mult[5].toFixed(3) + ")#k\r\n" +
+        "STR: " + item.getStr()  + " > #b" + s.str  + " (x" + s.mult[0].toFixed(2) + ")#k\r\n" +
+        "DEX: " + item.getDex()  + " > #b" + s.dex  + " (x" + s.mult[1].toFixed(2) + ")#k\r\n" +
+        "INT: " + item.getInt()  + " > #b" + s.int  + " (x" + s.mult[2].toFixed(2) + ")#k\r\n" +
+        "LUK: " + item.getLuk()  + " > #b" + s.luk  + " (x" + s.mult[3].toFixed(2) + ")#k\r\n" +
+        "WATK: " + item.getWatk() + " > #b" + s.watk + " (x" + s.mult[4].toFixed(2) + ")#k\r\n" +
+        "MATK: " + item.getMatk() + " > #b" + s.matk + " (x" + s.mult[5].toFixed(2) + ")#k\r\n" +
         "Cost: " + format(FEES[lvl - 1]) + " + " + amt + "x#v" + mat + "#";
 
+    // Show Auto Roll Button for BOTH modes now
     let menu =
         "\r\n#L0#Reroll stats (Pay Preview Fee again)#l" +
-        "\r\n#L1#Confirm Upgrade#l";
-
-    if (ctx.mode === "PREM") {
-        menu += "\r\n#L2#Auto re-roll to target#l";
-    }
+        "\r\n#L1#Confirm Upgrade#l" +
+        "\r\n#L2#Auto re-roll to target#l";
 
     ctx.step = STEP.PREVIEW;
     cm.sendSimple(msg + warning + autoMsg + menu);
@@ -343,13 +336,38 @@ function doPreview() {
 function handlePreviewChoice(selection) {
     if (selection === 0) return doPreview();
 
-    if (selection === 2 && ctx.mode === "PREM") {
-        ctx.step = STEP.AUTO_TARGET_INPUT;
-        cm.sendGetText("Enter your target rate (e.g., 1.42). Max: " + (ctx.maxRate - 0.01));
-        return;
+    if (selection === 2) {
+        // If Regular Mode, we need to ask WHICH stat they care about
+        if (ctx.mode === "REG") {
+            ctx.step = STEP.AUTO_STAT_SELECT;
+            cm.sendSimple("Which stat do you want to target?\r\n" +
+                "#L0# STR\r\n" +
+                "#L1# DEX\r\n" +
+                "#L2# INT\r\n" +
+                "#L3# LUK\r\n" +
+                "#L4# Weapon Attack\r\n" +
+                "#L5# Magic Attack");
+            return;
+        }
+        // If Premium, all stats match, so skip to input
+        else {
+            ctx.step = STEP.AUTO_TARGET_INPUT;
+            cm.sendGetText("Enter your target rate (e.g., 1.42). Max: " + (ctx.maxRate - 0.01));
+            return;
+        }
     }
 
     return doUpgrade(ctx.newStats);
+}
+
+function handleAutoStatSelect(selection) {
+    if (selection < 0 || selection > 5) return cm.dispose();
+
+    ctx.autoRerollStatIndex = selection; // Store choice
+    ctx.step = STEP.AUTO_TARGET_INPUT;
+
+    var statNames = ["STR", "DEX", "INT", "LUK", "WATK", "MATK"];
+    cm.sendGetText("Enter target rate for #b" + statNames[selection] + "#k (e.g., 1.42). Max: " + (ctx.maxRate - 0.01));
 }
 
 function handleAutoTargetEntered() {
@@ -365,7 +383,7 @@ function handleAutoTargetEntered() {
     return doPreview();
 }
 
-// ========================= UPGRADE LOGIC (0-4 -> 5) =========================
+// ========================= UPGRADE LOGIC =========================
 
 function doUpgrade(newStats) {
     const item = ctx.selectedItem;
@@ -438,7 +456,7 @@ function applyNewStats(ns) {
     cm.getPlayer().forceUpdateItem(item);
 }
 
-// ========================= REBIRTH LOGIC (JAVA HANDLED) =========================
+// ========================= REBIRTH LOGIC =========================
 
 function handleRebirthConfirm() {
     return doRebirth();
@@ -471,26 +489,33 @@ function doRebirth() {
     return cm.dispose();
 }
 
-// ========================= PREMIUM AUTO REROLL =========================
+// ========================= AUTO REROLL (REG & PREM) =========================
 
-function runPremiumAutoRerollIfEnabled() {
+function runAutoRerollIfEnabled() {
     if (!ctx.autoRerollEnabled) return "";
 
     const item = ctx.selectedItem;
     const iiReq = ItemInformationProvider.getInstance().getEquipLevelReq(item.getItemId());
 
-    // Updated Auto-Reroll Fee Calculation to match new rates
-    let rollFee = iiReq * 150000; // Premium Multiplier
+    // Fee Calculation based on mode
+    let baseMult = (ctx.mode === "REG") ? 10000 : 150000;
+    let rollFee = iiReq * baseMult;
     rollFee = Math.max(rollFee, MIN_PREVIEW_FEE);
-    const perAutoCost = Math.floor(rollFee * 1.05);
+
+    // Apply Surcharges
+    // Regular: 30% Premium | Premium: 10% Premium
+    let surcharge = (ctx.mode === "REG") ? 1.30 : 1.10;
+    const perAutoCost = Math.floor(rollFee * surcharge);
 
     let iterations = 0;
     let extraMesosSpent = 0;
-    let best = getBestMult(ctx.newStats);
+
+    // Determine the stat to check against
+    let currentVal = getTargetStatValue(ctx.newStats);
 
     let virtualMeso = cm.getMeso();
 
-    while (best < ctx.autoRerollTarget) {
+    while (currentVal < ctx.autoRerollTarget) {
         if (iterations >= MAX_AUTO_ROLLS) break;
 
         if (virtualMeso < perAutoCost) {
@@ -501,9 +526,13 @@ function runPremiumAutoRerollIfEnabled() {
         virtualMeso -= perAutoCost;
         extraMesosSpent += perAutoCost;
 
-        ctx.newStats = calcBetterNewStats(item, ctx.nxMultiplier, ctx.maxRate);
+        // Roll new stats based on mode
+        ctx.newStats = (ctx.mode === "REG")
+            ? calcNewStats(item, ctx.nxMultiplier, ctx.maxRate)
+            : calcBetterNewStats(item, ctx.nxMultiplier, ctx.maxRate);
+
         iterations++;
-        best = getBestMult(ctx.newStats);
+        currentVal = getTargetStatValue(ctx.newStats);
     }
 
     if (extraMesosSpent > 0) cm.gainMeso(-extraMesosSpent);
@@ -512,18 +541,27 @@ function runPremiumAutoRerollIfEnabled() {
 
     if (iterations === 0) return "";
 
+    let statLabel = (ctx.mode === "REG") ? ["STR","DEX","INT","LUK","WATK","MATK"][ctx.autoRerollStatIndex] : "All Stats";
+
     return (
-        "\r\n#d[Auto Results]#k\r\n" +
+        "\r\n#d[Auto Results - " + statLabel + "]#k\r\n" +
         "Target: x" + ctx.autoRerollTarget + "\r\n" +
-        "Best Hit: x" + best.toFixed(3) + "\r\n" +
+        "Hit: x" + currentVal.toFixed(3) + "\r\n" +
         "Attempts: " + iterations + "\r\n" +
         "Mesos Spent: " + format(extraMesosSpent) + "\r\n"
     );
 }
 
-function getBestMult(statsObj) {
+function getTargetStatValue(statsObj) {
     if (!statsObj || !Array.isArray(statsObj.mult)) return 1.0;
-    return statsObj.mult[0];
+
+    if (ctx.mode === "REG") {
+        // Return the specific random roll for the selected stat
+        return statsObj.mult[ctx.autoRerollStatIndex];
+    } else {
+        // Return index 0 (all are same)
+        return statsObj.mult[0];
+    }
 }
 
 // ========================= SALVAGE =========================
@@ -542,7 +580,14 @@ function salvageSelection(slot) {
 
     let msg = "Salvaging this item will return:\r\n";
     msg += "#b" + format(refundMesos) + "#k in Mesos.\r\n";
-    msg += "And a portion of materials used.\r\n\r\nConfirm salvage?";
+    msg += "And a portion of materials used.\r\n";
+
+    // Pity Logic Check for Preview
+    if (hands === 0 && lvl === 1) {
+        msg += "#d(Pity applied: You will get 1x " + "#v" + materials.zakDiamond + "# back)#k\r\n";
+    }
+
+    msg += "\r\nConfirm salvage?";
 
     ctx.step = STEP.SALVAGE_CONFIRM;
     cm.sendYesNo(msg);
@@ -562,6 +607,20 @@ function handleSalvageConfirm() {
         var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
         if (amt > 0) cm.gainItem(parseInt(matId), amt);
     });
+
+    // --- PITY LOGIC START ---
+    // If Rebirth 0 and Level 1 (only 1 diamond spent), force return 1 diamond
+    if (hands === 0 && lvl === 1) {
+        // Check if we didn't already give it (math says 1*0.3 = 0, so unlikely)
+        var zakId = materials.zakDiamond;
+        var amtGiven = Math.floor((totals.totalMats[zakId] || 0) * REFUND_RATE);
+
+        if (amtGiven < 1) {
+            cm.gainItem(zakId, 1);
+            cm.getPlayer().dropMessage(5, "Pity Refund: Returned 1x Zakum Diamond.");
+        }
+    }
+    // --- PITY LOGIC END ---
 
     SubordinateManager.removeEquipFromSlot(cm.getClient(), item.getPosition());
     cm.sendOk("Salvage complete.");
