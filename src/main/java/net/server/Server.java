@@ -910,6 +910,10 @@ public class Server {
             Runtime.getRuntime().addShutdownHook(new Thread(shutdown(false)));
         }
 
+        // --- FIX: Start TimerManager before the Database uses it ---
+        TimerManager.getInstance().start();
+        // -----------------------------------------------------------
+
         if (!DatabaseConnection.initializeConnectionPool()) {
             throw new IllegalStateException("Failed to initiate a connection to the database");
         }
@@ -1021,7 +1025,7 @@ public class Server {
 
     private void initializeTimelyTasks(ChannelDependencies channelDependencies) {
         TimerManager tMan = TimerManager.getInstance();
-        tMan.start();
+//        tMan.start();
         tMan.register(tMan.purge(), YamlConfig.config.server.PURGING_INTERVAL);//Purging ftw...
         disconnectIdlesOnLoginTask();
 
