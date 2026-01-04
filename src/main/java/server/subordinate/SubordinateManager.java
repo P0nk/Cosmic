@@ -146,8 +146,8 @@ public class SubordinateManager {
             addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
             addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
             addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
-            addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
-            addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate + ((double) itemReqLevel / 3));
+            addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
+            addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
         } else { // Is Armor
             addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
             addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
@@ -156,10 +156,20 @@ public class SubordinateManager {
             addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
             addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
         }
+        // Adjusted Check: Include Hats (100) and Tops (104) -> Start at 100
+        // Exclude Weapons (120+) -> Stop before weapons
+        if (newItemType == 105) {
+            // Flat Bonus: 125 * Rebirth Count
+            // RB1 = +125, RB5 = +625
+            addWdef = (short) (150 * nextHands);
+            addMdef = (short) (150 * nextHands);
+        } else if (newItemType >= 100 && newItemType < 120) {
+            // Flat Bonus: 125 * Rebirth Count
+            // RB1 = +125, RB5 = +625
+            addWdef = (short) (75 * nextHands);
+            addMdef = (short) (75 * nextHands);
+        }
 
-        // Defense
-        addWdef = (short) (selectedItem.getWdef() * RATE_BASE_STATS);
-        addMdef = (short) (selectedItem.getMdef() * RATE_BASE_STATS);
 
         // --- FORMULA END ---
 
