@@ -8149,7 +8149,7 @@ public class Character extends AbstractCharacterObject {
                     break;
                 case 500:
                 case 1500:
-                    tdex = 20;
+                    tluk = 35;
                     tsp += ((getLevel() - 10) * 3);
                     break;
             }
