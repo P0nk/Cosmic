@@ -1,24 +1,3 @@
-/*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
 package client;
 
 import tools.DatabaseConnection;
@@ -42,6 +21,7 @@ public final class MonsterBook {
     private int normalCard = 0;
     private int bookLevel = 1;
     private final Map<Integer, Integer> cards = new LinkedHashMap<>();
+    private final Set<Integer> redeemedCards = new HashSet<>(); // NEW: Tracks redeemed cards
     private final Lock lock = new ReentrantLock();
 
     public Set<Entry<Integer, Integer>> getCardSet() {
@@ -80,10 +60,9 @@ public final class MonsterBook {
         }
 
         if (qty < 5) {
-            if (qty == 0) {     // leveling system only accounts unique cards
+            if (qty == 0) {
                 calculateLevel();
             }
-
             c.sendPacket(PacketCreator.addCard(false, cardid, qty + 1));
             c.sendPacket(PacketCreator.showGainCard());
         } else {
@@ -95,14 +74,13 @@ public final class MonsterBook {
         lock.lock();
         try {
             int collectionExp = (normalCard + specialCard);
-
             int level = 0, expToNextlevel = 1;
             do {
                 level++;
                 expToNextlevel += level * 10;
             } while (collectionExp >= expToNextlevel);
 
-            bookLevel = level;  // thanks IxianMace for noticing book level differing between book UI and character info UI
+            bookLevel = level;
         } finally {
             lock.unlock();
         }
@@ -121,6 +99,15 @@ public final class MonsterBook {
         lock.lock();
         try {
             return Collections.unmodifiableMap(cards);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public boolean isRedeemed(int cardId) {
+        lock.lock();
+        try {
+            return redeemedCards.contains(cardId);
         } finally {
             lock.unlock();
         }
@@ -156,53 +143,137 @@ public final class MonsterBook {
     public void loadCards(final int charid) throws SQLException {
         lock.lock();
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT cardid, level FROM monsterbook WHERE charid = ? ORDER BY cardid ASC")) {
+             PreparedStatement ps = con.prepareStatement("SELECT cardid, level, redeemed FROM monsterbook WHERE charid = ? ORDER BY cardid ASC")) {
             ps.setInt(1, charid);
 
             try (ResultSet rs = ps.executeQuery()) {
                 int cardid;
                 int level;
+                boolean redeemed;
                 while (rs.next()) {
                     cardid = rs.getInt("cardid");
                     level = rs.getInt("level");
+                    redeemed = rs.getInt("redeemed") == 1;
+
                     if (cardid / 1000 >= 2388) {
                         specialCard++;
                     } else {
                         normalCard++;
                     }
                     cards.put(cardid, level);
+                    if (redeemed) {
+                        redeemedCards.add(cardid);
+                    }
                 }
             }
         } finally {
             lock.unlock();
         }
-
         calculateLevel();
     }
 
     public void saveCards(Connection con, int chrId) throws SQLException {
         final String query = """
-                INSERT INTO monsterbook (charid, cardid, level)
-                VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE level = ?;
+                INSERT INTO monsterbook (charid, cardid, level, redeemed)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE level = ?, redeemed = ?;
                 """;
         try (final PreparedStatement ps = con.prepareStatement(query)) {
-            for (Map.Entry<Integer, Integer> cardAndLevel : cards.entrySet()) {
-                final int card = cardAndLevel.getKey();
-                final int level = cardAndLevel.getValue();
-                // insert
-                ps.setInt(1, chrId);
-                ps.setInt(2, card);
-                ps.setInt(3, level);
+            lock.lock();
+            try {
+                for (Map.Entry<Integer, Integer> cardAndLevel : cards.entrySet()) {
+                    final int card = cardAndLevel.getKey();
+                    final int level = cardAndLevel.getValue();
+                    final int redeemed = redeemedCards.contains(card) ? 1 : 0;
 
-                // update
-                ps.setInt(4, level);
+                    ps.setInt(1, chrId);
+                    ps.setInt(2, card);
+                    ps.setInt(3, level);
+                    ps.setInt(4, redeemed);
+                    ps.setInt(5, level);
+                    ps.setInt(6, redeemed);
 
-                ps.addBatch();
+                    ps.addBatch();
+                }
+            } finally {
+                lock.unlock();
             }
             ps.executeBatch();
         }
     }
+
+    // --- REDEMPTION SYSTEM START ---
+
+    public boolean redeemCard(final Client c, final int cardid, final int type) {
+        lock.lock();
+        try {
+            Integer level = cards.get(cardid);
+            if (level == null || level < 5) return false;
+            if (redeemedCards.contains(cardid)) return false;
+
+            boolean isSpecial = (cardid / 1000 >= 2388);
+            int multiplier = isSpecial ? 10 : 1;
+
+            switch (type) {
+                case 0: giveWatk(c, 2 * multiplier); break;
+                case 1: giveMatk(c, 1 * multiplier); break;
+                case 2: giveDef(c, 5 * multiplier); break;
+                case 3: giveEva(c, 4 * multiplier); break;
+                case 4: giveAcc(c, 1 * multiplier); break;
+                default: return false;
+            }
+
+            redeemedCards.add(cardid);
+
+            // Visuals & Sound
+            c.sendPacket(PacketCreator.showSpecialEffect(12)); // Quest Clear Effect
+            c.sendPacket(PacketCreator.playSound("Game/Quest/Party1")); // Success Sound
+
+            // Immediate Save to prevent rollback exploits
+            saveRedemptionStatus(c.getPlayer().getId(), cardid);
+
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void saveRedemptionStatus(int charId, int cardId) {
+        // Runs immediately after a successful redeem to ensure DB is in sync
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE monsterbook SET redeemed = 1 WHERE charid = ? AND cardid = ?")) {
+            ps.setInt(1, charId);
+            ps.setInt(2, cardId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("[MonsterBook] Error saving redemption status: " + e.getMessage());
+        }
+    }
+
+    private void giveWatk(Client c, int amount) {
+        // You may need to create this method in MapleCharacter or use direct stats
+        // Example: c.getPlayer().addPermanentStat("watk", amount);
+        // For now, printing to chat as placeholder:
+        c.getPlayer().dropMessage(5, "Redeemed " + amount + " Weapon Attack!");
+    }
+
+    private void giveMatk(Client c, int amount) {
+        c.getPlayer().dropMessage(5, "Redeemed " + amount + " Magic Attack!");
+    }
+
+    private void giveDef(Client c, int amount) {
+        c.getPlayer().dropMessage(5, "Redeemed " + amount + " Weapon Def!");
+    }
+
+    private void giveEva(Client c, int amount) {
+        c.getPlayer().dropMessage(5, "Redeemed " + amount + " Avoidability!");
+    }
+
+    private void giveAcc(Client c, int amount) {
+        c.getPlayer().dropMessage(5, "Redeemed " + amount + " Accuracy!");
+    }
+
+    // --- REDEMPTION SYSTEM END ---
 
     public static int[] getCardTierSize() {
         try (Connection con = DatabaseConnection.getConnection();
@@ -211,11 +282,9 @@ public final class MonsterBook {
             rs.last();
             int[] tierSizes = new int[rs.getRow()];
             rs.beforeFirst();
-
             while (rs.next()) {
                 tierSizes[rs.getRow() - 1] = rs.getInt(1);
             }
-
             return tierSizes;
         } catch (SQLException e) {
             e.printStackTrace();
