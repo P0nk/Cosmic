@@ -4,7 +4,7 @@ function start() {
     const YamlConfig = Java.type('config.YamlConfig');
     if (YamlConfig.config.server.USE_ENABLE_CUSTOM_NPC_SCRIPT) {
         cm.dispose();
-        cm.openNpc(22024, "monsterBookRedeemer");
+        cm.openNpc(11024, "monsterBookRedeemer");
         return;
     }
 
