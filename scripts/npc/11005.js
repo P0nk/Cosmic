@@ -39,10 +39,14 @@ function awardRelationshipFromSpend(spendAmount) {
 var SPELL_TRACE_PER_SCROLL = 10;
 
 var SCROLL_BLACKLIST = {
-    2049100: false, // Chaos Scroll
+    2049100: true, // Chaos Scroll
+    2049115: true, // Chaos Scroll of goodness
+    2049116: true, // Incredible Chaos Scroll
+    2049117: true, // Miraculous  Chaos Scroll
     2049300: true, // Clean Slate Scroll
     2049400: true, // Innocence Scroll
     2049600: true  // Potential Scroll
+
 };
 
 // ===================== RANDOM SPELL TRACE LOGIC =====================
