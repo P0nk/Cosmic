@@ -10,10 +10,10 @@ public class RankingScheduler {
     public static void start() {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-//        long initialDelay = computeNextMidnightDelay();
+        long initialDelay = computeNextMidnightDelay();
 
-        // long initialDelay = computeNextMidnightDelay();
-        long initialDelay = 1000 * 10; // Run 10 seconds after server start
+//         long initialDelay = computeNextMidnightDelay();
+//        long initialDelay = 1000 * 10; // Run 10 seconds after server start
         long period = 24 * 60 * 60 * 1000; // 24 hours
 
         // The Announcer grabs the URL from EnvLoader internally now
