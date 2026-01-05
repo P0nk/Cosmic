@@ -43,9 +43,11 @@ public class SubordinateManager {
 
             // --- ARMORS ---
             case 100: return 0.15;  // Hats
+            case 107: return 0.20;  // Shoes // Checked by Starlight Blame if wrong
             case 108: return 0.20;  // Gloves
             case 105: return 0.15;  // Overall
             case 110: return 0.15;  // Cape
+
 
             // --- DEFAULT ---
             default: return 0.17;
