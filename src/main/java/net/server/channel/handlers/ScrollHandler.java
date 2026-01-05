@@ -167,8 +167,8 @@ public final class ScrollHandler extends AbstractPacketHandler {
                     mods.add(new ModifyInventory(0, scrolled));
                 }
 
-                // Send the updated inventory to the client
-                c.sendPacket(PacketCreator.modifyInventory(true, mods));
+                // [FIXED] Added 'c.getPlayer()' as the 3rd argument
+                c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
                 chr.getMap().broadcastMessage(PacketCreator.getScrollEffect(chr.getId(), scrollSuccess, legendarySpirit, whiteScroll));
 
                 // If the equipment is newly equipped, update the player

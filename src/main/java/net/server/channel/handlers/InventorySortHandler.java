@@ -337,7 +337,8 @@ public final class InventorySortHandler extends AbstractPacketHandler {
             inventory.unlockInventory();
         }
 
-        c.sendPacket(PacketCreator.modifyInventory(true, mods));
+        // [FIXED] Added 'c.getPlayer()' as the 3rd argument
+        c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
         c.sendPacket(PacketCreator.finishedSort2(invType));
         c.sendPacket(PacketCreator.enableActions());
     }

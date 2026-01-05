@@ -100,7 +100,8 @@ public class InventoryManipulator {
                                 quantity -= (newQ - oldQ);
                                 eItem.setQuantity(newQ);
                                 eItem.setExpiration(expiration);
-                                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, eItem))));
+                                // [MODIFIED] Added c.getPlayer()
+                                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, eItem)), c.getPlayer()));
                             }
                         } else {
                             break;
@@ -124,7 +125,8 @@ public class InventoryManipulator {
                         if (owner != null) {
                             nItem.setOwner(owner);
                         }
-                        c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem))));
+                        // [MODIFIED] Added c.getPlayer()
+                        c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                         if (sandboxItem) {
                             chr.setHasSandboxItem();
                         }
@@ -143,7 +145,8 @@ public class InventoryManipulator {
                     c.sendPacket(PacketCreator.getShowInventoryFull());
                     return false;
                 }
-                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem))));
+                // [MODIFIED] Added c.getPlayer()
+                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                 if (InventoryManipulator.isSandboxItem(nItem)) {
                     chr.setHasSandboxItem();
                 }
@@ -161,7 +164,8 @@ public class InventoryManipulator {
                 c.sendPacket(PacketCreator.getShowInventoryFull());
                 return false;
             }
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nEquip))));
+            // [MODIFIED] Added c.getPlayer()
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nEquip)), c.getPlayer()));
             if (InventoryManipulator.isSandboxItem(nEquip)) {
                 chr.setHasSandboxItem();
             }
@@ -217,7 +221,8 @@ public class InventoryManipulator {
                                 quantity -= (newQ - oldQ);
                                 eItem.setQuantity(newQ);
                                 item.setPosition(eItem.getPosition());
-                                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, eItem))));
+                                // [MODIFIED] Added c.getPlayer()
+                                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, eItem)), c.getPlayer()));
                             }
                         } else {
                             break;
@@ -240,7 +245,8 @@ public class InventoryManipulator {
                     }
                     nItem.setPosition(newSlot);
                     item.setPosition(newSlot);
-                    c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem))));
+                    // [MODIFIED] Added c.getPlayer()
+                    c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                     if (InventoryManipulator.isSandboxItem(nItem)) {
                         chr.setHasSandboxItem();
                     }
@@ -258,7 +264,8 @@ public class InventoryManipulator {
                 }
                 nItem.setPosition(newSlot);
                 item.setPosition(newSlot);
-                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem))));
+                // [MODIFIED] Added c.getPlayer()
+                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                 if (InventoryManipulator.isSandboxItem(nItem)) {
                     chr.setHasSandboxItem();
                 }
@@ -272,7 +279,8 @@ public class InventoryManipulator {
                 return false;
             }
             item.setPosition(newSlot);
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, item))));
+            // [MODIFIED] Added c.getPlayer()
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, item)), c.getPlayer()));
             if (InventoryManipulator.isSandboxItem(item)) {
                 chr.setHasSandboxItem();
             }
@@ -449,9 +457,11 @@ public class InventoryManipulator {
 
     private static void announceModifyInventory(Client c, Item item, boolean fromDrop, boolean allowZero) {
         if (item.getQuantity() == 0 && !allowZero) {
-            c.sendPacket(PacketCreator.modifyInventory(fromDrop, Collections.singletonList(new ModifyInventory(3, item))));
+            // [MODIFIED] Added c.getPlayer()
+            c.sendPacket(PacketCreator.modifyInventory(fromDrop, Collections.singletonList(new ModifyInventory(3, item)), c.getPlayer()));
         } else {
-            c.sendPacket(PacketCreator.modifyInventory(fromDrop, Collections.singletonList(new ModifyInventory(1, item))));
+            // [MODIFIED] Added c.getPlayer()
+            c.sendPacket(PacketCreator.modifyInventory(fromDrop, Collections.singletonList(new ModifyInventory(1, item)), c.getPlayer()));
         }
     }
 
@@ -518,10 +528,14 @@ public class InventoryManipulator {
         } else {
             mods.add(new ModifyInventory(2, source, src));
         }
-        c.sendPacket(PacketCreator.modifyInventory(true, mods));
+        // [MODIFIED] Added c.getPlayer()
+        c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
     }
 
     public static void equip(Client c, short src, short dst) {
+        // [DEBUG] Print destination slot to confirm Medal Slot ID
+//        System.out.println("[DEBUG] Equipping Item. Source: " + src + " | Destination (dst): " + dst);
+
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         Character chr = c.getPlayer();
@@ -534,7 +548,7 @@ public class InventoryManipulator {
             return;
         }
 
-// === NEW: server-side rebirth req-level enforcement ===
+        // === NEW: server-side rebirth req-level enforcement ===
         int requiredLevel = SubordinateManager.getEffectiveReqLevelForEquip(source);
         if (chr.getLevel() < requiredLevel) {
             chr.dropMessage(5, "You must be level " + requiredLevel + " to equip this item.");
@@ -542,7 +556,7 @@ public class InventoryManipulator {
             return;
         }
 
-// keep original wearable checks (jobs/stats/etc)
+        // keep original wearable checks (jobs/stats/etc)
         if (!ii.canWearEquipment(chr, source, dst)) {
             c.sendPacket(PacketCreator.enableActions());
             return;
@@ -560,59 +574,57 @@ public class InventoryManipulator {
             itemChanged = true;
         }
         switch (dst) {
-        case -6: // unequip the overall
-            Item top = eqpdInv.getItem((short) -5);
-            if (top != null && ItemConstants.isOverall(top.getItemId())) {
-                if (eqpInv.isFull()) {
-                    c.sendPacket(PacketCreator.getInventoryFull());
-                    c.sendPacket(PacketCreator.getShowInventoryFull());
-                    return;
+            case -6: // unequip the overall
+                Item top = eqpdInv.getItem((short) -5);
+                if (top != null && ItemConstants.isOverall(top.getItemId())) {
+                    if (eqpInv.isFull()) {
+                        c.sendPacket(PacketCreator.getInventoryFull());
+                        c.sendPacket(PacketCreator.getShowInventoryFull());
+                        return;
+                    }
+                    unequip(c, (byte) -5, eqpInv.getNextFreeSlot());
                 }
-                unequip(c, (byte) -5, eqpInv.getNextFreeSlot());
-            }
-            break;
-        case -5:
-            final Item bottom = eqpdInv.getItem((short) -6);
-            if (bottom != null && ItemConstants.isOverall(source.getItemId())) {
-                if (eqpInv.isFull()) {
-                    c.sendPacket(PacketCreator.getInventoryFull());
-                    c.sendPacket(PacketCreator.getShowInventoryFull());
-                    return;
+                break;
+            case -5:
+                final Item bottom = eqpdInv.getItem((short) -6);
+                if (bottom != null && ItemConstants.isOverall(source.getItemId())) {
+                    if (eqpInv.isFull()) {
+                        c.sendPacket(PacketCreator.getInventoryFull());
+                        c.sendPacket(PacketCreator.getShowInventoryFull());
+                        return;
+                    }
+                    unequip(c, (byte) -6, eqpInv.getNextFreeSlot());
                 }
-                unequip(c, (byte) -6, eqpInv.getNextFreeSlot());
-            }
-            break;
-        case -10: // check if weapon is two-handed
-            Item weapon = eqpdInv.getItem((short) -11);
-            if (weapon != null && ii.isTwoHanded(weapon.getItemId())) {
-                if (eqpInv.isFull()) {
-                    c.sendPacket(PacketCreator.getInventoryFull());
-                    c.sendPacket(PacketCreator.getShowInventoryFull());
-                    return;
+                break;
+            case -10: // check if weapon is two-handed
+                Item weapon = eqpdInv.getItem((short) -11);
+                if (weapon != null && ii.isTwoHanded(weapon.getItemId())) {
+                    if (eqpInv.isFull()) {
+                        c.sendPacket(PacketCreator.getInventoryFull());
+                        c.sendPacket(PacketCreator.getShowInventoryFull());
+                        return;
+                    }
+                    unequip(c, (byte) -11, eqpInv.getNextFreeSlot());
                 }
-                unequip(c, (byte) -11, eqpInv.getNextFreeSlot());
-            }
-            break;
-        case -11:
-            Item shield = eqpdInv.getItem((short) -10);
-            if (shield != null && ii.isTwoHanded(source.getItemId())) {
-                if (eqpInv.isFull()) {
-                    c.sendPacket(PacketCreator.getInventoryFull());
-                    c.sendPacket(PacketCreator.getShowInventoryFull());
-                    return;
+                break;
+            case -11:
+                Item shield = eqpdInv.getItem((short) -10);
+                if (shield != null && ii.isTwoHanded(source.getItemId())) {
+                    if (eqpInv.isFull()) {
+                        c.sendPacket(PacketCreator.getInventoryFull());
+                        c.sendPacket(PacketCreator.getShowInventoryFull());
+                        return;
+                    }
+                    unequip(c, (byte) -10, eqpInv.getNextFreeSlot());
                 }
-                unequip(c, (byte) -10, eqpInv.getNextFreeSlot());
-            }
-            break;
-        case -18:
-            if (chr.getMount() != null) {
-                chr.getMount().setItemId(source.getItemId());
-            }
-            break;
+                break;
+            case -18:
+                if (chr.getMount() != null) {
+                    chr.getMount().setItemId(source.getItemId());
+                }
+                break;
         }
 
-        //1112413, 1112414, 1112405 (Lilin's Ring)
-        source = (Equip) eqpInv.getItem(src);
         eqpInv.removeSlot(src);
 
         Equip target;
@@ -654,11 +666,30 @@ public class InventoryManipulator {
             chr.cancelBuffStats(BuffStat.BOOSTER);
         }
 
-        mods.add(new ModifyInventory(2, source, src));
-        c.sendPacket(PacketCreator.modifyInventory(true, mods));
-        chr.equipChanged();
-    }
+        // === FIX: Force "Add" packet for Medals to trigger addItemInfo ===
+        if (dst == -49) {
+            // 1. Remove the item from the Source Slot (Inventory)
+            // We create a temporary copy to ensure the packet uses the correct 'src' position
+            Item removeClone = source.copy();
+            removeClone.setPosition(src);
+            mods.add(new ModifyInventory(3, removeClone));
 
+            // 2. Add the item to the Destination Slot (Equip Slot -49)
+            // This triggers Mode 0 -> which calls addItemInfo -> which runs your Stat Injection
+            mods.add(new ModifyInventory(0, source));
+        } else {
+            // Standard behavior for all other items (Move)
+            mods.add(new ModifyInventory(2, source, src));
+        }
+
+        c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
+        chr.equipChanged();
+
+        // [OPTIONAL] You can keep your recalc here just to be safe server-side
+        if (dst == -49) {
+            chr.recalcLocalStats();
+        }
+    }
     public static void unequip(Client c, short src, short dst) {
         Character chr = c.getPlayer();
         Inventory eqpInv = chr.getInventory(InventoryType.EQUIP);
@@ -666,12 +697,14 @@ public class InventoryManipulator {
 
         Equip source = (Equip) eqpdInv.getItem(src);
         Equip target = (Equip) eqpInv.getItem(dst);
+
         if (dst < 0) {
             return;
         }
         if (source == null) {
             return;
         }
+        // Note: This check usually blocks swapping if target exists, ensuring dst is empty.
         if (target != null && src <= 0) {
             c.sendPacket(PacketCreator.getInventoryFull());
             return;
@@ -691,15 +724,52 @@ public class InventoryManipulator {
         if (target != null) {
             eqpInv.removeSlot(dst);
         }
+
+        // Update position object to new Inventory slot
         source.setPosition(dst);
         eqpInv.addItemFromDB(source);
+
         if (target != null) {
             target.setPosition(src);
             eqpdInv.addItemFromDB(target);
         }
-        c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(2, source, src))));
+
+        // ========================================================================
+        // [FIX START] Handle Medal Visuals (Remove + Add to clear spoofed stats)
+        // ========================================================================
+        List<ModifyInventory> mods = new ArrayList<>();
+
+        if (src == -49) { // If unequipped item is a Medal
+            // 1. Packet: Remove from Equip Slot (-49)
+            // We create a clone because 'source' has already been updated to 'dst' above.
+            // The client needs to know which slot to remove FROM (-49).
+            Item removeClone = source.copy();
+            removeClone.setPosition(src);
+            mods.add(new ModifyInventory(3, removeClone));
+
+            // 2. Packet: Add to Inventory Slot (dst)
+            // This triggers Mode 0 -> calls addItemInfo.
+            // Since source.getPosition() is now positive (dst), addItemInfo writes CLEAN stats.
+            mods.add(new ModifyInventory(0, source));
+        } else {
+            // Standard Move for all other items
+            mods.add(new ModifyInventory(2, source, src));
+        }
+
+        c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
+        // ========================================================================
+        // [FIX END]
+        // ========================================================================
+
         chr.equipChanged();
+
+        // Force Stat Recalculation if Medal was unequipped
+        if (src == -49) {
+            chr.recalcLocalStats();
+            c.sendPacket(PacketCreator.enableActions());
+        }
     }
+
 
     private static boolean isDisappearingItemDrop(Item it) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
@@ -757,7 +827,8 @@ public class InventoryManipulator {
             Item target = source.copy();
             target.setQuantity(quantity);
             source.setQuantity((short) (source.getQuantity() - quantity));
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, source))));
+            // [MODIFIED] Added c.getPlayer()
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, source)), c.getPlayer()));
 
             if (ItemConstants.isNewYearCardEtc(itemId)) {
                 if (itemId == ItemId.NEW_YEARS_CARD_SEND) {
@@ -787,7 +858,8 @@ public class InventoryManipulator {
                 inv.removeSlot(src);
             }
 
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(3, source))));
+            // [MODIFIED] Added c.getPlayer()
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(3, source)), c.getPlayer()));
             if (src < 0) {
                 chr.equipChanged();
             } else if (ItemConstants.isNewYearCardEtc(itemId)) {
@@ -830,3 +902,4 @@ public class InventoryManipulator {
         return (it.getFlag() & ItemConstants.SANDBOX) == ItemConstants.SANDBOX;
     }
 }
+

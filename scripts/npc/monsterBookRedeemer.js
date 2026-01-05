@@ -1,174 +1,206 @@
-/*
- * Monster Book Redemption NPC (Bulk System) - DEBUG VERSION
- */
+/* Monster Book Redemption NPC
+    Debug Mode: ON
+*/
+
+// POLYFILL: If the server engine doesn't support console.log natively, fallback to System.out
+if (typeof console === 'undefined') {
+    var console = {};
+    console.log = function(msg) {
+        java.lang.System.out.println(msg);
+    };
+}
 
 var status = -1;
-var book = null;
-
-var eligibleNormal = [];
-var eligibleSpecial = [];
-
-var selectedTierList = null;
+// Debug: Declare variables globally for tracking
+var validNormalQty = 0;
+var validBossQty = 0;
 var selectedStat = -1;
-var selectedQty = 0;
-var multiplier = 1;
-
-var statConfig = [
-    ["Weapon Attack", 2],
-    ["Magic Attack", 1]
-];
+var selectedTierIsSpecial = false;
+var quantityToRedeem = 0;
 
 function start() {
-    java.lang.System.out.println("[NPC DEBUG] start() called.");
+    console.log("[Debug] Function start() called.");
     status = -1;
     action(1, 0, 0);
 }
 
 function action(mode, type, selection) {
-    java.lang.System.out.println("[NPC DEBUG] action called. Mode: " + mode + ", Status: " + status + ", Selection: " + selection);
+    console.log("[Debug] action() called. Mode: " + mode + ", Status: " + status + ", Selection: " + selection);
 
     if (mode == -1) {
-        java.lang.System.out.println("[NPC DEBUG] Mode -1. Disposing.");
+        console.log("[Debug] Mode is -1, disposing.");
         cm.dispose();
         return;
     }
-    if (mode == 0) {
-        java.lang.System.out.println("[NPC DEBUG] Mode 0. Disposing.");
+    if (mode == 0 && status == 0) {
+        console.log("[Debug] Mode 0 & Status 0, disposing.");
         cm.dispose();
         return;
     }
     if (mode == 1) {
         status++;
+    } else {
+        status--;
     }
 
-    java.lang.System.out.println("[NPC DEBUG] New Status: " + status);
+    console.log("[Debug] New Status: " + status);
 
     if (status == 0) {
-        eligibleNormal = [];
-        eligibleSpecial = [];
+        // --- STEP 1: CALCULATE AVAILABLE CARDS ---
 
-        try {
-            book = cm.getPlayer().getMonsterBook();
-            var cards = book.getCards();
-            var iter = cards.entrySet().iterator();
+        console.log("[Debug] getting player instance...");
+        var player = cm.getPlayer();
+        console.log("[Debug] getting MonsterBook instance...");
+        var mb = player.getMonsterBook();
 
-            while (iter.hasNext()) {
-                var entry = iter.next();
-                var cardId = entry.getKey();
-                var level = entry.getValue();
+        // Reset counters
+        validNormalQty = 0;
+        validBossQty = 0;
 
-                if (level >= 5 && !book.isRedeemed(cardId)) {
-                    if (Math.floor(cardId / 1000) >= 2388) {
-                        eligibleSpecial.push(cardId);
-                    } else {
-                        eligibleNormal.push(cardId);
-                    }
+        console.log("[Debug] Fetching card map keys...");
+        var cardMap = mb.getCards();
+        // Convert keys to array to avoid Iterator crashes in JS
+        var cardIds = cardMap.keySet().toArray();
+
+        console.log("[Debug] Looping through " + cardIds.length + " cards.");
+
+        for (var i = 0; i < cardIds.length; i++) {
+            var cardId = cardIds[i];
+            var level = cardMap.get(cardId);
+
+            // Check if level 5 and NOT redeemed
+            if (level >= 5 && !mb.isRedeemed(cardId)) {
+                // Check if Special (Boss)
+                if (Math.floor(cardId / 1000) >= 2388) {
+                    validBossQty++;
+                } else {
+                    validNormalQty++;
                 }
             }
-            java.lang.System.out.println("[NPC DEBUG] Cards Found - Normal: " + eligibleNormal.length + " Special: " + eligibleSpecial.length);
-        } catch (e) {
-            java.lang.System.out.println("[NPC DEBUG] ERROR in status 0 card scanning: " + e);
         }
 
-        if (eligibleNormal.length == 0 && eligibleSpecial.length == 0) {
-            cm.sendOk("You don't have any completed card sets (5/5) ready to redeem.");
+        console.log("[Debug] Count Result - Normal: " + validNormalQty + ", Boss: " + validBossQty);
+
+        if (validNormalQty == 0 && validBossQty == 0) {
+            cm.sendOk("You do not have any Monster Book cards ready for redemption.\r\n\r\n#eRequirements:#n\r\n#b- Collect 5/5 of a card.\r\n- Card must not have been redeemed previously.#k");
             cm.dispose();
             return;
         }
 
-        var text = "I found completed cards in your Monster Book ready for redemption.\r\nWhich collection would you like to use?\r\n\r\n";
-        if (eligibleNormal.length > 0) {
-            text += "#L0#Redeem #bNormal Cards#k (Available: " + eligibleNormal.length + ")#l\r\n";
-        }
-        if (eligibleSpecial.length > 0) {
-            text += "#L1#Redeem #rSpecial Cards#k (Available: " + eligibleSpecial.length + ") #e[10x Stats]#n#l\r\n";
-        }
+        var text = "#e[Monster Book Redemption]#n\r\n";
+        text += "You have #b" + validNormalQty + " Completed Normal Cards#k and #r" + validBossQty + " Completed Boss Cards#k.\r\n";
+        text += "Choose which Stat to redeem:\r\n#b";
+
+        // Selection 0-5 mapping to Java Stat Type
+        text += "\r\n#L0# Weapon Attack (Norm: +2, Boss: +20)#l";
+        text += "\r\n#L1# Magic Attack (Norm: +1, Boss: +10)#l";
+        text += "\r\n#L2# Accuracy (Norm: +2, Boss: +20)#l";
+        text += "\r\n#L3# Magic Defense (Norm: +5, Boss: +50)#l";
+        text += "\r\n#L4# Weapon Defense (Norm: +5, Boss: +50)#l";
+        text += "\r\n#L5# Avoidability (Norm: +3, Boss: +30)#l";
+
+        console.log("[Debug] Sending Simple text: " + text);
         cm.sendSimple(text);
 
     } else if (status == 1) {
-        java.lang.System.out.println("[NPC DEBUG] Status 1. Selection: " + selection);
-        if (selection == 0) {
-            selectedTierList = eligibleNormal;
-            multiplier = 1;
-        } else {
-            selectedTierList = eligibleSpecial;
-            multiplier = 10;
+        // --- STEP 2: SELECT NORMAL OR BOSS ---
+
+        console.log("[Debug] User selected stat index: " + selection);
+        selectedStat = selection;
+
+        var text = "You selected a stat. Now choose which Card Tier to consume:\r\n#b";
+        var optionsAvailable = false;
+
+        // FIXED LOGIC: Hardcoding IDs 0 and 1 so the selection check in status 2 is always accurate
+        if (validNormalQty > 0) {
+            text += "\r\n#L0# Normal Cards (Available: " + validNormalQty + ")#l";
+            optionsAvailable = true;
+        }
+        if (validBossQty > 0) {
+            text += "\r\n#L1# Boss Cards (Available: " + validBossQty + ")#l";
+            optionsAvailable = true;
         }
 
-        if (selectedTierList == null) {
-             java.lang.System.out.println("[NPC DEBUG] ERROR: selectedTierList is null!");
-             cm.dispose(); return;
+        if (!optionsAvailable) {
+            console.log("[Debug] No options available (logic error or empty), disposing.");
+            cm.sendOk("Error: No cards available.");
+            cm.dispose();
+            return;
         }
 
-        var prompt = "You are redeeming #b" + selectedTierList.length + "#k cards.\r\n";
-        prompt += "Which stat would you like to acquire?\r\n\r\n";
-
-        for (var i = 0; i < statConfig.length; i++) {
-            var val = statConfig[i][1] * multiplier;
-            prompt += "#L" + i + "# " + statConfig[i][0] + " (+" + val + ")#l\r\n";
-        }
-        cm.sendSimple(prompt);
+        console.log("[Debug] Sending Tier selection menu.");
+        cm.sendSimple(text);
 
     } else if (status == 2) {
-        selectedStat = selection;
-        java.lang.System.out.println("[NPC DEBUG] Status 2. Stat Index: " + selectedStat);
+        // --- STEP 3: SELECT QUANTITY ---
 
-        var preview = "";
-        var limit = selectedTierList.length > 10 ? 10 : selectedTierList.length;
-        for (var i = 0; i < limit; i++) {
-            preview += "#t" + selectedTierList[i] + "#, ";
-        }
-        if (selectedTierList.length > 10) {
-            preview += "... and " + (selectedTierList.length - 10) + " others.";
+        console.log("[Debug] User selected tier index: " + selection);
+
+        // Because we hardcoded L0 and L1 in status 1, we can rely on selection ID
+        if (selection == 0) {
+             selectedTierIsSpecial = false; // Normal
+        } else if (selection == 1) {
+             selectedTierIsSpecial = true; // Boss
         } else {
-            preview = preview.substring(0, preview.length - 2);
+             // Should not happen unless packet editing
+             console.log("[Debug] Invalid Tier Selection: " + selection);
+             cm.dispose();
+             return;
         }
 
-        var prompt = "You selected #b" + statConfig[selectedStat][0] + "#k.\r\n";
-        prompt += "Available cards to redeem: " + selectedTierList.length + "\r\n";
-        prompt += "Next cards in line: " + preview + "\r\n\r\n";
-        prompt += "How many cards do you want to redeem?";
+        console.log("[Debug] Selected Special Tier? " + selectedTierIsSpecial);
 
-        cm.sendGetNumber(prompt, selectedTierList.length, 1, selectedTierList.length);
+        var maxAvailable = selectedTierIsSpecial ? validBossQty : validNormalQty;
+        console.log("[Debug] Max Available for this tier: " + maxAvailable);
 
-    } else if (status == 3) {
-        selectedQty = selection;
-        java.lang.System.out.println("[NPC DEBUG] Status 3. Qty: " + selectedQty);
+        if (maxAvailable <= 0) {
+             console.log("[Debug] Max available is 0, aborting.");
+             cm.dispose();
+             return;
+        }
 
-        var statName = statConfig[selectedStat][0];
-        var statValPerCard = statConfig[selectedStat][1] * multiplier;
-        var totalGain = selectedQty * statValPerCard;
+        var text = "How many " + (selectedTierIsSpecial ? "Boss" : "Normal") + " cards would you like to redeem? (Max: " + maxAvailable + ")";
 
-        var confirmMsg = "Please Confirm your selection:\r\n\r\n";
-        confirmMsg += "Cards Used: #b" + selectedQty + "#k\r\n";
-        confirmMsg += "Stat Chosen: #b" + statName + "#k\r\n";
-        confirmMsg += "Total Bonus: #r+" + totalGain + " " + statName + "#k\r\n\r\n";
-        confirmMsg += "Are you sure you want to proceed?";
+        // sendGetNumber(String text, int def, int min, int max)
+        console.log("[Debug] Sending GetNumber. Def: " + maxAvailable + " Min: 1 Max: " + maxAvailable);
+        cm.sendGetNumber(text, maxAvailable, 1, maxAvailable);
 
-        cm.sendYesNo(confirmMsg);
+} else if (status == 3) {
+        // --- STEP 4: EXECUTE ---
+
+        quantityToRedeem = selection;
+        console.log("[Debug] Quantity selected: " + quantityToRedeem);
+
+        // Basic validation
+        if (quantityToRedeem <= 0) {
+            cm.dispose();
+            return;
+        }
+
+        var player = cm.getPlayer();
+        var mb = player.getMonsterBook();
+
+        console.log("[Debug] Calling Java redeemBulk...");
+
+        // Execute the Java method
+        var success = mb.redeemBulk(cm.getClient(), selectedStat, selectedTierIsSpecial, quantityToRedeem);
+
+        console.log("[Debug] Java returned success: " + success);
+
+        if (success) {
+            // Send the success message.
+            // IMPORTANT: We do NOT dispose here. We wait for the user to click "OK".
+            cm.sendOk("Success! Redeemed " + quantityToRedeem + " cards. Stats have been updated permanently.");
+        } else {
+            cm.sendOk("Transaction failed. An error occurred in the backend.");
+        }
+        // Do not put cm.dispose() here!
+        // Letting the function end implies "wait for user input".
 
     } else if (status == 4) {
-        java.lang.System.out.println("[NPC DEBUG] Status 4. Executing Redemption Loop...");
-        var successCount = 0;
-
-        try {
-            for (var i = 0; i < selectedQty; i++) {
-                var cardId = selectedTierList[i];
-                java.lang.System.out.println("[NPC DEBUG] Calling Java redeemCard for CardID: " + cardId);
-
-                // IMPORTANT: This call jumps to Java
-                if (book.redeemCard(cm.getClient(), cardId, selectedStat)) {
-                    successCount++;
-                } else {
-                    java.lang.System.out.println("[NPC DEBUG] Java redeemCard returned FALSE for CardID: " + cardId);
-                }
-            }
-        } catch (e) {
-            java.lang.System.out.println("[NPC DEBUG] CRASH inside Redemption Loop: " + e);
-        }
-
-        java.lang.System.out.println("[NPC DEBUG] Loop finished. Success Count: " + successCount);
-        cm.sendOk("Redemption Complete! Successfully redeemed " + successCount + " cards.");
+        // --- STEP 5: CLEANUP ---
+        // The user clicked "OK" on the result message. Now we close properly.
+        console.log("[Debug] User clicked OK on result. Disposing.");
         cm.dispose();
     }
 }

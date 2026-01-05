@@ -124,6 +124,10 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+// [CUSTOM] Ensure you have access to your MonsterBook/Character stat methods here
+import client.Character;
+
+
 /**
  * @author Frz
  */
@@ -395,11 +399,20 @@ public class PacketCreator {
         p.writeLong(getTime(time)); // offset expiration time issue found thanks to Thora
     }
 
+// --------------------------------------------------------------------------------------
+    // [START] MODIFIED ITEM INFO BLOCK FOR MEDAL STATS
+    // --------------------------------------------------------------------------------------
+
     private static void addItemInfo(OutPacket p, Item item) {
-        addItemInfo(p, item, false);
+        addItemInfo(p, item, false, null);
     }
 
     protected static void addItemInfo(final OutPacket p, Item item, boolean zeroPosition) {
+        addItemInfo(p, item, zeroPosition, null);
+    }
+
+    // Updated Method with Character passed for Stat Injection
+    protected static void addItemInfo(final OutPacket p, Item item, boolean zeroPosition, Character chr) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         boolean isCash = ii.isCash(item.getItemId());
         boolean isPet = item.getPetId() > -1;
@@ -407,10 +420,12 @@ public class PacketCreator {
         Equip equip = null;
         short pos = item.getPosition();
         byte itemType = item.getItemType();
+
         if (itemType == 1) {
             equip = (Equip) item;
             isRing = equip.getRingId() > -1;
         }
+
         if (!zeroPosition) {
             if (equip != null) {
                 if (pos < 0) {
@@ -421,13 +436,17 @@ public class PacketCreator {
                 p.writeByte(pos);
             }
         }
+
         p.writeByte(itemType);
         p.writeInt(item.getItemId());
         p.writeBool(isCash);
+
         if (isCash) {
             p.writeLong(isPet ? item.getPetId() : isRing ? equip.getRingId() : item.getCashId());
         }
+
         addExpirationTime(p, item.getExpiration());
+
         if (isPet) {
             Pet pet = item.getPet();
             p.writeFixedString(StringUtil.getRightPaddedStr(pet.getName(), '\0', 13));
@@ -435,16 +454,17 @@ public class PacketCreator {
             p.writeShort(pet.getTameness());
             p.writeByte(pet.getFullness());
             addExpirationTime(p, item.getExpiration());
-            p.writeShort(1); // PetAttribute noticed by lrenex & Spoon // Global pet speed modifier.
-            p.writeShort(0); // PetSkill
-            p.writeInt(18000); // RemainLife
-            p.writeShort(0); // attribute
+            p.writeShort(1);
+            p.writeShort(0);
+            p.writeInt(18000);
+            p.writeShort(0);
             return;
         }
+
         if (equip == null) {
             p.writeShort(item.getQuantity());
             p.writeString(item.getOwner());
-            p.writeShort(item.getFlag()); // flag
+            p.writeShort(item.getFlag());
 
             if (ItemConstants.isRechargeable(item.getItemId())) {
                 p.writeInt(2);
@@ -452,25 +472,59 @@ public class PacketCreator {
             }
             return;
         }
-        p.writeByte(equip.getUpgradeSlots()); // upgrade slots
-        p.writeByte(equip.getLevel()); // level
-        p.writeShort(equip.getStr()); // str
-        p.writeShort(equip.getDex()); // dex
-        p.writeShort(equip.getInt()); // int
-        p.writeShort(equip.getLuk()); // luk
-        p.writeShort(equip.getHp()); // hp
-        p.writeShort(equip.getMp()); // mp
-        p.writeShort(equip.getWatk()); // watk
-        p.writeShort(equip.getMatk()); // matk
-        p.writeShort(equip.getWdef()); // wdef
-        p.writeShort(equip.getMdef()); // mdef
-        p.writeShort(equip.getAcc()); // accuracy
-        p.writeShort(equip.getAvoid()); // avoid
-        p.writeShort(equip.getHands()); // hands
-        p.writeShort(equip.getSpeed()); // speed
-        p.writeShort(equip.getJump()); // jump
-        p.writeString(equip.getOwner()); // owner name
-        p.writeShort(equip.getFlag()); //Item Flags
+
+        p.writeByte(equip.getUpgradeSlots());
+        p.writeByte(equip.getLevel());
+        p.writeShort(equip.getStr());
+        p.writeShort(equip.getDex());
+        p.writeShort(equip.getInt());
+        p.writeShort(equip.getLuk());
+        p.writeShort(equip.getHp());
+        p.writeShort(equip.getMp());
+
+        // ---------------------------------------------------------
+        // [START] MONSTER BOOK STAT INJECTION (ALL STATS + CAP)
+        // ---------------------------------------------------------
+
+        // Check if player object exists AND item is in Medal Slot (-49)
+        if (chr != null && item.getPosition() == -49) {
+            // [DEBUG PRINTOUT - REMOVE LATER]
+//            System.out.println("[PacketCreator] Injecting Stats for Medal: " + item.getItemId());
+//            System.out.println("   > Original Watk: " + equip.getWatk() + " | Passive Watk: " + chr.getPassiveWatk());
+
+            int extraWatk = chr.getPassiveWatk();
+            int extraMatk = chr.getPassiveMatk();
+            int extraWdef = chr.getPassiveWdef();
+            int extraMdef = chr.getPassiveMdef();
+            int extraAcc = chr.getPassiveAcc();
+            int extraAvoid = chr.getPassiveEva();
+
+            // Write boosted stats (Base Equip Stats + Passive Stats)
+            // Capped at Short.MAX_VALUE (32767) to prevent integer overflow
+            p.writeShort(Math.min(equip.getWatk() + extraWatk, Short.MAX_VALUE));
+            p.writeShort(Math.min(equip.getMatk() + extraMatk, Short.MAX_VALUE));
+            p.writeShort(Math.min(equip.getWdef() + extraWdef, Short.MAX_VALUE));
+            p.writeShort(Math.min(equip.getMdef() + extraMdef, Short.MAX_VALUE));
+            p.writeShort(Math.min(equip.getAcc() + extraAcc, Short.MAX_VALUE));
+            p.writeShort(Math.min(equip.getAvoid() + extraAvoid, Short.MAX_VALUE));
+        } else {
+            // Standard behavior (Write normal stats)
+            p.writeShort(equip.getWatk());
+            p.writeShort(equip.getMatk());
+            p.writeShort(equip.getWdef());
+            p.writeShort(equip.getMdef());
+            p.writeShort(equip.getAcc());
+            p.writeShort(equip.getAvoid());
+        }
+        // ---------------------------------------------------------
+        // [END] MONSTER BOOK STAT INJECTION
+        // ---------------------------------------------------------
+
+        p.writeShort(equip.getHands());
+        p.writeShort(equip.getSpeed());
+        p.writeShort(equip.getJump());
+        p.writeString(equip.getOwner());
+        p.writeShort(equip.getFlag());
 
         if (isCash) {
             for (int i = 0; i < 10; i++) {
@@ -478,21 +532,18 @@ public class PacketCreator {
             }
         } else {
             int itemLevel = equip.getItemLevel();
-
             long expNibble = (ExpTable.getExpNeededForLevel(ii.getEquipLevelReq(item.getItemId())) * equip.getItemExp());
             expNibble /= ExpTable.getEquipExpNeededForLevel(itemLevel);
 
             p.writeByte(0);
-            p.writeByte(itemLevel); //Item Level
+            p.writeByte(itemLevel);
             p.writeInt((int) expNibble);
-            p.writeInt(equip.getVicious()); //WTF NEXON ARE YOU SERIOUS?
+            p.writeInt(equip.getVicious());
             p.writeLong(0);
         }
         p.writeLong(getTime(-2));
         p.writeInt(-1);
-
     }
-
     private static void addInventoryInfo(OutPacket p, Character chr) {
         for (byte i = 1; i <= 5; i++) {
             p.writeByte(chr.getInventory(InventoryType.getByType(i)).getSlotLimit());
@@ -502,6 +553,7 @@ public class PacketCreator {
         Collection<Item> equippedC = iv.list();
         List<Item> equipped = new ArrayList<>(equippedC.size());
         List<Item> equippedCash = new ArrayList<>(equippedC.size());
+
         for (Item item : equippedC) {
             if (item.getPosition() <= -100) {
                 equippedCash.add(item);
@@ -509,32 +561,36 @@ public class PacketCreator {
                 equipped.add(item);
             }
         }
-        for (Item item : equipped) {    // equipped doesn't actually need sorting, thanks Pllsz
-            addItemInfo(p, item);
+
+        for (Item item : equipped) {
+            // [MODIFIED] Pass chr to allow stat injection
+            addItemInfo(p, item, false, chr);
         }
         p.writeShort(0); // start of equip cash
         for (Item item : equippedCash) {
-            addItemInfo(p, item);
+            // [MODIFIED] Pass chr to allow stat injection
+            addItemInfo(p, item, false, chr);
         }
         p.writeShort(0); // start of equip inventory
         for (Item item : chr.getInventory(InventoryType.EQUIP).list()) {
-            addItemInfo(p, item);
+            // [MODIFIED] Pass chr to allow stat injection
+            addItemInfo(p, item, false, chr);
         }
         p.writeInt(0);
         for (Item item : chr.getInventory(InventoryType.USE).list()) {
-            addItemInfo(p, item);
+            addItemInfo(p, item, false, chr);
         }
         p.writeByte(0);
         for (Item item : chr.getInventory(InventoryType.SETUP).list()) {
-            addItemInfo(p, item);
+            addItemInfo(p, item, false, chr);
         }
         p.writeByte(0);
         for (Item item : chr.getInventory(InventoryType.ETC).list()) {
-            addItemInfo(p, item);
+            addItemInfo(p, item, false, chr);
         }
         p.writeByte(0);
         for (Item item : chr.getInventory(InventoryType.CASH).list()) {
-            addItemInfo(p, item);
+            addItemInfo(p, item, false, chr);
         }
     }
 
@@ -2471,11 +2527,19 @@ public class PacketCreator {
         return p;
     }
 
-    public static Packet modifyInventory(boolean updateTick, final List<ModifyInventory> mods) {
+    // [MODIFIED] Added Character chr argument
+    public static Packet modifyInventory(boolean updateTick, final List<ModifyInventory> mods, Character chr) {
         OutPacket p = OutPacket.create(SendOpcode.INVENTORY_OPERATION);
         p.writeBool(updateTick);
         p.writeByte(mods.size());
-        //p.writeByte(0); v104 :)
+
+        // [DEBUG]
+        if (chr != null) {
+            // System.out.println("[PacketCreator] modifyInventory called for: " + chr.getName());
+        } else {
+            System.out.println("[PacketCreator] modifyInventory called with NULL character!");
+        }
+
         int addMovement = -1;
         for (ModifyInventory mod : mods) {
             p.writeByte(mod.getMode());
@@ -2483,7 +2547,8 @@ public class PacketCreator {
             p.writeShort(mod.getMode() == 2 ? mod.getOldPosition() : mod.getPosition());
             switch (mod.getMode()) {
                 case 0: {//add item
-                    addItemInfo(p, mod.getItem(), true);
+                    // [MODIFIED] Pass chr
+                    addItemInfo(p, mod.getItem(), true, chr);
                     break;
                 }
                 case 1: {//update quantity
@@ -3563,7 +3628,8 @@ public class PacketCreator {
     }
 
     public static Packet getInventoryFull() {
-        return modifyInventory(true, Collections.emptyList());
+        // [FIXED] Added 'null' as the third argument because no stats need to be calculated for an empty update.
+        return modifyInventory(true, Collections.emptyList(), null);
     }
 
     public static Packet getShowInventoryFull() {

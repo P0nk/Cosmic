@@ -1013,7 +1013,8 @@ public class AbstractPlayerInteraction {
         final Item newItem = ItemInformationProvider.getInstance().getEquipById(itemid);
         newItem.setPosition(slot);
         c.getPlayer().getInventory(InventoryType.EQUIPPED).addItemFromDB(newItem);
-        c.sendPacket(PacketCreator.modifyInventory(false, Collections.singletonList(new ModifyInventory(0, newItem))));
+// [FIXED] Added 'c.getPlayer()' as the third argument
+        c.sendPacket(PacketCreator.modifyInventory(false, Collections.singletonList(new ModifyInventory(0, newItem)), c.getPlayer()));
     }
 
     public void spawnNpc(int npcId, Point pos, MapleMap map) {

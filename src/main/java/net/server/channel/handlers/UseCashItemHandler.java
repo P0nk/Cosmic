@@ -617,7 +617,8 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                 final List<ModifyInventory> mods = new ArrayList<>();
                 mods.add(new ModifyInventory(3, scrolled));
                 mods.add(new ModifyInventory(0, scrolled));
-                client.sendPacket(PacketCreator.modifyInventory(true, mods));
+                // [FIXED] Added 'client.getPlayer()' as the 3rd argument
+                client.sendPacket(PacketCreator.modifyInventory(true, mods, client.getPlayer()));
 
                 ScrollResult scrollResult = scrolled.getLevel() > curlevel ? ScrollResult.SUCCESS : ScrollResult.FAIL;
                 player.getMap().broadcastMessage(PacketCreator.getScrollEffect(player.getId(), scrollResult, false, false));
