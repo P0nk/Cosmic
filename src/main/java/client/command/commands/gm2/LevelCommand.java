@@ -20,6 +20,7 @@
 
 /*
    @Author: Arthur L - Refactored command content into modules
+   @Modified: To support target player selection (Safety: Level First)
 */
 package client.command.commands.gm2;
 
@@ -30,26 +31,60 @@ import config.YamlConfig;
 
 public class LevelCommand extends Command {
     {
-        setDescription("Set your level.");
+        setDescription("Set a level. Usage: !level <level> [ign]");
     }
 
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
+        Character target = player; // Default target is self
+        int targetLevel = 0;
+
         if (params.length < 1) {
-            player.yellowMessage("Syntax: !level <newlevel>");
+            player.yellowMessage("Syntax: !level <level> [ign]");
             return;
         }
 
-        player.loseExp(player.getExp(), false, false);
-        player.setLevel(Math.min(Integer.parseInt(params[0]), player.getMaxClassLevel()) - 1);
-
-        player.resetPlayerRates();
-        if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
-            player.setPlayerRates();
+        // Step 1: Parse the Level (First Parameter)
+        try {
+            targetLevel = Integer.parseInt(params[0]);
+        } catch (NumberFormatException e) {
+            player.yellowMessage("Invalid Level. Please enter a number first. Syntax: !level <level> [ign]");
+            return;
         }
-        player.setWorldRates();
 
-        player.levelUp(false);
+        // Step 2: Check for optional target name (Second Parameter)
+        if (params.length > 1) {
+            String targetName = params[1];
+            target = c.getChannelServer().getPlayerStorage().getCharacterByName(targetName);
+
+            if (target == null) {
+                player.yellowMessage("Player '" + targetName + "' could not be found in this channel.");
+                return;
+            }
+        }
+
+        // Step 3: Execute Leveling Logic on Target
+        // We strip the EXP first so they start fresh at the new level
+        target.loseExp(target.getExp(), false, false);
+
+        // Set level to (Target - 1) because levelUp() is called immediately after to refresh stats
+        target.setLevel(Math.min(targetLevel, target.getMaxClassLevel()) - 1);
+
+        target.resetPlayerRates();
+        if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
+            target.setPlayerRates();
+        }
+        target.setWorldRates();
+
+        // This triggers the level up effect and recalculates stats
+        target.levelUp(false);
+
+        // Confirmation
+        if (player != target) {
+            player.yellowMessage("Set " + target.getName() + "'s level to " + target.getLevel());
+        } else {
+            player.yellowMessage("Set your level to " + target.getLevel());
+        }
     }
 }
