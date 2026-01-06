@@ -2527,24 +2527,34 @@ public class PacketCreator {
         return p;
     }
 
-    // [MODIFIED] Added Character chr argument
     public static Packet modifyInventory(boolean updateTick, final List<ModifyInventory> mods, Character chr) {
         OutPacket p = OutPacket.create(SendOpcode.INVENTORY_OPERATION);
         p.writeBool(updateTick);
         p.writeByte(mods.size());
 
-        // [DEBUG]
-        if (chr != null) {
-            // System.out.println("[PacketCreator] modifyInventory called for: " + chr.getName());
-        } else {
-//            System.out.println("[PacketCreator] modifyInventory called with NULL character!");
-        }
-
         int addMovement = -1;
         for (ModifyInventory mod : mods) {
+            // [ALERT SYSTEM]
+            // Only print if there is a logic failure that affects your new features.
+            if (mod.getItem() != null) {
+                int itemId = mod.getItem().getItemId();
+
+                // Check if item is a Medal (114xxxx)
+                boolean isMedal = (itemId >= 1140000 && itemId < 1150000);
+
+                if (chr == null && isMedal) {
+                    // This is a "Long Term Alert" - If this prints, your stat spoofing failed.
+                    System.out.println("[CRITICAL ALERT] ModifyInventory: Medal Update (ID: " + itemId + ") called with NULL Character! Stats will NOT apply.");
+                } else if (chr != null && isMedal) {
+                    // Optional: Confirm success for Medals only (useful for debugging)
+                    // System.out.println("[DEBUG] Updating Medal: " + itemId + " for player: " + chr.getName());
+                }
+            }
+
             p.writeByte(mod.getMode());
             p.writeByte(mod.getInventoryType());
             p.writeShort(mod.getMode() == 2 ? mod.getOldPosition() : mod.getPosition());
+
             switch (mod.getMode()) {
                 case 0: {//add item
                     // [MODIFIED] Pass chr
