@@ -2537,7 +2537,7 @@ public class PacketCreator {
         if (chr != null) {
             // System.out.println("[PacketCreator] modifyInventory called for: " + chr.getName());
         } else {
-            System.out.println("[PacketCreator] modifyInventory called with NULL character!");
+//            System.out.println("[PacketCreator] modifyInventory called with NULL character!");
         }
 
         int addMovement = -1;
