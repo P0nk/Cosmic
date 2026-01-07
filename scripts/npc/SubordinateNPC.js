@@ -1,8 +1,8 @@
 /*
- * Subordinate 4.0 — Pity Fixed (Hard Override)
- * - Strict Override for Lv 1 Salvage: Always returns 1 Diamond + 1.5m Mesos.
- * - Auto-Roll enabled for Regular & Premium.
- * - Pricing logic finalized.
+ * Subordinate 4.1 — Salvage Logic Fixed
+ * - Salvage Filter: Hides Clean items (RB0/Lv1).
+ * - Pity System: Triggers ONLY at RB0/Lv2 (1 upgrade done).
+ * - Pity Refund: Returns 1 Diamond + 1.5m Mesos.
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
@@ -173,7 +173,9 @@ function showItemList() {
         const name = ItemInformationProvider.getInstance().getName(itemId);
 
         if (ctx.mode === "SALVAGE") {
-            if (item.getItemLevel() === 0 && item.getHands() === 0) continue;
+            // FILTER: Hide Clean Items (RB0 and Level 1)
+            // Only allow if Hand > 0 OR Level > 1
+            if (item.getHands() === 0 && item.getItemLevel() <= 1) continue;
         } else if (ctx.mode === "REG" || ctx.mode === "PREM") {
             if (item.getHands() >= 6 && item.getItemLevel() === 5) continue;
         }
@@ -565,9 +567,8 @@ function salvageSelection(slot) {
     const lvl = item.getItemLevel();
     const hands = item.getHands();
 
-    // --- SPECIAL PITY CHECK FOR LV 1 / RB 0 ---
-    if (hands === 0 && lvl === 1) {
-        // Hard-coded refund for single upgrade
+    // --- SPECIAL PITY CHECK FOR LV 2 / RB 0 ---
+    if (hands === 0 && lvl === 2) {
         const pityMeso = Math.floor(5000000 * REFUND_RATE); // 1.5m
         let msg = "Salvaging this item will return:\r\n";
         msg += "#b" + format(pityMeso) + "#k in Mesos.\r\n";
@@ -610,7 +611,7 @@ function handleSalvageConfirm() {
     const lvl = item.getItemLevel();
     const hands = item.getHands();
 
-    // --- SPECIAL PITY ACTION FOR LV 1 / RB 0 ---
+    // --- SPECIAL PITY ACTION FOR LV 2 / RB 0 ---
     if (hands === 0 && lvl === 2) {
         // Refund 30% of 5m = 1.5m
         cm.gainMeso(1500000);
@@ -652,7 +653,9 @@ function getTotals(uptoLevel, hands) {
     }
 
     let matIdCurrent = matValues[hands];
-    for (let l = 1; l <= uptoLevel; l++) {
+    // Loop FIXED to strictly less than for standard cases to accumulate past levels
+    // But Pity handles the Lv 2 case explicitly now.
+    for (let l = 1; l < uptoLevel; l++) {
         totalFee += (FEES[l-1] || 0);
         if (matIdCurrent) {
             totalMats[matIdCurrent] = (totalMats[matIdCurrent] || 0) + (AMOUNTS[l-1] || 0);
