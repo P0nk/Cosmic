@@ -25,7 +25,7 @@ public class WorldChatCommand extends Command {
         Character player = c.getPlayer();
         int characterId = player.getId();
 
-        // 1) Ban check
+        // 1) Ban check (Kept exactly the same)
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT banned, period, `on` FROM worldchatban WHERE characterid = ? AND banned = TRUE")) {
@@ -51,8 +51,8 @@ public class WorldChatCommand extends Command {
             return;
         }
 
-        // 2) Broadcast in-game
-        String message = player.getLastCommandMessage();
+        // 2) Broadcast in-game (Kept same)
+        String message = player.getLastCommandMessage(); // Assuming you have logic to set this from the command args
         String inGameText = "[" + player.getName() + "]: " + message;
 
         Server.getInstance().broadcastMessage(
@@ -60,39 +60,26 @@ public class WorldChatCommand extends Command {
                 PacketCreator.serverNotice(6, inGameText)
         );
 
-        // 3) Send to Discord (Rich Embed)
-        // We use the specific World Chat webhook for player chatter
+        // 3) Send to Discord (Reverted to Old Method)
         String webhook = EnvLoader.get("DISCORD_WORLDCHAT_WEBHOOK");
 
         if (webhook != null && !webhook.isEmpty()) {
-            // A. Sanitize Logic (Length & Discord Abuse)
-            String logicSafeMessage = sanitizeForLogic(message);
+            // A. Sanitize Logic
+            String safeMessage = sanitizeForLogic(message);
 
-            // B. Sanitize Syntax (JSON Special Chars like quotes and slashes)
-            // We use the helper we added to DiscordWebhook.java previously
-            String jsonSafeMessage = DiscordWebhook.escape(logicSafeMessage);
-            String jsonSafeName = DiscordWebhook.escape(player.getName());
+            // B. Format the "Old Style" String
+            // This will look like: **[World] PlayerName:** Hello World
+            String discordContent = "**[World] " + player.getName() + ":** " + safeMessage;
 
-            // C. Construct the JSON Payload for the Embed
-            String jsonPayload = "{"
-                    + "\"username\": \"World Chat\","
-                    + "\"embeds\": [{"
-                    +    "\"author\": { \"name\": \"" + jsonSafeName + "\" },"
-                    +    "\"description\": \"" + jsonSafeMessage + "\","
-                    +    "\"color\": 3447003," // Blue Color (0x3498DB)
-                    +    "\"footer\": { \"text\": \"World " + c.getWorld() + "\" }"
-                    + "}]"
-                    + "}";
-
-            DiscordWebhook.sendEmbedAsync(webhook, jsonPayload);
+            // C. Send using the fixed sendAsync (which now wraps this string in JSON for you)
+            DiscordWebhook.sendAsync(webhook, discordContent);
         }
     }
 
-    // Handles game-logic cleaning (truncating length, removing @everyone)
     private static String sanitizeForLogic(String s) {
         if (s == null) return "";
-        s = s.replace("@", "@\u200B"); // Zero-width space to prevent pings
-        if (s.length() > 1000) s = s.substring(0, 1000) + "..."; // Discord limit is usually 2000, 1000 is safe for embed desc
+        s = s.replace("@", "@\u200B"); // Prevent @everyone / @here pings
+        if (s.length() > 1000) s = s.substring(0, 1000) + "...";
         return s;
     }
 }

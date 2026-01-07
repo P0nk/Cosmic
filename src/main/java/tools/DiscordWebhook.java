@@ -6,7 +6,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.List;
 
 public final class DiscordWebhook {
 
@@ -25,7 +24,9 @@ public final class DiscordWebhook {
 
         EXECUTOR.submit(() -> {
             try {
-                post(webhookUrl, content, true);
+                // [FIX] Changed 'true' to 'false' here.
+                // This tells 'post' to wrap the plain text in JSON {"content": "..."}
+                post(webhookUrl, content, false);
             } catch (Exception e) {
                 System.err.println("[DiscordWebhook] Failed: " + e.getMessage());
             }
@@ -33,15 +34,14 @@ public final class DiscordWebhook {
     }
 
     /**
-     * Sends a rich Embed message.
-     * @param webhookUrl The Discord Webhook URL.
-     * @param payloadJson The raw JSON string (constructed by our Builder).
+     * Sends a rich Embed message (Requires raw JSON).
      */
     public static void sendEmbedAsync(String webhookUrl, String payloadJson) {
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
         EXECUTOR.submit(() -> {
             try {
+                // Embeds are already JSON, so we pass 'true'
                 post(webhookUrl, payloadJson, true);
             } catch (Exception e) {
                 System.err.println("[DiscordWebhook] Failed to send embed: " + e.getMessage());
@@ -57,7 +57,8 @@ public final class DiscordWebhook {
         con.setDoOutput(true);
         con.setRequestProperty("Content-Type", "application/json");
 
-        // If it's raw JSON, send as is. If it's plain text, wrap it (legacy support).
+        // If it's raw JSON (Embeds), send as is.
+        // If it's plain text (Old Method), wrap it in "content".
         String payload = isJsonRaw ? data : "{\"content\":\"" + escape(data) + "\"}";
 
         try (OutputStream os = con.getOutputStream()) {
@@ -68,7 +69,6 @@ public final class DiscordWebhook {
         con.disconnect();
     }
 
-    // Helper to escape special characters for JSON strings
     public static String escape(String text) {
         return text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
