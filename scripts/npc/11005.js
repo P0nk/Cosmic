@@ -250,11 +250,11 @@ function action(mode, type, selection) {
       }
 
       // Blacklist check (Safety check)
-      if (isBlacklistedScroll(itemId)) {
-          cm.sendOk("This item is not eligible for conversion.");
-          cm.dispose();
-          return;
-      }
+//      if (isBlacklistedScroll(itemId)) {
+//          cm.sendOk("This item is not eligible for conversion.");
+//          cm.dispose();
+//          return;
+//      }
 
       cm.sendGetText("How many #i" + itemId + "# #b" + name + "#k do you want to convert?\r\nYou have: #b" + itemQty + "#k");
   }
