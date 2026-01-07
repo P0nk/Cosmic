@@ -611,7 +611,7 @@ function handleSalvageConfirm() {
     const hands = item.getHands();
 
     // --- SPECIAL PITY ACTION FOR LV 1 / RB 0 ---
-    if (hands === 0 && lvl === 1) {
+    if (hands === 0 && lvl === 2) {
         // Refund 30% of 5m = 1.5m
         cm.gainMeso(1500000);
         // Force refund 1 Diamond
