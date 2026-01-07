@@ -8497,7 +8497,7 @@ public class Character extends AbstractCharacterObject {
             con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
 
             try {
-                log.info("[Save-DEBUG] Starting save for character: {}", name);
+//                log.info("[Save-DEBUG] Starting save for character: {}", name);
 
                 // 1. Core Data
                 saveCharacterCoreData(con);
@@ -8535,7 +8535,7 @@ public class Character extends AbstractCharacterObject {
                 saveStorage(con);
 
                 con.commit();
-                log.info("[Save-DEBUG] TOTAL save time for {}: {}ms", name, (System.currentTimeMillis() - globalStart));
+                log.info("[Save-DEBUG] Character Saved: {}. Time: {}ms", name, (System.currentTimeMillis() - globalStart));
 
             } catch (Exception e) {
                 con.rollback();
