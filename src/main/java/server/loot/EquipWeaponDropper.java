@@ -538,7 +538,7 @@ public final class EquipWeaponDropper {
 // THIEF band 10
         TABLES.get(JobGroup.THIEF).put(10, new int[] {
                 1302001,
-                1332063, 1332102, 1332237,
+                1332063, 1332102,
                 1472102
         });
 
