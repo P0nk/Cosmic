@@ -9,7 +9,7 @@ import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.manipulator.InventoryManipulator;
 import server.ItemInformationProvider;
-import server.commerce.ItemBuybackManager;
+import server.ItemBuybackManager;
 import tools.Pair;
 import scripting.npc.NPCScriptManager;
 import constants.id.NpcId;

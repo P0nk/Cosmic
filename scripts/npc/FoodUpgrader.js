@@ -1,9 +1,11 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v7 - Full T10 Support)
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v6 - Inverted Menu)
  *
  * Updates:
- * - Enabled T7, T8, T9, T10 in the selection menu.
- * - Confirmed Stat Deltas for high tiers.
- * - Maintained Cash Item exclusions.
+ * - Menu order inverted (Highest Tier First).
+ * - Symbol fixes (ASCII only).
+ * - Cash Item exclusion implemented.
+ * - MAX_ENHANCE exploit checks reinforced.
+ * - Stat Delta values updated.
  */
 
 var status = 0;
@@ -21,17 +23,14 @@ var FOOD_T3 = [4036178, 4036179, 4036180, 4036181, 4036182, 4036183];
 var FOOD_T4 = [4036184, 4036185, 4036186, 4036187, 4036188, 4036189];
 var FOOD_T5 = [4036190, 4036191, 4036192, 4036193, 4036194, 4036195, 4036196, 4036197, 4036198, 4036199, 4036200];
 var FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 4036208, 4036209, 4036210];
-var FOOD_T7 = [4036211, 4036212, 4036213, 4036214, 4036215, 4036216, 4036217, 4036218, 4036219, 4036220, 4036221, 4036222, 4036223, 4036224, 4036225];
-var FOOD_T8 = [4036226, 4036227, 4036228, 4036229, 4036230, 4036231, 4036232, 4036233, 4036234, 4036235, 4036236, 4036237, 4036238, 4036239, 4036240];
-var FOOD_T9 = [4036241, 4036242, 4036243, 4036244, 4036245, 4036246, 4036247, 4036248, 4036249, 4036250, 4036251, 4036252, 4036253, 4036254, 4036255, 4036256, 4036257, 4036258, 4036259, 4036260, 4036261, 4036262, 4036263, 4036264, 4036265, 4036266];
-var FOOD_T10 = [4036289, 4036290, 4036291, 4036292, 4036293, 4036294, 4036295, 4036296, 4036297, 4036298, 4036299, 4036300, 4036301, 4036302, 4036303, 4036304, 4036305, 4036306, 4036307];
+var FOOD_T7 = [];
 
 var FOOD_PER_UPGRADE = 1;
-var NX_COST_STEP = 10000; // T1=10k ... T10=100k
+var NX_COST_STEP = 10000; // T1=10k, T2=20k, ...
 var MAX_ENHANCE = 3;
 
-var BASE_FAIL_RATE = 0;      // T1 fail
-var FAIL_STEP_PER_TIER = 10;  // +10% fail each tier (T10 = 90% fail)
+var BASE_FAIL_RATE = 10;      // T1 fail
+var FAIL_STEP_PER_TIER = 13;  // +13% fail each tier
 
 var ItemConstants = Packages.constants.inventory.ItemConstants;
 var CashShop = Packages.server.CashShop;
@@ -70,18 +69,7 @@ function tierDelta(tier, isWeapon) {
             return isWeapon ? {str:5, dex:5, int:5, luk:5, watk:6, matk:6}
                             : {str:11, dex:11, int:11, luk:11, watk:0, matk:0};
         case 'T7':
-            return isWeapon ? {str:6, dex:6, int:6, luk:6, watk:8, matk:8}
-                            : {str:13, dex:13, int:13, luk:13, watk:0, matk:0};
-        case 'T8':
-            return isWeapon ? {str:7, dex:7, int:7, luk:7, watk:10, matk:10}
-                            : {str:15, dex:15, int:15, luk:15, watk:0, matk:0};
-        case 'T9':
-            return isWeapon ? {str:8, dex:8, int:8, luk:8, watk:12, matk:12}
-                            : {str:17, dex:17, int:17, luk:17, watk:0, matk:0};
-        case 'T10':
-            return isWeapon ? {str:10, dex:10, int:10, luk:10, watk:16, matk:16}
-                            : {str:20, dex:20, int:20, luk:20, watk:0, matk:0};
-
+            return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
     }
     return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
 }
@@ -114,9 +102,6 @@ function foodPoolForTier(tier) {
         case 'T5': return FOOD_T5;
         case 'T6': return FOOD_T6;
         case 'T7': return FOOD_T7;
-        case 'T8': return FOOD_T8;
-        case 'T9': return FOOD_T9;
-        case 'T10': return FOOD_T10;
     }
     return [];
 }
@@ -163,7 +148,8 @@ function isCashItem(itemId) {
     if (itemId >= 5000000) return true; // Cash items / pets
     if (itemId >= 1700000 && itemId < 1800000) return true; // Cash weapons
 
-    // 2. Check ItemInformationProvider for isCash property
+    // 2. Check ItemInformationProvider for isCash property if available
+    // (Adjust this line if your source uses a different method name)
     try {
         if (Packages.server.ItemInformationProvider.getInstance().isCash(itemId)) return true;
     } catch(e) {
@@ -226,9 +212,6 @@ function tierIndex(tier) {
     if (tier === "T5") return 5;
     if (tier === "T6") return 6;
     if (tier === "T7") return 7;
-    if (tier === "T8") return 8;
-    if (tier === "T9") return 9;
-    if (tier === "T10") return 10;
     return 1;
 }
 
@@ -371,8 +354,8 @@ function action(mode, type, selection) {
             return;
         }
 
-        // --- UPDATED: Full tier list T10 down to T1 ---
-        var tiers = ["T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+        // --- CHANGED: Reversed array for display (Highest Tier First) ---
+        var tiers = ["T6","T5","T4","T3","T2","T1"];
 
         var menu = "Choose which Food Tier to use (any tier works on any equip):\r\n\r\n";
         for (var i = 0; i < tiers.length; i++) {
@@ -394,8 +377,8 @@ function action(mode, type, selection) {
 
     // status 3: tier chosen -> preview + confirm
     if (status === 3) {
-        // --- UPDATED: Full tier list to match previous menu index ---
-        var tiers2 = ["T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+        // --- CHANGED: Reversed array here too so selection index matches ---
+        var tiers2 = ["T6","T5","T4","T3","T2","T1"];
 
         chosenTier = tiers2[selection];
         if (!chosenTier) {
