@@ -1,320 +1,425 @@
-// Otto the Scroller – Equipment Enhancer NPC (NPC ID: 11001)
-
-const invTypeEquip = 1;
-const invTypeUse = 2;
-const invTypeCash = 5;
-const viciousHammerId = 5570000;
-const viciousHammerCost = 10000;
-const whiteScrollId = 2340000;
+/*
+ * Otto the Scroller (Redux)
+ * Persona: The Sage Blacksmith
+ * Optimized for readability, efficiency, and atmosphere.
+ */
 
 var status = 0;
-var hammering = false;
-var scrolling = false;
+var ii = Packages.server.ItemInformationProvider.getInstance();
 
-// Scroll-related globals
-var equipInvSlot = null;
-var equipSelected = null;
-var equipName = null;
-var scrollInvSlot = null;
-var scrollSelected = null;
-var scrollId = null;
-var requiredWhiteScrollCount = null;
+// ================= CONSTANTS =================
+var INV_EQUIP = 1;
+var INV_USE = 2;
+var INV_CASH = 5;
 
-// Hammer-related globals
-var requiredHammerCount = 0;
-var actualHammerCount = 0;
+var ID_HAMMER = 5570000;
+var ID_WHITE_SCROLL = 2340000;
+var COST_HAMMER = 10000;
 
+// ================= STATE VARS =================
+var selectedMode = -1; // 0: Scroll, 1: Hammer, 2: Buy
+var targetSlot = -1;
+var scrollSlot = -1;
+
+// ================= ENTRY POINT =================
 function start() {
     status = 0;
-    cm.sendNext("Hello! I'm Otto the Scroller.");
+    selectedMode = -1;
+    targetSlot = -1;
+    scrollSlot = -1;
+    cm.sendNext("Greetings, traveler. I am Otto. The spirits of the anvil whisper to me...");
 }
 
 function action(mode, type, selection) {
-    if (mode !== 1) return cm.dispose();
+    if (mode !== 1) {
+        cm.dispose();
+        return;
+    }
     status++;
 
     try {
-        switch (status) {
-            case 1:
-                cm.sendSimple("What would you like to do?\r\n" +
-                     "#b#L0#Auto-scroll an equip using scrolls#l\r\n" +
-                    "#b#L1#Hammer all your equips (using Vicious Hammers)#l\r\n" +
-                    "#L2#Purchase Vicious Hammers (10,000 NX each)#l");
-                break;
-            case 2:
-                switch (selection) {
-                    case 0: return showScrollableEquips();
-                    case 1: return showHammerableEquips();
-                    case 2:
-                        cm.sendGetText("How many Vicious Hammers would you like to buy?", "1");
-                        status = 10;
-                        break;
-                }
-                break;
-            case 3:
-                if (hammering) return confirmHammerCount();
-                return showApplicableScrolls(selection);
-            case 4:
-                if (hammering) return hammerTime();
-                return confirmScrollStart(selection);
-            case 5:
-                if (hammering) return cm.dispose();
-                return scrollItemOrStop(mode);
-            case 11:
-                return handleHammerPurchase();
+        if (status === 1) {
+            cm.sendSimple("The potential within your equipment is vast, yet dormant. How shall we shape destiny today?\r\n" +
+                "#b#L0#Awaken equipment (Auto-Scroll)#l\r\n" +
+                "#b#L1#Expand capacity (Vicious Hammer)#l\r\n" +
+                "#L2#Acquire ancient tools (Buy Hammers - 10k NX)#l");
         }
+        else if (status === 2) {
+            selectedMode = selection;
+            if (selectedMode === 0) return listScrollableEquips();
+            if (selectedMode === 1) return listHammerableEquips();
+            if (selectedMode === 2) {
+                cm.sendGetText("A wise investment. How many Hammers do you require?", "1");
+                status = 9; // Jump to purchase logic
+            }
+        }
+        else if (status === 3) {
+            if (selectedMode === 0) return listApplicableScrolls(selection);
+            if (selectedMode === 1) return confirmHammering();
+        }
+        else if (status === 4) {
+            if (selectedMode === 0) return confirmScroll(selection);
+            if (selectedMode === 1) return executeHammer();
+        }
+        else if (status === 5) {
+            if (selectedMode === 0) return executeScroll();
+        }
+
+        // Purchase Branch
+        else if (status === 10) {
+            return executePurchase();
+        }
+
     } catch (err) {
-        cm.sendOk("Something broke: " + err);
-        return cm.dispose();
+        cm.sendOk("The magic has been disrupted. (Error: " + err + ")");
+        cm.dispose();
     }
 }
 
-// === Hammer Flow ===
+// ==========================================================
+//                     LOGIC: HAMMERING
+// ==========================================================
 
-function showHammerableEquips() {
-    hammering = true;
-    var inv = cm.getInventory(invTypeEquip);
+function listHammerableEquips() {
+    var inv = cm.getInventory(INV_EQUIP);
+    var iter = inv.iterator();
     var lines = [];
-    requiredHammerCount = 0;
+    var totalNeeded = 0;
 
-    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
+    while (iter.hasNext()) {
+        var item = iter.next();
+        if (isCash(item.getItemId())) continue;
 
-        var item = inv.getItem(slot);
-        if (!item) continue;
-        var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
-        if (!item || !(item instanceof Packages.client.inventory.Equip)) continue;
-        if (inv.getEquipStat(slot, "cash") === 1) continue;
-        if (item.getVicious() >= 2) continue;
-
-        var needed = 2 - item.getVicious();
-        requiredHammerCount += needed;
-        lines.push(`#v${item.getItemId()}# ${name} - Needs ${needed} hammer(s)`);
-    }
-
-    if (!lines.length) {
-        cm.sendOk("You have no items that can be hammered.");
-        return cm.dispose();
-    }
-
-    cm.sendYesNo("Would you like to hammer these items?\r\n" + lines.join("\r\n"));
-}
-
-function confirmHammerCount() {
-    var inv = cm.getInventory(invTypeCash);
-    actualHammerCount = 0;
-
-    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
-        var item = inv.getItem(slot);
-        if (item && item.getItemId() === viciousHammerId) {
-            actualHammerCount += item.getQuantity();
+        // Check if item can be hammered (max 2)
+        var currentHammers = item.getVicious();
+        if (currentHammers < 2) {
+            var needed = 2 - currentHammers;
+            totalNeeded += needed;
+            var name = ii.getName(item.getItemId());
+            lines.push("#v" + item.getItemId() + "# #b" + name + "#k (Needs: " + needed + ")");
         }
     }
 
-    if (requiredHammerCount > actualHammerCount) {
-        cm.sendOk("You need " + requiredHammerCount + " Vicious Hammers but only have " + actualHammerCount + ".");
-        return cm.dispose();
+    if (lines.length === 0) {
+        cm.sendOk("You possess no artifacts that require the Vicious Hammer's touch.");
+        cm.dispose();
+        return;
     }
 
-    cm.sendYesNo("You have enough Vicious Hammers. Proceed?");
+    cm.sendYesNo("These items can be expanded. Doing so requires #b" + totalNeeded + " Vicious Hammers#k in total.\r\n\r\n" + lines.join("\r\n"));
 }
 
-function hammerTime() {
-    var inv = cm.getInventory(invTypeEquip);
+function confirmHammering() {
+    var inv = cm.getInventory(INV_EQUIP);
+    var cashInv = cm.getInventory(INV_CASH);
 
-    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
-        var item = inv.getItem(slot);
-        if (!item) continue;
-        if (!item || !(item instanceof Packages.client.inventory.Equip)) continue;
-        if (inv.getEquipStat(slot, "cash") === 1) continue;
-
-        var needed = 2 - item.getVicious();
-        for (var i = 0; i < needed; i++) {
-            item.setVicious(item.getVicious() + 1);
-            item.setUpgradeSlots(item.getUpgradeSlots() + 1);
+    // Calculate Needs
+    var needed = 0;
+    var iter = inv.iterator();
+    while (iter.hasNext()) {
+        var item = iter.next();
+        if (!isCash(item.getItemId()) && item.getVicious() < 2) {
+            needed += (2 - item.getVicious());
         }
-        cm.getPlayer().forceUpdateItem(item);
     }
 
-    cm.removeAmount(viciousHammerId, requiredHammerCount);
-    cm.sendOk("All eligible equips have been hammered.");
+    // Calculate Haves
+    var have = 0;
+    var cashIter = cashInv.iterator();
+    while (cashIter.hasNext()) {
+        var cItem = cashIter.next();
+        if (cItem.getItemId() === ID_HAMMER) {
+            have += cItem.getQuantity();
+        }
+    }
+
+    if (have < needed) {
+        cm.sendOk("The ritual requires #b" + needed + "#k Hammers, but you only possess #r" + have + "#k. Return when you are prepared.");
+        cm.dispose();
+        return;
+    }
+
+    cm.sendYesNo("The stars align. You have sufficient Hammers. Shall we proceed with the expansion?");
+}
+
+function executeHammer() {
+    var inv = cm.getInventory(INV_EQUIP);
+    var hammersConsumed = 0;
+    var iter = inv.iterator();
+
+    // We iterate slightly differently here to allow modification
+    // Use a standard for-loop on slots to be safe during modification
+    for (var i = 1; i <= inv.getSlotLimit(); i++) {
+        var item = inv.getItem(i);
+        if (item == null || isCash(item.getItemId())) continue;
+
+        var vic = item.getVicious();
+        if (vic < 2) {
+            var apply = 2 - vic;
+            item.setVicious(2);
+            item.setUpgradeSlots(item.getUpgradeSlots() + apply);
+            hammersConsumed += apply;
+            cm.getPlayer().forceUpdateItem(item);
+        }
+    }
+
+    if (hammersConsumed > 0) {
+        cm.gainItem(ID_HAMMER, -hammersConsumed);
+        cm.sendOk("It is done. Your equipment now breathes deeper, ready for more enchantments.");
+    } else {
+        cm.sendOk("No changes were made.");
+    }
     cm.dispose();
 }
 
-// === Purchase Flow ===
+// ==========================================================
+//                     LOGIC: SCROLLING
+// ==========================================================
 
-function handleHammerPurchase() {
-    var count = parseInt(cm.getText());
-    if (isNaN(count) || count <= 0) {
-        cm.sendOk("Please enter a valid number.");
-        return cm.dispose();
-    }
-
-    var totalCost = viciousHammerCost * count;
-    if (cm.getCashShop().getCash(1) < totalCost) {
-        cm.sendOk("You do not have enough NX. Required: " + totalCost);
-        return cm.dispose();
-    }
-
-    cm.gainItem(viciousHammerId, count);
-    cm.gainCash(-totalCost);
-    cm.sendCashNoti("You purchased " + count + " Vicious Hammer(s) for " + totalCost + " NX.");
-    cm.dispose();
-}
-
-// === Scroll Flow ===
-
-function showScrollableEquips() {
-    scrolling = true;
-    var inv = cm.getInventory(invTypeEquip);
+function listScrollableEquips() {
+    var inv = cm.getInventory(INV_EQUIP);
     var lines = [];
 
-    for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
-        var item = inv.getItem(slot);
-        if (!item) continue;
-        var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
-        if (inv.getUpgradeSlots(slot) > 0) {
-            lines.push(`#L${slot}##v${item.getItemId()}# ${name}#l`);
+    for (var i = 1; i <= inv.getSlotLimit(); i++) {
+        var item = inv.getItem(i);
+        if (item == null || isCash(item.getItemId())) continue;
+
+        // Must have slots to scroll
+        if (item.getUpgradeSlots() > 0) {
+            var name = ii.getName(item.getItemId());
+            lines.push("#L" + i + "##v" + item.getItemId() + "# #b" + name + "#k (" + item.getUpgradeSlots() + " slots)#l");
         }
     }
 
-    if (!lines.length) {
-        cm.sendOk("No scrollable equips found.");
-        return cm.dispose();
+    if (lines.length === 0) {
+        cm.sendOk("I see no equipment here that craves enchantment (0 slots available).");
+        cm.dispose();
+        return;
     }
 
-    cm.sendSimple("Select the equip to scroll:\r\n" + lines.join("\r\n"));
+    cm.sendSimple("Which artifact shall we imbue with power?\r\n" + lines.join("\r\n"));
 }
 
-function showApplicableScrolls(equipSlot) {
-    equipInvSlot = equipSlot;
-    equipSelected = cm.getInventory(invTypeEquip).getItem(equipSlot);
-    equipName = Packages.server.ItemInformationProvider.getInstance().getName(equipSelected.getItemId());
+function listApplicableScrolls(selection) {
+    targetSlot = selection;
+    var targetItem = cm.getInventory(INV_EQUIP).getItem(targetSlot);
 
-    var inv = cm.getInventory(invTypeUse);
+    if (targetItem == null) {
+        cm.sendOk("The item has vanished.");
+        cm.dispose();
+        return;
+    }
+
+    var validScrollIDs = ii.getScrollsByItemId(targetItem.getItemId()); // ArrayList of Integers
+    var inv = cm.getInventory(INV_USE);
     var lines = [];
-    var validScrolls = Packages.server.ItemInformationProvider.getInstance().getScrollsByItemId(equipSelected.getItemId());
 
-    for (var scroll of validScrolls) {
-        for (var slot = 1; slot <= inv.getSlotLimit(); slot++) {
-            var item = inv.getItem(slot);
-                    if (!item) continue;
-                    var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
-            if (item && item.getItemId() === scroll) {
-                lines.push(`#L${slot}##v${scroll}# ${name}#l`);
+    // Map scroll IDs to inventory slots
+    for (var i = 1; i <= inv.getSlotLimit(); i++) {
+        var item = inv.getItem(i);
+        if (item == null) continue;
+
+        var id = item.getItemId();
+        // Check if this item ID is in the valid list
+        // Note: contains() might require exact type matching (int vs double) in Rhino
+        for (var s = 0; s < validScrollIDs.size(); s++) {
+            if (validScrollIDs.get(s) == id) {
+                var sName = ii.getName(id);
+                lines.push("#L" + i + "##v" + id + "# #b" + sName + "#k#l");
+                break;
             }
         }
     }
 
-    if (!lines.length) {
-        cm.sendOk("No applicable scrolls found.");
-        return cm.dispose();
+    if (lines.length === 0) {
+        cm.sendOk("You possess no scrolls capable of enhancing this specific artifact.");
+        cm.dispose();
+        return;
     }
 
-    cm.sendSimple("Select the scroll to use:\r\n" + lines.join("\r\n"));
+    cm.sendSimple("And which scroll shall act as the catalyst?\r\n" + lines.join("\r\n"));
 }
 
-function confirmScrollStart(useSlot) {
-    scrollInvSlot = useSlot;
-    scrollSelected = cm.getInventory(invTypeUse).getItem(scrollInvSlot);
-    scrollId = scrollSelected.getItemId();
+function confirmScroll(selection) {
+    scrollSlot = selection;
+    var scrollItem = cm.getInventory(INV_USE).getItem(scrollSlot);
+    var targetItem = cm.getInventory(INV_EQUIP).getItem(targetSlot);
+    var whiteQty = cm.itemQuantity(ID_WHITE_SCROLL);
 
-    requiredWhiteScrollCount = scrollSelected.getEquipStat ? scrollSelected.getEquipStat("success") < 100 : 0;
-
-    cm.sendYesNo(`Proceed to scroll your #b${equipName}#k?\r\n` +
-        `This will use one scroll per attempt until:\r\n` +
-        `- Upgrade slots run out, or\r\n` +
-        `- Scrolls/white scrolls are depleted.`);
-}
-
-function scrollItemOrStop(mode) {
-    if (mode === 0) {
-        cm.sendOk("Come back when you're ready.");
-        return cm.dispose();
+    if (scrollItem == null || targetItem == null) {
+        cm.sendOk("A disturbance in the force... items are missing.");
+        cm.dispose();
+        return;
     }
 
-    const statFields = ["STR", "DEX", "INT", "LUK", "WATK", "MATK", "WDEF", "MDEF", "ACC", "AVOID", "SPEED", "JUMP"];
-    const getStats = (equip) => ({
-        STR: equip.getStr(), DEX: equip.getDex(), INT: equip.getInt(), LUK: equip.getLuk(),
-        WATK: equip.getWatk(), MATK: equip.getMatk(), WDEF: equip.getWdef(), MDEF: equip.getMdef(),
-        ACC: equip.getAcc(), AVOID: equip.getAvoid(), SPEED: equip.getSpeed(), JUMP: equip.getJump()
-    });
+    var msg = "You are about to enchant #b" + ii.getName(targetItem.getItemId()) + "#k.\r\n";
+    msg += "Using: #r" + ii.getName(scrollItem.getItemId()) + "#k\r\n\r\n";
+    msg += "I will apply scrolls continuously until:\r\n";
+    msg += "1. The item runs out of slots.\r\n";
+    msg += "2. You run out of scrolls.\r\n";
 
-    const instance = Packages.server.ItemInformationProvider.getInstance();
-    const player = cm.getPlayer();
+    if (whiteQty > 0) {
+        msg += "3. You run out of #bWhite Scrolls#k (I will use them automatically).\r\n";
+    }
 
-    let scrollsUsed = 0;
-    let whiteScrollsUsed = 0;
-    let success = 0;
-    let fail = 0;
-    let cursed = 0;
+    cm.sendYesNo(msg);
+}
 
-    let equip = equipSelected;
-    let scrollQty = scrollSelected.getQuantity();
-    let whiteQty = cm.getItemQuantity(whiteScrollId);
+function executeScroll() {
+    var invUse = cm.getInventory(INV_USE);
+    var invEquip = cm.getInventory(INV_EQUIP);
 
-    const originalStats = getStats(equip);
+    var equip = invEquip.getItem(targetSlot);
+    var scroll = invUse.getItem(scrollSlot);
 
-    while (equip.getUpgradeSlots() > 0 && scrollQty > 0 && whiteQty > 0) {
-        scrollsUsed++;
-        scrollQty--;
+    if (equip == null || scroll == null) {
+        cm.sendOk("The items required for the ritual are gone.");
+        cm.dispose();
+        return;
+    }
+
+    var scrollId = scroll.getItemId();
+
+    // Stats Tracking
+    var startStats = getEquipStats(equip);
+    var scrollsUsed = 0;
+    var whitesUsed = 0;
+    var successCount = 0;
+    var failCount = 0;
+    var boom = false;
+
+    // Safety: Don't waste White Scrolls on 100% scrolls
+    // Assuming 100% scrolls are defined by ID ranges or data.
+    // If we can't detect rate easily, we default to using WS if the user has them.
+    // Optimization: Check strict boolean for using WS
+
+    while (equip.getUpgradeSlots() > 0 && scroll.getQuantity() > 0) {
+
+        // Determine WS usage
+        var useWhite = false;
+        if (cm.itemQuantity(ID_WHITE_SCROLL) > 0) {
+             // Optional: Add logic here to NOT use WS if scroll success is 100
+             // For now, we assume user wants protection if they have WS
+             useWhite = true;
+        }
+
+        // Consume Items
         cm.gainItem(scrollId, -1);
+        scrollsUsed++;
 
-        let usingWhiteScroll = false;
-        if (whiteQty > 0) {
-            usingWhiteScroll = true;
-            whiteQty--;
-            whiteScrollsUsed++;
-            cm.gainItem(whiteScrollId, -1);
+        if (useWhite) {
+            cm.gainItem(ID_WHITE_SCROLL, -1);
+            whitesUsed++;
         }
 
-        const preLevel = equip.getLevel();
-        const preSlots = equip.getUpgradeSlots();
-        const preStats = getStats(equip);
+        // Execute via Server Core
+        // Note: checking return type. Some sources return the Equip, others return Boolean, others null on boom
+        var prevLevel = equip.getLevel(); // Using level to detect success (usually increases on scroll success)
+        var prevSlots = equip.getUpgradeSlots();
 
-        const result = instance.scrollEquipWithId(equip, scrollId, usingWhiteScroll, 0, false);
+        var newEquip = ii.scrollEquipWithId(equip, scrollId, useWhite, 0, false);
 
-        if (result === null) {
-            cursed++;
-            cm.sendOk("Unfortunately, your item was destroyed by a cursed scroll.");
-            return cm.dispose();
+        if (newEquip == null) {
+            boom = true;
+            break; // Item destroyed
         }
 
-        equip = result;
-        player.forceUpdateItem(equip);
+        equip = newEquip; // Update reference
 
-        const postLevel = equip.getLevel();
-        const postSlots = equip.getUpgradeSlots();
-
-        if (postLevel > preLevel) {
-            success++;
-        } else if (postSlots < preSlots && !usingWhiteScroll) {
-            fail++;
+        // Analyze Result
+        if (equip.getLevel() > prevLevel) {
+            successCount++;
+        } else if (equip.getUpgradeSlots() < prevSlots && !useWhite) {
+            failCount++;
         } else {
-            // Rare case: slot preserved due to white scroll, no stat gain
-            fail++;
+            // Failed but slot saved (White Scroll) OR failed and slot lost but level didn't go up
+            // This logic depends heavily on source.
+            // If useWhite was true and slots didn't change, it was a 'saved' fail.
+            failCount++;
         }
+
+        // Force update the specific slot
+        cm.getPlayer().forceUpdateItem(equip);
+
+        // Re-fetch scroll item to check quantity loop condition
+        scroll = invUse.getItem(scrollSlot);
+        if (scroll == null) break;
+
+        // Stop if we ran out of WS but logic dictates we should have them?
+        // Current logic: It just stops using them if they run out.
     }
 
-    const finalStats = getStats(equip);
-    const statChanges = [];
+    if (boom) {
+        cm.sendOk("Disaster! The chaotic energies were too great. Your artifact has been #rdestroyed#k.");
+    } else {
+        var endStats = getEquipStats(equip);
+        var report = generateReport(startStats, endStats);
 
-    for (const field of statFields) {
-        const delta = finalStats[field] - originalStats[field];
-        if (delta !== 0) {
-            statChanges.push((delta > 0 ? "+" : "") + delta + " " + field);
-        }
+        var msg = "#bRitual Complete.#k\r\n";
+        msg += "Scrolls Used: " + scrollsUsed + "\r\n";
+        msg += "White Scrolls: " + whitesUsed + "\r\n";
+        msg += "Success: " + successCount + " | Fail: " + failCount + "\r\n\r\n";
+        msg += "#dChanges:#k\r\n" + report;
+
+        cm.sendOk(msg);
     }
-
-    const summary = [
-        `#bScroll Summary:#k`,
-        `Total Scrolls Used: ${scrollsUsed}`,
-        `White Scrolls Used: ${whiteScrollsUsed}`,
-        `Successes: ${success} | Failures: ${fail} | Cursed: ${cursed}`,
-        ``,
-        `#bStat Changes:#k`,
-        statChanges.length ? statChanges.join(", ") : "No stat change detected."
-    ];
-
-    cm.sendOk(summary.join("\r\n"));
     cm.dispose();
+}
+
+// ==========================================================
+//                     LOGIC: PURCHASING
+// ==========================================================
+
+function executePurchase() {
+    var input = cm.getText();
+    var qty = parseInt(input);
+
+    if (isNaN(qty) || qty < 1) {
+        cm.sendOk("That is not a valid number.");
+        cm.dispose();
+        return;
+    }
+
+    var cost = qty * COST_HAMMER;
+    if (cm.getPlayer().getCashShop().getCash(1) < cost) {
+        cm.sendOk("You lack the funds. You need #b" + cost + " NX#k.");
+    } else {
+        cm.gainCash(-cost);
+        cm.gainItem(ID_HAMMER, qty);
+        cm.sendOk("A wise purchase. Use them well.");
+    }
+    cm.dispose();
+}
+
+// ==========================================================
+//                     HELPERS
+// ==========================================================
+
+function isCash(id) {
+    return id >= 5000000 || (id >= 1700000 && id < 1800000); // Standard Cash ranges
+}
+
+function getEquipStats(equip) {
+    // Returns simple object snapshot
+    return {
+        str: equip.getStr(), dex: equip.getDex(), int: equip.getInt(), luk: equip.getLuk(),
+        watk: equip.getWatk(), matk: equip.getMatk(),
+        wdef: equip.getWdef(), mdef: equip.getMdef(),
+        acc: equip.getAcc(), avoid: equip.getAvoid(),
+        speed: equip.getSpeed(), jump: equip.getJump()
+    };
+}
+
+function generateReport(oldS, newS) {
+    var txt = "";
+    var fields = ["str", "dex", "int", "luk", "watk", "matk"]; // Add others if desired
+
+    for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        var diff = newS[f] - oldS[f];
+        if (diff !== 0) {
+            txt += f.toUpperCase() + ": " + (diff > 0 ? "+" : "") + diff + "  ";
+        }
+    }
+    return txt === "" ? "No stats changed." : txt;
 }
