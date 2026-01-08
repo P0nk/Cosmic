@@ -15,7 +15,7 @@ public class SubordinateManager {
     // ==========================================
 
     // 1. Base Carry-Over for Non-Attack Stats & DEFENSE
-    private static final double RATE_BASE_STATS = 0.30; // 17%
+    private static final double RATE_BASE_STATS = 0.30; // 30%
 
     // 2. Custom Attack Rate Configuration (By Item Type)
     public static double getAttackRateForType(int type) {
@@ -24,7 +24,7 @@ public class SubordinateManager {
             case 130: return 0.30;  // 1H Sword
             case 131: return 0.30;  // 1H Axe
             case 132: return 0.30;  // 1H Blunt
-            case 133: return 0.305;  // Dagger
+            case 133: return 0.305; // Dagger
             case 137: return 0.29;  // Wand
             case 138: return 0.29;  // Staff
 
@@ -43,11 +43,10 @@ public class SubordinateManager {
 
             // --- ARMORS ---
             case 100: return 0.28;  // Hats
-            case 107: return 0.30;  // Shoes //
+            case 107: return 0.30;  // Shoes
             case 108: return 0.30;  // Gloves
             case 105: return 0.28;  // Overall
             case 110: return 0.28;  // Cape
-
 
             // --- DEFAULT ---
             default: return 0.30;
@@ -118,21 +117,27 @@ public class SubordinateManager {
 
         // Save old stats for Debug
         short oldWatk = selectedItem.getWatk();
-        short oldWdef = selectedItem.getWdef();
         int oldHands = selectedItem.getHands();
         int newItemId = selectedItem.getItemId();
 
         // Determine Type
         int newItemType = newItemId / 10000;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-        // 1. Swap Item
+        // 1. Remove Old Item
         InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, itemSlot, (short) 1, false);
+
+        // 2. Add New Clean Item (Simulating gainItem)
+        // We use getEquipById to fetch the item with correct WZ properties (like Slots)
+        // Then we use addFromDrop to place it in the inventory.
+        Equip cleanItem = (Equip) ii.getEquipById(newItemId);
         short newItemSlot = eqpInv.getNextFreeSlot();
-        InventoryManipulator.addById(c, newItemId, (short) 1, null, -1);
+        InventoryManipulator.addFromDrop(c, cleanItem, false);
+
+        // 3. Retrieve the New Item to Modify
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
         if (newItem == null) return;
 
-        ItemInformationProvider ii = ItemInformationProvider.getInstance();
         int itemReqLevel = ii.getEquipLevelReq(newItemId);
 
         short addStr = 0, addDex = 0, addInt = 0, addLuk = 0, addWatk = 0, addMatk = 0;
@@ -158,24 +163,21 @@ public class SubordinateManager {
             addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
             addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
         }
-        // Adjusted Check: Include Hats (100) and Tops (104) -> Start at 100
-        // Exclude Weapons (120+) -> Stop before weapons
+
+        // Defense Bonus Logic
         if (newItemType == 105) {
-            // Flat Bonus: 125 * Rebirth Count
-            // RB1 = +125, RB5 = +625
+            // Overalls (150 per RB)
             addWdef = (short) (150 * nextHands);
             addMdef = (short) (150 * nextHands);
         } else if (newItemType >= 100 && newItemType < 120) {
-            // Flat Bonus: 125 * Rebirth Count
-            // RB1 = +125, RB5 = +625
+            // Other Armors (75 per RB)
             addWdef = (short) (75 * nextHands);
             addMdef = (short) (75 * nextHands);
         }
 
-
         // --- FORMULA END ---
 
-        // Apply Stats
+        // Apply Stats with Safety Cap
         newItem.setStr((short) Math.min(MAX_STAT_CAP, newItem.getStr() + addStr));
         newItem.setDex((short) Math.min(MAX_STAT_CAP, newItem.getDex() + addDex));
         newItem.setInt((short) Math.min(MAX_STAT_CAP, newItem.getInt() + addInt));
@@ -192,8 +194,9 @@ public class SubordinateManager {
 
         // Debug Log
         if (DEBUG_MODE) {
-            System.out.println("[Rebirth Debug] Item Type: " + newItemType + " | Atk Rate: " + (currentTypeAttackRate * 100) + "%");
+            System.out.println("[Rebirth Debug] Item: " + newItemId + " | RB: " + nextHands);
             System.out.println("Watk: " + oldWatk + " -> " + newItem.getWatk());
+            System.out.println("Slots Available: " + newItem.getUpgradeSlots());
         }
 
         chr.forceUpdateItem(newItem);
