@@ -27,8 +27,8 @@ const AMOUNTS = [1, 2, 3, 3];
 
 const RB_LEVELS = [70, 110, 140, 160, 180, 200];
 
-const MIN_RATE_BASE = 1.20;
-const MAX_RATE_BASE = 1.45;
+const MIN_RATE_BASE = 1.25;
+const MAX_RATE_BASE = 1.50;
 
 const MIN_PREVIEW_FEE = 200_000;
 

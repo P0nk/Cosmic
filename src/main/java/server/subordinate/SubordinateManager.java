@@ -15,7 +15,7 @@ public class SubordinateManager {
     // ==========================================
 
     // 1. Base Carry-Over for Non-Attack Stats & DEFENSE
-    private static final double RATE_BASE_STATS = 0.17; // 17%
+    private static final double RATE_BASE_STATS = 0.30; // 17%
 
     // 2. Custom Attack Rate Configuration (By Item Type)
     public static double getAttackRateForType(int type) {
