@@ -1,6 +1,8 @@
 package server.gambling;
 
 import tools.DatabaseConnection;
+import tools.DiscordWebhook; // Import your Webhook tool
+import tools.EnvLoader;      // Import EnvLoader to get the URL
 import tools.PacketCreator;
 import net.packet.Packet;
 import net.server.Server;
@@ -11,7 +13,7 @@ import java.time.*;
 import java.util.*;
 
 /**
- * Manages 4D draw creation, result storage, and winner evaluation.
+ * Manages 4D draw creation, result storage, winner evaluation, and Discord announcements.
  */
 public class FourDResultManager {
 
@@ -19,12 +21,11 @@ public class FourDResultManager {
 
     /**
      * Checks if a draw exists and is valid for the specified date.
-     * Prevents false positives if the check is made before draw time.
      */
     public static boolean hasDrawToday(LocalDate date) {
         LocalDateTime now = LocalDateTime.now();
         if (date.equals(LocalDate.now()) && now.toLocalTime().isBefore(LocalTime.of(DRAW_HOUR, 0))) {
-            return false; // Too early to consider today's draw valid
+            return false;
         }
 
         try (Connection con = DatabaseConnection.getConnection();
@@ -82,7 +83,8 @@ public class FourDResultManager {
             getBets.setDate(1, java.sql.Date.valueOf(date));
             ResultSet bets = getBets.executeQuery();
 
-            boolean hasWinner = false; // Flag to check if any winner is found
+            boolean hasWinner = false;
+            List<String> jackpotWinners = new ArrayList<>(); // Track 1st prize winners for Discord
 
             while (bets.next()) {
                 int betId = bets.getInt("bet_id");
@@ -114,13 +116,14 @@ public class FourDResultManager {
 
                     // Broadcast 1st prize winners
                     if (number.equals(first)) {
-                        hasWinner = true; // At least one winner exists
+                        hasWinner = true;
                         String playerName = getCharacterNameById(charId);
                         if (playerName != null) {
+                            jackpotWinners.add(playerName); // Add to local list for Discord
                             String msg = "[★ Merogie Pools 4D Winner ★] " + playerName +
                                     " won " + totalPrize + " Meso BCoins with #" + number +
                                     " (" + tier + ", " + type + " bet) on draw " + date + "!";
-                            Packet packet = PacketCreator.serverNotice(6, msg); // Using type 6 for Lightblue Text
+                            Packet packet = PacketCreator.serverNotice(6, msg);
                             for (World world : Server.getInstance().getWorlds()) {
                                 Server.getInstance().broadcastMessage(world.getId(), packet);
                             }
@@ -134,26 +137,74 @@ public class FourDResultManager {
             getBets.close();
             getResult.close();
 
-            // Global announcement after the draw (even if no one won)
-            String resultAnnouncement = "[4D Draw Results] 1st Prize: " + first + " | 2nd Prize: " + second + " | 3rd Prize: " + third +
+            // --- 1. GAME ANNOUNCEMENT ---
+            String resultAnnouncement = "[4D Draw Results] 1st: " + first + " | 2nd: " + second + " | 3rd: " + third +
                     "\r\nStarters: " + String.join(", ", starters) +
-                    "\r\nConsolations: " + String.join(", ", consolations) +
-                    "\r\nGood luck to all players!";
+                    "\r\nConsolations: " + String.join(", ", consolations);
 
-            // If no one won, still announce the results to all players
             if (!hasWinner) {
-                resultAnnouncement += "\r\nUnfortunately, there were no winners this time. Better luck next time!";
+                resultAnnouncement += "\r\nNo 1st Prize winners this round. Better luck next time!";
             }
 
-            // Broadcast the result to all players
-            Packet broadcastPacket = PacketCreator.serverNotice(6, resultAnnouncement);  // Type 6 for Lightblue Text
+            Packet broadcastPacket = PacketCreator.serverNotice(6, resultAnnouncement);
             for (World world : Server.getInstance().getWorlds()) {
                 Server.getInstance().broadcastMessage(world.getId(), broadcastPacket);
             }
 
+            // --- 2. DISCORD ANNOUNCEMENT ---
+            sendDiscordResult(date, first, second, third, starters, consolations, jackpotWinners);
+
         } catch (SQLException e) {
             System.out.println("[FourDResultManager] Evaluation failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * Constructs and sends the Discord Embed.
+     */
+    private static void sendDiscordResult(LocalDate date, String first, String second, String third,
+                                          List<String> starters, List<String> consolations, List<String> winners) {
+
+        // Fetch Webhook URL from EnvLoader (same as DailyRanking)
+        String webhookUrl = EnvLoader.get("DISCORD_ANNOUNCEMENT_WEBHOOK");
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
+            System.out.println("[FourDResultManager] No Discord Webhook configured. Skipping.");
+            return;
+        }
+
+        StringBuilder json = new StringBuilder();
+        json.append("{");
+        json.append("\"username\": \"Merogie Pools\",");
+        json.append("\"embeds\": [{");
+        json.append("\"title\": \"\uD83C\uDFB1 4D Draw Results\","); // 🎱 emoji
+        json.append("\"description\": \"**Draw Date:** " + date.toString() + "\",");
+        json.append("\"color\": 16763904,"); // Gold
+        json.append("\"fields\": [");
+
+        // Top 3 Prizes
+        json.append("{\"name\": \"\uD83E\uDD47 1st Prize\", \"value\": \"**" + first + "**\", \"inline\": true},");
+        json.append("{\"name\": \"\uD83E\uDD48 2nd Prize\", \"value\": \"**" + second + "**\", \"inline\": true},");
+        json.append("{\"name\": \"\uD83E\uDD49 3rd Prize\", \"value\": \"**" + third + "**\", \"inline\": true},");
+
+        // Starters (Formatted in code block for alignment)
+        json.append("{\"name\": \"\uD83D\uDD39 Starters\", \"value\": \"`" + String.join(", ", starters) + "`\"},");
+
+        // Consolations
+        json.append("{\"name\": \"\uD83D\uDD38 Consolations\", \"value\": \"`" + String.join(", ", consolations) + "`\"}");
+
+        // Add Winners Field if anyone won 1st prize
+        if (!winners.isEmpty()) {
+            json.append(",");
+            String winnerList = String.join(", ", winners);
+            json.append("{\"name\": \"\uD83C\uDFC6 Jackpot Winners\", \"value\": \"Congratulations to: **" + DiscordWebhook.escape(winnerList) + "**!\"}");
+        }
+
+        json.append("],");
+        json.append("\"footer\": {\"text\": \"To claim prizes, visit the 4D NPC.\"}");
+        json.append("}]}");
+
+        // Send
+        DiscordWebhook.sendEmbedAsync(webhookUrl, json.toString());
     }
 
     /**
@@ -173,10 +224,8 @@ public class FourDResultManager {
         return null;
     }
 
+    // ... (Keep getResultByDate and getRecentDrawDates as they were in your original code) ...
 
-    /**
-     * Retrieves draw result details for the specified date.
-     */
     public static Map<String, String> getResultByDate(LocalDate date) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM 4d_results WHERE draw_date = ?")) {
@@ -201,9 +250,6 @@ public class FourDResultManager {
         return null;
     }
 
-    /**
-     * Returns the most recent draw dates up to a specified limit.
-     */
     public static List<String> getRecentDrawDates(int limit) {
         List<String> dates = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
