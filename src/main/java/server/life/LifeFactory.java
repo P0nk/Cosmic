@@ -124,12 +124,16 @@ public class LifeFactory {
 //        }
         if (mid == 8840000) { // Von Leon
             stats.setHp(75_000_000_000L);
+            stats.setHp(75_000_000_000L);
         } else if (mid == 8850011) { // Cygnus
             stats.setHp(150_000_000_000L);
+            stats.setHp(75_000_000_000L);
         } else if (mid == 9400408) { // Castellan B1
             stats.setHp(100_000_000_000L);
+            stats.setHp(75_000_000_000L);
         } else if ( mid == 9400409) { // Castellan B2
             stats.setHp(150_000_000_000L);
+            stats.setHp(75_000_000_000L);
         } else if (mid == 8880302 || mid == 8880301) { // Will
             stats.setHp(300_000_000_000L);
         } else if (mid == 8645009) { // Darknell
