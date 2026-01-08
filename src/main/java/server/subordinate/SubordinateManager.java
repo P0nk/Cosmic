@@ -21,36 +21,36 @@ public class SubordinateManager {
     public static double getAttackRateForType(int type) {
         switch (type) {
             // --- WEAPONS ---
-            case 130: return 0.18;  // 1H Sword
-            case 131: return 0.18;  // 1H Axe
-            case 132: return 0.18;  // 1H Blunt
-            case 133: return 0.18;  // Dagger
-            case 137: return 0.18;  // Wand
-            case 138: return 0.18;  // Staff
+            case 130: return 0.30;  // 1H Sword
+            case 131: return 0.30;  // 1H Axe
+            case 132: return 0.30;  // 1H Blunt
+            case 133: return 0.305;  // Dagger
+            case 137: return 0.29;  // Wand
+            case 138: return 0.29;  // Staff
 
-            case 140: return 0.175; // 2H Sword
-            case 141: return 0.175; // 2H Axe
-            case 142: return 0.175; // 2H Blunt
-            case 143: return 0.175; // Spear
-            case 144: return 0.175; // Polearm
+            case 140: return 0.30; // 2H Sword
+            case 141: return 0.30; // 2H Axe
+            case 142: return 0.30; // 2H Blunt
+            case 143: return 0.30; // Spear
+            case 144: return 0.30; // Polearm
 
-            case 145: return 0.19;  // Bow
-            case 146: return 0.19;  // Crossbow
+            case 145: return 0.30;  // Bow
+            case 146: return 0.30;  // Crossbow
 
-            case 147: return 0.20;  // Claw
-            case 148: return 0.18;  // Knuckle
-            case 149: return 0.20;  // Gun
+            case 147: return 0.35;  // Claw
+            case 148: return 0.33;  // Knuckle
+            case 149: return 0.33;  // Gun
 
             // --- ARMORS ---
-            case 100: return 0.15;  // Hats
-            case 107: return 0.20;  // Shoes // Checked by Starlight Blame if wrong
-            case 108: return 0.20;  // Gloves
-            case 105: return 0.15;  // Overall
-            case 110: return 0.15;  // Cape
+            case 100: return 0.28;  // Hats
+            case 107: return 0.30;  // Shoes //
+            case 108: return 0.30;  // Gloves
+            case 105: return 0.28;  // Overall
+            case 110: return 0.28;  // Cape
 
 
             // --- DEFAULT ---
-            default: return 0.17;
+            default: return 0.30;
         }
     }
 

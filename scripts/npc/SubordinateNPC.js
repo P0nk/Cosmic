@@ -144,15 +144,18 @@ function showGuide() {
               "#bBASE STATS (STR/DEX/INT/LUK/DEF):#k 17%\r\n" +
               "---------------------------------\r\n" +
               "#bATTACK RATES (WATK/MATK):#k\r\n" +
-              " Claw, Gun: #r20%#k\r\n" +
-              " Bow, XBow: #r19%#k\r\n" +
-              " 1H Weps, Mage, Knuckle: #r18%#k\r\n" +
-              " 2H Weps, Spear, Polearm: #r17.5%#k\r\n" +
-              " Others: #r17%#k\r\n" +
+              " Claw: #r35%#k\r\n" +
+              " Knuckle, Gun: #r33%#k\r\n" +
+              " Dagger: #r30.5%#k\r\n" +
+              " Bow, XBow: #r30%#k\r\n" +
+              " 1H Weps, : #r30%#k\r\n" +
+              " 2H Weps, Spear, Polearm: #r30%#k\r\n" +
+              " Wand, Staff: #r29%#k\r\n" +
+              " Others: #r30%#k\r\n" +
               "---------------------------------\r\n" +
               "#bARMOR ATTACK RATES:#k\r\n" +
-              " Gloves, Shoes: #d20%#k\r\n" +
-              " Hats, Capes, Overalls: #d15%#k";
+              " Gloves, Shoes: #d30%#k\r\n" +
+              " Hats, Capes, Overalls: #d28%#k";
 
     cm.sendOk(msg);
     cm.dispose();
