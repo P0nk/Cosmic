@@ -1,8 +1,8 @@
 package server.gambling;
 
 import tools.DatabaseConnection;
-import tools.DiscordWebhook; // Import your Webhook tool
-import tools.EnvLoader;      // Import EnvLoader to get the URL
+import tools.DiscordWebhook;
+import tools.EnvLoader;
 import tools.PacketCreator;
 import net.packet.Packet;
 import net.server.Server;
@@ -13,15 +13,12 @@ import java.time.*;
 import java.util.*;
 
 /**
- * Manages 4D draw creation, result storage, winner evaluation, and Discord announcements.
+ * Manages 4D draw creation, winner evaluation (Direct/iBet), and Discord announcements.
  */
 public class FourDResultManager {
 
     private static final int DRAW_HOUR = 0; // 12 AM GMT+8
 
-    /**
-     * Checks if a draw exists and is valid for the specified date.
-     */
     public static boolean hasDrawToday(LocalDate date) {
         LocalDateTime now = LocalDateTime.now();
         if (date.equals(LocalDate.now()) && now.toLocalTime().isBefore(LocalTime.of(DRAW_HOUR, 0))) {
@@ -38,9 +35,6 @@ public class FourDResultManager {
         }
     }
 
-    /**
-     * Stores the draw results in the database.
-     */
     public static void storeDraw(LocalDate date, String first, String second, String third,
                                  List<String> starters, List<String> consolations) {
         try (Connection con = DatabaseConnection.getConnection();
@@ -60,12 +54,13 @@ public class FourDResultManager {
     }
 
     /**
-     * Evaluates all bets for the given draw date, updates winners, and broadcasts top prize wins.
+     * Evaluates all bets for the given draw date.
+     * Supports iBet logic (permutation matching and prize splitting).
      */
     public static void evaluateBets(LocalDate date) {
         try (Connection con = DatabaseConnection.getConnection()) {
 
-            // Load draw results
+            // 1. Load Draw Results
             PreparedStatement getResult = con.prepareStatement("SELECT * FROM 4d_results WHERE draw_date = ?");
             getResult.setDate(1, java.sql.Date.valueOf(date));
             ResultSet rs = getResult.executeQuery();
@@ -77,52 +72,79 @@ public class FourDResultManager {
             List<String> starters = Arrays.asList(rs.getString("starters").split(","));
             List<String> consolations = Arrays.asList(rs.getString("consolations").split(","));
 
-            // Load bets for the draw
+            // 2. Load Bets
             PreparedStatement getBets = con.prepareStatement(
-                    "SELECT bet_id, char_id, bet_number, bet_type, amount FROM 4d_bets WHERE draw_date = ?");
+                    "SELECT bet_id, char_id, bet_number, bet_type, amount, currency_type, is_ibet FROM 4d_bets WHERE draw_date = ?");
             getBets.setDate(1, java.sql.Date.valueOf(date));
             ResultSet bets = getBets.executeQuery();
 
             boolean hasWinner = false;
-            List<String> jackpotWinners = new ArrayList<>(); // Track 1st prize winners for Discord
+            List<String> jackpotWinners = new ArrayList<>();
 
             while (bets.next()) {
                 int betId = bets.getInt("bet_id");
                 int charId = bets.getInt("char_id");
-                String number = bets.getString("bet_number");
-                String type = bets.getString("bet_type");
-                int amount = bets.getInt("amount");
+                String betNumber = bets.getString("bet_number");
+                String type = bets.getString("bet_type"); // "BIG" or "SMALL"
+                int amount = bets.getInt("amount"); // Number of Tickets
+                String currency = bets.getString("currency_type");
+                boolean isIBet = bets.getInt("is_ibet") == 1;
 
-                int basePrize = 0;
+                long totalPrize = 0;
                 String tier = null;
 
-                if (number.equals(first)) { basePrize = type.equals("BIG") ? 2000 : 3000; tier = "1st Prize"; }
-                else if (number.equals(second)) { basePrize = type.equals("BIG") ? 1000 : 2000; tier = "2nd Prize"; }
-                else if (number.equals(third)) { basePrize = type.equals("BIG") ? 490 : 800; tier = "3rd Prize"; }
-                else if (type.equals("BIG") && starters.contains(number)) basePrize = 250;
-                else if (type.equals("BIG") && consolations.contains(number)) basePrize = 60;
+                // --- CHECKING LOGIC ---
+                if (checkMatch(betNumber, first, isIBet)) {
+                    totalPrize = calculatePrize(type, "1st", currency, amount, betNumber, isIBet);
+                    tier = "1st Prize";
+                }
+                else if (checkMatch(betNumber, second, isIBet)) {
+                    totalPrize = calculatePrize(type, "2nd", currency, amount, betNumber, isIBet);
+                    tier = "2nd Prize";
+                }
+                else if (checkMatch(betNumber, third, isIBet)) {
+                    totalPrize = calculatePrize(type, "3rd", currency, amount, betNumber, isIBet);
+                    tier = "3rd Prize";
+                }
+                else {
+                    for (String s : starters) {
+                        if (checkMatch(betNumber, s, isIBet)) {
+                            totalPrize = calculatePrize(type, "Starter", currency, amount, betNumber, isIBet);
+                            tier = "Starter"; break;
+                        }
+                    }
+                    if (totalPrize == 0) {
+                        for (String c : consolations) {
+                            if (checkMatch(betNumber, c, isIBet)) {
+                                totalPrize = calculatePrize(type, "Consolation", currency, amount, betNumber, isIBet);
+                                tier = "Consolation"; break;
+                            }
+                        }
+                    }
+                }
 
-                int totalPrize = basePrize * amount;
-
+                // --- REWARD UPDATE ---
                 if (totalPrize > 0) {
-                    // Update the bet as a winning entry
+                    // Cap Mesos at Java Max Integer (2.1B) just in case
+                    if (currency.equals("MESO") && totalPrize > 2147483647L) totalPrize = 2147483647L;
+
                     try (PreparedStatement update = con.prepareStatement(
                             "UPDATE 4d_bets SET is_winner = 1, prize_item_id = ?, prize_quantity = ? WHERE bet_id = ?")) {
-                        update.setInt(1, 3020002); // MESO_BCOIN_ID
-                        update.setInt(2, totalPrize);
+                        // -1 for currencies (MESO/NX), ItemID for Items (BCOIN)
+                        update.setInt(1, currency.equals("BCOIN") ? 3020002 : -1);
+                        update.setInt(2, (int) totalPrize);
                         update.setInt(3, betId);
                         update.executeUpdate();
                     }
 
-                    // Broadcast 1st prize winners
-                    if (number.equals(first)) {
+                    // --- BROADCAST JACKPOT ---
+                    if ("1st Prize".equals(tier)) {
                         hasWinner = true;
                         String playerName = getCharacterNameById(charId);
                         if (playerName != null) {
-                            jackpotWinners.add(playerName); // Add to local list for Discord
-                            String msg = "[★ Merogie Pools 4D Winner ★] " + playerName +
-                                    " won " + totalPrize + " Meso BCoins with #" + number +
-                                    " (" + tier + ", " + type + " bet) on draw " + date + "!";
+                            jackpotWinners.add(playerName);
+                            String msg = "[Merogie 4D] " + playerName + " won " + totalPrize + " " + currency +
+                                    " with #" + betNumber + (isIBet ? " (iBet)" : "") + "!";
                             Packet packet = PacketCreator.serverNotice(6, msg);
                             for (World world : Server.getInstance().getWorlds()) {
                                 Server.getInstance().broadcastMessage(world.getId(), packet);
@@ -132,67 +154,111 @@ public class FourDResultManager {
                 }
             }
 
-            rs.close();
-            bets.close();
-            getBets.close();
-            getResult.close();
+            rs.close(); bets.close(); getBets.close(); getResult.close();
 
-            // --- 1. GAME ANNOUNCEMENT ---
+            // --- 3. GAME ANNOUNCEMENT ---
             String resultAnnouncement = "[4D Draw Results] 1st: " + first + " | 2nd: " + second + " | 3rd: " + third +
                     "\r\nStarters: " + String.join(", ", starters) +
                     "\r\nConsolations: " + String.join(", ", consolations);
 
-            if (!hasWinner) {
-                resultAnnouncement += "\r\nNo 1st Prize winners this round. Better luck next time!";
-            }
+            if (!hasWinner) resultAnnouncement += "\r\nNo 1st Prize winners this round. Better luck next time!";
 
             Packet broadcastPacket = PacketCreator.serverNotice(6, resultAnnouncement);
             for (World world : Server.getInstance().getWorlds()) {
                 Server.getInstance().broadcastMessage(world.getId(), broadcastPacket);
             }
 
-            // --- 2. DISCORD ANNOUNCEMENT ---
+            // --- 4. DISCORD ANNOUNCEMENT ---
             sendDiscordResult(date, first, second, third, starters, consolations, jackpotWinners);
 
         } catch (SQLException e) {
-            System.out.println("[FourDResultManager] Evaluation failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
+    // --- LOGIC HELPERS ---
+
+    private static boolean checkMatch(String betNum, String winNum, boolean isIBet) {
+        if (!isIBet) return betNum.equals(winNum);
+        return sortString(betNum).equals(sortString(winNum));
+    }
+
+    private static String sortString(String str) {
+        char[] chars = str.toCharArray();
+        Arrays.sort(chars);
+        return new String(chars);
+    }
+
     /**
-     * Constructs and sends the Discord Embed.
+     * Calculates prize amount.
+     * Logic: Base Multiplier * Currency Value * Ticket Count / Permutations (if iBet)
      */
+    private static long calculatePrize(String betType, String tier, String currency, int amount, String betNumber, boolean isIBet) {
+        long baseMultiplier = 0;
+
+        // Base payout per 1 unit wagered
+        switch (tier) {
+            case "1st": baseMultiplier = betType.equals("BIG") ? 2000 : 3000; break;
+            case "2nd": baseMultiplier = betType.equals("BIG") ? 1000 : 2000; break;
+            case "3rd": baseMultiplier = betType.equals("BIG") ? 490  : 800;  break;
+            case "Starter":     baseMultiplier = betType.equals("BIG") ? 250 : 0; break;
+            case "Consolation": baseMultiplier = betType.equals("BIG") ? 60  : 0; break;
+        }
+
+        if (baseMultiplier == 0) return 0;
+
+        // Determine value of "1 Ticket" based on Currency
+        long currencyValue = 1;
+        if (currency.equals("MESO")) currencyValue = 1000000; // 1 Ticket = 1M Mesos
+        else if (currency.equals("NX")) currencyValue = 500;  // 1 Ticket = 500 NX
+        else currencyValue = 1; // Items (BCOIN) = 1 Item
+
+        long totalPayout = baseMultiplier * amount * currencyValue;
+
+        // Reduce payout for iBet based on permutation count
+        if (isIBet) {
+            int permutations = getPermutationCount(betNumber);
+            totalPayout = totalPayout / permutations;
+        }
+
+        return totalPayout;
+    }
+
+    private static int getPermutationCount(String number) {
+        Map<Character, Integer> counts = new HashMap<>();
+        for (char c : number.toCharArray()) counts.put(c, counts.getOrDefault(c, 0) + 1);
+
+        int uniqueDigits = counts.size();
+        if (uniqueDigits == 4) return 24; // abcd (1234)
+        if (uniqueDigits == 3) return 12; // aabc (1123)
+        if (uniqueDigits == 2) {
+            for (int count : counts.values()) {
+                if (count == 3) return 4; // aaab (1112)
+            }
+            return 6; // aabb (1122)
+        }
+        return 1; // aaaa (1111)
+    }
+
     private static void sendDiscordResult(LocalDate date, String first, String second, String third,
                                           List<String> starters, List<String> consolations, List<String> winners) {
-
-        // Fetch Webhook URL from EnvLoader (same as DailyRanking)
         String webhookUrl = EnvLoader.get("DISCORD_ANNOUNCEMENT_WEBHOOK");
-        if (webhookUrl == null || webhookUrl.isEmpty()) {
-            System.out.println("[FourDResultManager] No Discord Webhook configured. Skipping.");
-            return;
-        }
+        if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
         StringBuilder json = new StringBuilder();
         json.append("{");
         json.append("\"username\": \"Merogie Pools\",");
         json.append("\"embeds\": [{");
-        json.append("\"title\": \"\uD83C\uDFB1 4D Draw Results\","); // 🎱 emoji
+        json.append("\"title\": \"\uD83C\uDFB1 4D Draw Results\",");
         json.append("\"description\": \"**Draw Date:** " + date.toString() + "\",");
-        json.append("\"color\": 16763904,"); // Gold
+        json.append("\"color\": 16763904,");
         json.append("\"fields\": [");
-
-        // Top 3 Prizes
         json.append("{\"name\": \"\uD83E\uDD47 1st Prize\", \"value\": \"**" + first + "**\", \"inline\": true},");
         json.append("{\"name\": \"\uD83E\uDD48 2nd Prize\", \"value\": \"**" + second + "**\", \"inline\": true},");
         json.append("{\"name\": \"\uD83E\uDD49 3rd Prize\", \"value\": \"**" + third + "**\", \"inline\": true},");
-
-        // Starters (Formatted in code block for alignment)
         json.append("{\"name\": \"\uD83D\uDD39 Starters\", \"value\": \"`" + String.join(", ", starters) + "`\"},");
-
-        // Consolations
         json.append("{\"name\": \"\uD83D\uDD38 Consolations\", \"value\": \"`" + String.join(", ", consolations) + "`\"}");
 
-        // Add Winners Field if anyone won 1st prize
         if (!winners.isEmpty()) {
             json.append(",");
             String winnerList = String.join(", ", winners);
@@ -203,39 +269,26 @@ public class FourDResultManager {
         json.append("\"footer\": {\"text\": \"To claim prizes, visit the 4D NPC.\"}");
         json.append("}]}");
 
-        // Send
         DiscordWebhook.sendEmbedAsync(webhookUrl, json.toString());
     }
 
-    /**
-     * Fetches the name of a character by their ID.
-     */
     private static String getCharacterNameById(int id) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT name FROM characters WHERE id = ?")) {
-
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getString("name");
-
-        } catch (SQLException e) {
-            System.out.println("[FourDResultManager] Failed to fetch player name: " + e.getMessage());
-        }
+        } catch (SQLException e) { }
         return null;
     }
-
-    // ... (Keep getResultByDate and getRecentDrawDates as they were in your original code) ...
 
     public static Map<String, String> getResultByDate(LocalDate date) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM 4d_results WHERE draw_date = ?")) {
-
             ps.setDate(1, java.sql.Date.valueOf(date));
             ResultSet rs = ps.executeQuery();
-
             if (rs.next()) {
                 Map<String, String> result = new HashMap<>();
-                result.put("date", date.toString());
                 result.put("first", rs.getString("prize_1st"));
                 result.put("second", rs.getString("prize_2nd"));
                 result.put("third", rs.getString("prize_3rd"));
@@ -243,28 +296,18 @@ public class FourDResultManager {
                 result.put("consolations", rs.getString("consolations"));
                 return result;
             }
-
-        } catch (SQLException e) {
-            System.out.println("[FourDResultManager] Failed to fetch result: " + e.getMessage());
-        }
+        } catch (SQLException e) { }
         return null;
     }
 
     public static List<String> getRecentDrawDates(int limit) {
         List<String> dates = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "SELECT draw_date FROM 4d_results ORDER BY draw_date DESC LIMIT ?")) {
-
+             PreparedStatement ps = con.prepareStatement("SELECT draw_date FROM 4d_results ORDER BY draw_date DESC LIMIT ?")) {
             ps.setInt(1, limit);
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                dates.add(rs.getString("draw_date"));
-            }
-
-        } catch (SQLException e) {
-            System.out.println("[FourDResultManager] Failed to fetch draw dates: " + e.getMessage());
-        }
+            while (rs.next()) dates.add(rs.getString("draw_date"));
+        } catch (SQLException e) { }
         return dates;
     }
 }

@@ -1,14 +1,15 @@
 var status = 0;
-var NX_MCOIN_ID = 3020001;
-var MESO_BCOIN_ID = 3020002             ;
+var TICKET_COST = 500; // 500 NX per ticket
 var manualNumber = "";
 var betType = "";
 var currentDrawDate;
-var betAmount = 1;
+var ticketQty = 1;
 var isQuickPick = false;
+var isIBet = false; // New iBet flag
 var dateList = null;
-var MAX_HISTORY_BETS =100;
-var MAX_HISTORY_DRAWS =7;
+var MAX_HISTORY_BETS = 100;
+var MAX_HISTORY_DRAWS = 7;
+
 var FourDBetManager = Java.type("server.gambling.FourDBetManager");
 var FourDResultManager = Java.type("server.gambling.FourDResultManager");
 var FourDDrawScheduler = Java.type("server.gambling.FourDDrawScheduler");
@@ -17,15 +18,15 @@ function start() {
     status = 0;
     currentDrawDate = FourDDrawScheduler.getNextDrawDate();
 
-    var msg = "#e#bWelcome to Merogie Pools~!#n#k\r\n";
-    msg += "Hi there~ I'm your lovely lottery lady, Rebecca! You Can Bet and WIN NXT with me!\r\n";
-    msg += "The Next 4D draw is on: #e#b" + currentDrawDate + " 12:00AM (GMT+8) #n\r\n\r\n";
-    msg += "How may I help you today? Teehee~\r\n\r\n";
-    msg += "#L0##bBuy 4D Ticket#k (#dManual Entry#k) - Got a lucky number?#l\r\n";
-    msg += "#L3##bBuy 4D Ticket#k (#gQuick Pick#k) - Leave it to fate?~#l\r\n";
-    msg += "#L1##bView Past Draw Results#k - Let's peek at history!#l\r\n";
-    msg += "#L2##rClaim Prize#k - Ooooh, did you wiiin?#l\r\n";
-    msg += "#L4##bView My Past Bets#k - Curious what you picked?#l\r\n";
+    var msg = "#e#bWelcome to Merogie Pools (NX)!#n#k\r\n";
+    msg += "Hi! I'm Rebecca. You can bet using #bNX Cash#k here!\r\n";
+    msg += "Price per ticket: #r" + formatNumber(TICKET_COST) + " NX#k\r\n";
+    msg += "Next Draw: #e#b" + currentDrawDate + " 12:00AM (GMT+8) #n\r\n\r\n";
+    msg += "#L0##bBuy 4D Ticket#k (#dManual Entry#k)#l\r\n";
+    msg += "#L3##bBuy 4D Ticket#k (#gQuick Pick#k)#l\r\n";
+    msg += "#L1##bView Past Draw Results#k#l\r\n";
+    msg += "#L2##rClaim Prize#k#l\r\n";
+    msg += "#L4##bView My Past Bets#k#l\r\n";
 
     if (cm.getPlayer().isGM()) {
         msg += "#L99##k(GM Only) Force Today's Draw#l\r\n";
@@ -36,201 +37,206 @@ function start() {
 
 function action(mode, type, selection) {
     if (mode !== 1) {
-        cm.sendOk("Alrighty~ come back anytime, okay? I'll be right here~");
         cm.dispose();
         return;
     }
-
     status++;
 
-    // Handle result viewing selection
+    // --- VIEW PAST RESULTS (Intercept) ---
     if (status === 2 && dateList !== null) {
         var selectedDate = dateList.get(selection);
-        dateList = null;
-
         try {
             var result = FourDResultManager.getResultByDate(java.time.LocalDate.parse(selectedDate));
             if (result !== null) {
                 var msg = "#eResults for #b" + selectedDate + "#k:#n\r\n\r\n";
-                msg += "#e1st:#n #r" + result.first + "#k\r\n";
-                msg += "#e2nd:#n #r" + result.second + "#k\r\n";
-                msg += "#e3rd:#n #r" + result.third + "#k\r\n\r\n";
-                msg += "#eStarters:#n\r\n#b" + result.starters + "#k\r\n\r\n";
-                msg += "#eConsolations:#n\r\n#b" + result.consolations + "#k\r\n\r\n";
-                cm.sendOk(msg + "Maybe your number is next~ ");
-            } else {
-                cm.sendOk("Hmm... no result found for that date. Try another?");
+                msg += "1st: #r" + result.get("first") + "#k | 2nd: #r" + result.get("second") + "#k | 3rd: #r" + result.get("third") + "#k\r\n\r\n";
+                msg += "Starters: " + result.get("starters") + "\r\n";
+                msg += "Consolations: " + result.get("consolations");
+                cm.sendOk(msg);
             }
-        } catch (e) {
-            cm.sendOk("Oopsie! I couldn't retrieve the result properly.");
-        }
+        } catch (e) { cm.sendOk("Error retrieving results."); }
         cm.dispose();
         return;
     }
 
-    // Main menu logic
+    // --- MAIN MENU ---
     if (status === 1) {
         switch (selection) {
-            case 0: // Manual bet
+            case 0: // Manual
                 isQuickPick = false;
-                cm.sendGetText("Type your 4-digit number (#r0000#k-#r9999#k):");
+                cm.sendGetText("Enter your lucky 4-digit number (0000-9999):");
                 break;
-
-            case 1: // View past results
+            case 1: // History
                 dateList = FourDResultManager.getRecentDrawDates(MAX_HISTORY_DRAWS);
-
                 if (!dateList || dateList.size() === 0) {
-                    cm.sendOk("No draws yet~ Come back after today's magic happens!");
+                    cm.sendOk("No history yet.");
                     cm.dispose();
-                    return;
+                } else {
+                    var menu = "Select a date:\r\n";
+                    for (var i = 0; i < dateList.size(); i++) menu += "#L" + i + "#" + dateList.get(i) + "#l\r\n";
+                    cm.sendSimple(menu);
                 }
-                var menu = "#eChoose a draw date to view its results:#n\r\n";
-                for (var i = 0; i < dateList.size(); i++) {
-                    menu += "#L" + i + "##b" + dateList.get(i) + "#k#l\r\n";
-                }
-                cm.sendSimple(menu);
                 return;
-
-            case 2:
+            case 2: // Claim
                 claimPrize();
                 return;
-
-            case 3: // Quick pick
+            case 3: // Quick Pick
                 isQuickPick = true;
-                cm.sendGetNumber("How many tickets? Each costs #v" + NX_MCOIN_ID + "#:", 1, 1, 100);
+                cm.sendGetNumber("How many Quick Pick tickets? (" + formatNumber(TICKET_COST) + " NX each)", 1, 1, 100);
                 break;
-
-            case 4: // Past bets
-                var bets = FourDBetManager.getPastBets(cm.getPlayer().getId(), MAX_HISTORY_BETS);
-                if (!bets || bets.size() === 0) {
-                    cm.sendOk("No past bets found~ Wanna try your luck today?");
-                } else {
-                    var list = "#eYour Past Bets:#n\r\n";
-                    for (var i = 0; i < bets.size(); i++) {
-                        var b = bets.get(i);
-                        list += "#b"
-                        + b.get("draw_date")
-                        + "#k -> "
-                        + " [" + b.get("bet_type") + "] "
-                        + b.get("number")
-                        + " x "
-                        +b.get("amount")
-
-                        + "\r\n";
-                    }
-                    cm.sendOk(list);
-                }
-                cm.dispose();
+            case 4: // Bet History
+                showBetHistory();
                 return;
-
-            case 99: // GM option
+            case 99:
                 FourDDrawScheduler.forceDrawToday();
-                cm.sendOk("Today's draw has been forced manually.");
+                cm.sendOk("Draw forced.");
                 cm.dispose();
                 return;
         }
     }
 
+    // --- STEP 2: INPUT VALIDATION / MANUAL IBET PROMPT ---
     if (status === 2) {
         if (isQuickPick) {
-            betAmount = selection;
-            if (betAmount <= 0 || !cm.haveItem(NX_MCOIN_ID, betAmount)) {
-                cm.sendOk("Aww~ not enough #v" + NX_MCOIN_ID + "# NXT Coins.");
+            ticketQty = selection;
+            var totalCost = ticketQty * TICKET_COST;
+            // Check NX (1 = Credit)
+            if (cm.getPlayer().getCSPoints(1) < totalCost) {
+                cm.sendOk("You need " + formatNumber(totalCost) + " NX.");
                 cm.dispose();
                 return;
             }
-            cm.sendSimple("Choose your bet type:\r\n#L0#Big Bet (More coverage)#l\r\n#L1#Small Bet (Higher payout)#l");
+            cm.sendSimple("Choose your bet type:\r\n#L0#Big Bet (1st/2nd/3rd/Starter/Consolation)#l\r\n#L1#Small Bet (1st/2nd/3rd Only)#l");
         } else {
             manualNumber = cm.getText();
             if (!/^\d{4}$/.test(manualNumber)) {
-                cm.sendOk("That's not a valid 4-digit number~ Try again!");
+                cm.sendOk("Invalid number. Please enter 4 digits.");
                 cm.dispose();
                 return;
             }
-            cm.sendSimple("Betting on #e" + manualNumber + "#n~\r\n#L0#Big Bet#l\r\n#L1#Small Bet#l");
+            // NEW: iBet Prompt
+            var msg = "You entered #e" + manualNumber + "#n.\r\n";
+            msg += "Do you want this to be an #r#eiBet (System Entry)#n#k?\r\n\r\n";
+            msg += "#d(iBet covers all permutations, e.g. 1234 covers 4321. Prize is shared.)#k\r\n";
+            msg += "#L0#No, Direct Bet only (Exact Match)#l\r\n";
+            msg += "#L1#Yes, iBet (Any Order)#l";
+            cm.sendSimple(msg);
         }
     }
 
+    // --- STEP 3: BET TYPE / EXECUTE QUICK PICK ---
     if (status === 3) {
-        betType = (selection === 0) ? "BIG" : "SMALL";
+        if (isQuickPick) {
+            // EXECUTE QUICK PICK
+            betType = (selection === 0) ? "BIG" : "SMALL";
+            var totalCost = ticketQty * TICKET_COST;
 
-        if (!isQuickPick) {
-            cm.sendGetNumber("How many #v" + NX_MCOIN_ID + "# will you bet?", 1, 1, 100);
-        } else {
-            if (!cm.haveItem(NX_MCOIN_ID, betAmount)) {
-                cm.sendOk("Oops~ Not enough #v" + NX_MCOIN_ID + "#.");
+            if (cm.getPlayer().getCSPoints(1) < totalCost) {
+                cm.sendOk("Not enough NX.");
                 cm.dispose();
                 return;
             }
-            cm.gainItem(NX_MCOIN_ID, -betAmount);
+
+            cm.getPlayer().modifyCSPoints(1, -totalCost);
 
             var picks = [];
-            for (var i = 0; i < betAmount; i++) {
+            for (var i = 0; i < ticketQty; i++) {
                 var num = generateRandomNumber();
-                if (!/^\d{4}$/.test(num)) continue; // extra safety
                 picks.push(num);
-                FourDBetManager.insertBet(cm.getPlayer().getId(), num, betType, currentDrawDate.toString(), "1","NXT");
+                // Quick Pick is always Direct (isIBet = false)
+                FourDBetManager.insertBet(cm.getPlayer().getId(), num, betType, currentDrawDate.toString(), "1", "NX", false);
             }
-
-            cm.sendOk("You placed #e" + betAmount + "#n Quick Pick #b" + betType + "#k bet(s):\r\n#d" + picks.join(", ") +
-                      "#k\r\nfor #b" + currentDrawDate + "#k.\r\nFingers crossed~");
+            cm.sendOk("Bought " + ticketQty + " Quick Picks for " + formatNumber(totalCost) + " NX.\r\nNumbers: #b" + picks.join(", ") + "#k");
             cm.dispose();
+        } else {
+            // MANUAL: HANDLE IBET SELECTION -> ASK TYPE
+            isIBet = (selection === 1);
+            var typeStr = isIBet ? "iBet (System)" : "Direct";
+            cm.sendSimple("Betting on #e" + manualNumber + " (" + typeStr + ")#n.\r\nChoose bet type:\r\n#L0#Big Bet#l\r\n#L1#Small Bet#l");
         }
     }
 
-    if (status === 4 && !isQuickPick) {
-        betAmount = selection;
-        if (betAmount <= 0 || betAmount > 100) {
-            cm.sendOk("That's not a valid number of bets.");
-            cm.dispose();
-            return;
+    // --- STEP 4: MANUAL QUANTITY ---
+    if (status === 4) {
+        if (!isQuickPick) {
+            betType = (selection === 0) ? "BIG" : "SMALL";
+            var typeStr = isIBet ? "iBet" : "Direct";
+            cm.sendGetNumber("How many tickets for " + manualNumber + " (" + typeStr + ")? (" + formatNumber(TICKET_COST) + " NX each)", 1, 1, 100);
         }
-        if (!cm.haveItem(NX_MCOIN_ID, betAmount)) {
-            cm.sendOk("Oopsie~ You don't have enough #v" + NX_MCOIN_ID + "#.");
+    }
+
+    // --- STEP 5: EXECUTE MANUAL ---
+    if (status === 5) {
+        if (!isQuickPick) {
+            ticketQty = selection;
+            var totalCost = ticketQty * TICKET_COST;
+
+            if (cm.getPlayer().getCSPoints(1) < totalCost) {
+                cm.sendOk("Not enough NX. Need: " + formatNumber(totalCost));
+                cm.dispose();
+                return;
+            }
+
+            cm.getPlayer().modifyCSPoints(1, -totalCost);
+
+            // Pass all parameters including isIBet
+            FourDBetManager.insertBet(
+                cm.getPlayer().getId(),
+                manualNumber,
+                betType,
+                currentDrawDate.toString(),
+                ticketQty.toString(),
+                "NX",
+                isIBet
+            );
+
+            var typeStr = isIBet ? "iBet" : "Direct";
+            cm.sendOk("Placed " + ticketQty + " " + typeStr + " bets on #e" + manualNumber + "#n for " + formatNumber(totalCost) + " NX.");
             cm.dispose();
-            return;
         }
-
-        cm.gainItem(NX_MCOIN_ID, -betAmount);
-        FourDBetManager.insertBet(cm.getPlayer().getId(), manualNumber, betType, currentDrawDate.toString(), betAmount.toString(),"NXT");
-
-        cm.sendOk("You've placed #e" + betAmount + "#n " + betType + " bet(s) on #e" + manualNumber +
-                  "#n for #b" + currentDrawDate + "#k!\r\nGood luck, sweetheart~");
-        cm.dispose();
     }
 }
 
 function claimPrize() {
     try {
-        var wins = FourDBetManager.getUnclaimedWinningBets(cm.getPlayer().getId(),"NXT");
+        var wins = FourDBetManager.getUnclaimedWinningBets(cm.getPlayer().getId(), "NX");
         var total = 0;
+
         for (var i = 0; i < wins.size(); i++) {
             var row = wins.get(i);
-            var qty = row.get("prize_quantity");
-            if (qty > 0) {
-                total += qty;
+            var prizeVal = row.get("prize_quantity");
+            if (prizeVal > 0) {
+                total += prizeVal;
                 FourDBetManager.markBetClaimed(row.get("bet_id"));
             }
         }
-            total_for_announce = total;
+
         if (total > 0) {
-            while(total >= 32000){
-                cm.gainItem(NX_MCOIN_ID, 32000);
-                total -= 32000;
-                }
-
-            cm.gainItem(NX_MCOIN_ID, total);
-            cm.sendOk("You claimed #e" + total_for_announce + "#n #v" + NX_MCOIN_ID + "#!\r\nCome win more next time~");
+            cm.getPlayer().modifyCSPoints(1, total);
+            cm.sendOk("Congratulations! You claimed #e" + formatNumber(total) + " NX#n!");
         } else {
-            cm.sendOk("No prizes to claim just yet~ Keep playing!");
+            cm.sendOk("No unclaimed NX prizes found.");
         }
-
-    } catch (e) {
-        cm.sendOk("Eek! Something went wrong checking your prize.");
-    }
+    } catch (e) { cm.sendOk("Error claiming prize."); }
     cm.dispose();
 }
 
-function generateRandomNumber() {
-    return ("000" + Math.floor(Math.random() * 10000)).slice(-4);
+function showBetHistory() {
+    var bets = FourDBetManager.getPastBets(cm.getPlayer().getId(), MAX_HISTORY_BETS);
+    if (!bets || bets.size() === 0) {
+        cm.sendOk("No bet history.");
+        cm.dispose();
+        return;
+    }
+    var msg = "Your Recent Bets:\r\n";
+    for (var i = 0; i < bets.size(); i++) {
+        var b = bets.get(i);
+        var ibetStr = b.get("is_ibet") ? "(iBet)" : "";
+        msg += "#b" + b.get("draw_date") + "#k | " + b.get("number") + " " + ibetStr + " | " + b.get("currency") + "\r\n";
+    }
+    cm.sendOk(msg);
+    cm.dispose();
 }
+
+function generateRandomNumber() { return ("000" + Math.floor(Math.random() * 10000)).slice(-4); }
+function formatNumber(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }

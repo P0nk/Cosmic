@@ -1,7 +1,6 @@
 package server.gambling;
 
 import tools.DatabaseConnection;
-
 import java.sql.*;
 import java.util.*;
 
@@ -12,16 +11,18 @@ public class FourDBetManager {
 
     /**
      * Inserts a new bet into the database for a player.
+     * Includes support for iBet (System Entry).
      *
-     * @param charId  Player ID placing the bet.
-     * @param number  4-digit number as a string (0000–9999).
-     * @param type    "BIG" or "SMALL" bet type.
-     * @param date    Draw date string (yyyy-MM-dd).
-     * @param amount  Ticket quantity (as string, will be parsed to int).
+     * @param charId       Player ID placing the bet.
+     * @param number       4-digit number as a string (0000–9999).
+     * @param type         "BIG" or "SMALL" bet type.
+     * @param date         Draw date string (yyyy-MM-dd).
+     * @param amount       Ticket quantity (as string).
+     * @param currencyType Currency used ("NX", "MESO", "BCOIN", etc.).
+     * @param isIBet       True if this is a System Entry (permutation bet).
      */
-
-    public static void insertBet(int charId, String number, String type, String date, String amount, String currencyType) {
-        String sql = "INSERT INTO 4d_bets (char_id, bet_number, bet_type, draw_date, amount, currency_type) VALUES (?, ?, ?, ?, ?, ?)";
+    public static void insertBet(int charId, String number, String type, String date, String amount, String currencyType, boolean isIBet) {
+        String sql = "INSERT INTO 4d_bets (char_id, bet_number, bet_type, draw_date, amount, currency_type, is_ibet) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -32,6 +33,7 @@ public class FourDBetManager {
             ps.setDate(4, java.sql.Date.valueOf(date));
             ps.setInt(5, Integer.parseInt(amount.trim()));
             ps.setString(6, currencyType);
+            ps.setInt(7, isIBet ? 1 : 0);
 
             ps.executeUpdate();
         } catch (SQLException | NumberFormatException e) {
@@ -40,23 +42,23 @@ public class FourDBetManager {
     }
 
     /**
-     * Returns unclaimed winning bets for a player.
-     *
-     * @param charId Player ID
-     * @return List of bets (each contains bet_id, prize_quantity)
+     * Returns unclaimed winning bets for a player based on currency type.
      */
     public static List<Map<String, Object>> getUnclaimedWinningBets(int characterId, String currencyType) {
         List<Map<String, Object>> results = new ArrayList<>();
+        String sql = "SELECT bet_id, prize_quantity FROM 4d_bets WHERE char_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?";
+
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM cosmic.4d_bets WHERE char_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?")) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setInt(1, characterId);
             ps.setString(2, currencyType);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
                     row.put("bet_id", rs.getInt("bet_id"));
                     row.put("prize_quantity", rs.getInt("prize_quantity"));
-
                     results.add(row);
                 }
             }
@@ -67,9 +69,7 @@ public class FourDBetManager {
     }
 
     /**
-     * Marks a specific bet as claimed after the reward is delivered.
-     *
-     * @param betId The bet ID to mark claimed
+     * Marks a specific bet as claimed.
      */
     public static void markBetClaimed(int betId) {
         String sql = "UPDATE 4d_bets SET claimed = 1 WHERE bet_id = ?";
@@ -85,15 +85,11 @@ public class FourDBetManager {
     }
 
     /**
-     * Fetches the player's past N bets.
-     *
-     * @param charId Player ID
-     * @param limit  Maximum number of rows to return
-     * @return List of bets with draw_date, bet_number, bet_type, amount
+     * Fetches the player's past bets (limited count).
      */
     public static List<Map<String, Object>> getPastBets(int charId, int limit) {
         List<Map<String, Object>> bets = new ArrayList<>();
-        String sql = "SELECT draw_date, bet_number, bet_type, amount FROM 4d_bets " +
+        String sql = "SELECT draw_date, bet_number, bet_type, amount, is_ibet, currency_type FROM 4d_bets " +
                 "WHERE char_id = ? ORDER BY bet_id DESC LIMIT ?";
 
         try (Connection con = DatabaseConnection.getConnection();
@@ -109,6 +105,8 @@ public class FourDBetManager {
                     row.put("number", rs.getString("bet_number"));
                     row.put("bet_type", rs.getString("bet_type"));
                     row.put("amount", rs.getInt("amount"));
+                    row.put("currency", rs.getString("currency_type"));
+                    row.put("is_ibet", rs.getInt("is_ibet") == 1);
                     bets.add(row);
                 }
             }
