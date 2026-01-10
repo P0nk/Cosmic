@@ -74,6 +74,7 @@ import service.NoteService;
 import tools.DatabaseConnection;
 import tools.Pair;
 import tools.RankingScheduler; // <--- Add this line
+import server.voting.VoteScheduler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -954,6 +955,10 @@ public class Server {
         // --- ADD THIS LINE HERE ---
         RankingScheduler.start();
         log.info("Daily Ranking Announcer scheduled.");
+
+        // Add VoteScheduler here
+        VoteScheduler.start();
+        // ------------------------
         // ------------------------
         try {
             for (int i = 0; i < worldCount; i++) {
