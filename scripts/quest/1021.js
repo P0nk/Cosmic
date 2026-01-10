@@ -51,11 +51,11 @@ function start(mode, type, selection) {
             qm.sendAcceptDecline("So..... Let me just do this for fun! Take this~!");
         } else if (status == 3) {
             if (qm.getPlayer().getHp() >= 10) {
-                qm.getPlayer().updateHp(1);
+                qm.getPlayer().updateHp(20);
             }
 
             if (!qm.haveItem(2010007)) {
-                qm.gainItem(2010007, 2);
+                qm.gainItem(2010007, 1);
             }
 
             qm.forceStartQuest();
@@ -100,8 +100,8 @@ function end(mode, type, selection) {
                 qm.dropMessage(1, "Unknown Error");
             } else if (qm.canHold(2010000) && qm.canHold(2010009)) {
                 qm.gainExp(10);
-                qm.gainItem(2010000, 100);
-                qm.gainItem(2010009, 100);
+                qm.gainItem(2010000, 1000);
+                qm.gainItem(2010009, 1000);
                 qm.forceCompleteQuest();
             } else {
                 qm.dropMessage(1, "Your inventory is full");
