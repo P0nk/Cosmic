@@ -113,7 +113,7 @@ public class DatabaseConnection {
         try {
             dataSource = new HikariDataSource(config);
             initializeJdbi(dataSource);
-            startPoolMonitor();
+//            startPoolMonitor(); // uncomment for debugging DB Connection.
 
             long initDuration = Duration.between(initStart, Instant.now()).toMillis();
             log.info("DB pool initialized in {} ms", initDuration);
