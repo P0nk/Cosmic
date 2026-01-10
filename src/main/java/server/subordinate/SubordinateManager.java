@@ -6,6 +6,7 @@ import client.inventory.Equip;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.manipulator.InventoryManipulator;
+import scripting.AbstractPlayerInteraction;
 import server.ItemInformationProvider;
 
 public class SubordinateManager {
@@ -113,71 +114,75 @@ public class SubordinateManager {
     public static void rebirthItem(Client c, Character chr, short itemSlot) {
         Inventory eqpInv = chr.getInventory(InventoryType.EQUIP);
         Equip selectedItem = (Equip) eqpInv.getItem(itemSlot);
-        if (selectedItem == null) return;
 
-        // Save old stats for Debug
-        short oldWatk = selectedItem.getWatk();
-        int oldHands = selectedItem.getHands();
+        if (selectedItem == null) {
+            return;
+        }
+
+        // 1. Capture Old Data
         int newItemId = selectedItem.getItemId();
+        int oldHands = selectedItem.getHands(); // Current Rebirth count
 
-        // Determine Type
-        int newItemType = newItemId / 10000;
-        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        // Capture old stats specifically for the formula
+        short oldStr = selectedItem.getStr();
+        short oldDex = selectedItem.getDex();
+        short oldInt = selectedItem.getInt();
+        short oldLuk = selectedItem.getLuk();
+        short oldWatk = selectedItem.getWatk();
+        short oldMatk = selectedItem.getMatk();
 
-        // 1. Remove Old Item
+        // 2. Remove Old Item
+        // We remove it first to free up the slot (and potentially reuse it)
         InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, itemSlot, (short) 1, false);
 
-        // 2. Add New Clean Item (Simulating gainItem)
-        // We use getEquipById to fetch the item with correct WZ properties (like Slots)
-        // Then we use addFromDrop to place it in the inventory.
-        Equip cleanItem = (Equip) ii.getEquipById(newItemId);
-        short newItemSlot = eqpInv.getNextFreeSlot();
-        InventoryManipulator.addFromDrop(c, cleanItem, false);
+        // 3. Add New Clean Item (Using the static helper)
+        // This adds the item to the inventory AND returns the object so we can edit it
+        Equip newItem = (Equip) AbstractPlayerInteraction.gainItem(c, newItemId, (short) 1);
 
-        // 3. Retrieve the New Item to Modify
-        Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
-        if (newItem == null) return;
+        // SAFETY CHECK: If inventory was full (despite removal) or item invalid
+        if (newItem == null) {
+            chr.dropMessage(1, "Error: Could not gain new item. Rebirth cancelled.");
+            return;
+        }
 
-        int itemReqLevel = ii.getEquipLevelReq(newItemId);
-
-        short addStr = 0, addDex = 0, addInt = 0, addLuk = 0, addWatk = 0, addMatk = 0;
-        short addWdef = 0, addMdef = 0;
+        // 4. Calculate New Stats
         int nextHands = oldHands + 1;
-
-        // --- FORMULA START ---
-
+        int newItemType = newItemId / 10000;
         double currentTypeAttackRate = getAttackRateForType(newItemType);
 
+        short addStr, addDex, addInt, addLuk, addWatk, addMatk;
+        short addWdef = 0, addMdef = 0;
+
+        // --- FORMULA START ---
+        // Note: We use the OLD stats (captured above) to calculate the bonus
         if (newItemType >= 130) { // Is Weapon
-            addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
-            addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
-            addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
-            addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
-            addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
-            addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
+            addStr = (short) (oldStr * RATE_BASE_STATS);
+            addDex = (short) (oldDex * RATE_BASE_STATS);
+            addInt = (short) (oldInt * RATE_BASE_STATS);
+            addLuk = (short) (oldLuk * RATE_BASE_STATS);
+            addMatk = (short) (oldMatk * currentTypeAttackRate);
+            addWatk = (short) (oldWatk * currentTypeAttackRate);
         } else { // Is Armor
-            addStr = (short) (selectedItem.getStr() * RATE_BASE_STATS);
-            addDex = (short) (selectedItem.getDex() * RATE_BASE_STATS);
-            addInt = (short) (selectedItem.getInt() * RATE_BASE_STATS);
-            addLuk = (short) (selectedItem.getLuk() * RATE_BASE_STATS);
-            addWatk = (short) (selectedItem.getWatk() * currentTypeAttackRate);
-            addMatk = (short) (selectedItem.getMatk() * currentTypeAttackRate);
+            addStr = (short) (oldStr * RATE_BASE_STATS);
+            addDex = (short) (oldDex * RATE_BASE_STATS);
+            addInt = (short) (oldInt * RATE_BASE_STATS);
+            addLuk = (short) (oldLuk * RATE_BASE_STATS);
+            addWatk = (short) (oldWatk * currentTypeAttackRate);
+            addMatk = (short) (oldMatk * currentTypeAttackRate);
         }
 
         // Defense Bonus Logic
-        if (newItemType == 105) {
-            // Overalls (150 per RB)
+        if (newItemType == 105) { // Overalls
             addWdef = (short) (150 * nextHands);
             addMdef = (short) (150 * nextHands);
-        } else if (newItemType >= 100 && newItemType < 120) {
-            // Other Armors (75 per RB)
+        } else if (newItemType >= 100 && newItemType < 120) { // Other Armors
             addWdef = (short) (75 * nextHands);
             addMdef = (short) (75 * nextHands);
         }
-
         // --- FORMULA END ---
 
-        // Apply Stats with Safety Cap
+        // 5. Apply Stats to the NEW Item
+        // We add the calculated bonus to the *clean* stats of the new item
         newItem.setStr((short) Math.min(MAX_STAT_CAP, newItem.getStr() + addStr));
         newItem.setDex((short) Math.min(MAX_STAT_CAP, newItem.getDex() + addDex));
         newItem.setInt((short) Math.min(MAX_STAT_CAP, newItem.getInt() + addInt));
@@ -187,19 +192,22 @@ public class SubordinateManager {
         newItem.setWdef((short) Math.min(MAX_STAT_CAP, newItem.getWdef() + addWdef));
         newItem.setMdef((short) Math.min(MAX_STAT_CAP, newItem.getMdef() + addMdef));
 
-        // Finalize
+        // 6. Finalize Rebirth Counters
         newItem.setHands((short) nextHands);
+        int itemReqLevel = ItemInformationProvider.getInstance().getEquipLevelReq(newItemId);
         int enforcedReq = getEffectiveReqLevel(itemReqLevel, nextHands);
         newItem.setReqLevelOverride((short) enforcedReq);
+
+        // 7. Update User
+        // Because we modified the object returned by gainItem (which is in the inventory),
+        // we just need to tell the client to refresh that specific item.
+        chr.forceUpdateItem(newItem);
 
         // Debug Log
         if (DEBUG_MODE) {
             System.out.println("[Rebirth Debug] Item: " + newItemId + " | RB: " + nextHands);
-            System.out.println("Watk: " + oldWatk + " -> " + newItem.getWatk());
-            System.out.println("Slots Available: " + newItem.getUpgradeSlots());
+            System.out.println("Old Watk: " + oldWatk + " -> New Bonus: " + addWatk + " -> Final: " + newItem.getWatk());
         }
-
-        chr.forceUpdateItem(newItem);
     }
 
     // ==========================================

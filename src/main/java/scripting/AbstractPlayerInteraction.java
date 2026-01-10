@@ -566,6 +566,121 @@ public class AbstractPlayerInteraction {
         return evolved;
     }
 
+// =========================================================================================
+    //                            STATIC OVERLOADS (For Java Source)
+    // =========================================================================================
+    // Use these when calling from SubordinateManager or other Java classes.
+
+    /**
+     * Static wrapper: Adds an item to the specified client's inventory.
+     * Can be called from anywhere in the source (e.g., SubordinateManager).
+     */
+    public static Item gainItem(Client c, int id, short quantity) {
+        return gainItem(c, id, quantity, false, true, -1, null);
+    }
+
+    /**
+     * The Master Static Method. All other gainItem calls eventually route here.
+     * Use this if you need full control (random stats, expiration, pet source, etc.) from a static context.
+     */
+    public static Item gainItem(Client c, int id, short quantity, boolean randomStats, boolean showMessage, long expires, Pet from) {
+        Item item = null;
+        Pet evolved;
+        int petId = -1;
+
+        if (quantity >= 0) {
+            // --- Pet Handling ---
+            if (ItemConstants.isPet(id)) {
+                petId = Pet.createPet(id);
+
+                if (from != null) {
+                    evolved = Pet.loadFromDb(id, (short) 0, petId);
+
+                    Point pos = c.getPlayer().getPosition();
+                    pos.y -= 12;
+                    evolved.setPos(pos);
+                    evolved.setFh(c.getPlayer().getMap().getFootholds().findBelow(evolved.getPos()).getId());
+                    evolved.setStance(0);
+                    evolved.setSummoned(true);
+
+                    evolved.setName(from.getName().compareTo(ItemInformationProvider.getInstance().getName(from.getItemId())) != 0 ? from.getName() : ItemInformationProvider.getInstance().getName(id));
+                    evolved.setTameness(from.getTameness());
+                    evolved.setFullness(from.getFullness());
+                    evolved.setLevel(from.getLevel());
+                    evolved.setExpiration(System.currentTimeMillis() + expires);
+                    evolved.saveToDb();
+                }
+            }
+
+            ItemInformationProvider ii = ItemInformationProvider.getInstance();
+
+            // --- Item Creation ---
+            if (ItemConstants.getInventoryType(id).equals(InventoryType.EQUIP)) {
+                item = ii.getEquipById(id);
+
+                if (item != null) {
+                    Equip it = (Equip) item;
+                    // Fix for Accessories having 0 slots
+                    if (ItemConstants.isAccessory(item.getItemId()) && it.getUpgradeSlots() <= 0) {
+                        it.setUpgradeSlots(3);
+                    }
+
+                    // Enhanced Crafting / GM Logic
+                    if (YamlConfig.config.server.USE_ENHANCED_CRAFTING && c.getPlayer().getCS()) {
+                        Equip eqp = (Equip) item;
+                        if (!(c.getPlayer().isGM() && YamlConfig.config.server.USE_PERFECT_GM_SCROLL)) {
+                            eqp.setUpgradeSlots((byte) (eqp.getUpgradeSlots() + 1));
+                        }
+                        item = ItemInformationProvider.getInstance().scrollEquipWithId(item, ItemId.CHAOS_SCROll_60, true, ItemId.CHAOS_SCROll_60, c.getPlayer().isGM());
+                    }
+                }
+            } else {
+                item = new Item(id, (short) 0, quantity, petId);
+            }
+
+            if (item == null) {
+                // Safety check if item data is missing
+                return null;
+            }
+
+            if (expires >= 0) {
+                item.setExpiration(System.currentTimeMillis() + expires);
+            }
+
+            // --- Inventory Space Check ---
+            if (!InventoryManipulator.checkSpace(c, id, quantity, "")) {
+                c.getPlayer().dropMessage(1, "Your inventory is full. Please remove an item from your " + ItemConstants.getInventoryType(id).name() + " inventory.");
+                return null;
+            }
+
+            // --- Adding to Inventory ---
+            if (ItemConstants.getInventoryType(id) == InventoryType.EQUIP) {
+                if (randomStats) {
+                    InventoryManipulator.addFromDrop(c, ii.randomizeStats((Equip) item), false, petId);
+                } else {
+                    InventoryManipulator.addFromDrop(c, item, false, petId);
+                }
+            } else {
+                InventoryManipulator.addFromDrop(c, item, false, petId);
+            }
+        } else {
+            // --- Remove Item (Negative Quantity) ---
+            InventoryManipulator.removeById(c, ItemConstants.getInventoryType(id), id, -quantity, true, false);
+        }
+
+        // --- UI Feedback ---
+        if (showMessage) {
+            c.sendPacket(PacketCreator.getShowItemGain(id, quantity, true));
+        }
+
+        return item;
+    }
+
+    // =========================================================================================
+    //                            INSTANCE OVERLOADS (For Scripts)
+    // =========================================================================================
+    // These are used by NPC scripts (cm.gainItem) and implicitly use 'this.c'.
+
     public void gainItem(int id, int quantity) {
         // Step 1: Determine if the quantity is negative or positive
         boolean isNegative = quantity < 0;
@@ -588,111 +703,33 @@ public class AbstractPlayerInteraction {
         }
     }
 
-
     public void gainItem(int id, short quantity) {
-        gainItem(id, quantity, false, true);
+        gainItem(this.c, id, quantity, false, true, -1, null);
     }
 
-    public void gainItem(int id, short quantity, boolean show) {//this will fk randomStats equip :P
-        gainItem(id, quantity, false, show);
+    public void gainItem(int id, short quantity, boolean show) {
+        gainItem(this.c, id, quantity, false, show, -1, null);
     }
 
     public void gainItem(int id, boolean show) {
-        gainItem(id, (short) 1, false, show);
+        gainItem(this.c, id, (short) 1, false, show, -1, null);
     }
 
     public void gainItem(int id) {
-        gainItem(id, (short) 1, false, true);
+        gainItem(this.c, id, (short) 1, false, true, -1, null);
     }
 
     public Item gainItem(int id, short quantity, boolean randomStats, boolean showMessage) {
-        return gainItem(id, quantity, randomStats, showMessage, -1);
+        return gainItem(this.c, id, quantity, randomStats, showMessage, -1, null);
     }
 
     public Item gainItem(int id, short quantity, boolean randomStats, boolean showMessage, long expires) {
-        return gainItem(id, quantity, randomStats, showMessage, expires, null);
+        return gainItem(this.c, id, quantity, randomStats, showMessage, expires, null);
     }
 
     public Item gainItem(int id, short quantity, boolean randomStats, boolean showMessage, long expires, Pet from) {
-        Item item = null;
-        Pet evolved;
-        int petId = -1;
-
-        if (quantity >= 0) {
-            if (ItemConstants.isPet(id)) {
-                petId = Pet.createPet(id);
-
-                if (from != null) {
-                    evolved = Pet.loadFromDb(id, (short) 0, petId);
-
-                    Point pos = getPlayer().getPosition();
-                    pos.y -= 12;
-                    evolved.setPos(pos);
-                    evolved.setFh(getPlayer().getMap().getFootholds().findBelow(evolved.getPos()).getId());
-                    evolved.setStance(0);
-                    evolved.setSummoned(true);
-
-                    evolved.setName(from.getName().compareTo(ItemInformationProvider.getInstance().getName(from.getItemId())) != 0 ? from.getName() : ItemInformationProvider.getInstance().getName(id));
-                    evolved.setTameness(from.getTameness());
-                    evolved.setFullness(from.getFullness());
-                    evolved.setLevel(from.getLevel());
-                    evolved.setExpiration(System.currentTimeMillis() + expires);
-                    evolved.saveToDb();
-                }
-
-                //InventoryManipulator.addById(c, id, (short) 1, null, petId, expires == -1 ? -1 : System.currentTimeMillis() + expires);
-            }
-
-            ItemInformationProvider ii = ItemInformationProvider.getInstance();
-
-            if (ItemConstants.getInventoryType(id).equals(InventoryType.EQUIP)) {
-                item = ii.getEquipById(id);
-
-                if (item != null) {
-                    Equip it = (Equip) item;
-                    if (ItemConstants.isAccessory(item.getItemId()) && it.getUpgradeSlots() <= 0) {
-                        it.setUpgradeSlots(3);
-                    }
-
-                    if (YamlConfig.config.server.USE_ENHANCED_CRAFTING == true && c.getPlayer().getCS() == true) {
-                        Equip eqp = (Equip) item;
-                        if (!(c.getPlayer().isGM() && YamlConfig.config.server.USE_PERFECT_GM_SCROLL)) {
-                            eqp.setUpgradeSlots((byte) (eqp.getUpgradeSlots() + 1));
-                        }
-                        item = ItemInformationProvider.getInstance().scrollEquipWithId(item, ItemId.CHAOS_SCROll_60, true, ItemId.CHAOS_SCROll_60, c.getPlayer().isGM());
-                    }
-                }
-            } else {
-                item = new Item(id, (short) 0, quantity, petId);
-            }
-
-            if (expires >= 0) {
-                item.setExpiration(System.currentTimeMillis() + expires);
-            }
-
-            if (!InventoryManipulator.checkSpace(c, id, quantity, "")) {
-                c.getPlayer().dropMessage(1, "Your inventory is full. Please remove an item from your " + ItemConstants.getInventoryType(id).name() + " inventory.");
-                return null;
-            }
-            if (ItemConstants.getInventoryType(id) == InventoryType.EQUIP) {
-                if (randomStats) {
-                    InventoryManipulator.addFromDrop(c, ii.randomizeStats((Equip) item), false, petId);
-                } else {
-                    InventoryManipulator.addFromDrop(c, item, false, petId);
-                }
-            } else {
-                InventoryManipulator.addFromDrop(c, item, false, petId);
-            }
-        } else {
-            InventoryManipulator.removeById(c, ItemConstants.getInventoryType(id), id, -quantity, true, false);
-        }
-        if (showMessage) {
-            c.sendPacket(PacketCreator.getShowItemGain(id, quantity, true));
-        }
-
-        return item;
+        return gainItem(this.c, id, quantity, randomStats, showMessage, expires, from);
     }
-
     public void gainFame(int delta) {
         getPlayer().gainFame(delta);
     }
