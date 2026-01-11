@@ -1,9 +1,9 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v12 - "S" Tag & Server Debug)
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v13 - Legendary Fixes & Audit Log)
  *
  * Updates:
- * - Legendary Tier now uses tag "S" (e.g. F.Tier SSS).
- * - Added console.log debug traces for server-side monitoring.
- * - Regex updated to support 1-9, X, S (and L for backward compat).
+ * - Legendary Tier Success set to fixed 50%.
+ * - Legendary Tier HIDDEN from menu unless player has the food.
+ * - Permanent server-side audit logging enabled.
  */
 
 var status = 0;
@@ -25,11 +25,7 @@ var FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 40
 var FOOD_T7 = [4036211, 4036212, 4036213, 4036214, 4036215, 4036216, 4036217, 4036218, 4036219, 4036220, 4036221, 4036222, 4036223, 4036224, 4036225];
 var FOOD_T8 = [4036226, 4036227, 4036228, 4036229, 4036230, 4036231, 4036232, 4036233, 4036234, 4036235, 4036236, 4036237, 4036238, 4036239, 4036240];
 var FOOD_T9 = [4036241, 4036242, 4036243, 4036244, 4036245, 4036246, 4036247, 4036248, 4036249, 4036250, 4036251, 4036252, 4036253, 4036254, 4036255, 4036256, 4036257, 4036258, 4036259, 4036260, 4036261, 4036262, 4036263, 4036264, 4036265, 4036266];
-
-// T10 (Matches Java Tier.T10)
 var FOOD_T10 = [4036267, 4036268, 4036269, 4036270, 4036271, 4036272, 4036273, 4036274, 4036275, 4036276, 4036277, 4036278, 4036279, 4036280, 4036281, 4036282, 4036283, 4036284, 4036285, 4036286, 4036287, 4036288];
-
-// LEGENDARY (Matches Java Tier.LEGENDARY)
 var FOOD_LEGENDARY = [4036289, 4036290, 4036291, 4036292, 4036293, 4036294, 4036295, 4036296, 4036297, 4036298, 4036299, 4036300, 4036301, 4036302, 4036303, 4036304, 4036305, 4036306, 4036307];
 
 var FOOD_PER_UPGRADE = 1;
@@ -42,13 +38,14 @@ var FAIL_STEP_PER_TIER = 10;
 var ItemConstants = Packages.constants.inventory.ItemConstants;
 var CashShop = Packages.server.CashShop;
 
-// ================== DEBUG LOGGER ==================
+// ================== AUDIT LOGGER ==================
 function log(msg) {
+    // Prints to server console in format: [FoodUpgrade][PlayerName] Message
     try {
         var charName = (cm && cm.getPlayer()) ? cm.getPlayer().getName() : "Unknown";
-        console.log("[NPC:FoodUpgrade][" + charName + "] " + msg);
+        console.log("[FoodUpgrade][" + charName + "] " + msg);
     } catch(e) {
-        console.log("[NPC:FoodUpgrade] " + msg);
+        console.log("[FoodUpgrade] " + msg);
     }
 }
 
@@ -88,14 +85,10 @@ function tierDelta(tier, isWeapon) {
 function getEnhanceHistory(item) {
     var owner = item.getOwner();
     if (!owner) return "";
-
-    // Match New Tag (Supports 1-9, X for T10, S for Legendary, L for Legacy Legendary)
     var mNew = owner.match(/\[F\.Tier ([1-9XSL]+)\]/);
     if (mNew) return mNew[1];
-
     var mOld = owner.match(/\[F\+(\d+)\]/);
     if (mOld) return "OLD:" + mOld[1];
-
     return "";
 }
 
@@ -107,7 +100,7 @@ function getEnhanceLevel(item) {
 
 function getTierChar(tier) {
     var s = String(tier);
-    if (s === "Legendary") return "S"; // UPDATED: Returns 'S' instead of 'L'
+    if (s === "Legendary") return "S";
     if (s === "T10") return "X";
     return s.replace("T", "");
 }
@@ -123,8 +116,6 @@ function addEnhanceTag(item, tierChar) {
     } else {
         newHistory = currentHistory + tierChar;
     }
-
-    // WIPE OLD TAGS + Update with new history
     item.setOwner("[F.Tier " + newHistory + "]");
 }
 
@@ -244,12 +235,15 @@ function tierIndex(tier) {
 }
 
 function failRateForTier(tier) {
+    // UPDATED: Standard formula for normal tiers
     var idx = tierIndex(tier);
     var fail = BASE_FAIL_RATE + (idx - 1) * FAIL_STEP_PER_TIER;
     return Math.max(0, Math.min(100, fail));
 }
 
 function successRateForTier(tier) {
+    // UPDATED: Fixed 50% for Legendary, otherwise formula
+    if (tier === "Legendary") return 50;
     return Math.max(0, Math.min(100, 100 - failRateForTier(tier)));
 }
 
@@ -284,8 +278,6 @@ function start() {
     pendingDelta = null;
     isAutoRoll = false;
 
-    log("Started interaction.");
-
     var menu = "Feed me any Food and I will bless your equip... sometimes.\r\n\r\n"
         + "#d- Items are tagged with [F.Tier ...]\r\n"
         + "- Max enhance per equip: #r+" + MAX_ENHANCE + "#k\r\n"
@@ -304,7 +296,6 @@ function start() {
 
 function action(mode, type, selection) {
     if (mode !== 1) {
-        log("Closed/Cancelled");
         cm.dispose();
         return;
     }
@@ -313,17 +304,13 @@ function action(mode, type, selection) {
     // status 1: menu choice
     if (status === 1) {
         if (selection == 1) {
-            log("Selected Guide");
             cm.sendOk(guide());
             cm.dispose();
             return;
         }
 
         if (selection == 999 && isDonor()) {
-            log("Selected Auto-Roll Mode");
             isAutoRoll = true;
-        } else {
-            log("Selected Normal Mode");
         }
 
         var inv = cm.getInventory(1);
@@ -370,8 +357,6 @@ function action(mode, type, selection) {
     // status 2: equip picked -> choose food tier
     if (status === 2) {
         selectedSlot = selection;
-        log("User selected inventory slot: " + selectedSlot);
-
         var inv2 = cm.getInventory(1);
         selectedItem = inv2.getItem(selectedSlot);
 
@@ -382,7 +367,6 @@ function action(mode, type, selection) {
         }
 
         selectedItemId = selectedItem.getItemId();
-        log("Item ID resolved: " + selectedItemId);
 
         if (isCashItem(selectedItemId)) {
             cm.sendOk("You cannot upgrade Cash items.");
@@ -397,14 +381,24 @@ function action(mode, type, selection) {
             return;
         }
 
-        var tiers = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+        // FULL LIST
+        var allTiers = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
 
-        var menu = "Choose which Food Tier to use (any tier works on any equip):\r\n";
+        // DISPLAY LIST (Filtered)
+        var displayTiers = [];
+        for (var k = 0; k < allTiers.length; k++) {
+            var tCheck = allTiers[k];
+            // HIDE LEGENDARY if player has 0 items
+            if (tCheck === "Legendary" && countTierFood(tCheck) <= 0) continue;
+            displayTiers.push(tCheck);
+        }
+
+        var menu = "Choose which Food Tier to use:\r\n";
         if (isAutoRoll) menu += "#r(Auto-Roll will use this tier repeatedly until Max or OOM)#k\r\n\r\n";
         else menu += "\r\n";
 
-        for (var i = 0; i < tiers.length; i++) {
-            var t = tiers[i];
+        for (var i = 0; i < displayTiers.length; i++) {
+            var t = displayTiers[i];
             var have = countTierFood(t);
             var succ = successRateForTier(t);
 
@@ -416,15 +410,25 @@ function action(mode, type, selection) {
                  + "#l\r\n";
         }
 
+        // STORE FILTERED LIST for next step selection
+        // We temporarily store it in a custom property on 'cm' or rebuild it next step
+        // To be safe and stateless, we will rebuild the exact same list in status 3
         cm.sendSimple(menu);
         return;
     }
 
     // status 3: tier chosen -> preview + confirm
     if (status === 3) {
-        var tiers2 = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
-        chosenTier = tiers2[selection];
-        log("User selected tier: " + chosenTier);
+        // REBUILD FILTERED LIST to match index
+        var allTiers2 = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+        var displayTiers2 = [];
+        for (var k = 0; k < allTiers2.length; k++) {
+            var tCheck = allTiers2[k];
+            if (tCheck === "Legendary" && countTierFood(tCheck) <= 0) continue;
+            displayTiers2.push(tCheck);
+        }
+
+        chosenTier = displayTiers2[selection];
 
         if (!chosenTier || selectedItem.getItemId() !== selectedItemId) {
              cm.sendOk("Error. Please start over.");
@@ -433,7 +437,6 @@ function action(mode, type, selection) {
         }
 
         if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
-            log("Not enough food items for tier " + chosenTier);
             cm.sendOk("You don't have enough " + chosenTier + " Food.\r\n\r\n" + "#dAcceptable " + chosenTier + " Food:#k\r\n" + foodListForTier(chosenTier, FOOD_PER_UPGRADE));
             cm.dispose();
             return;
@@ -441,7 +444,6 @@ function action(mode, type, selection) {
 
         var nxNeed = nxCostForTier(chosenTier);
         if (getNxCredit() < nxNeed) {
-            log("Not enough NX.");
             cm.sendOk("You need #b" + fmt(nxNeed) + " NX#k.");
             cm.dispose();
             return;
@@ -451,12 +453,11 @@ function action(mode, type, selection) {
         pendingDelta = tierDelta(chosenTier, weaponFlag);
 
         var succ2 = successRateForTier(chosenTier);
-        var fail2 = failRateForTier(chosenTier);
+        var fail2 = 100 - succ2;
 
         var msg = "";
 
         if (isAutoRoll) {
-            log("Previewing Auto-Roll Confirmation");
             msg = "#e#r[Auto-Roll Confirmation]#k#n\r\n"
                 + "I will continuously apply #b" + chosenTier + "#k until:\r\n"
                 + "1. The item reaches +" + MAX_ENHANCE + "\r\n"
@@ -465,7 +466,6 @@ function action(mode, type, selection) {
                 + "#rWarning: Food/NX is consumed on failure!#k\r\n"
                 + "Proceed?";
         } else {
-            log("Previewing Normal Confirmation");
             var iip2 = Packages.server.ItemInformationProvider.getInstance();
             var itemName = iip2.getName(selectedItem.getItemId());
             var hist2 = getEnhanceHistory(selectedItem);
@@ -489,18 +489,18 @@ function action(mode, type, selection) {
 
     // status 4: execute
     if (status === 4) {
-        log("Status 4: Executing Upgrade. AutoRoll=" + isAutoRoll);
-
         var inv3 = cm.getInventory(1);
         var liveItem = inv3.getItem(selectedSlot);
 
         if (!liveItem || liveItem.getItemId() !== selectedItemId) {
-            log("Critical: Item missing or ID changed.");
             cm.sendOk("Item changed or missing.");
             cm.dispose();
             return;
         }
         selectedItem = liveItem;
+
+        // AUDIT LOG START
+        log("Attempting upgrade on ItemID:" + selectedItemId + " Tier:" + chosenTier + " Mode:" + (isAutoRoll?"Auto":"Single"));
 
         // SINGLE MODE
         if (!isAutoRoll) {
@@ -524,21 +524,20 @@ function action(mode, type, selection) {
             cm.gainCash(-nxNeedS);
             if (!consumeTierFood(chosenTier, FOOD_PER_UPGRADE)) {
                 cm.gainCash(nxNeedS); // refund
-                log("Error: Food consume failed logic.");
                 cm.sendOk("Food consumption failed.");
                 cm.dispose();
                 return;
             }
 
             if (!rollPercent(successRateForTier(chosenTier))) {
-                log("Result: Fail");
+                log("Result: FAILED");
                 cm.sendOk("#rFailed!#k\r\nFood + NX consumed. No stats gained.");
                 cm.dispose();
                 return;
             }
 
             // Success
-            log("Result: Success");
+            log("Result: SUCCESS");
             var wf = isWeapon(selectedItem);
             var d = tierDelta(chosenTier, wf);
             applyStats(selectedItem, d);
@@ -552,7 +551,6 @@ function action(mode, type, selection) {
 
         // AUTO ROLL MODE
         else {
-            log("Starting Auto-Roll Loop...");
             var attempts = 0;
             var successes = 0;
             var failures = 0;
@@ -565,14 +563,8 @@ function action(mode, type, selection) {
             var successRate = successRateForTier(chosenTier);
 
             while (getEnhanceLevel(selectedItem) < MAX_ENHANCE) {
-                if (getNxCredit() < cost) {
-                    log("Auto-Roll Break: Out of NX");
-                    break;
-                }
-                if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
-                    log("Auto-Roll Break: Out of Food");
-                    break;
-                }
+                if (getNxCredit() < cost) break;
+                if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) break;
 
                 cm.gainCash(-cost);
                 nxTotal += cost;
