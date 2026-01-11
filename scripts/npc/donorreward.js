@@ -1,7 +1,7 @@
 /*
  * donorreward.js — Donor Rewards UI (Dashboard + Flat Shop + History)
  * v83 safe: no emoji/bullets that become '?'
- * Updated to support Item Duration/Period display
+ * Updated to support Item Duration, Maple Leaves Bundles, World Buff, and Icons
  */
 
 var DonorCreditManager = Java.type("server.donor.DonorCreditManager");
@@ -15,9 +15,39 @@ var allItems = [];
 var selectedRow = null;
 var selectedTimes = 1;
 
-// Only currency items get quantity prompt (NXT, BCoin, etc)
-// Add IDs here if you want them to prompt for quantity "How many do you want to buy?"
-var CURRENCY_IDS = { "3020001": true, "3020002": true };
+// Items that trigger the "How many do you want?" prompt.
+var CURRENCY_IDS = {
+    "3020001": true, // Dinosaur Cash
+    "3020002": true, // Other Coin
+    "4001126": true  // Maple Leaf
+};
+
+// ============================================
+// CONFIG: Custom Items (Leaves & Buff)
+// ============================================
+var customItems = [
+    {
+        id: "cust_leaves",
+        type: "ITEM",
+        name: "Maple Leaves", // Icon #i4001126# will be added automatically in code
+        itemid: 4001126,
+        qty: 5000,       // 1 Bundle = 1000
+        priceCents: 350, // 1 DC
+        category: "Special",
+        desc: "Get 1000 Maple Leaves instantly."
+    },
+    {
+        id: "cust_buff",
+        type: "BUFF",
+        name: "Activate World Buff", // Icon #i2022179# will be added automatically in code
+        itemid: 2022179, // Onyx Apple Icon
+        qty: 1,
+        priceCents: 350, // 5 DC
+        category: "Special",
+        desc: "Cast GM Buffs on everyone & announce name!"
+    }
+];
+// ============================================
 
 function start() {
     status = -1;
@@ -37,12 +67,10 @@ function action(m, t, sel) {
         return;
     }
 
-    // If we previously showed sendOk + set pendingJump,
-    // the NEXT click should land on the target page cleanly.
     if (pendingJump != null) {
         page = pendingJump;
         pendingJump = null;
-        status = -1; // reset state machine for new page
+        status = -1;
     }
 
     status++;
@@ -67,7 +95,6 @@ function fmtCents(cents) {
     if (isNaN(v)) v = 0;
     var neg = v < 0;
     v = Math.abs(v);
-
     var dollars = Math.floor(v / 100);
     var rem = v % 100;
     return (neg ? "-" : "") + dollars + "." + (rem < 10 ? "0" + rem : rem);
@@ -94,6 +121,7 @@ function jump(p) {
 }
 
 function itemLine(itemId) {
+    // Shows Icon + WZ Name (e.g., #i4001126# #t4001126#)
     return "#i" + itemId + "# #t" + itemId + "#";
 }
 
@@ -102,32 +130,23 @@ function itemLine(itemId) {
 function homeFlow(sel) {
     if (status == 0) {
         var st = getStatusObj();
-
-        var lifetime = st.get("lifetimeCents");
-        var bal = st.get("balanceCents");
-        var earned = st.get("earnedCents");
-        var spent = st.get("spentCents");
-        var milestones = st.get("milestones");
-        var toNext = st.get("toNextMilestoneCents");
-        var bonusPer = st.get("milestoneBonusCentsPer");
-        var lastCredit = safeStr(st.get("lastCreditAt"));
-        var lastSpend = safeStr(st.get("lastSpendAt"));
-
         var txt = "#e[ Donor Rewards ]#n\r\n\r\n";
-        txt += "Donor Credits (DC): #b" + fmtCents(bal) + "#k\r\n";
-        txt += "Lifetime Donated: #b$" + fmtCents(lifetime) + " SGD#k\r\n";
-        txt += "Total Earned: #b" + fmtCents(earned) + " DC#k\r\n";
-        txt += "Total Spent: #b" + fmtCents(spent) + " DC#k\r\n\r\n";
+        txt += "Donor Credits (DC): #b" + fmtCents(st.get("balanceCents")) + "#k\r\n";
+        txt += "Lifetime Donated: #b$" + fmtCents(st.get("lifetimeCents")) + " SGD#k\r\n";
+        txt += "Total Earned: #b" + fmtCents(st.get("earnedCents")) + " DC#k\r\n";
+        txt += "Total Spent: #b" + fmtCents(st.get("spentCents")) + " DC#k\r\n\r\n";
 
         txt += "#eMilestones#n\r\n";
-        txt += "Achieved: #b" + milestones + "#k\r\n";
-        txt += "Next bonus in: #b$" + fmtCents(toNext) + " SGD#k (Bonus: #b+" + fmtCents(bonusPer) + " DC#k)\r\n\r\n";
+        txt += "Achieved: #b" + st.get("milestones") + "#k\r\n";
+        txt += "Next bonus in: #b$" + fmtCents(st.get("toNextMilestoneCents")) + " SGD#k (Bonus: #b+" + fmtCents(st.get("milestoneBonusCentsPer")) + " DC#k)\r\n\r\n";
 
         txt += "#eRules#n\r\n";
         txt += "- 1 SGD = 1 DC (supports cents)\r\n";
         txt += "- Bonus: +10.00 DC every $50 lifetime donated\r\n";
         txt += "- Spend DC in the Donor Shop\r\n\r\n";
 
+        var lastCredit = safeStr(st.get("lastCreditAt"));
+        var lastSpend = safeStr(st.get("lastSpendAt"));
         if (lastCredit.length > 0) txt += "Last credited: #b" + lastCredit + "#k\r\n";
         if (lastSpend.length > 0) txt += "Last spent:   #b" + lastSpend + "#k\r\n";
 
@@ -144,23 +163,46 @@ function homeFlow(sel) {
     cm.dispose();
 }
 
-/* ============ SHOP (flat list) ============ */
+/* ============ SHOP ============ */
 
 function buildFlatShopList() {
     allItems = [];
-
+    // 1. Inject Custom Items
+    for (var k in customItems) {
+        var ci = customItems[k];
+        allItems.push({
+            isCustom: true,
+            id: ci.id,
+            type: ci.type,
+            name: ci.name,
+            itemid: ci.itemid,
+            qty: ci.qty,
+            priceCents: ci.priceCents,
+            category: ci.category,
+            desc: ci.desc,
+            period: 0
+        });
+    }
+    // 2. Fetch DB Items
     var cats = DonorCreditManager.getCategories();
-    if (cats == null || cats.size() == 0) return;
-
-    for (var i = 0; i < cats.size(); i++) {
-        var cat = String(cats.get(i));
-        var list = DonorCreditManager.getItemsByCategory(cat);
-        if (list == null || list.size() == 0) continue;
-
-        for (var j = 0; j < list.size(); j++) {
-            var row = list.get(j);
-            row.put("category", cat);
-            allItems.push(row);
+    if (cats != null && cats.size() > 0) {
+        for (var i = 0; i < cats.size(); i++) {
+            var cat = String(cats.get(i));
+            var list = DonorCreditManager.getItemsByCategory(cat);
+            if (list == null || list.size() == 0) continue;
+            for (var j = 0; j < list.size(); j++) {
+                var row = list.get(j);
+                allItems.push({
+                    isCustom: false,
+                    id: row.get("id"),
+                    itemid: Number(row.get("itemid")),
+                    qty: Number(row.get("qty")),
+                    priceCents: Number(row.get("priceCents")),
+                    category: cat,
+                    stock: row.get("stock"),
+                    period: row.get("period")
+                });
+            }
         }
     }
 }
@@ -168,7 +210,6 @@ function buildFlatShopList() {
 function shopFlow(sel) {
     if (status == 0) {
         buildFlatShopList();
-
         if (allItems.length == 0) {
             cm.sendOk("Donor shop is currently empty.\r\nAsk an admin to add items.");
             cm.dispose();
@@ -180,48 +221,46 @@ function shopFlow(sel) {
         txt += "Balance: #b" + fmtCents(bal) + " DC#k\r\n\r\n";
 
         var lastCat = null;
-
         for (var k = 0; k < allItems.length; k++) {
             var r = allItems[k];
-            var cat = safeStr(r.get("category"));
-
+            var cat = r.category;
             if (lastCat == null || cat != lastCat) {
                 txt += "\r\n#e[ " + cat + " ]#n\r\n";
                 lastCat = cat;
             }
 
-            var itemId = Number(r.get("itemid"));
-            var qty = Number(r.get("qty"));
-            var price = Number(r.get("priceCents"));
-            var stock = r.get("stock"); // may be null
-            var period = r.get("period"); // Read period from Java
+            // --- Display Name Logic (UPDATED) ---
+            var dName = "";
+            if (r.isCustom) {
+                // Manually add Icon + Custom Name
+                // e.g. #i4001126# 1000 Maple Leaves
+                dName = "#i" + r.itemid + "# " + r.name;
+            } else {
+                // Standard: Icon + WZ Name
+                dName = itemLine(r.itemid);
+            }
+            // ------------------------------------
 
-            if (isNaN(price) || price <= 0) {
-                // bad data safety
-                txt += "#d" + itemLine(itemId) + "  x" + qty + "  -  INVALID PRICE#k\r\n";
-                continue;
+            var durTxt = "";
+            if (r.period > 0) durTxt = " #b(" + r.period + " Days)#k";
+            else if (!r.isCustom) durTxt = " #b(Perm)#k";
+
+            txt += "#L" + k + "#" + dName;
+
+            if (r.isCustom && r.type == "BUFF") {
+                txt += " - #r" + fmtCents(r.priceCents) + " DC#k";
+            } else {
+                txt += "  x" + r.qty + "  -  #r" + fmtCents(r.priceCents) + " DC#k";
             }
 
-            // --- Duration Text Logic ---
-            var durTxt = " #b(Perm)#k";
-            if (period != null && Number(period) > 0) {
-                 durTxt = " #b(" + period + " Days)#k";
-            }
-            // ---------------------------
+            txt += durTxt;
 
-            txt += "#L" + k + "#";
-            txt += itemLine(itemId);
-            txt += "  x" + qty + "  -  #r" + fmtCents(price) + " DC#k";
-            txt += durTxt; // Add the duration text
-
-            // show max buy hint for currencies (like before)
-            if (isCurrency(itemId)) {
-                var maxAffordable = Math.floor(bal / price);
+            if (isCurrency(r.itemid)) {
+                var maxAffordable = Math.floor(bal / r.priceCents);
                 if (maxAffordable < 0) maxAffordable = 0;
                 txt += "  #d(Max: " + maxAffordable + ")#k";
             }
-
-            if (stock != null) txt += "  #dStock: " + stock + "#k";
+            if (r.stock != null) txt += "  #dStock: " + r.stock + "#k";
             txt += "#l\r\n";
         }
 
@@ -236,52 +275,54 @@ function shopFlow(sel) {
     selectedRow = allItems[sel];
     selectedTimes = 1;
 
-    var itemId2 = Number(selectedRow.get("itemid"));
-    if (isCurrency(itemId2)) return jump("QTY");
+    // Buffs skip qty select
+    if (selectedRow.isCustom && selectedRow.type == "BUFF") return jump("CONFIRM");
+    // Items in CURRENCY_IDS (Leaves + Coins) go to QTY
+    if (isCurrency(selectedRow.itemid)) return jump("QTY");
+
     return jump("CONFIRM");
 }
 
-/* ============ QTY (currency only) ============ */
+/* ============ QTY (Prompt for Bundles/Quantity) ============ */
 
 function qtyFlow(sel) {
     if (status == 0) {
         if (selectedRow == null) return jump("SHOP");
 
-        var itemId = Number(selectedRow.get("itemid"));
-        var baseQty = Number(selectedRow.get("qty"));
-        var price = Number(selectedRow.get("priceCents"));
-        var stock = selectedRow.get("stock");
-
-        if (isNaN(price) || price <= 0) {
-            cm.sendOk("This item has an invalid price.\r\nPlease inform an admin.");
-            pendingJump = "SHOP";
-            return;
-        }
-
+        var max = 100; // Cap to prevent math overflow
+        var price = selectedRow.priceCents;
         var bal = getBalanceCents();
-        var maxAffordable = Math.floor(bal / price);
-        if (maxAffordable < 1) {
+
+        var affordable = Math.floor(bal / price);
+        if (selectedRow.stock != null) max = Math.min(max, selectedRow.stock);
+        max = Math.min(max, affordable);
+
+        if (max < 1) {
             cm.sendOk("You do not have enough DC for this.");
             pendingJump = "SHOP";
             return;
         }
+        if (max > 10000) max = 10000;
 
-        var maxByStock = (stock == null) ? maxAffordable : Math.min(maxAffordable, Number(stock));
-        if (maxByStock < 1) {
-            cm.sendOk("Out of stock.");
-            pendingJump = "SHOP";
-            return;
+        // Custom Text for Maple Leaves
+        var txt = "#eQuantity Selection#n\r\n\r\n";
+
+        if (selectedRow.id === "cust_leaves") {
+            // Specific text for Bundles
+            // Uses #i# to show icon in the prompt too
+            txt += "Item: #i" + selectedRow.itemid + "# (Maple Leaves)\r\n";
+            txt += "One Bundle contains: #b" + selectedRow.qty + " Leaves#k\r\n";
+            txt += "Price per Bundle: #r" + fmtCents(price) + " DC#k\r\n";
+            txt += "\r\nHow many #bBUNDLES#k would you like to buy? (1 - " + max + "):";
+        } else {
+            // Default text
+            txt += "Item: " + itemLine(selectedRow.itemid) + "\r\n";
+            txt += "Per purchase gives: #b" + selectedRow.qty + "#k\r\n";
+            txt += "Price each: #r" + fmtCents(price) + " DC#k\r\n";
+            txt += "\r\nEnter how many you want to buy (1 - " + max + "):";
         }
 
-        if (maxByStock > 10000) maxByStock = 10000;
-
-        var txt = "#eQuantity#n\r\n\r\n";
-        txt += "Item: " + itemLine(itemId) + "\r\n";
-        txt += "Per purchase gives: #b" + baseQty + "#k\r\n";
-        txt += "Price each: #r" + fmtCents(price) + " DC#k\r\n";
-        txt += "\r\nEnter how many you want to buy (1 - " + maxByStock + "):";
-
-        cm.sendGetNumber(txt, 1, 1, maxByStock);
+        cm.sendGetNumber(txt, 1, 1, max);
         return;
     }
 
@@ -295,58 +336,44 @@ function confirmFlow(sel) {
     if (status == 0) {
         if (selectedRow == null) return jump("SHOP");
 
-        var itemId = Number(selectedRow.get("itemid"));
-        var baseQty = Number(selectedRow.get("qty"));
-        var priceEach = Number(selectedRow.get("priceCents"));
-        var stock = selectedRow.get("stock");
-        var period = selectedRow.get("period"); // Get period for confirm screen
+        var r = selectedRow;
         var times = (selectedTimes <= 0 ? 1 : selectedTimes);
-
-        if (isNaN(priceEach) || priceEach <= 0) {
-            cm.sendOk("This shop item has an invalid price.\r\nPlease inform an admin.");
-            pendingJump = "SHOP";
-            return;
-        }
-
-        var totalQty = baseQty * times;
-        var totalPrice = priceEach * times;
-
-        if (isNaN(totalPrice) || totalPrice <= 0) {
-            cm.sendOk("This purchase amount is invalid.\r\nPlease inform an admin.");
-            pendingJump = "SHOP";
-            return;
-        }
-
+        var totalCost = r.priceCents * times;
         var bal = getBalanceCents();
-        var after = bal - totalPrice;
+        var after = bal - totalCost;
 
-        // HARD BLOCK: never show Buy screen if insufficient
         if (after < 0) {
-            cm.sendOk(
-                "You do not have enough Donor Credits.\r\n\r\n" +
-                "Required: " + fmtCents(totalPrice) + " DC\r\n" +
-                "Your Balance: " + fmtCents(bal) + " DC"
-            );
+            cm.sendOk("You do not have enough Donor Credits.");
             pendingJump = "SHOP";
             return;
         }
 
         var txt = "#eConfirm Purchase#n\r\n\r\n";
-        txt += "Item: " + itemLine(itemId) + "\r\n";
 
-        // Show duration in confirm screen
-//        if (period != null && Number(period) > 0) {
-//             txt += "Duration: #b" + period + " Days#k\r\n";
-//        } else {
-//             txt += "Duration: #bPermanent#k\r\n";
-//        }
+        // Show icon in confirmation too for consistency
+        var confirmName = "";
+        if (r.isCustom) {
+            confirmName = "#i" + r.itemid + "# " + r.name;
+        } else {
+            confirmName = itemLine(r.itemid);
+        }
 
-        txt += "Times: #b" + times + "#k\r\n";
-        txt += "Total Quantity: #b" + totalQty + "#k\r\n";
-        txt += "Total Cost: #r" + fmtCents(totalPrice) + " DC#k\r\n";
-        if (stock != null) txt += "Stock: #b" + stock + "#k\r\n";
-        txt += "\r\nBalance: #b" + fmtCents(bal) + " DC#k\r\n";
-        txt += "After: #b" + fmtCents(after) + " DC#k\r\n\r\n";
+        if (r.isCustom && r.type == "BUFF") {
+            txt += "Action: " + confirmName + "\r\n";
+            txt += "Desc: " + r.desc + "\r\n";
+        } else {
+            txt += "Item: " + confirmName + "\r\n";
+            if (r.id === "cust_leaves") {
+                txt += "Bundles: #b" + times + "#k\r\n";
+                txt += "Total Leaves: #b" + (r.qty * times) + "#k\r\n";
+            } else {
+                txt += "Times: #b" + times + "#k\r\n";
+                txt += "Total Quantity: #b" + (r.qty * times) + "#k\r\n";
+            }
+        }
+
+        txt += "Total Cost: #r" + fmtCents(totalCost) + " DC#k\r\n";
+        txt += "Balance After: #b" + fmtCents(after) + " DC#k\r\n\r\n";
         txt += "#L0#Buy#l\r\n";
         txt += "#L1#Cancel#l";
 
@@ -354,47 +381,48 @@ function confirmFlow(sel) {
         return;
     }
 
-    // status == 1 (player clicked Buy/Cancel)
-    if (sel == 1) return jump("SHOP");
+    if (sel == 1) return jump("SHOP"); // Cancelled
 
     if (selectedRow == null) {
-        cm.sendOk("Session expired. Please try again.");
+        cm.sendOk("Session expired.");
         pendingJump = "SHOP";
         return;
     }
 
-    // final re-check before calling Java (race safe)
-    var bal2 = getBalanceCents();
-    var priceEach2 = Number(selectedRow.get("priceCents"));
-    var times2 = (selectedTimes <= 0 ? 1 : selectedTimes);
-    var totalPrice2 = priceEach2 * times2;
+    var r = selectedRow;
+    var times = (selectedTimes <= 0 ? 1 : selectedTimes);
+    var totalCost = r.priceCents * times;
+    var totalQty = r.qty * times;
 
-    if (isNaN(totalPrice2) || totalPrice2 <= 0) {
-        cm.sendOk("Invalid purchase.");
-        pendingJump = "SHOP";
+    // --- A. CUSTOM ITEMS ---
+    if (r.isCustom) {
+        if (DonorCreditManager.deductFunds(cm.getClient().getAccID(), totalCost, "CUSTOM:" + r.id)) {
+            if (r.type == "ITEM") {
+                cm.gainItem(r.itemid, totalQty);
+                cm.sendOk("Purchase complete!\r\nReceived: " + totalQty + " " + r.name);
+            } else if (r.type == "BUFF") {
+                var player = cm.getPlayer();
+                DonorCreditManager.applyWorldBuff(player.getWorld(), player.getName());
+                cm.sendOk("World Buff Activated and Announced!");
+            }
+        } else {
+            cm.sendOk("Transaction failed. Insufficient funds.");
+        }
+        cm.dispose();
         return;
     }
 
-    if (bal2 < totalPrice2) {
-        cm.sendOk("You no longer have enough Donor Credits.");
-        pendingJump = "SHOP";
-        return;
-    }
-
+    // --- B. DB ITEMS ---
     try {
-        var shopItemId = Number(selectedRow.get("id"));
-        var res = DonorCreditManager.buyFromShop(cm.getClient(), shopItemId, times2);
-
+        var res = DonorCreditManager.buyFromShop(cm.getClient(), Number(r.id), times);
         var msg = "Purchase complete!\r\n\r\n";
         msg += "You received: " + itemLine(res.itemId) + " x" + res.qty + "\r\n";
         msg += "Cost: " + fmtCents(res.priceCents) + " DC\r\n";
         msg += "New Balance: " + fmtCents(res.newBalanceCents) + " DC\r\n\r\n";
         msg += "Type @donorreward to open again.";
-
         cm.sendOk(msg);
         cm.dispose();
     } catch (e) {
-        // IMPORTANT: do NOT stay on CONFIRM page; jump back after OK
         var err = (e && e.getMessage) ? e.getMessage() : ("" + e);
         cm.sendOk("Purchase failed:\r\n\r\n" + err);
         pendingJump = "SHOP";
@@ -407,7 +435,6 @@ function confirmFlow(sel) {
 function historyFlow(sel) {
     if (status == 0) {
         var list = DonorCreditManager.getRecentTxns(cm.getClient().getAccID(), 10);
-
         var txt = "#e[ Donor Transaction History ]#n\r\n\r\n";
         if (list == null || list.size() == 0) {
             txt += "No transactions yet.";
@@ -415,24 +442,17 @@ function historyFlow(sel) {
             cm.dispose();
             return;
         }
-
         for (var i = 0; i < list.size(); i++) {
             var r = list.get(i);
-            var at = safeStr(r.get("at"));
-            var type = safeStr(r.get("type"));
             var delta = Number(r.get("dcDeltaCents"));
-            var ref = safeStr(r.get("ref"));
-
-            txt += at + "\r\n";
-            txt += "Type: " + type + "   DC: " + (delta >= 0 ? "+" : "-") + fmtCents(Math.abs(delta)) + "\r\n";
-            if (ref.length > 0) txt += "Ref: " + ref + "\r\n";
+            txt += safeStr(r.get("at")) + "\r\n";
+            txt += "Type: " + safeStr(r.get("type")) + "   DC: " + (delta >= 0 ? "+" : "-") + fmtCents(Math.abs(delta)) + "\r\n";
+            if (safeStr(r.get("ref")).length > 0) txt += "Ref: " + safeStr(r.get("ref")) + "\r\n";
             txt += "-----------------------------\r\n";
         }
-
         cm.sendOk(txt);
         cm.dispose();
         return;
     }
-
     cm.dispose();
 }

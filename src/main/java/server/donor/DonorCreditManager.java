@@ -6,6 +6,10 @@ import client.inventory.Pet;
 import client.inventory.manipulator.InventoryManipulator;
 import constants.inventory.ItemConstants;
 import tools.DatabaseConnection;
+import client.SkillFactory;
+import net.server.Server;
+import net.server.channel.Channel;
+import tools.PacketCreator;
 
 import java.sql.*;
 import java.util.*;
@@ -486,4 +490,106 @@ public final class DonorCreditManager {
             this.newBalanceCents = newBalanceCents;
         }
     }
+    // ==========================================================
+    // NEW METHOD: Support for Script-based Custom Purchases
+    // ==========================================================
+    public static boolean deductFunds(int accountId, int amountCents, String description) {
+        if (amountCents <= 0) return false;
+
+        ensureLedgerRow(accountId);
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // 1. Check Balance
+                long bal;
+                String sel = "SELECT dc_balance_cents FROM cosmic.donor_ledger WHERE account_id = ? FOR UPDATE";
+                try (PreparedStatement ps = con.prepareStatement(sel)) {
+                    ps.setInt(1, accountId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) return false;
+                        bal = rs.getLong(1);
+                    }
+                }
+
+                if (bal < amountCents) return false; // Insufficient funds
+
+                // 2. Deduct
+                long newBal = bal - amountCents;
+                String upd = "UPDATE cosmic.donor_ledger SET dc_balance_cents = ?, dc_spent_cents_total = dc_spent_cents_total + ?, last_spend_at = NOW() WHERE account_id = ?";
+                try (PreparedStatement ps = con.prepareStatement(upd)) {
+                    ps.setLong(1, newBal);
+                    ps.setLong(2, amountCents);
+                    ps.setInt(3, accountId);
+                    ps.executeUpdate();
+                }
+
+                // 3. Log Transaction
+                String ins = "INSERT INTO cosmic.donor_txn (account_id, txn_type, dc_cents_delta, ref, created_at) VALUES (?, 'SPEND', ?, ?, NOW())";
+                try (PreparedStatement ps = con.prepareStatement(ins)) {
+                    ps.setInt(1, accountId);
+                    ps.setLong(2, -amountCents);
+                    ps.setString(3, description);
+                    ps.executeUpdate();
+                }
+
+                con.commit();
+                return true;
+            } catch (SQLException e) {
+                con.rollback();
+                alertDb("deductFunds failed for acc=" + accountId, e);
+                return false;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            alertDb("deductFunds connection fail", e);
+            return false;
+        }
+    }
+// ========================================================================
+    // NEW: World Buff Logic (Replicated from BuffWorldCommand + Announcement)
+    // ========================================================================
+
+    public static void applyWorldBuff(int worldId, String buyerName) {
+        // 1. Prepare Announcement Packet (Type 6 = Lightblue Notice)
+        String msg = "[Donor] " + buyerName + " has purchased the World Buff! Happy Mapling!";
+        byte[] packet = PacketCreator.serverNotice(6, msg).getBytes(); // .getBytes() assuming your Packet class has it, or just pass the Object if broadcastPacket accepts it.
+        // NOTE: In most sources, serverNotice returns a 'Packet' object.
+        // If your broadcastPacket method takes a Packet, remove .getBytes().
+
+        // 2. Iterate Worlds/Channels
+        for (Channel ch : Server.getInstance().getChannelsFromWorld(worldId)) {
+
+            // Broadcast the message to the channel
+            ch.broadcastPacket(PacketCreator.serverNotice(6, msg));
+
+            // Apply buffs to all players
+            for (Character chr : ch.getPlayerStorage().getAllCharacters()) {
+                if (chr != null) {
+                    applySkill(chr, 9101001); // GM Super Body
+                    applySkill(chr, 9101002); // GM Super Haste
+                    applySkill(chr, 9101003); // GM Super HS
+                    applySkill(chr, 9101008); // GM Super HB
+                    applySkill(chr, 1005);    // Echo of Hero (Source specific ID)
+                    applySkill(chr, 5121009); // Speed Infusion
+                    applySkill(chr, 3121002); // Sharp Eyes
+                    applySkill(chr, 4111001); // Meso Up
+                }
+            }
+        }
+    }
+
+    // Helper to keep the loop clean
+    private static void applySkill(Character chr, int skillId) {
+        try {
+            var skill = SkillFactory.getSkill(skillId);
+            if (skill != null) {
+                skill.getEffect(skill.getMaxLevel()).applyTo(chr, true);
+            }
+        } catch (Exception e) {
+            // Ignore if skill doesn't exist to prevent crash
+        }
+    }
+
 }
