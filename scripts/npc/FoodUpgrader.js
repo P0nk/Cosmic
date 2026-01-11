@@ -1,10 +1,9 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v8 - "F.Tier NNN" History Tag)
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v12 - "S" Tag & Server Debug)
  *
  * Updates:
- * - Tag format changed to [F.Tier NNN...]
- * - "N" represents the specific tier used (1-9).
- * - "X" represents Tier 10.
- * - Length of the sequence represents current upgrade count.
+ * - Legendary Tier now uses tag "S" (e.g. F.Tier SSS).
+ * - Added console.log debug traces for server-side monitoring.
+ * - Regex updated to support 1-9, X, S (and L for backward compat).
  */
 
 var status = 0;
@@ -14,6 +13,7 @@ var selectedItemId = -1;
 
 var chosenTier = null;
 var pendingDelta = null;
+var isAutoRoll = false;
 
 // ======================= CONFIG ========================
 var FOOD_T1 = [4036173, 4036174];
@@ -25,17 +25,37 @@ var FOOD_T6 = [4036201, 4036202, 4036203, 4036204, 4036205, 4036206, 4036207, 40
 var FOOD_T7 = [4036211, 4036212, 4036213, 4036214, 4036215, 4036216, 4036217, 4036218, 4036219, 4036220, 4036221, 4036222, 4036223, 4036224, 4036225];
 var FOOD_T8 = [4036226, 4036227, 4036228, 4036229, 4036230, 4036231, 4036232, 4036233, 4036234, 4036235, 4036236, 4036237, 4036238, 4036239, 4036240];
 var FOOD_T9 = [4036241, 4036242, 4036243, 4036244, 4036245, 4036246, 4036247, 4036248, 4036249, 4036250, 4036251, 4036252, 4036253, 4036254, 4036255, 4036256, 4036257, 4036258, 4036259, 4036260, 4036261, 4036262, 4036263, 4036264, 4036265, 4036266];
-var FOOD_T10 = [6036267,4036289, 4036290, 4036291, 4036292, 4036293, 4036294, 4036295, 4036296, 4036297, 4036298, 4036299, 4036300, 4036301, 4036302, 4036303, 4036304, 4036305, 4036306, 4036307];
+
+// T10 (Matches Java Tier.T10)
+var FOOD_T10 = [4036267, 4036268, 4036269, 4036270, 4036271, 4036272, 4036273, 4036274, 4036275, 4036276, 4036277, 4036278, 4036279, 4036280, 4036281, 4036282, 4036283, 4036284, 4036285, 4036286, 4036287, 4036288];
+
+// LEGENDARY (Matches Java Tier.LEGENDARY)
+var FOOD_LEGENDARY = [4036289, 4036290, 4036291, 4036292, 4036293, 4036294, 4036295, 4036296, 4036297, 4036298, 4036299, 4036300, 4036301, 4036302, 4036303, 4036304, 4036305, 4036306, 4036307];
 
 var FOOD_PER_UPGRADE = 1;
 var NX_COST_STEP = 10000;
-var MAX_ENHANCE = 3; // Max string length
+var MAX_ENHANCE = 3;
 
 var BASE_FAIL_RATE = 0;
 var FAIL_STEP_PER_TIER = 10;
 
 var ItemConstants = Packages.constants.inventory.ItemConstants;
 var CashShop = Packages.server.CashShop;
+
+// ================== DEBUG LOGGER ==================
+function log(msg) {
+    try {
+        var charName = (cm && cm.getPlayer()) ? cm.getPlayer().getName() : "Unknown";
+        console.log("[NPC:FoodUpgrade][" + charName + "] " + msg);
+    } catch(e) {
+        console.log("[NPC:FoodUpgrade] " + msg);
+    }
+}
+
+// ================== ACCESS CHECK ==================
+function isDonor() {
+    return cm.getPlayer().isGM();
+}
 
 // ================== NX HELPERS ==================
 function getNxCredit() {
@@ -59,48 +79,53 @@ function tierDelta(tier, isWeapon) {
         case 'T8': return isWeapon ? {str:7, dex:7, int:7, luk:7, watk:10, matk:10} : {str:15, dex:15, int:15, luk:15, watk:0, matk:0};
         case 'T9': return isWeapon ? {str:8, dex:8, int:8, luk:8, watk:12, matk:12} : {str:17, dex:17, int:17, luk:17, watk:0, matk:0};
         case 'T10': return isWeapon ? {str:10, dex:10, int:10, luk:10, watk:16, matk:16} : {str:20, dex:20, int:20, luk:20, watk:0, matk:0};
+        case 'Legendary': return isWeapon ? {str:12, dex:12, int:12, luk:12, watk:20, matk:20} : {str:25, dex:25, int:25, luk:25, watk:0, matk:0};
     }
     return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
 }
 
-// ================== ENHANCE TAG LOGIC (UPDATED) ==================
-
-// Returns the history string (e.g., "1X5")
+// ================== HYBRID TAG LOGIC ==================
 function getEnhanceHistory(item) {
     var owner = item.getOwner();
     if (!owner) return "";
-    // Matches [F.Tier (sequence of 1-9 or X)]
-    var m = owner.match(/\[F\.Tier ([1-9X]+)\]/);
-    if (!m) return "";
-    return m[1];
+
+    // Match New Tag (Supports 1-9, X for T10, S for Legendary, L for Legacy Legendary)
+    var mNew = owner.match(/\[F\.Tier ([1-9XSL]+)\]/);
+    if (mNew) return mNew[1];
+
+    var mOld = owner.match(/\[F\+(\d+)\]/);
+    if (mOld) return "OLD:" + mOld[1];
+
+    return "";
 }
 
-// Returns the integer count of upgrades based on string length
 function getEnhanceLevel(item) {
     var hist = getEnhanceHistory(item);
+    if (hist.startsWith("OLD:")) return parseInt(hist.split(":")[1]);
     return hist.length;
 }
 
-// Converts Tier string to Single Character
 function getTierChar(tier) {
-    if (tier === "T10") return "X";
-    // For T1-T9, strip the 'T'
-    return tier.replace("T", "");
+    var s = String(tier);
+    if (s === "Legendary") return "S"; // UPDATED: Returns 'S' instead of 'L'
+    if (s === "T10") return "X";
+    return s.replace("T", "");
 }
 
-// Appends the new tier char to the existing tag
 function addEnhanceTag(item, tierChar) {
-    var currentOwner = item.getOwner() || "";
-    var currentHistory = getEnhanceHistory(item); // e.g. "1X" or ""
+    var currentHistory = getEnhanceHistory(item);
+    var newHistory = "";
 
-    // Remove old tag pattern completely
-    // Note: We remove ANY matching F.Tier tag to replace it with the updated one
-    var cleanOwner = currentOwner.replace(/\s*\[F\.Tier [1-9X]+\]\s*/g, " ").trim();
+    if (currentHistory.startsWith("OLD:")) {
+        var oldLevel = parseInt(currentHistory.split(":")[1]);
+        for (var i = 0; i < oldLevel; i++) newHistory += tierChar;
+        newHistory += tierChar;
+    } else {
+        newHistory = currentHistory + tierChar;
+    }
 
-    var newHistory = currentHistory + tierChar;
-    var newTag = "[F.Tier " + newHistory + "]";
-
-    item.setOwner(cleanOwner.length > 0 ? (cleanOwner + " " + newTag) : newTag);
+    // WIPE OLD TAGS + Update with new history
+    item.setOwner("[F.Tier " + newHistory + "]");
 }
 
 // ================= HELPERS =================
@@ -116,6 +141,7 @@ function foodPoolForTier(tier) {
         case 'T8': return FOOD_T8;
         case 'T9': return FOOD_T9;
         case 'T10': return FOOD_T10;
+        case 'Legendary': return FOOD_LEGENDARY;
     }
     return [];
 }
@@ -213,6 +239,7 @@ function tierIndex(tier) {
     if (tier === "T8") return 8;
     if (tier === "T9") return 9;
     if (tier === "T10") return 10;
+    if (tier === "Legendary") return 11;
     return 1;
 }
 
@@ -238,8 +265,8 @@ function fmt(n) {
 function guide() {
     var msg = "#e#b[Food Enhancement Guide]#k#n\r\n\r\n";
     msg += "- Enhancements appear as #b[F.Tier NNN]#k.\r\n";
-    msg += "- The letters (1-9, X) show which tiers were used.\r\n";
-    msg += "- Max enhancement per equip: #r+" + MAX_ENHANCE + "#k\r\n";
+    msg += "- Tier codes: 1-9, X (T10), S (Legendary).\r\n";
+    msg += "- Max enhance per equip: #r+" + MAX_ENHANCE + "#k\r\n";
     msg += "- Cost per attempt: #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
     msg += "#dFailure Rate Rule:#k\r\n";
     msg += "T1 fail = " + BASE_FAIL_RATE + "%\r\n";
@@ -255,21 +282,29 @@ function start() {
     selectedItemId = -1;
     chosenTier = null;
     pendingDelta = null;
+    isAutoRoll = false;
 
-    cm.sendSimple(
-        "Feed me any Food and I will bless your equip... sometimes.\r\n\r\n"
+    log("Started interaction.");
+
+    var menu = "Feed me any Food and I will bless your equip... sometimes.\r\n\r\n"
         + "#d- Items are tagged with [F.Tier ...]\r\n"
         + "- Max enhance per equip: #r+" + MAX_ENHANCE + "#k\r\n"
         + "- Cost per attempt: #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n"
         + "- #rFail consumes Food + NX#k.\r\n"
         + "- No scroll slots are used.\r\n\r\n"
         + "#b#L0#Proceed#l\r\n"
-        + "#b#L1#Guide please#l"
-    );
+        + "#b#L1#Guide please#l";
+
+    if (isDonor()) {
+        menu += "\r\n#r#L999#[Donor] Auto-Roll (Loop until Max)#l";
+    }
+
+    cm.sendSimple(menu);
 }
 
 function action(mode, type, selection) {
     if (mode !== 1) {
+        log("Closed/Cancelled");
         cm.dispose();
         return;
     }
@@ -278,9 +313,17 @@ function action(mode, type, selection) {
     // status 1: menu choice
     if (status === 1) {
         if (selection == 1) {
+            log("Selected Guide");
             cm.sendOk(guide());
             cm.dispose();
             return;
+        }
+
+        if (selection == 999 && isDonor()) {
+            log("Selected Auto-Roll Mode");
+            isAutoRoll = true;
+        } else {
+            log("Selected Normal Mode");
         }
 
         var inv = cm.getInventory(1);
@@ -303,12 +346,12 @@ function action(mode, type, selection) {
 
             var name = iip.getName(itemId);
 
-            // Get current history to display (e.g., "1X5")
             var hist = getEnhanceHistory(it);
-            var count = hist.length;
+            var count = getEnhanceLevel(it);
 
-            // Display: [F.Tier 1X5] (3/3) or [Food +0/3]
-            var tagDisplay = (count > 0) ? "[F.Tier " + hist + "]" : "[No Food]";
+            var tagDisplay;
+            if (hist.startsWith("OLD:")) tagDisplay = "[F+" + hist.split(":")[1] + "]";
+            else tagDisplay = (count > 0) ? "[F.Tier " + hist + "]" : "[No Food]";
 
             lines.push("#L" + s + "##v" + itemId + "# " + name + "  #d" + tagDisplay + " (" + count + "/" + MAX_ENHANCE + ")#k#l");
         }
@@ -319,13 +362,16 @@ function action(mode, type, selection) {
             return;
         }
 
-        cm.sendSimple("Pick the equip to enhance:\r\n" + lines.join("\r\n"));
+        var title = isAutoRoll ? "#e#r[Auto-Roll Mode]#n#k Pick item:" : "Pick the equip to enhance:";
+        cm.sendSimple(title + "\r\n" + lines.join("\r\n"));
         return;
     }
 
     // status 2: equip picked -> choose food tier
     if (status === 2) {
         selectedSlot = selection;
+        log("User selected inventory slot: " + selectedSlot);
+
         var inv2 = cm.getInventory(1);
         selectedItem = inv2.getItem(selectedSlot);
 
@@ -336,6 +382,7 @@ function action(mode, type, selection) {
         }
 
         selectedItemId = selectedItem.getItemId();
+        log("Item ID resolved: " + selectedItemId);
 
         if (isCashItem(selectedItemId)) {
             cm.sendOk("You cannot upgrade Cash items.");
@@ -350,10 +397,12 @@ function action(mode, type, selection) {
             return;
         }
 
-        // Tiers T10 to T1
-        var tiers = ["T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+        var tiers = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
 
-        var menu = "Choose which Food Tier to use (any tier works on any equip):\r\n\r\n";
+        var menu = "Choose which Food Tier to use (any tier works on any equip):\r\n";
+        if (isAutoRoll) menu += "#r(Auto-Roll will use this tier repeatedly until Max or OOM)#k\r\n\r\n";
+        else menu += "\r\n";
+
         for (var i = 0; i < tiers.length; i++) {
             var t = tiers[i];
             var have = countTierFood(t);
@@ -373,8 +422,9 @@ function action(mode, type, selection) {
 
     // status 3: tier chosen -> preview + confirm
     if (status === 3) {
-        var tiers2 = ["T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
+        var tiers2 = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
         chosenTier = tiers2[selection];
+        log("User selected tier: " + chosenTier);
 
         if (!chosenTier || selectedItem.getItemId() !== selectedItemId) {
              cm.sendOk("Error. Please start over.");
@@ -382,14 +432,8 @@ function action(mode, type, selection) {
              return;
         }
 
-        var curCount2 = getEnhanceLevel(selectedItem);
-        if (curCount2 >= MAX_ENHANCE) {
-            cm.sendOk("This equip is already maxed.");
-            cm.dispose();
-            return;
-        }
-
         if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
+            log("Not enough food items for tier " + chosenTier);
             cm.sendOk("You don't have enough " + chosenTier + " Food.\r\n\r\n" + "#dAcceptable " + chosenTier + " Food:#k\r\n" + foodListForTier(chosenTier, FOOD_PER_UPGRADE));
             cm.dispose();
             return;
@@ -397,6 +441,7 @@ function action(mode, type, selection) {
 
         var nxNeed = nxCostForTier(chosenTier);
         if (getNxCredit() < nxNeed) {
+            log("Not enough NX.");
             cm.sendOk("You need #b" + fmt(nxNeed) + " NX#k.");
             cm.dispose();
             return;
@@ -408,21 +453,35 @@ function action(mode, type, selection) {
         var succ2 = successRateForTier(chosenTier);
         var fail2 = failRateForTier(chosenTier);
 
-        var iip2 = Packages.server.ItemInformationProvider.getInstance();
-        var itemName = iip2.getName(selectedItem.getItemId());
+        var msg = "";
 
-        var hist2 = getEnhanceHistory(selectedItem);
-        var nextChar = getTierChar(chosenTier);
+        if (isAutoRoll) {
+            log("Previewing Auto-Roll Confirmation");
+            msg = "#e#r[Auto-Roll Confirmation]#k#n\r\n"
+                + "I will continuously apply #b" + chosenTier + "#k until:\r\n"
+                + "1. The item reaches +" + MAX_ENHANCE + "\r\n"
+                + "2. You run out of Food/NX\r\n\r\n"
+                + "Chance: " + succ2 + "% Success / " + fail2 + "% Fail\r\n"
+                + "#rWarning: Food/NX is consumed on failure!#k\r\n"
+                + "Proceed?";
+        } else {
+            log("Previewing Normal Confirmation");
+            var iip2 = Packages.server.ItemInformationProvider.getInstance();
+            var itemName = iip2.getName(selectedItem.getItemId());
+            var hist2 = getEnhanceHistory(selectedItem);
 
-        var msg =
-            "Tier chosen: #b" + chosenTier + "#k\r\n"
-            + "Current Tag: #b[F.Tier " + (hist2 === "" ? "None" : hist2) + "]#k\r\n"
-            + "Result Tag: #b[F.Tier " + (hist2 + nextChar) + "]#k\r\n\r\n"
-            + "Target:\r\n#v" + selectedItem.getItemId() + "# " + itemName + "\r\n\r\n"
-            + "#dPreview:#k\r\n" + statSummary(selectedItem, pendingDelta) + "\r\n\r\n"
-            + "#dCosts:#k " + fmt(nxNeed) + " NX + " + FOOD_PER_UPGRADE + " Food\r\n"
-            + "Success: #b" + succ2 + "%#k | Fail: #r" + fail2 + "%#k\r\n"
-            + "Proceed?";
+            var curTagDisplay;
+            if (hist2.startsWith("OLD:")) curTagDisplay = "[F+" + hist2.split(":")[1] + "]";
+            else curTagDisplay = "[F.Tier " + (hist2||"None") + "]";
+
+            msg = "Tier chosen: #b" + chosenTier + "#k\r\n"
+                + "Current Tag: #b" + curTagDisplay + "#k\r\n"
+                + "Target:\r\n#v" + selectedItem.getItemId() + "# " + itemName + "\r\n\r\n"
+                + "#dPreview (Per Success):#k\r\n" + statSummary(selectedItem, pendingDelta) + "\r\n\r\n"
+                + "#dCosts:#k " + fmt(nxNeed) + " NX + " + FOOD_PER_UPGRADE + " Food\r\n"
+                + "Success: #b" + succ2 + "%#k | Fail: #r" + fail2 + "%#k\r\n"
+                + "Proceed?";
+        }
 
         cm.sendYesNo(msg);
         return;
@@ -430,64 +489,121 @@ function action(mode, type, selection) {
 
     // status 4: execute
     if (status === 4) {
+        log("Status 4: Executing Upgrade. AutoRoll=" + isAutoRoll);
+
         var inv3 = cm.getInventory(1);
         var liveItem = inv3.getItem(selectedSlot);
 
         if (!liveItem || liveItem.getItemId() !== selectedItemId) {
+            log("Critical: Item missing or ID changed.");
             cm.sendOk("Item changed or missing.");
             cm.dispose();
             return;
         }
         selectedItem = liveItem;
 
-        if (getEnhanceLevel(selectedItem) >= MAX_ENHANCE) {
-            cm.sendOk("Already maxed.");
+        // SINGLE MODE
+        if (!isAutoRoll) {
+            if (getEnhanceLevel(selectedItem) >= MAX_ENHANCE) {
+                cm.sendOk("Already maxed.");
+                cm.dispose();
+                return;
+            }
+            if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
+                cm.sendOk("Not enough food.");
+                cm.dispose();
+                return;
+            }
+            var nxNeedS = nxCostForTier(chosenTier);
+            if (getNxCredit() < nxNeedS) {
+                cm.sendOk("Not enough NX.");
+                cm.dispose();
+                return;
+            }
+
+            cm.gainCash(-nxNeedS);
+            if (!consumeTierFood(chosenTier, FOOD_PER_UPGRADE)) {
+                cm.gainCash(nxNeedS); // refund
+                log("Error: Food consume failed logic.");
+                cm.sendOk("Food consumption failed.");
+                cm.dispose();
+                return;
+            }
+
+            if (!rollPercent(successRateForTier(chosenTier))) {
+                log("Result: Fail");
+                cm.sendOk("#rFailed!#k\r\nFood + NX consumed. No stats gained.");
+                cm.dispose();
+                return;
+            }
+
+            // Success
+            log("Result: Success");
+            var wf = isWeapon(selectedItem);
+            var d = tierDelta(chosenTier, wf);
+            applyStats(selectedItem, d);
+            addEnhanceTag(selectedItem, getTierChar(chosenTier));
+
+            cm.getPlayer().forceUpdateItem(selectedItem);
+            cm.sendOk("#bSuccess!#k");
             cm.dispose();
             return;
         }
 
-        if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
-            cm.sendOk("Not enough food.");
+        // AUTO ROLL MODE
+        else {
+            log("Starting Auto-Roll Loop...");
+            var attempts = 0;
+            var successes = 0;
+            var failures = 0;
+            var nxTotal = 0;
+
+            var cost = nxCostForTier(chosenTier);
+            var wf2 = isWeapon(selectedItem);
+            var d2 = tierDelta(chosenTier, wf2);
+            var tChar = getTierChar(chosenTier);
+            var successRate = successRateForTier(chosenTier);
+
+            while (getEnhanceLevel(selectedItem) < MAX_ENHANCE) {
+                if (getNxCredit() < cost) {
+                    log("Auto-Roll Break: Out of NX");
+                    break;
+                }
+                if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
+                    log("Auto-Roll Break: Out of Food");
+                    break;
+                }
+
+                cm.gainCash(-cost);
+                nxTotal += cost;
+                consumeTierFood(chosenTier, FOOD_PER_UPGRADE);
+                attempts++;
+
+                if (rollPercent(successRate)) {
+                    successes++;
+                    applyStats(selectedItem, d2);
+                    addEnhanceTag(selectedItem, tChar);
+                } else {
+                    failures++;
+                }
+            }
+
+            log("Auto-Roll Finished. Attempts: " + attempts + " Success: " + successes);
+
+            cm.getPlayer().forceUpdateItem(selectedItem);
+
+            var report = "#e#b[Auto-Roll Finished]#k#n\r\n";
+            if (getEnhanceLevel(selectedItem) >= MAX_ENHANCE) report += "Result: #gMAXED!#k\r\n";
+            else report += "Result: Stopped (Out of resources)\r\n";
+
+            report += "Attempts: " + attempts + "\r\n";
+            report += "Success: " + successes + "\r\n";
+            report += "Fail: " + failures + "\r\n";
+            report += "NX Spent: " + fmt(nxTotal);
+
+            cm.sendOk(report);
             cm.dispose();
             return;
         }
-
-        var nxNeed2 = nxCostForTier(chosenTier);
-        if (getNxCredit() < nxNeed2) {
-            cm.sendOk("Not enough NX.");
-            cm.dispose();
-            return;
-        }
-
-        cm.gainCash(-nxNeed2);
-
-        if (!consumeTierFood(chosenTier, FOOD_PER_UPGRADE)) {
-            cm.gainCash(nxNeed2); // Refund NX if food fails
-            cm.sendOk("Food consumption failed.");
-            cm.dispose();
-            return;
-        }
-
-        if (!rollPercent(successRateForTier(chosenTier))) {
-            cm.sendOk("#rFailed!#k\r\nFood + NX consumed. No stats gained.");
-            cm.dispose();
-            return;
-        }
-
-        // Success
-        var weaponFlag3 = isWeapon(selectedItem);
-        var d3 = tierDelta(chosenTier, weaponFlag3);
-
-        // 1. Apply Stats
-        applyStats(selectedItem, d3);
-
-        // 2. Update Tag (Append new tier char)
-        var tChar = getTierChar(chosenTier);
-        addEnhanceTag(selectedItem, tChar);
-
-        cm.getPlayer().forceUpdateItem(selectedItem);
-        cm.sendOk("#bSuccess!#k\r\nStats applied and tag updated to " + getEnhanceHistory(selectedItem));
-        cm.dispose();
-        return;
     }
 }
