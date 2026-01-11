@@ -1,15 +1,16 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v7 - Full T10 Support)
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v8 - "F.Tier NNN" History Tag)
  *
  * Updates:
- * - Enabled T7, T8, T9, T10 in the selection menu.
- * - Confirmed Stat Deltas for high tiers.
- * - Maintained Cash Item exclusions.
+ * - Tag format changed to [F.Tier NNN...]
+ * - "N" represents the specific tier used (1-9).
+ * - "X" represents Tier 10.
+ * - Length of the sequence represents current upgrade count.
  */
 
 var status = 0;
 var selectedSlot = -1;
-var selectedItem = null; // Snapshot of item
-var selectedItemId = -1; // To verify identity on execute
+var selectedItem = null;
+var selectedItemId = -1;
 
 var chosenTier = null;
 var pendingDelta = null;
@@ -27,81 +28,79 @@ var FOOD_T9 = [4036241, 4036242, 4036243, 4036244, 4036245, 4036246, 4036247, 40
 var FOOD_T10 = [4036289, 4036290, 4036291, 4036292, 4036293, 4036294, 4036295, 4036296, 4036297, 4036298, 4036299, 4036300, 4036301, 4036302, 4036303, 4036304, 4036305, 4036306, 4036307];
 
 var FOOD_PER_UPGRADE = 1;
-var NX_COST_STEP = 10000; // T1=10k ... T10=100k
-var MAX_ENHANCE = 3;
+var NX_COST_STEP = 10000;
+var MAX_ENHANCE = 3; // Max string length
 
-var BASE_FAIL_RATE = 0;      // T1 fail
-var FAIL_STEP_PER_TIER = 10;  // +10% fail each tier (T10 = 90% fail)
+var BASE_FAIL_RATE = 0;
+var FAIL_STEP_PER_TIER = 10;
 
 var ItemConstants = Packages.constants.inventory.ItemConstants;
 var CashShop = Packages.server.CashShop;
 
 // ================== NX HELPERS ==================
 function getNxCredit() {
-    try {
-        return cm.getPlayer().getCashShop().getCash(CashShop.NX_CREDIT);
-    } catch (e) {
-        return 0;
-    }
+    try { return cm.getPlayer().getCashShop().getCash(CashShop.NX_CREDIT); }
+    catch (e) { return 0; }
 }
 function nxCostForTier(tier) {
     return tierIndex(tier) * NX_COST_STEP;
 }
 
-// ================== STATS PER TIER (UPDATED) =====================
+// ================== STATS PER TIER =====================
 function tierDelta(tier, isWeapon) {
     switch (tier) {
-        case 'T1':
-            return isWeapon ? {str:0, dex:0, int:0, luk:0, watk:1, matk:1}
-                            : {str:1, dex:1, int:1, luk:1, watk:0, matk:0};
-        case 'T2':
-            return isWeapon ? {str:1, dex:1, int:1, luk:1, watk:2, matk:2}
-                            : {str:3, dex:3, int:3, luk:3, watk:0, matk:0};
-        case 'T3':
-            return isWeapon ? {str:2, dex:2, int:2, luk:2, watk:3, matk:3}
-                            : {str:5, dex:5, int:5, luk:5, watk:0, matk:0};
-        case 'T4':
-            return isWeapon ? {str:3, dex:3, int:3, luk:3, watk:4, matk:4}
-                            : {str:7, dex:7, int:7, luk:7, watk:0, matk:0};
-        case 'T5':
-            return isWeapon ? {str:4, dex:4, int:4, luk:4, watk:5, matk:5}
-                            : {str:9, dex:9, int:9, luk:9, watk:0, matk:0};
-        case 'T6':
-            return isWeapon ? {str:5, dex:5, int:5, luk:5, watk:6, matk:6}
-                            : {str:11, dex:11, int:11, luk:11, watk:0, matk:0};
-        case 'T7':
-            return isWeapon ? {str:6, dex:6, int:6, luk:6, watk:8, matk:8}
-                            : {str:13, dex:13, int:13, luk:13, watk:0, matk:0};
-        case 'T8':
-            return isWeapon ? {str:7, dex:7, int:7, luk:7, watk:10, matk:10}
-                            : {str:15, dex:15, int:15, luk:15, watk:0, matk:0};
-        case 'T9':
-            return isWeapon ? {str:8, dex:8, int:8, luk:8, watk:12, matk:12}
-                            : {str:17, dex:17, int:17, luk:17, watk:0, matk:0};
-        case 'T10':
-            return isWeapon ? {str:10, dex:10, int:10, luk:10, watk:16, matk:16}
-                            : {str:20, dex:20, int:20, luk:20, watk:0, matk:0};
-
+        case 'T1': return isWeapon ? {str:0, dex:0, int:0, luk:0, watk:1, matk:1} : {str:1, dex:1, int:1, luk:1, watk:0, matk:0};
+        case 'T2': return isWeapon ? {str:1, dex:1, int:1, luk:1, watk:2, matk:2} : {str:3, dex:3, int:3, luk:3, watk:0, matk:0};
+        case 'T3': return isWeapon ? {str:2, dex:2, int:2, luk:2, watk:3, matk:3} : {str:5, dex:5, int:5, luk:5, watk:0, matk:0};
+        case 'T4': return isWeapon ? {str:3, dex:3, int:3, luk:3, watk:4, matk:4} : {str:7, dex:7, int:7, luk:7, watk:0, matk:0};
+        case 'T5': return isWeapon ? {str:4, dex:4, int:4, luk:4, watk:5, matk:5} : {str:9, dex:9, int:9, luk:9, watk:0, matk:0};
+        case 'T6': return isWeapon ? {str:5, dex:5, int:5, luk:5, watk:6, matk:6} : {str:11, dex:11, int:11, luk:11, watk:0, matk:0};
+        case 'T7': return isWeapon ? {str:6, dex:6, int:6, luk:6, watk:8, matk:8} : {str:13, dex:13, int:13, luk:13, watk:0, matk:0};
+        case 'T8': return isWeapon ? {str:7, dex:7, int:7, luk:7, watk:10, matk:10} : {str:15, dex:15, int:15, luk:15, watk:0, matk:0};
+        case 'T9': return isWeapon ? {str:8, dex:8, int:8, luk:8, watk:12, matk:12} : {str:17, dex:17, int:17, luk:17, watk:0, matk:0};
+        case 'T10': return isWeapon ? {str:10, dex:10, int:10, luk:10, watk:16, matk:16} : {str:20, dex:20, int:20, luk:20, watk:0, matk:0};
     }
     return {str:0, dex:0, int:0, luk:0, watk:0, matk:0};
 }
 
-// ================== ENHANCE TAG (Owner) ==================
-function getEnhanceLevel(item) {
+// ================== ENHANCE TAG LOGIC (UPDATED) ==================
+
+// Returns the history string (e.g., "1X5")
+function getEnhanceHistory(item) {
     var owner = item.getOwner();
-    if (!owner) return 0;
-    var m = owner.match(/\[F\+(\d+)\]/);
-    if (!m) return 0;
-    return parseInt(m[1], 10) || 0;
+    if (!owner) return "";
+    // Matches [F.Tier (sequence of 1-9 or X)]
+    var m = owner.match(/\[F\.Tier ([1-9X]+)\]/);
+    if (!m) return "";
+    return m[1];
 }
 
-function setEnhanceLevel(item, lvl) {
-    var owner = item.getOwner();
-    if (!owner) owner = "";
-    // Remove old tag
-    owner = owner.replace(/\s*\[F\+\d+\]\s*/g, " ").trim();
-    var tag = "[F+" + lvl + "]";
-    item.setOwner(owner.length > 0 ? (owner + " " + tag) : tag);
+// Returns the integer count of upgrades based on string length
+function getEnhanceLevel(item) {
+    var hist = getEnhanceHistory(item);
+    return hist.length;
+}
+
+// Converts Tier string to Single Character
+function getTierChar(tier) {
+    if (tier === "T10") return "X";
+    // For T1-T9, strip the 'T'
+    return tier.replace("T", "");
+}
+
+// Appends the new tier char to the existing tag
+function addEnhanceTag(item, tierChar) {
+    var currentOwner = item.getOwner() || "";
+    var currentHistory = getEnhanceHistory(item); // e.g. "1X" or ""
+
+    // Remove old tag pattern completely
+    // Note: We remove ANY matching F.Tier tag to replace it with the updated one
+    var cleanOwner = currentOwner.replace(/\s*\[F\.Tier [1-9X]+\]\s*/g, " ").trim();
+
+    var newHistory = currentHistory + tierChar;
+    var newTag = "[F.Tier " + newHistory + "]";
+
+    item.setOwner(cleanOwner.length > 0 ? (cleanOwner + " " + newTag) : newTag);
 }
 
 // ================= HELPERS =================
@@ -143,12 +142,10 @@ function hasEnoughTierFood(tier, qty) {
 function consumeTierFood(tier, qty) {
     var pool = foodPoolForTier(tier);
     var remaining = qty;
-
     for (var i = 0; i < pool.length && remaining > 0; i++) {
         var id = pool[i];
         var have = cm.itemQuantity(id);
         if (have <= 0) continue;
-
         var take = Math.min(have, remaining);
         if (take > 0) {
             cm.gainItem(id, -take);
@@ -159,38 +156,25 @@ function consumeTierFood(tier, qty) {
 }
 
 function isCashItem(itemId) {
-    // 1. Check ID ranges standard for Cash items
-    if (itemId >= 5000000) return true; // Cash items / pets
-    if (itemId >= 1700000 && itemId < 1800000) return true; // Cash weapons
-
-    // 2. Check ItemInformationProvider for isCash property
+    if (itemId >= 5000000) return true;
+    if (itemId >= 1700000 && itemId < 1800000) return true;
     try {
         if (Packages.server.ItemInformationProvider.getInstance().isCash(itemId)) return true;
-    } catch(e) {
-        // Fallback if method doesn't exist
-    }
-
+    } catch(e) {}
     return false;
 }
 
 function isWeapon(item) {
     var itemId = item.getItemId();
-
-    // Explicit exclusions
     if (isCashItem(itemId)) return false;
-
     var baseWeapon = ItemConstants.isWeapon(itemId);
     var inWeaponRange = (itemId >= 1300000 && itemId < 1500000);
-
     var isAccessory = ItemConstants.isAccessory(itemId);
     var isOverall = ItemConstants.isOverall(itemId);
     var isMedal = ItemConstants.isMedal(itemId);
     var isShield = (itemId >= 1092000 && itemId < 1100000);
     var inArmorRange = (itemId >= 1000000 && itemId < 1300000);
-
-    // Double check specific cash weapon range just in case
     var inCashWeaponRange = (itemId >= 1700000 && itemId < 1800000);
-
     var excluded = (inArmorRange || isShield || isAccessory || isOverall || isMedal || inCashWeaponRange);
     return (inWeaponRange || baseWeapon) && !excluded;
 }
@@ -235,9 +219,7 @@ function tierIndex(tier) {
 function failRateForTier(tier) {
     var idx = tierIndex(tier);
     var fail = BASE_FAIL_RATE + (idx - 1) * FAIL_STEP_PER_TIER;
-    if (fail < 0) fail = 0;
-    if (fail > 100) fail = 100;
-    return fail;
+    return Math.max(0, Math.min(100, fail));
 }
 
 function successRateForTier(tier) {
@@ -255,10 +237,10 @@ function fmt(n) {
 
 function guide() {
     var msg = "#e#b[Food Enhancement Guide]#k#n\r\n\r\n";
-    msg += "- Any Food tier works on any equipment.\r\n";
+    msg += "- Enhancements appear as #b[F.Tier NNN]#k.\r\n";
+    msg += "- The letters (1-9, X) show which tiers were used.\r\n";
     msg += "- Max enhancement per equip: #r+" + MAX_ENHANCE + "#k\r\n";
-    msg += "- Cost per attempt (always consumed): #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
-    msg += "- #rFail consumes Food + NX#k (no stats gained).\r\n\r\n";
+    msg += "- Cost per attempt: #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n";
     msg += "#dFailure Rate Rule:#k\r\n";
     msg += "T1 fail = " + BASE_FAIL_RATE + "%\r\n";
     msg += "Each next tier adds +" + FAIL_STEP_PER_TIER + "% fail.\r\n";
@@ -276,7 +258,7 @@ function start() {
 
     cm.sendSimple(
         "Feed me any Food and I will bless your equip... sometimes.\r\n\r\n"
-        + "#d- Any Food tier works on any equipment.\r\n"
+        + "#d- Items are tagged with [F.Tier ...]\r\n"
         + "- Max enhance per equip: #r+" + MAX_ENHANCE + "#k\r\n"
         + "- Cost per attempt: #b(Tier x " + fmt(NX_COST_STEP) + ") NX#k + " + FOOD_PER_UPGRADE + " Food\r\n"
         + "- #rFail consumes Food + NX#k.\r\n"
@@ -317,14 +299,18 @@ function action(mode, type, selection) {
             if (!it) continue;
 
             var itemId = it.getItemId();
-
-            // EXPLOIT FIX: Filter out Cash Items strictly
             if (isCashItem(itemId)) continue;
 
             var name = iip.getName(itemId);
-            var enh = getEnhanceLevel(it);
 
-            lines.push("#L" + s + "##v" + itemId + "# " + name + "  #d[Food +" + enh + "/" + MAX_ENHANCE + "]#k#l");
+            // Get current history to display (e.g., "1X5")
+            var hist = getEnhanceHistory(it);
+            var count = hist.length;
+
+            // Display: [F.Tier 1X5] (3/3) or [Food +0/3]
+            var tagDisplay = (count > 0) ? "[F.Tier " + hist + "]" : "[No Food]";
+
+            lines.push("#L" + s + "##v" + itemId + "# " + name + "  #d" + tagDisplay + " (" + count + "/" + MAX_ENHANCE + ")#k#l");
         }
 
         if (lines.length === 0) {
@@ -340,38 +326,31 @@ function action(mode, type, selection) {
     // status 2: equip picked -> choose food tier
     if (status === 2) {
         selectedSlot = selection;
-
         var inv2 = cm.getInventory(1);
-        if (!inv2) {
-            cm.sendOk("Inventory unavailable.");
-            cm.dispose();
-            return;
-        }
-
         selectedItem = inv2.getItem(selectedSlot);
+
         if (!selectedItem) {
             cm.sendOk("Invalid selection.");
             cm.dispose();
             return;
         }
 
-        selectedItemId = selectedItem.getItemId(); // save ID for verification later
+        selectedItemId = selectedItem.getItemId();
 
-        // Double check cash status
         if (isCashItem(selectedItemId)) {
             cm.sendOk("You cannot upgrade Cash items.");
             cm.dispose();
             return;
         }
 
-        var curEnh = getEnhanceLevel(selectedItem);
-        if (curEnh >= MAX_ENHANCE) {
-            cm.sendOk("This equip is already at #bFood Enhance +" + curEnh + "#k.\r\nMax is #r+" + MAX_ENHANCE + "#k.");
+        var curCount = getEnhanceLevel(selectedItem);
+        if (curCount >= MAX_ENHANCE) {
+            cm.sendOk("This equip is already maxed at #b" + curCount + "/" + MAX_ENHANCE + "#k upgrades.");
             cm.dispose();
             return;
         }
 
-        // --- UPDATED: Full tier list T10 down to T1 ---
+        // Tiers T10 to T1
         var tiers = ["T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
 
         var menu = "Choose which Food Tier to use (any tier works on any equip):\r\n\r\n";
@@ -394,49 +373,34 @@ function action(mode, type, selection) {
 
     // status 3: tier chosen -> preview + confirm
     if (status === 3) {
-        // --- UPDATED: Full tier list to match previous menu index ---
         var tiers2 = ["T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
-
         chosenTier = tiers2[selection];
-        if (!chosenTier) {
-            cm.sendOk("Invalid tier selection.");
-            cm.dispose();
-            return;
-        }
 
-        // Re-verify item hasn't changed or been maxed
-        if (selectedItem.getItemId() !== selectedItemId) {
-             cm.sendOk("Item error. Please try again.");
+        if (!chosenTier || selectedItem.getItemId() !== selectedItemId) {
+             cm.sendOk("Error. Please start over.");
              cm.dispose();
              return;
         }
 
-        var curEnh2 = getEnhanceLevel(selectedItem);
-        if (curEnh2 >= MAX_ENHANCE) {
-            cm.sendOk("This equip is already at #bFood Enhance +" + curEnh2 + "#k.\r\nMax is #r+" + MAX_ENHANCE + "#k.");
+        var curCount2 = getEnhanceLevel(selectedItem);
+        if (curCount2 >= MAX_ENHANCE) {
+            cm.sendOk("This equip is already maxed.");
             cm.dispose();
             return;
         }
 
         if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
-            cm.sendOk(
-                "You don't have enough " + chosenTier + " Food.\r\n\r\n"
-                + "#dAcceptable " + chosenTier + " Food:#k\r\n"
-                + foodListForTier(chosenTier, FOOD_PER_UPGRADE)
-            );
+            cm.sendOk("You don't have enough " + chosenTier + " Food.\r\n\r\n" + "#dAcceptable " + chosenTier + " Food:#k\r\n" + foodListForTier(chosenTier, FOOD_PER_UPGRADE));
             cm.dispose();
             return;
         }
 
         var nxNeed = nxCostForTier(chosenTier);
-        var nxBal = getNxCredit();
-        if (nxBal < nxNeed) {
-            cm.sendOk("You need #b" + fmt(nxNeed) + " NX#k for " + chosenTier + ".\r\n"
-                + "Your current NX: #r" + fmt(nxBal) + "#k");
+        if (getNxCredit() < nxNeed) {
+            cm.sendOk("You need #b" + fmt(nxNeed) + " NX#k.");
             cm.dispose();
             return;
         }
-
 
         var weaponFlag = isWeapon(selectedItem);
         pendingDelta = tierDelta(chosenTier, weaponFlag);
@@ -447,106 +411,82 @@ function action(mode, type, selection) {
         var iip2 = Packages.server.ItemInformationProvider.getInstance();
         var itemName = iip2.getName(selectedItem.getItemId());
 
+        var hist2 = getEnhanceHistory(selectedItem);
+        var nextChar = getTierChar(chosenTier);
+
         var msg =
             "Tier chosen: #b" + chosenTier + "#k\r\n"
-            + "Enhance: #b+" + curEnh2 + "#k -> #b+" + (curEnh2 + 1) + "#k (Max +" + MAX_ENHANCE + ")\r\n\r\n"
+            + "Current Tag: #b[F.Tier " + (hist2 === "" ? "None" : hist2) + "]#k\r\n"
+            + "Result Tag: #b[F.Tier " + (hist2 + nextChar) + "]#k\r\n\r\n"
             + "Target:\r\n#v" + selectedItem.getItemId() + "# " + itemName + "\r\n\r\n"
             + "#dPreview:#k\r\n" + statSummary(selectedItem, pendingDelta) + "\r\n\r\n"
-            + "#dCosts (always consumed):#k\r\n"
-            + fmt(nxNeed) + " NX\r\n"
-            + FOOD_PER_UPGRADE + " x (any one of the following):\r\n"
-            + foodListForTier(chosenTier, FOOD_PER_UPGRADE) + "\r\n\r\n"
-            + "#dChance:#k\r\n"
-            + "Success: #b" + succ2 + "%#k\r\n"
-            + "Fail: #r" + fail2 + "%#k\r\n"
-            + "#rOn fail: Food + NX are consumed. No stats gained.#k\r\n\r\n"
+            + "#dCosts:#k " + fmt(nxNeed) + " NX + " + FOOD_PER_UPGRADE + " Food\r\n"
+            + "Success: #b" + succ2 + "%#k | Fail: #r" + fail2 + "%#k\r\n"
             + "Proceed?";
 
         cm.sendYesNo(msg);
         return;
     }
 
-    // status 4: execute upgrade (consume NX+food regardless, then roll)
+    // status 4: execute
     if (status === 4) {
         var inv3 = cm.getInventory(1);
-        if (!inv3) {
-            cm.sendOk("Inventory unavailable.");
-            cm.dispose();
-            return;
-        }
         var liveItem = inv3.getItem(selectedSlot);
-        if (!liveItem) {
-            cm.sendOk("That equip is no longer in that slot.");
+
+        if (!liveItem || liveItem.getItemId() !== selectedItemId) {
+            cm.sendOk("Item changed or missing.");
             cm.dispose();
             return;
         }
-
-        // EXPLOIT FIX: Verify item identity one last time
-        if (liveItem.getItemId() !== selectedItemId) {
-            cm.sendOk("The item in this slot seems to have changed.");
-            cm.dispose();
-            return;
-        }
-
         selectedItem = liveItem;
 
-        // EXPLOIT FIX: Verify max enhance ONE LAST TIME
-        var curEnh3 = getEnhanceLevel(selectedItem);
-        if (curEnh3 >= MAX_ENHANCE) {
-            cm.sendOk("This equip is already at #bFood Enhance +" + curEnh3 + "#k.\r\nMax is #r+" + MAX_ENHANCE + "#k.");
+        if (getEnhanceLevel(selectedItem) >= MAX_ENHANCE) {
+            cm.sendOk("Already maxed.");
             cm.dispose();
             return;
         }
 
         if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) {
-            cm.sendOk(
-                "Looks like you don't have enough " + chosenTier + " Food.\r\n\r\n"
-                + "#dAcceptable " + chosenTier + " Food:#k\r\n"
-                + foodListForTier(chosenTier, FOOD_PER_UPGRADE)
-            );
+            cm.sendOk("Not enough food.");
             cm.dispose();
             return;
         }
 
         var nxNeed2 = nxCostForTier(chosenTier);
-        var nxBal2 = getNxCredit();
-        if (nxBal2 < nxNeed2) {
-            cm.sendOk("You need #b" + fmt(nxNeed2) + " NX#k for " + chosenTier + ".\r\n"
-                + "Your current NX: #r" + fmt(nxBal2) + "#k");
+        if (getNxCredit() < nxNeed2) {
+            cm.sendOk("Not enough NX.");
             cm.dispose();
             return;
         }
 
-        // Consume NX first (fail still pays)
         cm.gainCash(-nxNeed2);
 
-        // Consume food (fail still pays)
-        var ok3 = consumeTierFood(chosenTier, FOOD_PER_UPGRADE);
-        if (!ok3) {
-            // Refund NX if food consume failed (rare but fair)
-            cm.gainCash(nxNeed2);
-            cm.sendOk("Couldn't consume the required Food for some reason.");
+        if (!consumeTierFood(chosenTier, FOOD_PER_UPGRADE)) {
+            cm.gainCash(nxNeed2); // Refund NX if food fails
+            cm.sendOk("Food consumption failed.");
             cm.dispose();
             return;
         }
 
-        // Roll
-        var succ3 = successRateForTier(chosenTier);
-        if (!rollPercent(succ3)) {
-            cm.sendOk("#rFailed!#k\r\nFood + NX were consumed.\r\nNo stats gained.");
+        if (!rollPercent(successRateForTier(chosenTier))) {
+            cm.sendOk("#rFailed!#k\r\nFood + NX consumed. No stats gained.");
             cm.dispose();
             return;
         }
 
-        // Success -> apply stats + enhance +1
+        // Success
         var weaponFlag3 = isWeapon(selectedItem);
         var d3 = tierDelta(chosenTier, weaponFlag3);
 
+        // 1. Apply Stats
         applyStats(selectedItem, d3);
-        setEnhanceLevel(selectedItem, curEnh3 + 1);
+
+        // 2. Update Tag (Append new tier char)
+        var tChar = getTierChar(chosenTier);
+        addEnhanceTag(selectedItem, tChar);
 
         cm.getPlayer().forceUpdateItem(selectedItem);
-        cm.sendOk("#bSuccess!#k\r\nFood Enhance +" + (curEnh3 + 1) + " applied.");
+        cm.sendOk("#bSuccess!#k\r\nStats applied and tag updated to " + getEnhanceHistory(selectedItem));
         cm.dispose();
         return;
     }
