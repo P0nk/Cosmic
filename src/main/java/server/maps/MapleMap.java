@@ -3087,7 +3087,19 @@ public class MapleMap {
      */
     public void addMonsterSpawn(Monster monster, int mobTime, int team) {
         Point newpos = calcPointBelow(monster.getPosition());
-        newpos.y -= 1;
+
+        // FIX START: Null Check
+        if (newpos == null) {
+            // If we can't calculate the ground below, use the raw WZ coordinates
+            newpos = monster.getPosition();
+            // Optional: Log this to console so you can fix the map later
+            // System.out.println("Warning: [Map " + mapId + "] Monster " + monster.getId() + " spawn point is invalid (floating/no foothold). Using raw pos.");
+        } else {
+            // Only adjust Y if we successfully calculated a new position
+            newpos.y -= 1;
+        }
+        // FIX END
+
         SpawnPoint sp = new SpawnPoint(monster, newpos, !monster.isMobile(), mobTime, mobInterval, team);
         monsterSpawn.add(sp);
         if (sp.shouldSpawn() || mobTime == -1) {// -1 does not respawn and should not either but force ONE spawn
@@ -3097,16 +3109,26 @@ public class MapleMap {
 
     public void addAllMonsterSpawn(Monster monster, int mobTime, int team) {
         Point newpos = calcPointBelow(monster.getPosition());
-        newpos.y -= 1;
+
+        if (newpos == null) {
+            newpos = monster.getPosition();
+        } else {
+            newpos.y -= 1;
+        }
+
         SpawnPoint sp = new SpawnPoint(monster, newpos, !monster.isMobile(), mobTime, mobInterval, team);
         allMonsterSpawn.add(sp);
     }
-
     public void removeMonsterSpawn(int mobId, int x, int y) {
         // assumption: spawn points identifies by tuple (lifeid, x, y)
+        Point rawPos = new Point(x, y);
+        Point checkpos = calcPointBelow(rawPos);
 
-        Point checkpos = calcPointBelow(new Point(x, y));
-        checkpos.y -= 1;
+        if (checkpos == null) {
+            checkpos = rawPos;
+        } else {
+            checkpos.y -= 1;
+        }
 
         List<SpawnPoint> toRemove = new LinkedList<>();
         for (SpawnPoint sp : getMonsterSpawn()) {
@@ -3115,6 +3137,7 @@ public class MapleMap {
                 toRemove.add(sp);
             }
         }
+        // ... rest of method
 
         if (!toRemove.isEmpty()) {
             synchronized (monsterSpawn) {
@@ -3128,8 +3151,18 @@ public class MapleMap {
     public void removeAllMonsterSpawn(int mobId, int x, int y) {
         // assumption: spawn points identifies by tuple (lifeid, x, y)
 
-        Point checkpos = calcPointBelow(new Point(x, y));
-        checkpos.y -= 1;
+        Point rawPos = new Point(x, y);
+        Point checkpos = calcPointBelow(rawPos);
+
+        // FIX START: Null Check
+        if (checkpos == null) {
+            // Fallback to raw coordinates if foothold calculation fails
+            checkpos = rawPos;
+        } else {
+            // Only adjust Y if we found a valid foothold
+            checkpos.y -= 1;
+        }
+        // FIX END
 
         List<SpawnPoint> toRemove = new LinkedList<>();
         for (SpawnPoint sp : getAllMonsterSpawn()) {
