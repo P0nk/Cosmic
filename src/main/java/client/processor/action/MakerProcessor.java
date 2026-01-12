@@ -51,15 +51,15 @@ public class MakerProcessor {
     private static final ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
     public static void makerAction(InPacket p, Client c) {
-        System.out.println("[MakerDebug] Received Maker Action Packet.");
+        System.out.println("[MakerProcessorDebug] START: Received Maker Action Packet.");
 
         if (c.tryacquireClient()) {
             try {
                 int type = p.readInt();
-                System.out.println("[MakerDebug] Var declared - type: " + type);
+                System.out.println("[MakerProcessorDebug] Packet Type: " + type);
 
                 int toCreate = p.readInt();
-                System.out.println("[MakerDebug] Var declared - toCreate (ItemId): " + toCreate);
+                System.out.println("[MakerProcessorDebug] Target ItemID (toCreate): " + toCreate);
 
                 int toDisassemble = -1, pos = -1;
                 boolean makerSucceeded = true;
@@ -69,76 +69,75 @@ public class MakerProcessor {
                 int stimulantid = -1;
 
                 if (type == 3) {    // building monster crystal
-                    System.out.println("[MakerDebug] Branch: Monster Crystal (type 3)");
+                    System.out.println("[MakerProcessorDebug] Action: Monster Crystal (Type 3)");
                     int fromLeftover = toCreate;
-                    System.out.println("[MakerDebug] Var declared - fromLeftover: " + fromLeftover);
+                    System.out.println("[MakerProcessorDebug] fromLeftover ID: " + fromLeftover);
 
-                    System.out.println("[MakerDebug] Function Call - ii.getMakerCrystalFromLeftover(" + toCreate + ")");
                     toCreate = ii.getMakerCrystalFromLeftover(toCreate);
-                    System.out.println("[MakerDebug] Var Update - toCreate (After Lookup): " + toCreate);
+                    System.out.println("[MakerProcessorDebug] Converted toCreate ID: " + toCreate);
 
                     if (toCreate == -1) {
-                        System.out.println("[MakerDebug] Error: Leftover unavailable.");
+                        System.out.println("[MakerProcessorDebug] FAIL: Leftover unavailable.");
                         c.sendPacket(PacketCreator.serverNotice(1, ii.getName(fromLeftover) + " is unavailable for Monster Crystal conversion."));
                         c.sendPacket(PacketCreator.makerEnableActions());
                         return;
                     }
 
-                    System.out.println("[MakerDebug] Function Call - MakerItemFactory.generateLeftoverCrystalEntry(" + fromLeftover + ", " + toCreate + ")");
                     recipe = MakerItemFactory.generateLeftoverCrystalEntry(fromLeftover, toCreate);
 
                 } else if (type == 4) {  // disassembling
-                    System.out.println("[MakerDebug] Branch: Disassembling (type 4)");
+                    System.out.println("[MakerProcessorDebug] Action: Disassembling (Type 4)");
                     p.readInt(); // 1... probably inventory type
                     pos = p.readInt();
-                    System.out.println("[MakerDebug] Var declared - pos: " + pos);
+                    System.out.println("[MakerProcessorDebug] Inventory Slot Position: " + pos);
 
                     Item it = c.getPlayer().getInventory(InventoryType.EQUIP).getItem((short) pos);
-                    System.out.println("[MakerDebug] Var declared - it (Item): " + (it == null ? "null" : it.getItemId()));
+                    System.out.println("[MakerProcessorDebug] Item at Slot " + pos + ": " + (it == null ? "NULL" : it.getItemId()));
 
                     if (it != null && it.getItemId() == toCreate) {
                         toDisassemble = toCreate;
-                        System.out.println("[MakerDebug] Var Update - toDisassemble: " + toDisassemble);
+                        System.out.println("[MakerProcessorDebug] Valid Item found for disassembly: " + toDisassemble);
 
-                        System.out.println("[MakerDebug] Function Call - generateDisassemblyInfo(" + toDisassemble + ")");
                         Pair<Integer, List<Pair<Integer, Integer>>> pair = generateDisassemblyInfo(toDisassemble);
 
                         if (pair != null) {
-                            System.out.println("[MakerDebug] Disassembly Info found. Fee: " + pair.getLeft());
+                            System.out.println("[MakerProcessorDebug] Disassembly Info Found - Fee: " + pair.getLeft() + ", Gains: " + pair.getRight().size());
                             recipe = MakerItemFactory.generateDisassemblyCrystalEntry(toDisassemble, pair.getLeft(), pair.getRight());
                         } else {
-                            System.out.println("[MakerDebug] Error: Disassembly info null.");
+                            System.out.println("[MakerProcessorDebug] FAIL: Disassembly info is null.");
                             c.sendPacket(PacketCreator.serverNotice(1, ii.getName(toCreate) + " is unavailable for Monster Crystal disassembly."));
                             c.sendPacket(PacketCreator.makerEnableActions());
                             return;
                         }
                     } else {
-                        System.out.println("[MakerDebug] Error: Item mismatch or null.");
+                        System.out.println("[MakerProcessorDebug] FAIL: Item mismatch (Packet ID: " + toCreate + " vs Slot ID: " + (it == null ? "null" : it.getItemId()) + ")");
                         c.sendPacket(PacketCreator.serverNotice(1, "An unknown error occurred when trying to apply that item for disassembly."));
                         c.sendPacket(PacketCreator.makerEnableActions());
                         return;
                     }
                 } else {
-                    System.out.println("[MakerDebug] Branch: Standard Crafting (type " + type + ")");
+                    System.out.println("[MakerProcessorDebug] Action: Standard Crafting (Type " + type + ")");
 
                     if (ItemConstants.isEquipment(toCreate)) {   // only equips uses stimulant and reagents
-                        System.out.println("[MakerDebug] Item is Equipment.");
+                        System.out.println("[MakerProcessorDebug] Target is Equipment.");
                         if (p.readByte() != 0) {  // stimulant
                             stimulantid = ii.getMakerStimulant(toCreate);
-                            System.out.println("[MakerDebug] Var declared - stimulantid: " + stimulantid);
+                            System.out.println("[MakerProcessorDebug] Stimulant ID from WZ: " + stimulantid);
 
                             if (!c.getAbstractPlayerInteraction().haveItem(stimulantid)) {
-                                System.out.println("[MakerDebug] Player does not have stimulant. Resetting to -1.");
+                                System.out.println("[MakerProcessorDebug] FAIL: Player missing stimulant " + stimulantid + ". Setting to -1.");
                                 stimulantid = -1;
+                            } else {
+                                System.out.println("[MakerProcessorDebug] Player has stimulant: " + stimulantid);
                             }
                         }
 
                         int reagents = Math.min(p.readInt(), getMakerReagentSlots(toCreate));
-                        System.out.println("[MakerDebug] Var declared - reagents (count): " + reagents);
+                        System.out.println("[MakerProcessorDebug] Reagent Count Limit: " + reagents);
 
                         for (int i = 0; i < reagents; i++) {  // crystals
                             int reagentid = p.readInt();
-                            System.out.println("[MakerDebug] Reading reagent: " + reagentid);
+                            System.out.println("[MakerProcessorDebug] Packet reading Reagent ID: " + reagentid);
 
                             if (ItemConstants.isMakerReagent(reagentid)) {
                                 Short rs = reagentids.get(reagentid);
@@ -147,23 +146,30 @@ public class MakerProcessor {
                                 } else {
                                     reagentids.put(reagentid, (short) (rs + 1));
                                 }
+                            } else {
+                                System.out.println("[MakerProcessorDebug] Item " + reagentid + " is NOT a valid Maker Reagent.");
                             }
                         }
-                        System.out.println("[MakerDebug] Reagents Map: " + reagentids.toString());
+                        System.out.println("[MakerProcessorDebug] Reagents Map before inventory check: " + reagentids.toString());
 
                         List<Pair<Integer, Short>> toUpdate = new LinkedList<>();
                         for (Map.Entry<Integer, Short> r : reagentids.entrySet()) {
-                            int qty = c.getAbstractPlayerInteraction().getItemQuantity(r.getKey());
-                            System.out.println("[MakerDebug] Checking inventory for reagent " + r.getKey() + ". Has: " + qty + " Needs: " + r.getValue());
+                            // DEBUGGING THE QUANTITY CHECK HERE
+                            int needed = r.getValue();
+                            int itemId = r.getKey();
+                            int qty = c.getAbstractPlayerInteraction().getItemQuantity(itemId);
 
-                            if (qty < r.getValue()) {
-                                toUpdate.add(new Pair<>(r.getKey(), (short) qty));
+                            System.out.println("[MakerProcessorDebug] Reagent Check [ID: " + itemId + "] -> Need: " + needed + " | Has: " + qty);
+
+                            if (qty < needed) {
+                                System.out.println("[MakerProcessorDebug] WARNING: Player has insufficient Reagent " + itemId);
+                                toUpdate.add(new Pair<>(itemId, (short) qty));
                             }
                         }
 
                         // remove those not present on player inventory
                         if (!toUpdate.isEmpty()) {
-                            System.out.println("[MakerDebug] Adjusting reagents based on actual inventory...");
+                            System.out.println("[MakerProcessorDebug] Cleaning up invalid reagents...");
                             for (Pair<Integer, Short> rp : toUpdate) {
                                 if (rp.getRight() > 0) {
                                     reagentids.put(rp.getLeft(), rp.getRight());
@@ -174,9 +180,8 @@ public class MakerProcessor {
                         }
 
                         if (!reagentids.isEmpty()) {
-                            System.out.println("[MakerDebug] Function Call - removeOddMakerReagents(" + toCreate + ", " + reagentids + ")");
                             if (!removeOddMakerReagents(toCreate, reagentids)) {
-                                System.out.println("[MakerDebug] Error: removeOddMakerReagents failed (Invalid gem for item).");
+                                System.out.println("[MakerProcessorDebug] FAIL: removeOddMakerReagents returned false.");
                                 c.sendPacket(PacketCreator.serverNotice(1, "You can only use WATK and MATK Strengthening Gems on weapon items."));
                                 c.sendPacket(PacketCreator.makerEnableActions());
                                 return;
@@ -184,19 +189,17 @@ public class MakerProcessor {
                         }
                     }
 
-                    System.out.println("[MakerDebug] Function Call - MakerItemFactory.getItemCreateEntry(" + toCreate + ", " + stimulantid + ", " + reagentids + ")");
                     recipe = MakerItemFactory.getItemCreateEntry(toCreate, stimulantid, reagentids);
                 }
 
                 if (recipe == null) {
-                    System.out.println("[MakerDebug] CRITICAL: Recipe is null.");
+                    System.out.println("[MakerProcessorDebug] CRITICAL: Recipe generation returned NULL.");
                 } else {
-                    System.out.println("[MakerDebug] Recipe created. Cost: " + recipe.getCost() + " ReqLevel: " + recipe.getReqLevel());
+                    System.out.println("[MakerProcessorDebug] Recipe Generated -> Cost: " + recipe.getCost() + ", ReqLevel: " + recipe.getReqLevel());
                 }
 
-                System.out.println("[MakerDebug] Function Call - getCreateStatus(c, recipe)");
                 short createStatus = getCreateStatus(c, recipe);
-                System.out.println("[MakerDebug] Var declared - createStatus: " + createStatus);
+                System.out.println("[MakerProcessorDebug] Validation Status Code: " + createStatus);
 
                 switch (createStatus) {
                     case -1:// non-available for Maker itemid has been tried to forge
@@ -206,11 +209,13 @@ public class MakerProcessor {
                         break;
 
                     case 1: // no items
+                        System.out.println("[MakerProcessorDebug] FAIL: Case 1 - Missing Items.");
                         c.sendPacket(PacketCreator.serverNotice(1, "You don't have all required items in your inventory to make " + ii.getName(toCreate) + "."));
                         c.sendPacket(PacketCreator.makerEnableActions());
                         break;
 
                     case 2: // no meso
+                        System.out.println("[MakerProcessorDebug] FAIL: Case 2 - Missing Mesos. Need: " + recipe.getCost() + " Have: " + c.getPlayer().getMeso());
                         c.sendPacket(PacketCreator.serverNotice(1, "You don't have enough mesos (" + GameConstants.numberWithCommas(recipe.getCost()) + ") to complete this operation."));
                         c.sendPacket(PacketCreator.makerEnableActions());
                         break;
@@ -231,20 +236,17 @@ public class MakerProcessor {
                         break;
 
                     default:
-                        System.out.println("[MakerDebug] Checks passed. Proceeding with crafting/disassembly.");
+                        System.out.println("[MakerProcessorDebug] Validation Passed. Proceeding to Transaction.");
                         if (toDisassemble != -1) {
-                            System.out.println("[MakerDebug] Removing disassembled item from slot: " + pos);
                             InventoryManipulator.removeFromSlot(c, InventoryType.EQUIP, (short) pos, (short) 1, false);
                         } else {
                             for (Pair<Integer, Integer> pair : recipe.getReqItems()) {
-                                System.out.println("[MakerDebug] Consuming Requirement: " + pair.getLeft() + " Qty: " + pair.getRight());
+                                System.out.println("[MakerProcessorDebug] Consuming Req Item: " + pair.getLeft() + " Qty: " + pair.getRight());
                                 c.getAbstractPlayerInteraction().gainItem(pair.getLeft(), (short) -pair.getRight(), false);
                             }
                         }
 
                         int cost = recipe.getCost();
-                        System.out.println("[MakerDebug] Var declared - cost: " + cost);
-
                         if (stimulantid == -1 && reagentids.isEmpty()) {
                             if (cost > 0) {
                                 c.getPlayer().gainMeso(-cost, false);
@@ -252,21 +254,19 @@ public class MakerProcessor {
 
                             for (Pair<Integer, Integer> pair : recipe.getGainItems()) {
                                 c.getPlayer().setCS(true);
-                                System.out.println("[MakerDebug] Gaining item (No Stim/Reagent): " + pair.getLeft());
+                                System.out.println("[MakerProcessorDebug] Gaining Item (Simple): " + pair.getLeft() + " Qty: " + pair.getRight());
                                 c.getAbstractPlayerInteraction().gainItem(pair.getLeft(), pair.getRight().shortValue(), false);
                                 c.getPlayer().setCS(false);
                             }
                         } else {
                             toCreate = recipe.getGainItems().get(0).getLeft();
-                            System.out.println("[MakerDebug] Update toCreate (from recipe gain): " + toCreate);
 
                             if (stimulantid != -1) {
-                                System.out.println("[MakerDebug] Consuming Stimulant: " + stimulantid);
                                 c.getAbstractPlayerInteraction().gainItem(stimulantid, (short) -1, false);
                             }
                             if (!reagentids.isEmpty()) {
                                 for (Map.Entry<Integer, Short> r : reagentids.entrySet()) {
-                                    System.out.println("[MakerDebug] Consuming Reagent: " + r.getKey() + " Qty: " + r.getValue());
+                                    System.out.println("[MakerProcessorDebug] Consuming Reagent: " + r.getKey() + " Qty: " + r.getValue());
                                     c.getAbstractPlayerInteraction().gainItem(r.getKey(), (short) (-1 * r.getValue()), false);
                                 }
                             }
@@ -275,20 +275,16 @@ public class MakerProcessor {
                                 c.getPlayer().gainMeso(-cost, false);
                             }
 
-                            System.out.println("[MakerDebug] Function Call - addBoostedMakerItem(...)");
                             makerSucceeded = addBoostedMakerItem(c, toCreate, stimulantid, reagentids);
-                            System.out.println("[MakerDebug] makerSucceeded: " + makerSucceeded);
+                            System.out.println("[MakerProcessorDebug] Boosted Creation Result: " + makerSucceeded);
                         }
 
                         // thanks inhyuk for noticing missing MAKER_RESULT packets
                         if (type == 3) {
-                            System.out.println("[MakerDebug] Sending makerResultCrystal packet");
                             c.sendPacket(PacketCreator.makerResultCrystal(recipe.getGainItems().get(0).getLeft(), recipe.getReqItems().get(0).getLeft()));
                         } else if (type == 4) {
-                            System.out.println("[MakerDebug] Sending makerResultDesynth packet");
                             c.sendPacket(PacketCreator.makerResultDesynth(recipe.getReqItems().get(0).getLeft(), recipe.getCost(), recipe.getGainItems()));
                         } else {
-                            System.out.println("[MakerDebug] Sending makerResult packet");
                             c.sendPacket(PacketCreator.makerResult(makerSucceeded, recipe.getGainItems().get(0).getLeft(), recipe.getGainItems().get(0).getRight(), recipe.getCost(), recipe.getReqItems(), stimulantid, new LinkedList<>(reagentids.keySet())));
                         }
 
@@ -296,34 +292,30 @@ public class MakerProcessor {
                         c.getPlayer().getMap().broadcastMessage(c.getPlayer(), PacketCreator.showForeignMakerEffect(c.getPlayer().getId(), makerSucceeded), false);
 
                         if (toCreate == 4260003 && type == 3 && c.getPlayer().getQuestStatus(6033) == 1) {
-                            System.out.println("[MakerDebug] Updating Quest 6033 progress");
                             c.getAbstractPlayerInteraction().setQuestProgress(6033, 1);
                         }
                 }
             } finally {
                 c.releaseClient();
-                System.out.println("[MakerDebug] Client released.");
+                System.out.println("[MakerProcessorDebug] END: Client Released.");
             }
         } else {
-            System.out.println("[MakerDebug] Failed to acquire client lock.");
+            System.out.println("[MakerProcessorDebug] ERROR: Failed to acquire Client Lock.");
         }
     }
 
     // checks and prevents hackers from PE'ing Maker operations with invalid operations
     private static boolean removeOddMakerReagents(int toCreate, Map<Integer, Short> reagentids) {
-        System.out.println("[MakerDebug] Inside removeOddMakerReagents");
         Map<Integer, Integer> reagentType = new LinkedHashMap<>();
         List<Integer> toRemove = new LinkedList<>();
 
         boolean isWeapon = ItemConstants.isWeapon(toCreate) || YamlConfig.config.server.USE_MAKER_PERMISSIVE_ATKUP;  // thanks Vcoc for finding a case where a weapon wouldn't be counted as such due to a bounding on isWeapon
-        System.out.println("[MakerDebug] isWeapon: " + isWeapon);
 
         for (Map.Entry<Integer, Short> r : reagentids.entrySet()) {
             int curRid = r.getKey();
             int type = r.getKey() / 100;
 
             if (type < 42502 && !isWeapon) {     // only weapons should gain w.att/m.att from these.
-                System.out.println("[MakerDebug] Invalid reagent for non-weapon: " + curRid);
                 return false;   //toRemove.add(curRid);
             } else {
                 Integer tableRid = reagentType.get(type);
@@ -343,7 +335,6 @@ public class MakerProcessor {
 
         // removing less effective gems of repeated type
         for (Integer i : toRemove) {
-            System.out.println("[MakerDebug] Removing duplicate/weaker reagent: " + i);
             reagentids.remove(i);
         }
 
@@ -372,12 +363,10 @@ public class MakerProcessor {
     }
 
     private static Pair<Integer, List<Pair<Integer, Integer>>> generateDisassemblyInfo(int itemId) {
-        System.out.println("[MakerDebug] generateDisassemblyInfo for " + itemId);
         int recvFee = ii.getMakerDisassembledFee(itemId);
-        System.out.println("[MakerDebug] Fee: " + recvFee);
+
         if (recvFee > -1) {
             List<Pair<Integer, Integer>> gains = ii.getMakerDisassembledItems(itemId);
-            System.out.println("[MakerDebug] Gains list size: " + gains.size());
             if (!gains.isEmpty()) {
                 return new Pair<>(recvFee, gains);
             }
@@ -391,29 +380,28 @@ public class MakerProcessor {
     }
 
     private static short getCreateStatus(Client c, MakerItemCreateEntry recipe) {
-        System.out.println("[MakerDebug] Inside getCreateStatus");
         if (recipe.isInvalid()) {
-            System.out.println("[MakerDebug] Status: -1 (Recipe Invalid)");
+            System.out.println("[MakerProcessorDebug] getCreateStatus: Recipe Invalid.");
             return -1;
         }
 
         if (!hasItems(c, recipe)) {
-            System.out.println("[MakerDebug] Status: 1 (Missing Items)");
+            System.out.println("[MakerProcessorDebug] getCreateStatus: Missing Items.");
             return 1;
         }
 
         if (c.getPlayer().getMeso() < recipe.getCost()) {
-            System.out.println("[MakerDebug] Status: 2 (Missing Mesos)");
+            System.out.println("[MakerProcessorDebug] getCreateStatus: Missing Mesos.");
             return 2;
         }
 
         if (c.getPlayer().getLevel() < recipe.getReqLevel()) {
-            System.out.println("[MakerDebug] Status: 3 (Level too low)");
+            System.out.println("[MakerProcessorDebug] getCreateStatus: Low Level.");
             return 3;
         }
 
         if (getMakerSkillLevel(c.getPlayer()) < recipe.getReqSkillLevel()) {
-            System.out.println("[MakerDebug] Status: 4 (Maker Skill Level too low)");
+            System.out.println("[MakerProcessorDebug] getCreateStatus: Low Skill Level.");
             return 4;
         }
 
@@ -433,36 +421,44 @@ public class MakerProcessor {
         }
 
         if (!c.getAbstractPlayerInteraction().canHoldAllAfterRemoving(addItemids, addQuantity, rmvItemids, rmvQuantity)) {
-            System.out.println("[MakerDebug] Status: 5 (Inventory Full)");
+            System.out.println("[MakerProcessorDebug] getCreateStatus: Inventory Full.");
             return 5;
         }
 
-        System.out.println("[MakerDebug] Status: 0 (OK)");
         return 0;
     }
 
     private static boolean hasItems(Client c, MakerItemCreateEntry recipe) {
+        System.out.println("[MakerProcessorDebug] --- Checking Recipe Ingredients (hasItems) ---");
         for (Pair<Integer, Integer> p : recipe.getReqItems()) {
             int itemId = p.getLeft();
-            int count = c.getPlayer().getInventory(ItemConstants.getInventoryType(itemId)).countById(itemId);
-            System.out.println("[MakerDebug] Item Check - ID: " + itemId + " Have: " + count + " Need: " + p.getRight());
-            if (count < p.getRight()) {
+            int required = p.getRight();
+            InventoryType type = ItemConstants.getInventoryType(itemId);
+            int count = c.getPlayer().getInventory(type).countById(itemId);
+
+            System.out.println("[MakerProcessorDebug] ItemID: " + itemId);
+            System.out.println("[MakerProcessorDebug] -> Target Inventory Type: " + type.name());
+            System.out.println("[MakerProcessorDebug] -> Qty in Inventory: " + count);
+            System.out.println("[MakerProcessorDebug] -> Qty Required: " + required);
+
+            if (count < required) {
+                System.out.println("[MakerProcessorDebug] -> FAIL: Not enough items.");
                 return false;
             }
         }
+        System.out.println("[MakerProcessorDebug] --- Recipe Ingredients Check Passed ---");
         return true;
     }
 
     private static boolean addBoostedMakerItem(Client c, int itemid, int stimulantid, Map<Integer, Short> reagentids) {
-        System.out.println("[MakerDebug] Inside addBoostedMakerItem");
         if (stimulantid != -1 && !ItemInformationProvider.rollSuccessChance(90.0)) {
-            System.out.println("[MakerDebug] Stimulant Fail (10% chance hit)");
+            System.out.println("[MakerProcessorDebug] Stimulant Failed (10% fail rate triggered).");
             return false;
         }
 
         Item item = ii.getEquipById(itemid);
         if (item == null) {
-            System.out.println("[MakerDebug] Error: Item is null in addBoostedMakerItem");
+            System.out.println("[MakerProcessorDebug] ERROR: Created item is NULL.");
             return false;
         }
 
@@ -536,7 +532,6 @@ public class MakerProcessor {
         }
 
         InventoryManipulator.addFromDrop(c, item, false, -1);
-        System.out.println("[MakerDebug] Item added to inventory successfully.");
         return true;
     }
 }
