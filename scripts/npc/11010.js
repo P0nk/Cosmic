@@ -533,172 +533,288 @@ function action(mode, type, selection) {
         cm.dispose();
     }
 
-    // =========================================================================
-    // == POTION BANK SERVICE ==================================================
-    // =========================================================================
-    else if (status === 1 && selection === 1) {
-        selectedService = 1;
+/* * Updated Potion Bank
+ * 1. Includes Blacklist (Gelt, Apple, Graham Pie) to ignore during Deposit.
+ * 2. Updated Withdrawal list with specific IDs and Heal values.
+ * 3. Withdrawal now shows "Stock available" (Qty) instead of raw HP/MP.
+ */
 
-        var hp = potionBank.getBankedHP(cm.getPlayer().getId());
-        var mp = potionBank.getBankedMP(cm.getPlayer().getId());
+// =========================================================================
+// == CONFIGURATION ========================================================
+// =========================================================================
 
-        var text = "U-um, I think I can help with potions... I... I don't really know much about these things, but I hope I can help...\r\n"
-                 + "\r\n#e#r[Potion Bank Summary]#n#k\r\n\r\n";
-        text += "Stored HP: #b" + hp + "#k\r\n";
-        text += "Stored MP: #b" + mp + "#k\r\n\r\n";
-        text += "#L20#Deposit all healing items\r\n";
-        text += "#L21#Withdraw potions\r\n";
-        cm.sendSimple(text);
-    }
+// Items to IGNORE during deposit
+var blacklist = [
+    2022174, // Gelt Chocolate
+    2022179, // Onyx Apple
+    2022143  // Graham Pie (Verify this ID for your version, sometimes 2022003)
+];
 
-    // Deposit healing items - preview before confirm
-    else if (status === 2 && selectedService === 1 && selection === 20) {
-        prevSelection = 20;
+// Available Potions for Withdrawal
+// Format: [ItemID, HealAmount, "Type"]
+var potionList = [
+    // HP Potions
+    [2000007, 50, "HP"],   // Red Pill
+    [2000008, 150, "HP"],  // Orange Pill
+    [2000009, 300, "HP"],  // White Pill
+    [2022013, 500, "HP"],  // Sushi (Salmon)
+    [2022203, 800, "HP"],  // Laksa
+    [2022205, 1800, "HP"], // Carrot Cake
+    [2022206, 2200, "HP"], // Chicken Rice
+    [2022207, 2600, "HP"], // Satay
+    [2022476, 4000, "HP"], // Chicken Kapitan
+    [2020013, 5000, "HP"], // Reindeer Milk
+    // MP Potions
+    [2000010, 100, "MP"],  // Blue Pill
+    [2000011, 300, "MP"],  // Mana Elixir Pill
+    [2022022, 500, "MP"],  // Fish Cake
+    [2022051, 800, "MP"],  // Buckwheat Paste
+    [2022210, 1600, "MP"], // Dragon Fruit
+    [2001002, 2000, "MP"], // Red Bean Sundae
+    [2022211, 3200, "MP"], // Durian
+    [2020014, 4050, "MP"], // Sunrise Dew
+    [2020015, 5000, "MP"]  // Sunset Dew
+];
 
-        var preview = cm.getPlayer().previewConsolidatePotions();
-        if (preview == null) {
-            cm.sendOk("Menma can't find any.. I'm sorry...");
-            cm.dispose();
-            return;
+// Helper to get Item Information Provider (Standard v83)
+// If your server calls it differently, adjust this.
+var ii = server.MapleItemInformationProvider.getInstance();
+
+
+// =========================================================================
+// == MAIN SCRIPT ==========================================================
+// =========================================================================
+
+if (status === 1 && selection === 1) {
+    selectedService = 1;
+
+    var hp = potionBank.getBankedHP(cm.getPlayer().getId());
+    var mp = potionBank.getBankedMP(cm.getPlayer().getId());
+
+    var text = "U-um, I think I can help with potions... I... I don't really know much about these things, but I hope I can help...\r\n"
+             + "\r\n#e#r[Potion Bank Summary]#n#k\r\n\r\n";
+    text += "Stored HP: #b" + hp + "#k\r\n";
+    text += "Stored MP: #b" + mp + "#k\r\n\r\n";
+    text += "#L20#Deposit all healing items\r\n";
+    text += "#L21#Withdraw potions\r\n";
+    cm.sendSimple(text);
+}
+
+// -------------------------------------------------------------------------
+// -- DEPOSIT LOGIC (Rewritten in JS to support Blacklist) -----------------
+// -------------------------------------------------------------------------
+
+else if (status === 2 && selectedService === 1 && selection === 20) {
+    prevSelection = 20;
+
+    // Calculate deposit manually to exclude Blacklist
+    var inv = cm.getInventory(2); // Use Inventory
+    var iter = inv.list().iterator();
+
+    var totalHP = 0;
+    var totalMP = 0;
+    var count = 0;
+
+    // We store items to remove in a temporary list to use in the next step
+    // But since we can't easily pass objects between states without session vars,
+    // we will recalculate in the next step. This step is just for PREVIEW.
+
+    while (iter.hasNext()) {
+        var item = iter.next();
+        var id = item.getItemId();
+
+        // 1. Blacklist Check
+        if (blacklist.indexOf(id) !== -1) {
+            continue;
         }
 
-        var detail  = preview.get("detailText");
-        var totalHP = preview.get("totalHP");
-        var totalMP = preview.get("totalMP");
+        // 2. Check if it heals HP or MP
+        // Note: usage of 'ii' defined at top
+        var healHP = ii.getItemEffect(id).getHp();
+        var healMP = ii.getItemEffect(id).getMp();
 
-        var msg = "Menma will take care of these items for you.. (deposit into Potion Bank):\r\n\r\n";
-        msg += detail + "\r\n";
-        msg += "#bEstimated HP gained: " + totalHP + "#k\r\n";
-        msg += "#bEstimated MP gained: " + totalMP + "#k\r\n";
-        msg += "\r\n#rWARNING: Any total exceeding 2,000,000,000 HP or MP will be voided!#k\r\n\r\n";
-        msg += "Proceed with consolidation?";
-        cm.sendYesNo(msg);
+        if (healHP > 0 || healMP > 0) {
+            var qty = item.getQuantity();
+            totalHP += (healHP * qty);
+            totalMP += (healMP * qty);
+            count++;
+        }
     }
 
-    // Confirm deposit
-    else if (status === 3 && selectedService === 1 && prevSelection === 20) {
-        cm.getPlayer().consolidatePotions();
-        cm.sendOk("Menma has stored your potions.. I hope that's okay..");
-        prevSelection = -1;
+    if (count === 0) {
+        cm.sendOk("Menma can't find any potions to deposit... (or they are all blacklisted!)");
         cm.dispose();
+        return;
     }
 
-    // Withdraw potion menu
-    else if (status === 2 && selectedService === 1 && selection === 21) {
-        prevSelection = 21;
+    var msg = "Menma will take care of these items for you.. (deposit into Potion Bank):\r\n\r\n";
+    msg += "Items found: #b" + count + "#k\r\n";
+    msg += "#bEstimated HP gained: " + totalHP + "#k\r\n";
+    msg += "#bEstimated MP gained: " + totalMP + "#k\r\n";
+    msg += "\r\n#rWARNING: Items will be removed from your inventory!#k\r\n";
+    msg += "Proceed with consolidation?";
+    cm.sendYesNo(msg);
+}
 
-        var list = "You want your potions back? Where did Menma put it..:\r\n";
-        list += "-----------------------------------------\r\n";
-        list += "#L0##v2000007# Red Pill (50 HP)\r\n";
-        list += "#L1##v2000008# Orange Pill (150 HP)\r\n";
-        list += "#L2##v2000009# White Pill (300 HP)\r\n";
-        list += "#L3##v2000010# Blue Pill (100 MP)\r\n";
-        list += "#L4##v2000011# Mana Elixir Pill (300 MP)\r\n";
-        cm.sendSimple(list);
+// Confirm deposit (Manual JS Removal)
+else if (status === 3 && selectedService === 1 && prevSelection === 20) {
+
+    var inv = cm.getInventory(2);
+    var iter = inv.list().iterator();
+    var totalHP = 0;
+    var totalMP = 0;
+
+    // Iterating backwards or using a robust method is safer for removal,
+    // but standard removeAll logic usually requires iterating first.
+    // We will collect IDs and Quantities first to avoid ConcurrentModification.
+
+    var toRemove = []; // [ [itemId, qty, healHP, healMP], ... ]
+
+    while (iter.hasNext()) {
+        var item = iter.next();
+        var id = item.getItemId();
+
+        if (blacklist.indexOf(id) !== -1) continue;
+
+        var healHP = ii.getItemEffect(id).getHp();
+        var healMP = ii.getItemEffect(id).getMp();
+
+        if (healHP > 0 || healMP > 0) {
+            toRemove.push([id, item.getQuantity(), healHP, healMP]);
+        }
     }
 
-    // Potion type selection (withdraw) - shows eligibility based on bank + inventory
-    else if (status === 3 && selectedService === 1 && prevSelection === 21) {
-        var potions = [
-            [2000007, 50, "HP"],
-            [2000008, 150, "HP"],
-            [2000009, 300, "HP"],
-            [2000010, 100, "MP"],
-            [2000011, 300, "MP"]
-        ];
-
-        selectedIndex = selection;
-        var potion = potions[selectedIndex];
-        if (!potion) {
-            cm.sendOk("Invalid selection.");
-            cm.dispose();
-            return;
-        }
-
-        var itemId = potion[0];
-        var heal = potion[1];
-        var pType = potion[2];
-
-        var banked = (pType === "HP")
-            ? potionBank.getBankedHP(cm.getPlayer().getId())
-            : potionBank.getBankedMP(cm.getPlayer().getId());
-
-        var bankMax = Math.floor(banked / heal);
-        var cap = Math.min(32000, bankMax);
-        var eligible = getEligibleWithdrawByCanHold(itemId, cap, 32000);
-
-        if (eligible <= 0) {
-            var reason = (bankMax <= 0)
-                ? ("Not enough " + pType + " stored.")
-                : ("Not enough inventory space for " + ItemInfo.getName(itemId) + ".");
-            cm.sendOk(reason);
-            cm.dispose();
-            return;
-        }
-
-        cm.sendGetNumber(
-            "How many #b" + ItemInfo.getName(itemId) + "#k should Menma withdraw?\r\n"
-          + "(Stored " + pType + ": " + banked + " | Eligible now: #b" + eligible + "#k)",
-            eligible, 1, eligible
-        );
+    // Execute Removal and Addition
+    for (var i = 0; i < toRemove.length; i++) {
+        var rec = toRemove[i];
+        // Remove item
+        cm.gainItem(rec[0], -rec[1]);
+        // Add to bank
+        totalHP += (rec[2] * rec[1]);
+        totalMP += (rec[3] * rec[1]);
     }
 
-    // Potion withdrawal execution
-    else if (status === 4 && selectedService === 1 && prevSelection === 21) {
-        var potions = [
-            [2000007, 50, "HP"],
-            [2000008, 150, "HP"],
-            [2000009, 300, "HP"],
-            [2000010, 100, "MP"],
-            [2000011, 300, "MP"]
-        ];
+    // Update Bank
+    if (totalHP > 0) potionBank.depositHP(cm.getPlayer(), totalHP); // Assuming depositHP adds to current
+    if (totalMP > 0) potionBank.depositMP(cm.getPlayer(), totalMP);
 
-        var potion = potions[selectedIndex];
-        if (!potion) {
-            cm.sendOk("I don't understand.. I'm sorry..");
-            cm.dispose();
-            return;
-        }
+    cm.sendOk("Menma has stored your potions..\r\nAdded #b" + totalHP + " HP#k and #b" + totalMP + " MP#k.");
+    prevSelection = -1;
+    cm.dispose();
+}
 
-        var itemId = potion[0];
-        var heal = potion[1];
-        var pType = potion[2];
+// -------------------------------------------------------------------------
+// -- WITHDRAW LOGIC (Updated List & Display) ------------------------------
+// -------------------------------------------------------------------------
 
-        var banked = (pType === "HP")
-            ? potionBank.getBankedHP(cm.getPlayer().getId())
-            : potionBank.getBankedMP(cm.getPlayer().getId());
+else if (status === 2 && selectedService === 1 && selection === 21) {
+    prevSelection = 21;
 
-        var bankMax = Math.floor(banked / heal);
-        var cap = Math.min(32000, bankMax);
-        var eligible = getEligibleWithdrawByCanHold(itemId, cap, 32000);
+    var list = "You want your potions back? Where did Menma put it..:\r\n";
+    list += "-----------------------------------------\r\n";
 
-        if (eligible <= 0) {
-            cm.sendOk("Not enough " + pType + " stored, or not enough inventory space.");
-            prevSelection = -1;
-            cm.dispose();
-            return;
-        }
+    // Dynamic List Generation
+    for (var i = 0; i < potionList.length; i++) {
+        var pId = potionList[i][0];
+        var pVal = potionList[i][1];
+        var pType = potionList[i][2];
 
-        var num = selection;
-        if (num <= 0) num = 1;
-        if (num > eligible) num = eligible;
+        list += "#L" + i + "##v" + pId + "# #t" + pId + "# (" + pVal + " " + pType + ")\r\n";
+    }
 
-        var total = heal * num;
+    cm.sendSimple(list);
+}
 
-        var success = (pType === "HP")
-            ? potionBank.withdrawHP(cm.getPlayer(), total)
-            : potionBank.withdrawMP(cm.getPlayer(), total);
+// Potion type selection (withdraw)
+else if (status === 3 && selectedService === 1 && prevSelection === 21) {
 
-        if (success) {
-            cm.gainItem(itemId, num);
-            cm.sendOk("Withdrawn " + num + "x " + ItemInfo.getName(itemId) + ".\r\nTotal " + pType + " deducted: " + total + ".");
-        } else {
-            cm.sendOk("Not enough " + pType + " stored.");
-        }
+    selectedIndex = selection;
+    var potion = potionList[selectedIndex]; // Use the new list
 
-        prevSelection = -1;
+    if (!potion) {
+        cm.sendOk("Invalid selection.");
         cm.dispose();
+        return;
     }
+
+    var itemId = potion[0];
+    var heal = potion[1];
+    var pType = potion[2];
+
+    var banked = (pType === "HP")
+        ? potionBank.getBankedHP(cm.getPlayer().getId())
+        : potionBank.getBankedMP(cm.getPlayer().getId());
+
+    // Calculate how many POTIONS they can afford
+    var maxQtyAfford = Math.floor(banked / heal);
+
+    // Check Inventory Limit (Max 32000 or slot limit)
+    var cap = Math.min(32000, maxQtyAfford);
+    var eligible = getEligibleWithdrawByCanHold(itemId, cap, 32000); // Your existing helper
+
+    if (eligible <= 0) {
+        var reason = (maxQtyAfford <= 0)
+            ? ("Not enough " + pType + " stored to make even one " + ItemInfo.getName(itemId) + ".")
+            : ("Not enough inventory space for " + ItemInfo.getName(itemId) + ".");
+        cm.sendOk(reason);
+        cm.dispose();
+        return;
+    }
+
+    // User requested: "Show them how many of that pot they can withdraw"
+    cm.sendGetNumber(
+        "You have selected #t" + itemId + "# (" + heal + " " + pType + ").\r\n" +
+        "Current Bank Balance: " + banked + " " + pType + "\r\n" +
+        "You can withdraw up to: #b" + eligible + " items#k\r\n" +
+        "How many would you like?",
+        eligible, 1, eligible
+    );
+}
+
+// Potion withdrawal execution
+else if (status === 4 && selectedService === 1 && prevSelection === 21) {
+
+    // Re-access the list using the index saved from previous step
+    var potion = potionList[selectedIndex];
+
+    if (!potion) {
+        cm.sendOk("I don't understand.. I'm sorry..");
+        cm.dispose();
+        return;
+    }
+
+    var itemId = potion[0];
+    var heal = potion[1];
+    var pType = potion[2];
+
+    var num = selection;
+    var totalCost = heal * num;
+
+    // Double check availability (security)
+    var banked = (pType === "HP")
+        ? potionBank.getBankedHP(cm.getPlayer().getId())
+        : potionBank.getBankedMP(cm.getPlayer().getId());
+
+    if (banked < totalCost) {
+        cm.sendOk("You don't have enough points left!");
+        cm.dispose();
+        return;
+    }
+
+    var success = (pType === "HP")
+        ? potionBank.withdrawHP(cm.getPlayer(), totalCost)
+        : potionBank.withdrawMP(cm.getPlayer(), totalCost);
+
+    if (success) {
+        cm.gainItem(itemId, num);
+        cm.sendOk("Withdrawn " + num + "x #t" + itemId + "#.\r\nTotal " + pType + " deducted: " + totalCost + ".");
+    } else {
+        cm.sendOk("An error occurred withdrawing points.");
+    }
+
+    prevSelection = -1;
+    cm.dispose();
+}
 
     // =========================================================================
     // == FOOD BANK SERVICE ====================================================
