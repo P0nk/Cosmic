@@ -3,84 +3,158 @@ package server.loot;
 import java.awt.Point;
 import java.util.*;
 
+import client.inventory.Equip; // Required for Equip objects
+import client.inventory.Item;
 import client.inventory.Pet;
-import constants.inventory.ItemConstants;
+import constants.inventory.ItemConstants; // Assuming you have this
 import server.maps.MapleMap;
 import server.maps.MapObject;
 import server.life.Monster;
 import client.Character;
-import client.inventory.Item;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 
 public final class BossDropper {
 
     private static final Random RNG = new Random();
-
-    // MonsterID -> list of DropEntry (itemId + dropRate)
-    private static final Map<Integer, List<DropEntry>> MONSTER_DROPS = new HashMap<>();
+    private static final Map<Integer, BossDropTable> BOSS_DROPS = new HashMap<>();
 
     static {
-        // Example drops
-        // dropRate is in 1/1000000 (like FoodDropper)
-//        addDrop(8840000, 5000330, 5000);   // Vonleon drops item 5000330 at 0.5%
-//        addDrop(100100, 2001, 100000); // Monster 100100 drops item 2001 at 10%
-//        addDrop(200200, 3000, 1000);   // Monster 200200 drops item 3000 at 0.1%
+        // --- EXAMPLE CONFIGURATION ---
+
+        // Example: Boss 8840000
+        // 1. Guaranteed Drops (ID, Quantity)
+        // Note: For Equips, quantity is always forced to 1 automatically.
+        addGuaranteed(8840000, 2000005, 50); // Drop 50 Power Elixirs
+        addGuaranteed(8840000, 4000000, 10); // Drop 10 Shells
+
+        // 2. Random Pool (ID, Quantity)
+        addToPool(8840000, 1002357, 1); // Equip: Sword (Qty 1)
+        addToPool(8840000, 4001126, 5); // Item: 5 Maple Leaves
+        addToPool(8840000, 5000000, 1); // Pet: 1 Pet
+
+        // Pick 1 to 2 options from the pool
+        setPoolPicks(8840000, 1, 2);
+    }
+
+    // =========================================
+    //             DATA STRUCTURES
+    // =========================================
+
+    private static class BossDropTable {
+        List<DropEntry> guaranteedItems = new ArrayList<>();
+        List<DropEntry> poolItems = new ArrayList<>();
+        int minPoolPicks = 1;
+        int maxPoolPicks = 1;
     }
 
     public static class DropEntry {
         public final int itemId;
-        public final int chance; // out of 1,000,000
+        public final int quantity;
 
-        public DropEntry(int itemId, int chance) {
+        public DropEntry(int itemId, int quantity) {
             this.itemId = itemId;
-            this.chance = chance;
+            this.quantity = quantity;
         }
     }
 
-    private static void addDrop(int monsterId, int itemId, int chance) {
-        MONSTER_DROPS.computeIfAbsent(monsterId, k -> new ArrayList<>())
-                .add(new DropEntry(itemId, chance));
+    // =========================================
+    //             CONFIGURATION
+    // =========================================
+
+    private static BossDropTable getTable(int bossId) {
+        return BOSS_DROPS.computeIfAbsent(bossId, k -> new BossDropTable());
     }
 
-    /** Drops items for a specific monster ID. */
+    /** Add a Guaranteed drop with specific quantity. */
+    public static void addGuaranteed(int bossId, int itemId, int quantity) {
+        getTable(bossId).guaranteedItems.add(new DropEntry(itemId, quantity));
+    }
+
+    /** Add a Pool drop with specific quantity. */
+    public static void addToPool(int bossId, int itemId, int quantity) {
+        getTable(bossId).poolItems.add(new DropEntry(itemId, quantity));
+    }
+
+    public static void setPoolPicks(int bossId, int min, int max) {
+        BossDropTable table = getTable(bossId);
+        table.minPoolPicks = min;
+        table.maxPoolPicks = max;
+    }
+
+    // =========================================
+    //             DROP LOGIC
+    // =========================================
+
     public static void dropForMonster(
-            MapleMap map,
-            Monster mob,
-            Character owner,
-            Point seedPos,
-            byte dropType,
-            boolean playerDrop
-    ) {
+            MapleMap map, Monster mob, Character owner,
+            Point seedPos, byte dropType, boolean playerDrop) {
+
         if (map == null || mob == null || owner == null) return;
 
-        List<DropEntry> drops = MONSTER_DROPS.get(mob.getId());
-        if (drops == null || drops.isEmpty()) return;
+        BossDropTable table = BOSS_DROPS.get(mob.getId());
+        if (table == null) return;
 
-        for (DropEntry entry : drops) {
-            int roll = RNG.nextInt(1_000_000) + 1;
-            if (roll <= entry.chance) {
-                Item item = new Item(entry.itemId, (short) 0, (short) 1);
-                if (ItemConstants.isPet(item.getItemId())) { // Checks if pet
-                    int petid = Pet.createPet(item.getItemId());
-                    Item toDrop = new Item(item.getItemId(), (short) 0, (short) 1, petid);
-                    long days = 999;
-                    long expiration = System.currentTimeMillis() + DAYS.toMillis(days);
-                    toDrop.setExpiration(expiration);
-                    toDrop.setOwner("");
+        // 1. Process Guaranteed
+        for (DropEntry entry : table.guaranteedItems) {
+            spawnDrop(map, mob, owner, seedPos, dropType, playerDrop, entry);
+        }
 
-                    map.spawnItemDrop((MapObject) mob, owner, toDrop, seedPos, dropType, playerDrop);
+        // 2. Process Pool
+        if (!table.poolItems.isEmpty()) {
+            int range = table.maxPoolPicks - table.minPoolPicks + 1;
+            int picks = table.minPoolPicks + RNG.nextInt(range);
 
-                }
-                else {
-                    map.spawnItemDrop((MapObject) mob, owner, item, seedPos, dropType, playerDrop);
-                }
+            List<DropEntry> shuffledPool = new ArrayList<>(table.poolItems);
+            Collections.shuffle(shuffledPool);
+
+            for (int i = 0; i < picks && i < shuffledPool.size(); i++) {
+                spawnDrop(map, mob, owner, seedPos, dropType, playerDrop, shuffledPool.get(i));
             }
         }
     }
 
-    /** Overload with sensible defaults. */
+    private static void spawnDrop(
+            MapleMap map, Monster mob, Character owner,
+            Point seedPos, byte dropType, boolean playerDrop,
+            DropEntry entry) {
+
+        Item itemToDrop;
+        int itemId = entry.itemId;
+        int qty = entry.quantity;
+
+        // --- TYPE DETECTION ---
+        boolean isEquip = (itemId < 2000000); // Standard check: IDs < 2mil are equips
+        boolean isPet = ItemConstants.isPet(itemId);
+
+        if (isPet) {
+            // Pet Handling (Force Qty 1)
+            int petId = Pet.createPet(itemId);
+            if (petId == -1) return;
+
+            itemToDrop = new Item(itemId, (short) 0, (short) 1, petId);
+            long days = 90;
+            long expiration = System.currentTimeMillis() + DAYS.toMillis(days);
+            itemToDrop.setExpiration(expiration);
+            itemToDrop.setOwner("");
+
+        } else if (isEquip) {
+            // Equip Handling (Uses Equip Class, Force Qty 1)
+            // Constructor: (id, position, ringId, flag) - varies by source version
+            // Common v83/v62 constructor: new Equip(id, (short) 0, (byte) -1, (byte) 0);
+            itemToDrop = new Equip(itemId, (short) 0, (byte) -1);
+
+        } else {
+            // Standard Item Handling (Uses Item Class, Respects Qty)
+            itemToDrop = new Item(itemId, (short) 0, (short) qty, (short) 0);
+        }
+
+        map.spawnItemDrop((MapObject) mob, owner, itemToDrop, seedPos, dropType, playerDrop);
+    }
+
+    /** Overload for simple calling */
     public static void dropForMonster(MapleMap map, Monster mob, Character owner) {
+        if (mob == null || owner == null) return;
         byte dropType = (byte) (owner.getParty() != null ? 1 : 0);
         dropForMonster(map, mob, owner, mob.getPosition(), dropType, false);
     }
