@@ -1,7 +1,7 @@
 /*
  * NPC: Menma (Tri-Service)
  * Theme: Shy Ghost Girl (AnoHana inspired)
- * Status: THEMED & PERSONALIZED
+ * Status: FIXED (Use addBanked instead of depositHP/MP)
  */
 
 // ============================================================================
@@ -75,9 +75,7 @@ var potionList = [
 
 // --- 3. FOOD BANK CONFIGURATION ---
 // (Ensure your full food list is here, shortened for brevity)
-// --- 3. FOOD BANK CONFIGURATION ---
 var foodName = {
-    // Tier 1
     4036173: "Food_T1_01",
     4036174: "Food_T1_02",
 
@@ -526,7 +524,7 @@ function action(mode, type, selection) {
         cm.sendYesNo(msg);
     }
 
-    // Confirm Deposit
+    // Confirm Deposit (FIXED: Use addBanked)
     else if (status === 3 && selectedService === 1 && prevSelection === 20) {
         var inv = cm.getInventory(2);
         var iter = inv.list().iterator();
@@ -554,8 +552,10 @@ function action(mode, type, selection) {
             totalMP += (rec[3] * rec[1]);
         }
 
-        if (totalHP > 0) potionBank.depositHP(cm.getPlayer(), totalHP);
-        if (totalMP > 0) potionBank.depositMP(cm.getPlayer(), totalMP);
+        // FIX IS HERE: Call addBanked instead of depositHP/depositMP
+        if (totalHP > 0 || totalMP > 0) {
+            potionBank.addBanked(cm.getPlayer(), totalHP, totalMP);
+        }
 
         cm.sendOk("Menma did it! I stored them safe and sound...\r\nAdded #b" + totalHP + " HP#k and #b" + totalMP + " MP#k!");
         prevSelection = -1;
