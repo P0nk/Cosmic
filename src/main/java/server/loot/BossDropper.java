@@ -25,16 +25,16 @@ public final class BossDropper {
         // Example: Boss 8840000
         // 1. Guaranteed Drops (ID, Quantity)
         // Note: For Equips, quantity is always forced to 1 automatically.
-        addGuaranteed(8840000, 2000005, 50); // Drop 50 Power Elixirs
-        addGuaranteed(8840000, 4000000, 10); // Drop 10 Shells
+//        addGuaranteed(8840000, 2000005, 50); // Drop 50 Power Elixirs
+//        addGuaranteed(8840000, 4000000, 10); // Drop 10 Shells
 
         // 2. Random Pool (ID, Quantity)
-        addToPool(8840000, 1002357, 1); // Equip: Sword (Qty 1)
-        addToPool(8840000, 4001126, 5); // Item: 5 Maple Leaves
-        addToPool(8840000, 5000000, 1); // Pet: 1 Pet
+//        addToPool(8840000, 1002357, 1); // Equip: Sword (Qty 1)
+//        addToPool(8840000, 4001126, 5); // Item: 5 Maple Leaves
+//        addToPool(8840000, 5000000, 1); // Pet: 1 Pet
 
         // Pick 1 to 2 options from the pool
-        setPoolPicks(8840000, 1, 2);
+//        setPoolPicks(8840000, 1, 2);
     }
 
     // =========================================
