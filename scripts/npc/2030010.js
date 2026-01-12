@@ -4,6 +4,17 @@
  */
 var status = 0;
 var zakumAlive = false;
+var ZAKUM_ALTAR = 2111001; // Standard Zakum Altar ID. Change if needed.
+
+// Helper: Check if the Altar is still ready to be used normally
+function isAltarIntact() {
+    var reactor = cm.getPlayer().getMap().getReactorById(ZAKUM_ALTAR);
+    // If reactor exists and state < 1 (meaning ready/unbroken), it is intact
+    if (reactor !== null && reactor.getState() < 1) {
+        return true;
+    }
+    return false;
+}
 
 function start() {
     // Check if any Zakum bodies or arms (IDs 8800000 - 8800010) are alive in the map
@@ -19,6 +30,8 @@ function start() {
         }
     }
 
+    var altarReady = isAltarIntact();
+
     // Check if we are in the Zakum-related maps
     if (cm.getMapId() === 280030000 || (cm.getMapId() >= 280030100 && cm.getMapId() <= 280030130)) {
         if (zakumAlive) {
@@ -27,11 +40,17 @@ function start() {
                 "#b#L0#Leave the map#l"
             );
         } else {
-            cm.sendSimple(
-                "Zakum has been defeated.\r\nWhat would you like to do?\r\n" +
-                "#b#L1#Let me spawn Zakum again#l\r\n" +
-                "#L0#Leave the map#l"
-            );
+            var msg = "Zakum has been defeated.\r\nWhat would you like to do?\r\n";
+
+            // Only show Respawn option if Altar is NOT ready (meaning it was used already)
+            if (!altarReady) {
+                msg += "#b#L1#Let me spawn Zakum again#l\r\n";
+            } else {
+                msg += "\r\n#k(Drop an Eye of Fire on the altar to summon the first Zakum)#k\r\n";
+            }
+
+            msg += "#b#L0#Leave the map#l";
+            cm.sendSimple(msg);
         }
     } else {
         cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
@@ -63,21 +82,24 @@ function action(mode, type, selection) {
         if (players <= 1 || player.isPartyLeader()) {
             map.clearMapObjects();
             map.warpEveryone(211042300, 0);
-            mmd.close();
-            channel.removeMiniDungeon(mapId);
+            if (mmd != null) { // Null check added for safety
+                mmd.close();
+                channel.removeMiniDungeon(mapId);
+            }
         } else {
-            mmd.unregisterPlayer(player);
+            if (mmd != null) {
+                mmd.unregisterPlayer(player);
+            }
             cm.warp(211042300, 0);
         }
         cm.dispose();
     } else if (selection === 1) {
-        // Check if Zakum or his arms are still alive
+        // Double Check: Is Zakum alive?
         zakumAlive = false;
         var map = cm.getPlayer().getMap();
         var monsters = map.getMonsters();
         for (var i = 0; i < monsters.size(); i++) {
             var mob = monsters.get(i);
-            // Check for any Zakum body or arm (IDs 8800000 - 8800010)
             if (mob.getId() >= 8800000 && mob.getId() <= 8800010) {
                 zakumAlive = true;
                 break;
@@ -85,16 +107,31 @@ function action(mode, type, selection) {
         }
 
         if (zakumAlive) {
-            cm.sendOk("You cannot reset reactors while Zakum or his arms are still alive.");
+            cm.sendOk("You cannot reset while Zakum or his arms are still alive.");
+            cm.dispose();
+            return;
+        }
+
+        // Double Check: Is Altar intact? (Double Spawn Protection)
+        if (isAltarIntact()) {
+            cm.sendOk("The Altar is currently active. Please drop an Eye of Fire on it to summon Zakum normally first.");
+            cm.dispose();
+            return;
+        }
+
+        // Check items and Spawn
+        if (cm.haveItem(4001017, 1)) {
+            cm.gainItem(4001017, -1);
+
+            // --- AUTO CLEAR FUNCTION ---
+            // Clears floor items before spawning
+            cm.getPlayer().getMap().clearDrops();
+            // ---------------------------
+
+            cm.spawnZakum();
+            cm.sendOk("The floor has been cleared and Zakum has been respawned.");
         } else {
-            // Check if the player has the necessary item to spawn Zakum
-            if (cm.haveItem(4001017, 1)) {
-                cm.spawnZakum(); // Spawns Zakum
-                cm.gainItem(4001017, -1); // Remove the item from the player's inventory
-                cm.sendOk("Zakum has been respawned.");
-            } else {
-                cm.sendOk("You do not have an #v4001017#.");
-            }
+            cm.sendOk("You do not have an #v4001017#.");
         }
         cm.dispose();
     }

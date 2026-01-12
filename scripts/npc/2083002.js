@@ -2,7 +2,7 @@ var horntailAlive = false;
 
 var MANA_CRYSTAL = 4021032; // Mana Crystal
 var HT_MAP = 240060200;
-var HT_REACTOR = 2401000; // The ID of the purple crystal reactor that spawns HT
+var HT_REACTOR = 2401000; // The ID of the purple crystal reactor
 
 function isHorntailAlive() {
     for (var i = 8810000; i <= 8810018; i++) {
@@ -13,7 +13,7 @@ function isHorntailAlive() {
     return false;
 }
 
-// Helper to check if the original crystal is still standing
+// Helper: Check if the original crystal is still standing
 function isCrystalIntact() {
     var reactor = cm.getPlayer().getMap().getReactorById(HT_REACTOR);
     // If reactor exists and state < 1 (meaning state 0, unbroken), it is intact
@@ -25,30 +25,29 @@ function isCrystalIntact() {
 
 function start() {
     horntailAlive = isHorntailAlive();
-    var crystalIntact = isCrystalIntact();
+    var crystalIntact = isCrystalIntact(); // Check the crystal status
+
     var mapId = cm.getPlayer().getMapId();
 
     if (mapId === HT_MAP) {
-        var msg = "";
-
         if (horntailAlive) {
-            msg = "Horntail is still alive.\r\n";
-        } else if (crystalIntact) {
-            msg = "The summoning crystal is currently intact. Break it to start the battle!\r\n";
+            cm.sendSimple(
+                "Horntail is still alive.\r\nWhat would you like to do?\r\n" +
+                "#b#L0#Leave the map#l"
+            );
         } else {
-            msg = "Horntail has been defeated.\r\n";
+            var msg = "Horntail has been defeated.\r\nWhat would you like to do?\r\n" +
+                      "#b#L0#Leave the map#l\r\n";
+
+            // Only show the Respawn option if HT is dead AND the crystal is already broken
+            if (!crystalIntact) {
+                msg += "#L1#Replace the broken crystal using a #v" + MANA_CRYSTAL + "# Mana Crystal (x1)#l";
+            } else {
+                msg += "\r\n#k(Break the purple crystal to summon the first Horntail)#k";
+            }
+
+            cm.sendSimple(msg);
         }
-
-        msg += "What would you like to do?\r\n\r\n";
-        msg += "#b#L0#Leave the map#l\r\n";
-        msg += "#L2#Clear items on the floor (Reduce Lag)#l\r\n"; // NEW OPTION
-
-        // Only show Respawn option if HT is dead AND the original crystal is gone/broken
-        if (!horntailAlive && !crystalIntact) {
-            msg += "#L1#Replace the broken crystal using a #v" + MANA_CRYSTAL + "# Mana Crystal (x1)#l";
-        }
-
-        cm.sendSimple(msg);
     } else {
         cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
     }
@@ -60,7 +59,6 @@ function action(mode, type, selection) {
         return;
     }
 
-    // Selection 0: Leave Map
     if (selection === 0 || selection === -1) {
         if (cm.getMapId() > 240050400) {
             cm.warp(240050600);
@@ -71,18 +69,8 @@ function action(mode, type, selection) {
         return;
     }
 
-    // Selection 2: Clear Drops (NEW)
-    if (selection === 2) {
-        // Calls the built-in method we found in your MapleMap.java
-        cm.getPlayer().getMap().clearDrops();
-        cm.sendOk("The floor has been swept of all items.");
-        cm.dispose();
-        return;
-    }
-
-    // Selection 1: Respawn HT
     if (selection === 1) {
-        // 1. Security Check: Is HT Alive?
+        // Re-check all Horntail parts
         horntailAlive = isHorntailAlive();
         if (horntailAlive) {
             cm.sendOk("You cannot reset while Horntail is still alive.");
@@ -90,14 +78,14 @@ function action(mode, type, selection) {
             return;
         }
 
-        // 2. Security Check: Is the original Crystal still there? (Prevents double spawn)
+        // Security Check: Prevent spawning if the original crystal is still there
         if (isCrystalIntact()) {
-            cm.sendOk("Please break the purple crystal on the right side of the map to summon the first Horntail.");
+            cm.sendOk("You must defeat the original Horntail summoned by the crystal first.");
             cm.dispose();
             return;
         }
 
-        // 3. Item Check
+        // Require Mana Crystal
         if (!cm.haveItem(MANA_CRYSTAL, 1)) {
             cm.sendOk(
                 "The summoning crystal has shattered.\r\n\r\n" +
@@ -107,12 +95,18 @@ function action(mode, type, selection) {
             return;
         }
 
-        // Consume crystal and respawn
+        // Consume crystal
         cm.gainItem(MANA_CRYSTAL, -1);
+
+        // --- AUTO CLEAR FUNCTION ---
+        // This cleans the floor right before the new boss spawns
+        cm.getPlayer().getMap().clearDrops();
+        // ---------------------------
+
         spawnHorntailWithScalingHP();
 
         cm.sendOk(
-            "The restored crystal glows violently...\r\n" +
+            "The floor has been cleared and the restored crystal glows violently...\r\n" +
             "Horntail has been summoned once more!"
         );
         cm.dispose();
@@ -138,7 +132,7 @@ function spawnHorntailWithScalingHP() {
     var cappedClears = Math.min(clears, 2);
 
     // +15% HP per clear, max +90%
-    // var multiplier = 0.15 * cappedClears;
+//    var multiplier = 0.15 * cappedClears;
     var multiplier = 0 * cappedClears;
 
     map.spawnHorntailOnGroundBelow(new Point(90, 0), multiplier);
