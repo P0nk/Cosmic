@@ -86,7 +86,8 @@ public final class FoodDropper {
         LEVEL_TO_TIER.put(215, Tier.T7);
         LEVEL_TO_TIER.put(230, Tier.T8);
         LEVEL_TO_TIER.put(240, Tier.T9);
-        LEVEL_TO_TIER.put(255, Tier.T10);
+//        LEVEL_TO_TIER.put(255, Tier.T10);
+        LEVEL_TO_TIER.put(Integer.MAX_VALUE, Tier.T10);
 //        LEVEL_TO_TIER.put(Integer.MAX_VALUE, Tier.LEGENDARY);
     }
 
