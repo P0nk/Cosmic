@@ -493,13 +493,20 @@ function action(mode, type, selection) {
         var totalMP = 0;
         var count = 0;
 
-        while (iter.hasNext()) {
-            var item = iter.next();
-            var id = item.getItemId();
-            if (blacklist.indexOf(id) !== -1) continue;
+while (iter.hasNext()) {
+        var item = iter.next();
+        var id = item.getItemId();
 
-            var healHP = ii.getItemEffect(id).getHp();
-            var healMP = ii.getItemEffect(id).getMp();
+        // 1. Check Blacklist
+        if (blacklist.indexOf(id) !== -1) continue;
+
+        // 2. Safe Check for Potion Stats
+        try {
+            var effect = ii.getItemEffect(id);
+            if (effect == null) continue; // Skip if it's not a usable item
+
+            var healHP = effect.getHp();
+            var healMP = effect.getMp();
 
             if (healHP > 0 || healMP > 0) {
                 var qty = item.getQuantity();
@@ -507,7 +514,11 @@ function action(mode, type, selection) {
                 totalMP += (healMP * qty);
                 count++;
             }
+        } catch (e) {
+            // This catches the NullPointerException for Scrolls/Cash items/etc
+            continue;
         }
+    }
 
         if (count === 0) {
             cm.sendOk("Menma looked everywhere... but I couldn't find any potions to store... (Did you lock them?)");
@@ -532,18 +543,27 @@ function action(mode, type, selection) {
         var totalMP = 0;
         var toRemove = [];
 
-        while (iter.hasNext()) {
-            var item = iter.next();
-            var id = item.getItemId();
-            if (blacklist.indexOf(id) !== -1) continue;
+while (iter.hasNext()) {
+        var item = iter.next();
+        var id = item.getItemId();
 
-            var healHP = ii.getItemEffect(id).getHp();
-            var healMP = ii.getItemEffect(id).getMp();
+        if (blacklist.indexOf(id) !== -1) continue;
+
+        try {
+            var effect = ii.getItemEffect(id);
+            if (effect == null) continue;
+
+            var healHP = effect.getHp();
+            var healMP = effect.getMp();
 
             if (healHP > 0 || healMP > 0) {
                 toRemove.push([id, item.getQuantity(), healHP, healMP]);
             }
+        } catch (e) {
+            // Ignore items that cause errors
+            continue;
         }
+    }
 
         for (var i = 0; i < toRemove.length; i++) {
             var rec = toRemove[i];
