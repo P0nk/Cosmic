@@ -1,8 +1,9 @@
-/* 92xxxxx_WeakerTierUpgrader.js (REVISED v13 - Legendary Fixes & Audit Log)
+/* 92xxxxx_WeakerTierUpgrader.js (REVISED v14 - Free Player Batch Roll)
  *
  * Updates:
+ * - Added Auto-Roll for Free Players (Max 10 attempts).
+ * - Free Player Auto-Roll costs +10% NX.
  * - Legendary Tier Success set to fixed 50%.
- * - Legendary Tier HIDDEN from menu unless player has the food.
  * - Permanent server-side audit logging enabled.
  */
 
@@ -13,7 +14,10 @@ var selectedItemId = -1;
 
 var chosenTier = null;
 var pendingDelta = null;
+
+// Mode Flags
 var isAutoRoll = false;
+var isFreeAuto = false; // Tracks if using the non-donor limited auto
 
 // ======================= CONFIG ========================
 var FOOD_T1 = [4036173, 4036174];
@@ -32,6 +36,10 @@ var FOOD_PER_UPGRADE = 1;
 var NX_COST_STEP = 10000;
 var MAX_ENHANCE = 3;
 
+// NEW CONSTANTS
+var FREE_AUTO_LIMIT = 10;
+var FREE_AUTO_COST_MULT = 1.10; // +10% cost
+
 var BASE_FAIL_RATE = 0;
 var FAIL_STEP_PER_TIER = 10;
 
@@ -40,7 +48,6 @@ var CashShop = Packages.server.CashShop;
 
 // ================== AUDIT LOGGER ==================
 function log(msg) {
-    // Prints to server console in format: [FoodUpgrade][PlayerName] Message
     try {
         var charName = (cm && cm.getPlayer()) ? cm.getPlayer().getName() : "Unknown";
         console.log("[FoodUpgrade][" + charName + "] " + msg);
@@ -59,8 +66,15 @@ function getNxCredit() {
     try { return cm.getPlayer().getCashShop().getCash(CashShop.NX_CREDIT); }
     catch (e) { return 0; }
 }
+
 function nxCostForTier(tier) {
-    return tierIndex(tier) * NX_COST_STEP;
+    var baseCost = tierIndex(tier) * NX_COST_STEP;
+
+    // Apply surcharge if it's the free player auto mode
+    if (isFreeAuto) {
+        return Math.floor(baseCost * FREE_AUTO_COST_MULT);
+    }
+    return baseCost;
 }
 
 // ================== STATS PER TIER =====================
@@ -235,14 +249,12 @@ function tierIndex(tier) {
 }
 
 function failRateForTier(tier) {
-    // UPDATED: Standard formula for normal tiers
     var idx = tierIndex(tier);
     var fail = BASE_FAIL_RATE + (idx - 1) * FAIL_STEP_PER_TIER;
     return Math.max(0, Math.min(100, fail));
 }
 
 function successRateForTier(tier) {
-    // UPDATED: Fixed 50% for Legendary, otherwise formula
     if (tier === "Legendary") return 50;
     return Math.max(0, Math.min(100, 100 - failRateForTier(tier)));
 }
@@ -277,6 +289,7 @@ function start() {
     chosenTier = null;
     pendingDelta = null;
     isAutoRoll = false;
+    isFreeAuto = false;
 
     var menu = "Feed me any Food and I will bless your equip... sometimes.\r\n\r\n"
         + "#d- Items are tagged with [F.Tier ...]\r\n"
@@ -289,6 +302,8 @@ function start() {
 
     if (isDonor()) {
         menu += "\r\n#r#L999#[Donor] Auto-Roll (Loop until Max)#l";
+    } else {
+        menu += "\r\n#b#L998#[Auto] Batch Roll (Max " + FREE_AUTO_LIMIT + ", +10% NX Cost)#l";
     }
 
     cm.sendSimple(menu);
@@ -309,8 +324,16 @@ function action(mode, type, selection) {
             return;
         }
 
+        // Donor Infinite Auto
         if (selection == 999 && isDonor()) {
             isAutoRoll = true;
+            isFreeAuto = false;
+        }
+
+        // Free Player Limited Auto
+        if (selection == 998 && !isDonor()) {
+            isAutoRoll = true;
+            isFreeAuto = true;
         }
 
         var inv = cm.getInventory(1);
@@ -388,38 +411,39 @@ function action(mode, type, selection) {
         var displayTiers = [];
         for (var k = 0; k < allTiers.length; k++) {
             var tCheck = allTiers[k];
-            // HIDE LEGENDARY if player has 0 items
             if (tCheck === "Legendary" && countTierFood(tCheck) <= 0) continue;
             displayTiers.push(tCheck);
         }
 
         var menu = "Choose which Food Tier to use:\r\n";
-        if (isAutoRoll) menu += "#r(Auto-Roll will use this tier repeatedly until Max or OOM)#k\r\n\r\n";
-        else menu += "\r\n";
+        if (isAutoRoll) {
+            if (isFreeAuto) menu += "#r(Batch Roll: Will try up to " + FREE_AUTO_LIMIT + " times. +10% NX Cost)#k\r\n\r\n";
+            else menu += "#r(Auto-Roll will use this tier repeatedly until Max or OOM)#k\r\n\r\n";
+        } else {
+            menu += "\r\n";
+        }
 
         for (var i = 0; i < displayTiers.length; i++) {
             var t = displayTiers[i];
             var have = countTierFood(t);
             var succ = successRateForTier(t);
+            // This function handles the 10% surcharge automatically if isFreeAuto is true
+            var finalCost = nxCostForTier(t);
 
             menu += "#L" + i + "#"
                  + "#b" + t + "#k "
                  + "(Have: " + have
-                 + ", Cost: " + FOOD_PER_UPGRADE + " Food + " + fmt(nxCostForTier(t)) + " NX"
+                 + ", Cost: " + FOOD_PER_UPGRADE + " Food + " + fmt(finalCost) + " NX"
                  + ", Success: " + succ + "%)"
                  + "#l\r\n";
         }
 
-        // STORE FILTERED LIST for next step selection
-        // We temporarily store it in a custom property on 'cm' or rebuild it next step
-        // To be safe and stateless, we will rebuild the exact same list in status 3
         cm.sendSimple(menu);
         return;
     }
 
     // status 3: tier chosen -> preview + confirm
     if (status === 3) {
-        // REBUILD FILTERED LIST to match index
         var allTiers2 = ["Legendary", "T10", "T9", "T8", "T7", "T6", "T5", "T4", "T3", "T2", "T1"];
         var displayTiers2 = [];
         for (var k = 0; k < allTiers2.length; k++) {
@@ -442,6 +466,7 @@ function action(mode, type, selection) {
             return;
         }
 
+        // nxCostForTier automatically calculates surcharge if isFreeAuto is true
         var nxNeed = nxCostForTier(chosenTier);
         if (getNxCredit() < nxNeed) {
             cm.sendOk("You need #b" + fmt(nxNeed) + " NX#k.");
@@ -458,14 +483,25 @@ function action(mode, type, selection) {
         var msg = "";
 
         if (isAutoRoll) {
-            msg = "#e#r[Auto-Roll Confirmation]#k#n\r\n"
-                + "I will continuously apply #b" + chosenTier + "#k until:\r\n"
+            msg = "#e#r[Auto-Roll Confirmation]#k#n\r\n";
+            if (isFreeAuto) {
+                msg += "#dMode: Batch Roll (Max " + FREE_AUTO_LIMIT + " attempts)#k\r\n";
+                msg += "#dCost: Normal + 10% Surcharge#k\r\n";
+            } else {
+                msg += "#dMode: Unlimited Donor Roll#k\r\n";
+            }
+
+            msg += "I will apply #b" + chosenTier + "#k until:\r\n"
                 + "1. The item reaches +" + MAX_ENHANCE + "\r\n"
-                + "2. You run out of Food/NX\r\n\r\n"
-                + "Chance: " + succ2 + "% Success / " + fail2 + "% Fail\r\n"
+                + "2. You run out of Food/NX\r\n";
+
+            if (isFreeAuto) msg += "3. Or " + FREE_AUTO_LIMIT + " attempts reached.\r\n";
+
+            msg += "\r\nChance: " + succ2 + "% Success / " + fail2 + "% Fail\r\n"
                 + "#rWarning: Food/NX is consumed on failure!#k\r\n"
                 + "Proceed?";
         } else {
+            // Single Logic (Unchanged display)
             var iip2 = Packages.server.ItemInformationProvider.getInstance();
             var itemName = iip2.getName(selectedItem.getItemId());
             var hist2 = getEnhanceHistory(selectedItem);
@@ -500,9 +536,9 @@ function action(mode, type, selection) {
         selectedItem = liveItem;
 
         // AUDIT LOG START
-        log("Attempting upgrade on ItemID:" + selectedItemId + " Tier:" + chosenTier + " Mode:" + (isAutoRoll?"Auto":"Single"));
+        log("Attempting upgrade on ItemID:" + selectedItemId + " Tier:" + chosenTier + " Mode:" + (isAutoRoll ? (isFreeAuto ? "AutoFree" : "AutoDonor") : "Single"));
 
-        // SINGLE MODE
+        // SINGLE MODE (UNCHANGED)
         if (!isAutoRoll) {
             if (getEnhanceLevel(selectedItem) >= MAX_ENHANCE) {
                 cm.sendOk("Already maxed.");
@@ -549,20 +585,29 @@ function action(mode, type, selection) {
             return;
         }
 
-        // AUTO ROLL MODE
+        // AUTO ROLL MODE (UPDATED)
         else {
             var attempts = 0;
             var successes = 0;
             var failures = 0;
             var nxTotal = 0;
 
+            // Helper will calculate +10% if isFreeAuto is true
             var cost = nxCostForTier(chosenTier);
+
             var wf2 = isWeapon(selectedItem);
             var d2 = tierDelta(chosenTier, wf2);
             var tChar = getTierChar(chosenTier);
             var successRate = successRateForTier(chosenTier);
 
+            // Determine loop limit
+            var loopLimit = 999999;
+            if (isFreeAuto) {
+                loopLimit = FREE_AUTO_LIMIT; // 10
+            }
+
             while (getEnhanceLevel(selectedItem) < MAX_ENHANCE) {
+                if (attempts >= loopLimit) break; // Check attempt limit
                 if (getNxCredit() < cost) break;
                 if (!hasEnoughTierFood(chosenTier, FOOD_PER_UPGRADE)) break;
 
@@ -586,6 +631,7 @@ function action(mode, type, selection) {
 
             var report = "#e#b[Auto-Roll Finished]#k#n\r\n";
             if (getEnhanceLevel(selectedItem) >= MAX_ENHANCE) report += "Result: #gMAXED!#k\r\n";
+            else if (attempts >= loopLimit) report += "Result: Stopped (Attempt Limit Reached)\r\n";
             else report += "Result: Stopped (Out of resources)\r\n";
 
             report += "Attempts: " + attempts + "\r\n";
