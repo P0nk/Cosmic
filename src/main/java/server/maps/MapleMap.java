@@ -1358,7 +1358,7 @@ public class MapleMap {
             //    B. Must be > 30 mins since last check (Cooldown Check)
             if (currentKills > 0 && (currentKills % 500 == 0)) {
 
-                System.out.println("[BotCheck] Threshold hit. Scheduling NPC in 500ms...");
+//                System.out.println("[BotCheck] Threshold hit. Scheduling NPC in 500ms...");
 
                 // Mark time now so we don't trigger multiple times if they kill fast
                 chr.updateBotCheckTime();

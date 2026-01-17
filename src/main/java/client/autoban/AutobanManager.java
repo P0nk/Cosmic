@@ -55,9 +55,8 @@ public class AutobanManager {
             return;
         }
 
-        // 1. Check Strikes (3 Strikes = Ban)
+        // 1. Check Strikes
         int currentStrikes = getJailStrikeCount(chr.getClient().getAccID());
-
         if (currentStrikes >= 2) {
             applyPermBan("3rd Strike: " + reason);
             return;
@@ -66,17 +65,19 @@ public class AutobanManager {
         // 2. Apply Jail
         long durationMillis = durationMinutes * 60 * 1000L;
         chr.setFutureJailExpiration(durationMillis);
-        chr.changeMap(999999999, 0); // Warp to Jail Map
 
-        // 3. Log to DB
+        // [FIXED] Using your provided Jail Map ID
+        try {
+            chr.changeMap(300000012, 0);
+        } catch (Exception e) {
+            // Fallback: If for some reason this still fails, disconnect them so monsters don't glitch
+            chr.getClient().disconnect(true, false);
+        }
+
+        // 3. Log & Notify
         logJailToDB(reason, durationMinutes);
-
-        // 4. Notify
         chr.dropMessage(1, "[SYSTEM] Security Violation Detected.");
         chr.dropMessage(1, "Reason: " + reason);
-        chr.dropMessage(1, "Penalty: Jail for " + durationMinutes + " minutes.");
-        chr.dropMessage(1, "Warning: Strike " + (currentStrikes + 1) + "/3. 3 Strikes = Permanent Ban.");
-
         System.out.println("[AutoJail] " + chr.getName() + " jailed for " + reason);
     }
 
@@ -157,27 +158,29 @@ public class AutobanManager {
     // --- [ANTI-HACK] 2. God Mode Watchdog (No Packet) ---
     // Called from AbstractDealDamageHandler whenever they attack
     public void checkGodMode() {
-        // [FIX 4] Use getAllMapObjects instead of getMobCount (Method not found)
-        if (chr.isGM() || chr.getMap().countMonsters() == 0) return;
-
-        if (chr.getBuffedValue(BuffStat.DARKSIGHT) != null) return;
-        // [FIX 3] Removed DIVINE_SHIELD check here too
-
-        long now = System.currentTimeMillis();
-        long timeSinceAttack = now - chr.getLastAttackTime();
-        long timeSinceHit = now - chr.getLastHitTime();
-
-        // If active (attacked in last 2s) but haven't taken damage in 120s
-        if (timeSinceAttack < 2000 && timeSinceHit > 120000) {
-            // Thief exception: Give them 5 mins
-            if (chr.getJob().isA(Job.THIEF) && timeSinceHit < 300000) return;
-
-            // Jail for 24 Hours
-            jailPlayer("God Mode / Packet Block (No damage taken for 120s+)", 1440);
-
-            // Reset timers to prevent spam-jailing
-            chr.updateHitAction();
-        }
+        // [RECOMMENDED] Uncomment this line to disable God Mode jail until you test it fully.
+         return;
+//        // [FIX 4] Use getAllMapObjects instead of getMobCount (Method not found)
+//        if (chr.isGM() || chr.getMap().countMonsters() == 0) return;
+//
+//        if (chr.getBuffedValue(BuffStat.DARKSIGHT) != null) return;
+//        // [FIX 3] Removed DIVINE_SHIELD check here too
+//
+//        long now = System.currentTimeMillis();
+//        long timeSinceAttack = now - chr.getLastAttackTime();
+//        long timeSinceHit = now - chr.getLastHitTime();
+//
+//        // If active (attacked in last 2s) but haven't taken damage in 120s
+//        if (timeSinceAttack < 2000 && timeSinceHit > 120000) {
+//            // Thief exception: Give them 5 mins
+//            if (chr.getJob().isA(Job.THIEF) && timeSinceHit < 300000) return;
+//
+//            // Jail for 24 Hours
+//            jailPlayer("God Mode / Packet Block (No damage taken for 120s+)", 1440);
+//
+//            // Reset timers to prevent spam-jailing
+//            chr.updateHitAction();
+//        }
     }
 
     // --- [ANTI-HACK] 3. Fast Attack Counter ---
