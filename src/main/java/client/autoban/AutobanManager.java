@@ -135,12 +135,11 @@ public class AutobanManager {
     public void addMiss() {
         this.consecutiveMisses++;
 
-        // [ADJUSTED] Flat limit of 100 misses for ALL classes.
-        // This is generous enough to prevent false bans on high-avoid chars,
-        // but strict enough to catch GodMode users standing in mobs forever.
-        int threshold = 100;
+        // [ADJUSTED] Threshold set to 300.
+        // This is virtually impossible for a legitimate player to reach
+        // without getting hit at least once, making it a very safe trigger for GodMode.
+        int threshold = 300;
 
-        // Exception: Dark Sight users are supposed to get misses
         if (chr.getBuffedValue(BuffStat.DARKSIGHT) != null) {
             return;
         }
