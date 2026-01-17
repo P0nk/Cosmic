@@ -37,6 +37,8 @@ public class Item implements Comparable<Item> {
     private final int id;
     private int cashId;
     private int sn;
+    // [ADD THIS FIELD]
+    private int uniqueId;
     private short position;
     private short quantity;
     private int petid = -1;
@@ -194,5 +196,14 @@ public class Item implements Comparable<Item> {
 
     public boolean isUntradeable() {
         return ((this.getFlag() & ItemConstants.UNTRADEABLE) == ItemConstants.UNTRADEABLE) || (ItemInformationProvider.getInstance().isDropRestricted(this.getItemId()) && !KarmaManipulator.hasKarmaFlag(this));
+    }
+
+    // [ADD THESE METHODS]
+    public int getUniqueId() {
+        return uniqueId;
+    }
+
+    public void setUniqueId(int uniqueId) {
+        this.uniqueId = uniqueId;
     }
 }

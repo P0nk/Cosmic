@@ -34,4 +34,5 @@ public class Shadower {
     public static final int SMOKE_SCREEN = 4221006;
     public static final int BOOMERANG_STEP = 4221007;
     public static final int HEROS_WILL = 4221008;
+    public static final int SHADOW_VEIL = 4221052;
 }

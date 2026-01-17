@@ -148,7 +148,11 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     mobCount = 15;
                 } else if (attack.skill == Aran.HIDDEN_FULL_DOUBLE || attack.skill == Aran.HIDDEN_FULL_TRIPLE || attack.skill == Aran.HIDDEN_OVER_DOUBLE || attack.skill == Aran.HIDDEN_OVER_TRIPLE) {
                     mobCount = 15;
-                }
+                } else if (attack.skill == FPWizard.POISON_BREATH) {
+                // [FIX] Exception for F/P Wizard - Poison Breath
+                // Causes false positives when hitting multiple mobs
+                mobCount = 15;
+            }
 
                 // STRICT CHECK: Does packet claim more hits than skill allows?
                 if (attack.numAttacked > mobCount) {
@@ -216,8 +220,11 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     skillId == ILArchMage.BLIZZARD ||
                                     skillId == DragonKnight.DRAGON_ROAR ||
                                     skillId == Marksman.SNIPE ||
+                                    skillId == Crusader.SHOUT ||
+                                    skillId == Shadower.SHADOW_VEIL ||
                                     skillId == SuperGM.SUPER_DRAGON_ROAR ||
                                     skillId == Aran.COMBO_TEMPEST;
+
 
                     // 3. The Check
                     if (!isFMA && distSq > thresholdSq) {

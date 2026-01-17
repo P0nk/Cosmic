@@ -249,8 +249,8 @@ public class Monster extends AbstractLoadedLife {
         this.hp.addAndGet(hp);
     }
 
-    public synchronized void setStartingHp(int hp) {
-        stats.setHp(hp);    // refactored mob stats after non-static HP pool suggestion thanks to twigs
+    public synchronized void setStartingHp(long hp) {
+        stats.setHp(hp);
         this.hp.set(hp);
     }
 

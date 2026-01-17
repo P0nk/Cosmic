@@ -189,6 +189,11 @@ public class MapleMap {
     private final Lock objectRLock;
     private final Lock objectWLock;
 
+    // [EVOLVING MAP SYSTEM]
+    private final AtomicInteger mapKillCounter = new AtomicInteger(0);
+    private int evolveTier = 0; // 0 to 10
+    private long lastKillTime = System.currentTimeMillis(); // Tracks inactivity
+
     private final Lock lootLock = new ReentrantLock(true);
 
     // due to the nature of loadMapFromWz (synchronized), sole function that calls 'generateMapDropRangeCache', this lock remains optional.
@@ -1343,8 +1348,7 @@ public class MapleMap {
             }
         }
         if (killed) {
-
-// [SMART BOT CHECK TRIGGER]
+            // [SMART BOT CHECK TRIGGER]
             // 1. Increment persistent map kill counter
             int currentKills = chr.incrementMapKillCount();
 
@@ -1372,6 +1376,10 @@ public class MapleMap {
                     }, 500); // 500ms delay
                 }
             }
+
+            // [EVOLVING MAP]
+            checkMapEvolution(chr);
+
 
             int nx_chance = 10000; // chance to get nx from mob 5000 for 5%
             boolean nx_gain = (int) (Math.random() * 100000) <= nx_chance; // check success or failure to gain nx
@@ -2030,6 +2038,21 @@ public class MapleMap {
         }
 
         monster.changeDifficulty(difficulty, isPq);
+
+        // --- [EVOLVING MAP INTEGRATION] ---
+        if (this.evolveTier > 0 && !monster.isBoss()) {
+            // 1. Scale Level (for Damage/Acc/Exp)
+            monster.changeLevel(monster.getLevel() + this.evolveTier);
+
+            // 2. Fix HP Scaling (Long support)
+            // changeLevel() resets HP to an int cap. We must re-apply our tier scaling manually.
+            long originalHp = monster.getStats().getHp(); // Get raw stats from XML/LifeFactory
+            double multiplier = 1.0 + (this.evolveTier * 0.10); // +10% per tier
+
+            long newHp = (long)(originalHp * multiplier);
+            monster.setStartingHp(newHp);
+        }
+        // ----------------------------------
 
         monster.setMap(this);
         if (getEventInstance() != null) {
@@ -4606,5 +4629,88 @@ public class MapleMap {
     public void setTimeExpand(int timeExpand) {
         this.timeExpand = timeExpand;
     }
+    /**
+     * [EVOLVING MAP]
+     * Called whenever a monster dies to check for evolution or elite spawns.
+     */
+    public void checkMapEvolution(Character killer) {
+        if (killer == null) return;
+
+        long now = System.currentTimeMillis();
+        long timeSinceLastKill = now - lastKillTime;
+
+        // --- 1. HANDLE DECAY (Inactivity Check) ---
+        // If > 1 hour (3,600,000 ms) has passed, lower the tier
+        if (timeSinceLastKill > 3600000) {
+            // Calculate how many hours have passed (1 hour = 1 level drop)
+            int tiersToDrop = (int) (timeSinceLastKill / 3600000);
+
+            if (evolveTier > 0) {
+                evolveTier = Math.max(0, evolveTier - tiersToDrop);
+                broadcastMessage(PacketCreator.serverNotice(6, "[Map Event] The map feels safer... The monsters' rage has subsided. (Tier " + evolveTier + "/10)"));
+            }
+        }
+
+        // Update activity timestamp
+        lastKillTime = now;
+
+        // --- 2. HANDLE PROGRESSION ---
+        int kills = mapKillCounter.incrementAndGet();
+
+        // Trigger every 1,000 kills (1000, 2000, 10000, 15000...)
+        if (kills % 1000 == 0) {
+
+            // A. Increase Tier (Cap at 10)
+            // We do this separately so Elites still spawn even if we are at max tier
+            if (this.evolveTier < 10) {
+                this.evolveTier++;
+                broadcastMessage(PacketCreator.serverNotice(6, "[Map Event] The area grows darker... Monsters have become stronger! (Tier " + evolveTier + "/10)"));
+                broadcastMessage(PacketCreator.showEffect("quest/party/clear"));
+                broadcastMessage(PacketCreator.playSound("Party1/Clear"));
+            }
+
+            // B. Spawn Elite Boss (Continuous - happens every 1000 kills forever)
+            spawnEliteBoss(killer);
+        }
+    }
+
+    /**
+     * Spawns an "Elite" version of a map mob using existing methods.
+     */
+    private void spawnEliteBoss(Character triggerPlayer) {
+        // 1. Pick a random mob ID from the map's spawn points
+        int mobIdToSpawn = 100100; // Default Snail
+        List<SpawnPoint> spawns = getMonsterSpawn();
+        if (!spawns.isEmpty()) {
+            mobIdToSpawn = spawns.get(Randomizer.nextInt(spawns.size())).getMonsterId();
+        }
+
+        // 2. Create the Monster
+        Monster elite = LifeFactory.getMonster(mobIdToSpawn);
+        if (elite != null) {
+            // 3. SCALE IT (Using existing methods)
+
+            // A. Turn on Boss HP Bar
+            elite.setBoss(true);
+
+            // B. Scale Level (+20 Levels)
+            // This recalculates Damage, Accuracy, and EXP automatically via ChangeableStats
+            elite.changeLevel(elite.getLevel() + 20);
+
+            // C. Force HP Multiplier (100x HP)
+            // We must do this AFTER changeLevel, because changeLevel resets HP.
+            long targetHp = elite.getMaxHp() * 100;
+
+            // Cap at Integer.MAX_VALUE (2.1 billion) because setStartingHp takes an int
+            if (targetHp > Integer.MAX_VALUE) targetHp = Integer.MAX_VALUE;
+
+            elite.setStartingHp((int) targetHp);
+
+            // 4. Spawn it
+            spawnMonsterOnGroundBelow(elite, triggerPlayer.getPosition());
+            broadcastMessage(PacketCreator.serverNotice(5, "[WARNING] An Elite Monster has appeared!"));
+        }
+    }
+
 
 }
