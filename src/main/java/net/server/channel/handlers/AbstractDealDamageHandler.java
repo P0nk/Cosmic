@@ -199,23 +199,24 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 if (monster != null) {
 
                     // [ANTI-HACK] 4. Kami / Distance Check
-                    double distance = player.getPosition().distanceSq(monster.getPosition());
-                    double distanceToDetect = 200000.0;
 
-                    if (attack.ranged) distanceToDetect += 400000;
-                    if (attack.magic) distanceToDetect += 200000;
-                    if (player.getJob().isA(Job.ARAN1)) distanceToDetect += 200000;
-
-                    if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.BODY_PRESSURE) distanceToDetect += 40000;
-                    else if (attack.skill == Bishop.GENESIS || attack.skill == ILArchMage.BLIZZARD || attack.skill == FPArchMage.METEOR_SHOWER) distanceToDetect += 275000;
-                    else if (attack.skill == Hero.BRANDISH || attack.skill == DragonKnight.SPEAR_CRUSHER || attack.skill == DragonKnight.POLE_ARM_CRUSHER) distanceToDetect += 40000;
-                    else if (attack.skill == DragonKnight.DRAGON_ROAR || attack.skill == SuperGM.SUPER_DRAGON_ROAR) distanceToDetect += 250000;
-                    else if (attack.skill == Shadower.BOOMERANG_STEP) distanceToDetect += 60000;
-
-                    if (distance > distanceToDetect) {
-                        player.getAutobanManager().jailPlayer("Kami / Distance Hack (Dist: " + (int)Math.sqrt(distance) + ")", 30);
-                        return;
-                    }
+//                    double distance = player.getPosition().distanceSq(monster.getPosition());
+//                    double distanceToDetect = 200000.0;
+//
+//                    if (attack.ranged) distanceToDetect += 400000;
+//                    if (attack.magic) distanceToDetect += 200000;
+//                    if (player.getJob().isA(Job.ARAN1)) distanceToDetect += 200000;
+//
+//                    if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.BODY_PRESSURE) distanceToDetect += 40000;
+//                    else if (attack.skill == Bishop.GENESIS || attack.skill == ILArchMage.BLIZZARD || attack.skill == FPArchMage.METEOR_SHOWER) distanceToDetect += 275000;
+//                    else if (attack.skill == Hero.BRANDISH || attack.skill == DragonKnight.SPEAR_CRUSHER || attack.skill == DragonKnight.POLE_ARM_CRUSHER) distanceToDetect += 40000;
+//                    else if (attack.skill == DragonKnight.DRAGON_ROAR || attack.skill == SuperGM.SUPER_DRAGON_ROAR) distanceToDetect += 250000;
+//                    else if (attack.skill == Shadower.BOOMERANG_STEP) distanceToDetect += 60000;
+//
+//                    if (distance > distanceToDetect) {
+//                        player.getAutobanManager().jailPlayer("Kami / Distance Hack (Dist: " + (int)Math.sqrt(distance) + ")", 30);
+//                        return;
+//                    }
 
                     int totDamageToOneMonster = 0;
                     List<Integer> onedList = target.getValue().damageLines();

@@ -32,8 +32,7 @@ public final class MonsterBook {
     }
 
     public void addCard(final Client c, final int cardid) {
-        // [FIX] 1. Check if Book is Full BEFORE doing anything else
-        // This prevents the "Could not consume" error if you spam click a full card.
+        // 1. Check if Book is Full BEFORE doing anything else
         lock.lock();
         try {
             if (cards.getOrDefault(cardid, 0) >= 5) {
@@ -44,39 +43,37 @@ public final class MonsterBook {
             lock.unlock();
         }
 
-        // [ANTI-HACK] 2. Validate Inventory
-        if (c.getPlayer().getItemQuantity(cardid, false) <= 0) {
-            // Player sent packet but doesn't have the item -> Hacker
-            c.getPlayer().getAutobanManager().jailPlayer("Packet Edit: Monster Book (No Item: " + cardid + ")", 60);
-            return;
-        }
+        // [FIXED] Removed the "getItemQuantity <= 0 -> Jail" block.
+        // It was causing false bans during auto-loot/pickup lag.
 
-        // [CONSUME] 3. Remove the Card from Inventory
+        // 2. Attempt to Consume the Card
         try {
+            // InventoryManipulator verifies they have the item.
+            // If they don't, it throws an Exception.
             InventoryManipulator.removeById(c, InventoryType.ETC, cardid, 1, true, false);
         } catch (Exception e) {
-            c.getPlayer().dropMessage(1, "Error: Could not consume card item.");
+            // This Catch Block handles two cases:
+            // A. Hacker sending packet without item -> Exception -> Returns (No Card Added).
+            // B. Lag/Race Condition (Auto-Loot) -> Exception -> Returns (No Card Added, but NO JAIL).
+            // c.getPlayer().dropMessage(5, "Could not add card: Item not found.");
             return;
         }
 
-        // [UPDATE] 4. Update Book Logic
+        // 3. Update Book Logic (Only reached if Consume was successful)
         c.getPlayer().getMap().broadcastMessage(c.getPlayer(), PacketCreator.showForeignCardEffect(c.getPlayer().getId()), false);
 
         Integer oldQty;
         lock.lock();
         try {
-            // Re-read current quantity safely
             oldQty = cards.get(cardid);
 
             if (oldQty != null) {
-                // Card exists, increment count
                 if (oldQty < 5) {
                     cards.put(cardid, oldQty + 1);
                 }
             } else {
-                // New Card entry
                 cards.put(cardid, 1);
-                oldQty = 0; // It was 0 before this add
+                oldQty = 0;
 
                 if (cardid / 1000 >= 2388) {
                     specialCard++;
@@ -88,10 +85,7 @@ public final class MonsterBook {
             lock.unlock();
         }
 
-        // [PACKET] 5. Send Success Packet
-        // Note: We use oldQty (the count BEFORE adding).
-        // If oldQty was 4, it is now 5. Packet expects the NEW total (oldQty + 1).
-
+        // 4. Send Success Packet
         if (oldQty < 5) {
             if (oldQty == 0) {
                 calculateLevel();
