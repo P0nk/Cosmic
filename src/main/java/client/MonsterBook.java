@@ -1,5 +1,7 @@
 package client;
 
+import client.inventory.InventoryType;
+import client.inventory.manipulator.InventoryManipulator;
 import tools.DatabaseConnection;
 import tools.PacketCreator;
 
@@ -7,12 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,93 +31,52 @@ public final class MonsterBook {
         }
     }
 
-    // Add this method to client.MonsterBook class
-
-    public boolean redeemBulk(final Client c, final int statType, final boolean isSpecial, final int quantity) {
+    public void addCard(final Client c, final int cardid) {
+        // [FIX] 1. Check if Book is Full BEFORE doing anything else
+        // This prevents the "Could not consume" error if you spam click a full card.
         lock.lock();
-        System.out.println("[Debug] redeemBulk called. Stat: " + statType + " | Special: " + isSpecial + " | Qty: " + quantity);
         try {
-            int redeemedCount = 0;
-            int multiplierPerCard = isSpecial ? 10 : 1;
-
-            // We need to collect IDs to update DB later
-            java.util.List<Integer> cardsToRedeem = new java.util.ArrayList<>();
-
-            for (Map.Entry<Integer, Integer> entry : cards.entrySet()) {
-                // If we have redeemed enough, stop looping
-                if (redeemedCount >= quantity) break;
-
-                int cardId = entry.getKey();
-                int level = entry.getValue();
-
-                // Check Validity: Level 5, Not Redeemed
-                if (level >= 5 && !redeemedCards.contains(cardId)) {
-                    // Check Tier: Special (>= 2388) vs Normal (< 2388)
-                    boolean cardIsSpecial = (cardId / 1000 >= 2388);
-
-                    if (cardIsSpecial == isSpecial) {
-                        cardsToRedeem.add(cardId);
-                        redeemedCount++;
-                    }
-                }
+            if (cards.getOrDefault(cardid, 0) >= 5) {
+                c.sendPacket(PacketCreator.addCard(true, cardid, 5)); // Send "Book Full" packet
+                return; // Stop here. Do not consume item.
             }
-
-            System.out.println("[Debug] Found " + redeemedCount + " valid cards to redeem.");
-
-            if (redeemedCount < quantity) {
-                System.out.println("[Debug] Not enough cards found. Aborting.");
-                return false; // Should not happen if Client checks correctly, but safety first
-            }
-
-            // Apply Stats
-            int totalMultiplier = multiplierPerCard * quantity;
-
-            switch (statType) {
-                case 0: giveWatk(c, 2 * totalMultiplier); break;
-                case 1: giveMatk(c, 1 * totalMultiplier); break;
-                case 2: giveAcc(c, 2 * totalMultiplier); break;
-                case 3: giveMDef(c, 5 * totalMultiplier); break;
-                case 4: giveWDef(c, 5 * totalMultiplier); break;
-                case 5: giveEva(c, 3 * totalMultiplier); break;
-                default: return false;
-            }
-
-            // Mark as Redeemed in Memory and DB
-            for (Integer cid : cardsToRedeem) {
-                redeemedCards.add(cid);
-                saveRedemptionStatus(c.getPlayer().getId(), cid);
-            }
-
-            // Visuals
-//            c.sendPacket(PacketCreator.showSpecialEffect(12));
-//            c.sendPacket(PacketCreator.playSound("Game/Quest/Party1"));
-
-            return true;
-
-        } catch (Exception e) {
-            System.err.println("[MonsterBook] Error in redeemBulk");
-            e.printStackTrace();
-            return false;
         } finally {
             lock.unlock();
         }
-    }
 
-    public void addCard(final Client c, final int cardid) {
+        // [ANTI-HACK] 2. Validate Inventory
+        if (c.getPlayer().getItemQuantity(cardid, false) <= 0) {
+            // Player sent packet but doesn't have the item -> Hacker
+            c.getPlayer().getAutobanManager().jailPlayer("Packet Edit: Monster Book (No Item: " + cardid + ")", 60);
+            return;
+        }
+
+        // [CONSUME] 3. Remove the Card from Inventory
+        try {
+            InventoryManipulator.removeById(c, InventoryType.ETC, cardid, 1, true, false);
+        } catch (Exception e) {
+            c.getPlayer().dropMessage(1, "Error: Could not consume card item.");
+            return;
+        }
+
+        // [UPDATE] 4. Update Book Logic
         c.getPlayer().getMap().broadcastMessage(c.getPlayer(), PacketCreator.showForeignCardEffect(c.getPlayer().getId()), false);
 
-        Integer qty;
+        Integer oldQty;
         lock.lock();
         try {
-            qty = cards.get(cardid);
+            // Re-read current quantity safely
+            oldQty = cards.get(cardid);
 
-            if (qty != null) {
-                if (qty < 5) {
-                    cards.put(cardid, qty + 1);
+            if (oldQty != null) {
+                // Card exists, increment count
+                if (oldQty < 5) {
+                    cards.put(cardid, oldQty + 1);
                 }
             } else {
+                // New Card entry
                 cards.put(cardid, 1);
-                qty = 0;
+                oldQty = 0; // It was 0 before this add
 
                 if (cardid / 1000 >= 2388) {
                     specialCard++;
@@ -131,14 +88,16 @@ public final class MonsterBook {
             lock.unlock();
         }
 
-        if (qty < 5) {
-            if (qty == 0) {
+        // [PACKET] 5. Send Success Packet
+        // Note: We use oldQty (the count BEFORE adding).
+        // If oldQty was 4, it is now 5. Packet expects the NEW total (oldQty + 1).
+
+        if (oldQty < 5) {
+            if (oldQty == 0) {
                 calculateLevel();
             }
-            c.sendPacket(PacketCreator.addCard(false, cardid, qty + 1));
+            c.sendPacket(PacketCreator.addCard(false, cardid, oldQty + 1));
             c.sendPacket(PacketCreator.showGainCard());
-        } else {
-            c.sendPacket(PacketCreator.addCard(true, cardid, 5));
         }
     }
 
@@ -245,11 +204,7 @@ public final class MonsterBook {
     }
 
     public void saveCards(Connection con, int chrId) throws SQLException {
-        final String query = """
-                INSERT INTO monsterbook (charid, cardid, level, redeemed)
-                VALUES (?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE level = ?, redeemed = ?;
-                """;
+        final String query = "INSERT INTO monsterbook (charid, cardid, level, redeemed) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE level = ?, redeemed = ?";
         try (final PreparedStatement ps = con.prepareStatement(query)) {
             lock.lock();
             try {
@@ -274,8 +229,6 @@ public final class MonsterBook {
         }
     }
 
-    // --- REDEMPTION SYSTEM START ---
-
     public boolean redeemCard(final Client c, final int cardid, final int type) {
         lock.lock();
         try {
@@ -287,45 +240,84 @@ public final class MonsterBook {
                 return false;
             }
 
-            // Check if card is special (Boss/Rare) and apply multiplier if desired.
-            // Currently using 1x multiplier for normal cards as per your base values.
             boolean isSpecial = (cardid / 1000 >= 2388);
             int multiplier = isSpecial ? 10 : 1;
 
             switch (type) {
-                case 0: // +2 Watk
-                    giveWatk(c, 2 * multiplier);
-                    break;
-                case 1: // +1 Matk
-                    giveMatk(c, 1 * multiplier);
-                    break;
-                case 2: // +2 Acc
-                    giveAcc(c, 2 * multiplier);
-                    break;
-                case 3: // +5 MDef
-                    giveMDef(c, 5 * multiplier);
-                    break;
-                case 4: // +5 WDef
-                    giveWDef(c, 5 * multiplier);
-                    break;
-                case 5: // +3 Eva
-                    giveEva(c, 3 * multiplier);
-                    break;
-                default:
-                    return false;
+                case 0 -> giveWatk(c, 2 * multiplier);
+                case 1 -> giveMatk(c, 1 * multiplier);
+                case 2 -> giveAcc(c, 2 * multiplier);
+                case 3 -> giveMDef(c, 5 * multiplier);
+                case 4 -> giveWDef(c, 5 * multiplier);
+                case 5 -> giveEva(c, 3 * multiplier);
+                default -> { return false; }
             }
 
             redeemedCards.add(cardid);
 
-            // Visuals & Sound
-            c.sendPacket(PacketCreator.showSpecialEffect(12)); // Quest Clear Effect
-            c.sendPacket(PacketCreator.playSound("Game/Quest/Party1")); // Success Sound
+            c.sendPacket(PacketCreator.showSpecialEffect(12));
+            c.sendPacket(PacketCreator.playSound("Game/Quest/Party1"));
 
-            // Save the specific card redemption status to DB
             saveRedemptionStatus(c.getPlayer().getId(), cardid);
             return true;
 
         } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public boolean redeemBulk(final Client c, final int statType, final boolean isSpecial, final int quantity) {
+        lock.lock();
+        try {
+            int redeemedCount = 0;
+            int multiplierPerCard = isSpecial ? 10 : 1;
+
+            List<Integer> cardsToRedeem = new ArrayList<>();
+
+            for (Map.Entry<Integer, Integer> entry : cards.entrySet()) {
+                if (redeemedCount >= quantity) break;
+
+                int cardId = entry.getKey();
+                int level = entry.getValue();
+
+                if (level >= 5 && !redeemedCards.contains(cardId)) {
+                    boolean cardIsSpecial = (cardId / 1000 >= 2388);
+
+                    if (cardIsSpecial == isSpecial) {
+                        cardsToRedeem.add(cardId);
+                        redeemedCount++;
+                    }
+                }
+            }
+
+            if (redeemedCount < quantity) {
+                return false;
+            }
+
+            int totalMultiplier = multiplierPerCard * quantity;
+
+            switch (statType) {
+                case 0 -> giveWatk(c, 2 * totalMultiplier);
+                case 1 -> giveMatk(c, 1 * totalMultiplier);
+                case 2 -> giveAcc(c, 2 * totalMultiplier);
+                case 3 -> giveMDef(c, 5 * totalMultiplier);
+                case 4 -> giveWDef(c, 5 * totalMultiplier);
+                case 5 -> giveEva(c, 3 * totalMultiplier);
+                default -> { return false; }
+            }
+
+            for (Integer cid : cardsToRedeem) {
+                redeemedCards.add(cid);
+                saveRedemptionStatus(c.getPlayer().getId(), cid);
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("[MonsterBook] Error in redeemBulk");
             e.printStackTrace();
             return false;
         } finally {
@@ -345,19 +337,12 @@ public final class MonsterBook {
         }
     }
 
-    // --- STAT UPDATING METHODS (BACKEND) ---
-
     private void giveWatk(Client c, int amount) {
         Character player = c.getPlayer();
-        // 1. Get Current
         int current = player.getPassiveWatk();
-        // 2. Calculate New
         int newStat = current + amount;
-        // 3. Set New (Update)
         player.setPassiveWatk(newStat);
-        // 4. Save to DB
         player.saveCharToDB();
-
         player.dropMessage(5, "Redeemed " + amount + " Weapon Attack! (Total: " + newStat + ")");
     }
 
@@ -367,7 +352,6 @@ public final class MonsterBook {
         int newStat = current + amount;
         player.setPassiveMatk(newStat);
         player.saveCharToDB();
-
         player.dropMessage(5, "Redeemed " + amount + " Magic Attack! (Total: " + newStat + ")");
     }
 
@@ -377,7 +361,6 @@ public final class MonsterBook {
         int newStat = current + amount;
         player.setPassiveWdef(newStat);
         player.saveCharToDB();
-
         player.dropMessage(5, "Redeemed " + amount + " Weapon Def! (Total: " + newStat + ")");
     }
 
@@ -387,7 +370,6 @@ public final class MonsterBook {
         int newStat = current + amount;
         player.setPassiveMdef(newStat);
         player.saveCharToDB();
-
         player.dropMessage(5, "Redeemed " + amount + " Magic Def! (Total: " + newStat + ")");
     }
 
@@ -397,7 +379,6 @@ public final class MonsterBook {
         int newStat = current + amount;
         player.setPassiveEva(newStat);
         player.saveCharToDB();
-
         player.dropMessage(5, "Redeemed " + amount + " Avoidability! (Total: " + newStat + ")");
     }
 
@@ -407,11 +388,8 @@ public final class MonsterBook {
         int newStat = current + amount;
         player.setPassiveAcc(newStat);
         player.saveCharToDB();
-
         player.dropMessage(5, "Redeemed " + amount + " Accuracy! (Total: " + newStat + ")");
     }
-
-    // --- REDEMPTION SYSTEM END ---
 
     public static int[] getCardTierSize() {
         try (Connection con = DatabaseConnection.getConnection();

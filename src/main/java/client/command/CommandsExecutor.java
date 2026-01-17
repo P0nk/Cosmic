@@ -166,6 +166,7 @@ public class CommandsExecutor {
         addCommand("reportbug", ReportBugCommand.class);
         addCommand("enableauth", EnableAuthCommand.class);
         addCommand("credits", StaffCommand.class);
+        addCommand("changepassword", ChangePasswordCommand.class);
 
         // --- Economy & Shops ---
         addCommand("voteshop", 0, VoteShopCommand.class);
@@ -356,7 +357,6 @@ public class CommandsExecutor {
         addCommand("timerall", 3, TimerAllCommand.class);
         addCommand("warpmap", 3, WarpMapCommand.class);
         addCommand("warparea", 3, WarpAreaCommand.class);
-        addCommand("ban2", 3, Ban2Command.class);
         addCommand("getmaplewp", 3, GetMapleWp.class);
         addCommand("chatban", 3, WorldChatBanCommand.class);
         addCommand("newsub", 3, NewSubCommand.class);

@@ -12,86 +12,112 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+/**
+ * Enhanced Ban Command
+ * Supports 'Account Only' and 'Max' (Nuclear) modes.
+ * Default: Account Only
+ */
 public class BanCommand extends Command {
     {
-        setDescription("Ban a player.");
+        setDescription("Bans a player. Syntax: !ban [account|max] <IGN> <Reason>");
     }
 
     @Override
     public void execute(Client c, String[] params) {
-        Character player = c.getPlayer();
+        Character gm = c.getPlayer();
+
         if (params.length < 2) {
-            player.yellowMessage("Syntax: !ban <IGN> <Reason> (Please be descriptive)");
+            // Updated Help Message to reflect new default
+            gm.yellowMessage("Syntax: !ban <IGN> <Reason> (Default: Account Only)");
+            gm.yellowMessage("Option: !ban max <IGN> <Reason> (Nuke: Account + IP + MAC + HWID)");
             return;
         }
 
-        // Step 1: Extract parameters
-        String ign = params[0];
-        String reason = joinStringFrom(params, 1);
-        System.out.println("[BanCommand] Target IGN: " + ign);
-        System.out.println("[BanCommand] Reason provided: " + reason);
+        // --- 1. Parse Mode & Arguments ---
+        // [CHANGE] Default set to "account" instead of "max"
+        String mode = "account";
+        String targetName;
+        String reason;
 
-        // Step 2: Attempt to find the player online
-        Character target = c.getChannelServer().getPlayerStorage().getCharacterByName(ign);
-        System.out.println("[BanCommand] Target character found online: " + (target != null));
+        // Check if first arg is a subcommand
+        if (params[0].equalsIgnoreCase("max") || params[0].equalsIgnoreCase("full") || params[0].equalsIgnoreCase("ip")) {
+            mode = "max";
+            targetName = params[1];
+            reason = joinStringFrom(params, 2);
+        } else if (params[0].equalsIgnoreCase("account") || params[0].equalsIgnoreCase("acc")) {
+            mode = "account";
+            targetName = params[1];
+            reason = joinStringFrom(params, 2);
+        } else {
+            // No subcommand, use default (Account)
+            targetName = params[0];
+            reason = joinStringFrom(params, 1);
+        }
 
+        if (targetName == null || reason.isEmpty()) {
+            gm.yellowMessage("Error: You must provide a name and a reason.");
+            return;
+        }
+
+        Character target = c.getChannelServer().getPlayerStorage().getCharacterByName(targetName);
+
+        // --- 2. Execute Ban Logic ---
         if (target != null) {
+            // === ONLINE BAN ===
+            Client targetClient = target.getClient();
+            String ip = targetClient.getRemoteAddress();
+            int accId = targetClient.getAccID();
             String readableTargetName = Character.makeMapleReadable(target.getName());
-            String ip = target.getClient().getRemoteAddress();
-            System.out.println("[BanCommand] Readable IGN: " + readableTargetName);
-            System.out.println("[BanCommand] IP Address: " + ip);
-            System.out.println("[BanCommand] MAC Address: " + c.getMacs());
 
-            // Step 3: Insert IP ban
-            try (Connection con = DatabaseConnection.getConnection()) {
-                if (ip.matches("/[0-9]{1,3}\\..*")) {
-                    try (PreparedStatement ps = con.prepareStatement("INSERT INTO ipbans VALUES (DEFAULT, ?, ?)")) {
+            // A. Hardware/Network Bans (Only if mode is explicitly MAX)
+            if (mode.equals("max")) {
+                // IP Ban (Regex Safe)
+                if (ip.matches("[0-9]{1,3}\\..*") && !ip.equals("127.0.0.1")) {
+                    try (Connection con = DatabaseConnection.getConnection();
+                         PreparedStatement ps = con.prepareStatement("INSERT IGNORE INTO ipbans (ip, aid) VALUES (?, ?)")) {
                         ps.setString(1, ip);
-                        ps.setString(2, String.valueOf(target.getClient().getAccID()));
-                        int rowsAffected = ps.executeUpdate();
-                        System.out.println("[BanCommand] IP Ban inserted, rows affected: " + rowsAffected);
+                        ps.setInt(2, accId);
+                        ps.executeUpdate();
+                    } catch (SQLException ex) {
+                        gm.message("Error banning IP: " + ex.getMessage());
                     }
-                } else {
-                    System.out.println("[BanCommand] IP pattern did not match expected format, skipping IP ban.");
                 }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-                c.getPlayer().message("Error occurred while banning IP address");
-                c.getPlayer().message(target.getName() + "'s IP was not banned: " + ip);
+
+                // MAC & HWID Bans
+                targetClient.banMacs();
+                targetClient.banHWID();
             }
 
-            // Step 4: Ban MACs
-            target.getClient().banMacs();
-            reason = c.getPlayer().getName() + " banned " + readableTargetName + " for " + reason + " (IP: " + ip + ") " + "(MAC: " + c.getMacs() + ")";
-            System.out.println("[BanCommand] Final reason string: " + reason);
+            // B. Account Ban (Always applied)
+            String fullReason = "[" + mode.toUpperCase() + "] Banned by " + gm.getName() + ": " + reason;
+            target.ban(fullReason);
 
-            // Step 5: Apply ban
-            target.ban(reason);
-            target.yellowMessage("You have been banned by #b" + c.getPlayer().getName() + " #k.");
+            // C. Notify & Disconnect
+            target.yellowMessage("You have been banned by " + gm.getName() + ".");
             target.yellowMessage("Reason: " + reason);
-
-            // Step 6: Visual effect
             c.sendPacket(PacketCreator.getGMEffect(4, (byte) 0));
 
-            // Step 7: Disconnect
-            final Character rip = target;
+            // Delayed Disconnect
             TimerManager.getInstance().schedule(() -> {
-                System.out.println("[BanCommand] Disconnecting player after 5 seconds: " + rip.getName());
-                rip.getClient().disconnect(false, false);
-            }, 5000);
+                if (target != null && target.getClient() != null) {
+                    target.getClient().disconnect(true, false);
+                }
+            }, 3000);
 
-            // Step 8: Global broadcast
-            Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.serverNotice(6, "[RIP]: " + ign + " has been banned."));
+            // D. Feedback
+            Server.getInstance().broadcastMessage(c.getWorld(),
+                    PacketCreator.serverNotice(6, "[System] " + targetName + " has been banned (" + mode + ") for " + reason + "."));
+
         } else {
-            // Offline ban fallback
-            System.out.println("[BanCommand] Target is offline. Attempting offline ban for: " + ign);
-            if (Character.ban(ign, reason, false)) {
-                System.out.println("[BanCommand] Offline ban successful for: " + ign);
+            // === OFFLINE BAN ===
+            if (Character.ban(targetName, "Offline banned by " + gm.getName() + ": " + reason, false)) {
                 c.sendPacket(PacketCreator.getGMEffect(4, (byte) 0));
-                Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.serverNotice(6, "[RIP]: " + ign + " has been banned."));
+                gm.message("Offline ban successful for " + targetName + " (Account Only).");
+                Server.getInstance().broadcastMessage(c.getWorld(),
+                        PacketCreator.serverNotice(6, "[System] " + targetName + " has been banned for " + reason + "."));
             } else {
-                System.out.println("[BanCommand] Offline ban failed for: " + ign);
                 c.sendPacket(PacketCreator.getGMEffect(6, (byte) 1));
+                gm.message("Failed to ban " + targetName + ". Character not found.");
             }
         }
     }

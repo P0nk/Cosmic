@@ -384,6 +384,48 @@ public class Character extends AbstractCharacterObject {
     // Daily Playtime for Leaderboard
     private int dailyPlaytime = 0;
 
+    // [ANTI-CHEAT VARIABLES]
+    private boolean isPendingBotCheck = false; // Locks player during check
+    private int botCheckStrikeCount = 0;       // Doubles penalty each time
+    private long lastAttackTime = 0;           // For God Mode Watchdog
+    private long lastHitTime = 0;              // For God Mode Watchdog
+
+    // 1. Add the Counter
+    private int mapKillCount = 0;
+
+    // 2. Add Getter
+    public int getMapKillCount() {
+        return mapKillCount;
+    }
+
+    // 3. Add Incrementer (Returns new total)
+    public int incrementMapKillCount() {
+        this.mapKillCount++;
+        return this.mapKillCount;
+    }
+
+    // 4. Add Reset Method
+    public void resetMapKillCount() {
+        this.mapKillCount = 0;
+    }
+
+    // ... existing mapKillCount variables ...
+
+    // 1. The Time Tracker (Defaults to 0 so the first check can happen anytime)
+    private long lastBotCheckTime = 0;
+
+    // 2. The Check Logic
+    // Returns TRUE if 30 minutes (1,800,000 ms) have passed since the last check.
+    public boolean canTriggerBotCheck() {
+        long now = System.currentTimeMillis();
+        // 30 Minutes = 30 * 60 * 1000 = 1,800,000 ms
+        return (now - lastBotCheckTime) > 1800000;
+    }
+
+    // 3. The Reset (Call this when we trigger a check)
+    public void updateBotCheckTime() {
+        this.lastBotCheckTime = System.currentTimeMillis();
+    }
 
 
     private Character() {
@@ -11075,7 +11117,7 @@ public class Character extends AbstractCharacterObject {
         return jailExpiration - System.currentTimeMillis();
     }
 
-    private void setFutureJailExpiration(long time) {
+    public void setFutureJailExpiration(long time) {
         jailExpiration = System.currentTimeMillis() + time;
     }
 
@@ -12152,5 +12194,86 @@ public class Character extends AbstractCharacterObject {
         // Pass the Character instance itself to manager
         return PotionBankManager.withdrawMP(this, amount);
     }
+
+    // ------------------------------------------------------------------
+    // [START] ANTI-CHEAT & BOT CHECK METHODS
+    // ------------------------------------------------------------------
+
+    // --- Bot Check Locking ---
+    public boolean isPendingBotCheck() {
+        return isPendingBotCheck;
+    }
+
+    public void setPendingBotCheck(boolean checking) {
+        this.isPendingBotCheck = checking;
+    }
+
+    // --- God Mode Watchdog Timestamps ---
+    public void updateAttackAction() {
+        this.lastAttackTime = System.currentTimeMillis();
+        // Check for God Mode every time they attack
+        this.autoban.checkGodMode();
+    }
+
+    public void updateHitAction() {
+        this.lastHitTime = System.currentTimeMillis();
+    }
+
+    public long getLastAttackTime() { return lastAttackTime; }
+    public long getLastHitTime() { return lastHitTime; }
+    public void setLastAttackTime(long time) { this.lastAttackTime = time; } // For No-Delay check
+
+    // --- Penalties ---
+
+    /**
+     * Applies the escalating Bot Check penalty.
+     * 1st Strike: 15m, 2nd: 30m, 3rd: 60m...
+     * Resets when session ends (Character object reloaded).
+     */
+    public void applyBotPenalty() {
+        long baseMinutes = 15;
+        // Formula: 15 * 2^strikes
+        long durationMinutes = baseMinutes * (long) Math.pow(2, botCheckStrikeCount);
+        long durationMillis = durationMinutes * 60 * 1000L;
+
+        // Use your existing method
+        this.setFutureJailExpiration(durationMillis);
+
+        // Warp to Jail (Map 999999999 is standard jail, change if needed)
+        this.changeMap(999999999, 0);
+
+        // Unlock them so they can move in jail
+        this.setPendingBotCheck(false);
+        this.botCheckStrikeCount++;
+
+        this.dropMessage(1, "[SYSTEM] Bot Check Failed.");
+        this.dropMessage(1, "You pressed ESC or failed to answer.");
+        this.dropMessage(1, "Jailed for " + durationMinutes + " minutes.");
+
+        // Log it using the new AutobanManager
+        this.autoban.jailPlayer("Bot Check Fail (Strike " + botCheckStrikeCount + ")", (int)durationMinutes);
+    }
+
+    /**
+     * Applies the 24-hour Hacking penalty.
+     */
+    public void applyGodModePenalty() {
+        long durationMinutes = 1440; // 24 Hours
+        long durationMillis = durationMinutes * 60 * 1000L;
+
+        this.setFutureJailExpiration(durationMillis);
+        this.changeMap(999999999, 0);
+
+        this.dropMessage(1, "[SYSTEM] Security Violation Detected.");
+        this.dropMessage(1, "God Mode / Packet Blocking detected.");
+        this.dropMessage(1, "You are jailed for 24 hours.");
+
+        this.autoban.jailPlayer("God Mode / Damage Block", (int)durationMinutes);
+    }
+
+    // ------------------------------------------------------------------
+    // [END] ANTI-CHEAT METHODS
+    // ------------------------------------------------------------------
+
 
 }

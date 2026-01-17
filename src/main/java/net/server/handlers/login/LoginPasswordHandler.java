@@ -70,11 +70,11 @@ public final class LoginPasswordHandler implements PacketHandler {
 
         String login = p.readString();
         String pwd = p.readString();
+
         // Custom Unstuck tool
         if (Objects.equals(pwd, "unstuck")) {
             try (Connection con = DatabaseConnection.getConnection();
                  PreparedStatement getAccountId = con.prepareStatement("SELECT id FROM accounts WHERE name = ?")) {
-//                System.out.println("Query Account name");
                 getAccountId.setString(1, login);
                 try (ResultSet rs = getAccountId.executeQuery()) {
                     if (rs.next()) {
@@ -84,7 +84,6 @@ public final class LoginPasswordHandler implements PacketHandler {
                                 "UPDATE characters SET map = 100000000 WHERE accountid = ?")) {
                             updateMap.setInt(1, accountId);
                             int affected = updateMap.executeUpdate();
-//                            System.out.println("Unstuck " + affected + " character(s) for account: " + login);
                         }
 
                     } else {
@@ -102,8 +101,18 @@ public final class LoginPasswordHandler implements PacketHandler {
         p.skip(6);   // localhost masked the initial part with zeroes...
         byte[] hwidNibbles = p.readBytes(4);
         Hwid hwid = new Hwid(HexTool.toCompactHexString(hwidNibbles));
-        int loginok = c.login(login, pwd, hwid);
 
+        // [ANTI-CHEAT] 1. Set HWID immediately so we can check it
+        c.setHwid(hwid);
+
+        // [ANTI-CHEAT] 2. Check Bans BEFORE processing login (hashing/DB)
+        // This stops banned players from wasting server CPU resources.
+        if (c.hasBannedIP() || c.hasBannedMac() || c.hasBannedHWID()) {
+            c.sendPacket(PacketCreator.getLoginFailed(3)); // 3 = "This ID has been deleted or blocked"
+            return;
+        }
+
+        int loginok = c.login(login, pwd, hwid);
 
         if (YamlConfig.config.server.AUTOMATIC_REGISTER && loginok == 5) {
             try (Connection con = DatabaseConnection.getConnection();
@@ -139,10 +148,8 @@ public final class LoginPasswordHandler implements PacketHandler {
             }
         }
 
-        if (c.hasBannedIP() || c.hasBannedMac()) {
-            c.sendPacket(PacketCreator.getLoginFailed(3));
-            return;
-        }
+        // Removed redundant IP/MAC check here (moved to top)
+
         Calendar tempban = c.getTempBanCalendarFromDB();
         if (tempban != null) {
             if (tempban.getTimeInMillis() > Calendar.getInstance().getTimeInMillis()) {

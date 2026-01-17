@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
 import scripting.map.MapScriptManager;
+import scripting.npc.NPCScriptManager;
 import server.ItemInformationProvider;
 import server.StatEffect;
 import server.TimerManager;
@@ -1342,6 +1343,38 @@ public class MapleMap {
             }
         }
         if (killed) {
+
+// [SMART BOT CHECK TRIGGER]
+            // 1. Increment persistent map kill counter
+            int currentKills = chr.incrementMapKillCount();
+
+            // [DEBUG] Print kill count every 10 kills to console
+            if (currentKills % 10 == 0) {
+                System.out.println("[BotCheck] " + chr.getName() + " | Current Kills: " + currentKills);
+            }
+
+            // 2. Check Triggers:
+            //    A. Must be a multiple of 500 kills (Activity Check)
+            //    B. Must be > 30 mins since last check (Cooldown Check)
+            if (currentKills > 0 && (currentKills % 500 == 0)) {
+
+                System.out.println("[BotCheck] Threshold hit. Scheduling NPC in 500ms...");
+
+                // Mark time now so we don't trigger multiple times if they kill fast
+                chr.updateBotCheckTime();
+
+                // [FIX] Schedule the open with a 500ms delay to allow attack animation to finish
+                server.TimerManager.getInstance().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Double check they are still online/in map
+                        if (chr != null && chr.getClient() != null) {
+                            scripting.npc.NPCScriptManager.getInstance().start(chr.getClient(), 9010000, chr);
+                        }
+                    }
+                }, 500); // 500ms delay
+            }
+
             int nx_chance = 10000; // chance to get nx from mob 5000 for 5%
             boolean nx_gain = (int) (Math.random() * 100000) <= nx_chance; // check success or failure to gain nx
 
@@ -2385,6 +2418,7 @@ public class MapleMap {
             chrWLock.unlock();
         }
 
+        chr.resetMapKillCount();
         chr.setMapId(mapid);
         chr.updateActiveEffects();
         
