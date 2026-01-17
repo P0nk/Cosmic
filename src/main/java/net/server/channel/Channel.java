@@ -46,6 +46,7 @@ import server.maps.MapManager;
 import server.maps.MapleMap;
 import server.maps.MiniDungeon;
 import server.maps.MiniDungeonInfo;
+import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.Pair;
 
@@ -53,6 +54,11 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+// [FIX] Added SQL Imports
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -230,24 +236,86 @@ public final class Channel {
         closeChannelServices();
     }
 
+    /**
+     * [OPTIMIZED] Saves all merchants atomically using one connection.
+     */
     private void closeAllMerchants() {
+        int saved = 0;
+        long start = System.currentTimeMillis();
+
+        merchWlock.lock();
+        Connection con = null;
         try {
-            List<HiredMerchant> merchs;
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false); // Start Transaction
 
-            merchWlock.lock();
-            try {
-                merchs = new ArrayList<>(hiredMerchants.values());
-                hiredMerchants.clear();
-            } finally {
-                merchWlock.unlock();
+            List<HiredMerchant> merchants = new ArrayList<>(hiredMerchants.values());
+
+            for (HiredMerchant hm : merchants) {
+                try {
+                    // 1. Save to DB
+                    hm.savePersistence(con);
+
+                    // 2. Remove from Map (Visuals only)
+                    hm.getMap().removeMapObject(hm);
+
+                    // 3. Do NOT call forceClose() because that triggers refunds/Fredrick.
+                    // We just want to vanish the object.
+
+                    saved++;
+                } catch (Exception e) {
+                    log.error("Failed to persist merchant: " + hm.getOwner(), e);
+                }
             }
 
-            for (HiredMerchant merch : merchs) {
-                merch.forceClose();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            // 4. Commit all saves
+            con.commit();
+            hiredMerchants.clear();
+            log.info("Persisted {} hired merchants in {}ms.", saved, (System.currentTimeMillis() - start));
+
+        } catch (SQLException e) {
+            if (con != null) try { con.rollback(); } catch (SQLException ex) {}
+            log.error("Critical error persisting merchants", e);
+        } finally {
+            if (con != null) try { con.setAutoCommit(true); con.close(); } catch (SQLException ex) {}
+            merchWlock.unlock();
         }
+    }
+
+    public void restoreMerchants() {
+        int restored = 0;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM hiredmerchants WHERE world = ? AND channel = ? AND isopen = 1")) {
+
+            ps.setInt(1, this.world);
+            ps.setInt(2, this.channel);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    HiredMerchant merch = HiredMerchant.loadFromPersistence(this, rs);
+                    if (merch != null) {
+                        // Check expiration (e.g. 7 days = 10080 minutes)
+                        // If expired -> call forceClose() to send to Fredrick
+
+                        // Add to Map
+                        merch.getMap().addMapObject(merch);
+                        merch.getMap().broadcastMessage(PacketCreator.spawnHiredMerchantBox(merch));
+
+                        // Register in Channel
+                        addHiredMerchant(merch.getOwnerId(), merch);
+
+                        // Ensure Character table has flag set (just in case)
+                        // This prevents them from opening a second shop if the flag was wiped
+                        merch.setOpen(true);
+
+                        restored++;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Failed to restore merchants for Ch" + channel, e);
+        }
+        log.info("Restored {} hired merchants on Channel {}.", restored, channel);
     }
 
     public MapManager getMapFactory() {

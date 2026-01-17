@@ -992,6 +992,13 @@ public class Server {
 
         log.info("Listening on port 8484");
 
+
+        // Restore Merchants
+        System.out.println("Restoring Persisted Merchants...");
+        for (Channel ch : getAllChannels()) {
+            ch.restoreMerchants();
+        }
+
         online = true;
         Duration initDuration = Duration.between(beforeInit, Instant.now());
         log.info("Cosmic is now online after {} ms.", initDuration.toMillis());

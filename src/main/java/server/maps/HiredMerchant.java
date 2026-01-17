@@ -39,6 +39,8 @@ import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.Pair;
 
+
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,11 +52,12 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
+import java.awt.Point;
 /**
  * @author XoticStory
  * @author Ronan - concurrency protection
@@ -85,6 +88,19 @@ public class HiredMerchant extends AbstractMapObject {
     private record Visitor(Character chr, Instant enteredAt) {}
 
     public record PastVisitor(String chrName, Duration visitDuration) {}
+
+    // [NEW] Constructor for DB Loading (Bypasses Client/Character requirements)
+    public HiredMerchant(int ownerId, String ownerName, int itemId, String desc, int world, int channel, MapleMap map, long startTime) {
+        this.ownerId = ownerId;
+        this.ownerName = ownerName;
+        this.itemId = itemId;
+        this.description = desc;
+        this.world = world;
+        this.channel = channel;
+        this.map = map;
+        this.start = startTime; // Backdated start time
+        this.setPosition(new Point(0, 0)); // Will be updated by load logic
+    }
 
     public HiredMerchant(final Character owner, String desc, int itemId) {
         this.setPosition(owner.getPosition());
@@ -814,17 +830,23 @@ public class HiredMerchant extends AbstractMapObject {
     public void saveItems(boolean shutdown) throws SQLException {
         List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
         List<Short> bundles = new ArrayList<>();
+        List<Integer> prices = new ArrayList<>(); // [FIX] Added Price List
 
-        for (PlayerShopItem pItems : getItems()) {
-            Item newItem = pItems.getItem();
-            short newBundle = pItems.getBundles();
+        synchronized (items) { // Ensure thread safety while reading
+            for (PlayerShopItem pItems : items) {
+                Item newItem = pItems.getItem(); // Note: Be careful modifying this object directly if it's shared
+                short newBundle = pItems.getBundles();
 
-            // Quantity handling unchanged
-            newItem.setQuantity(pItems.getItem().getQuantity());
+                // It's safer to clone the item to avoid modifying the quantity of the live object
+                // if saveItems is called while the shop is open.
+                // However, following your existing pattern:
+                newItem.setQuantity(pItems.getItem().getQuantity());
 
-            if (newBundle > 0) {
-                itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
-                bundles.add(newBundle);
+                if (newBundle > 0) {
+                    itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
+                    bundles.add(newBundle);
+                    prices.add(pItems.getPrice()); // [FIX] Collect Price
+                }
             }
         }
 
@@ -833,32 +855,22 @@ public class HiredMerchant extends AbstractMapObject {
             con.setAutoCommit(false);
 
             try {
-                ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, this.ownerId, con);
+                // [FIX] Pass 'prices' list to the factory
+                ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
                 con.commit();
             } catch (Exception e) {
-                System.err.println(
-                        "[MERCHANT][FATAL] HiredMerchant.saveItems FAILED -> rollback. CID=" + ownerId
-                );
+                System.err.println("[MERCHANT][FATAL] HiredMerchant.saveItems FAILED -> rollback. CID=" + ownerId);
                 e.printStackTrace();
-
-                try {
-                    con.rollback();
-                } catch (SQLException re) {
-                    re.printStackTrace();
-                }
-
+                try { con.rollback(); } catch (SQLException re) { re.printStackTrace(); }
                 throw e;
             } finally {
-                try {
-                    con.setAutoCommit(oldAutoCommit);
-                } catch (SQLException ignore) {}
+                try { con.setAutoCommit(oldAutoCommit); } catch (SQLException ignore) {}
             }
         }
 
         // Keep your existing Fredrick activity marker
         FredrickProcessor.insertFredrickLog(this.ownerId);
     }
-
 
     private static boolean check(Character chr, List<PlayerShopItem> items) {
         List<Pair<Item, InventoryType>> li = new ArrayList<>();
@@ -995,6 +1007,144 @@ public class HiredMerchant extends AbstractMapObject {
 
         public int getMesos() {
             return mesos;
+        }
+    }
+
+    /**
+     * [PERSISTENCE] Saves the merchant to DB during server shutdown.
+     * Uses the shared connection from Channel to ensure atomic transaction.
+     */
+    public void savePersistence(Connection con) throws SQLException {
+        PreparedStatement ps = null;
+        try {
+            // 1. Calculate accumulated time open
+            long minutesOpen = (System.currentTimeMillis() - this.start) / 60000;
+
+            // 2. Save Metadata
+            ps = con.prepareStatement("REPLACE INTO hiredmerchants (ownerid, ownername, itemid, description, world, channel, mapid, x, y, minutesopen, isopen, blacklist) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
+            ps.setInt(1, ownerId);
+            ps.setString(2, ownerName);
+            ps.setInt(3, itemId);
+            ps.setString(4, description);
+            ps.setInt(5, world);
+            ps.setInt(6, channel);
+            ps.setInt(7, map.getId());
+            ps.setInt(8, getPosition().x);
+            ps.setInt(9, getPosition().y);
+            ps.setInt(10, (int) minutesOpen);
+
+            // Serialize blacklist
+            StringBuilder bl = new StringBuilder();
+            visitorLock.lock();
+            try {
+                for (String banned : blacklist) {
+                    bl.append(banned).append(";");
+                }
+            } finally {
+                visitorLock.unlock();
+            }
+            ps.setString(11, bl.toString());
+            ps.executeUpdate();
+            ps.close();
+
+            // 3. Save Items
+            // First, delete old items to prevent dupes (Safety measure)
+            ps = con.prepareStatement("DELETE FROM inventoryitems WHERE type = 6 AND characterid = ?");
+            ps.setInt(1, ownerId);
+            ps.executeUpdate();
+            ps.close();
+
+            List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
+            List<Short> bundles = new ArrayList<>();
+            List<Integer> prices = new ArrayList<>(); // [FIX] Added Price List
+
+            synchronized (items) {
+                for (PlayerShopItem pItems : items) {
+                    Item newItem = pItems.getItem();
+                    short newBundle = pItems.getBundles();
+                    newItem.setQuantity(pItems.getItem().getQuantity());
+
+                    if (newBundle > 0) {
+                        itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
+                        bundles.add(newBundle);
+                        prices.add(pItems.getPrice()); // [FIX] Collect Price
+                    }
+                }
+            }
+
+            // [FIX] Pass 'prices' list to the factory
+            ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
+
+        } finally {
+            if (ps != null && !ps.isClosed()) ps.close();
+        }
+    }
+    public static HiredMerchant loadFromPersistence(net.server.channel.Channel cserv, ResultSet rs) {
+        try {
+            int ownerId = rs.getInt("ownerid");
+            String ownerName = rs.getString("ownername");
+            int itemId = rs.getInt("itemid");
+            String desc = rs.getString("description");
+            int mapId = rs.getInt("mapid");
+            int x = rs.getInt("x");
+            int y = rs.getInt("y");
+            int minutesOpen = rs.getInt("minutesopen");
+            String blString = rs.getString("blacklist");
+
+            // 1. Validate Map
+            MapleMap map = cserv.getMapFactory().getMap(mapId);
+            if (map == null) return null;
+
+            // 2. Calculate time
+            long restoredStart = System.currentTimeMillis() - (minutesOpen * 60000L);
+
+            // 3. Create Instance using NEW constructor
+            HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, desc, cserv.getWorld(), cserv.getId(), map, restoredStart);
+            merch.setPosition(new java.awt.Point(x, y));
+
+            // 4. Restore Blacklist
+            if (blString != null && !blString.isEmpty()) {
+                for (String s : blString.split(";")) {
+                    if (!s.isEmpty()) merch.addToBlacklist(s);
+                }
+            }
+
+            // 5. Load Items & Prices
+            // Map<Unique_DB_ID, Pair<Price, Bundles>>
+            java.util.Map<Integer, Pair<Integer, Short>> priceInfo = new java.util.HashMap<>();
+
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement("SELECT inventoryitemid, price, bundles FROM inventorymerchant WHERE characterid = ?")) {
+                ps.setInt(1, ownerId);
+                try (ResultSet rs2 = ps.executeQuery()) {
+                    while (rs2.next()) {
+                        priceInfo.put(rs2.getInt("inventoryitemid"), new Pair<>(rs2.getInt("price"), rs2.getShort("bundles")));
+                    }
+                }
+            }
+
+            // Load raw items (Type 6 = Merchant)
+            // Ensure your ItemFactory loads items with 'type = 6' in the DB!
+            List<Pair<Item, InventoryType>> loadedItems = ItemFactory.INVENTORY.loadItems(ownerId, false);
+
+            for (Pair<Item, InventoryType> p : loadedItems) {
+                Item item = p.getLeft();
+
+                // [FIX] Use getUniqueId() to match the DB Key, NOT getItemId()
+                int uniqueId = item.getUniqueId(); // Check Item.java if this is named getDbId() or getInventoryItemId()
+
+                if (priceInfo.containsKey(uniqueId)) {
+                    Pair<Integer, Short> info = priceInfo.get(uniqueId);
+                    PlayerShopItem shopItem = new PlayerShopItem(item, info.getRight(), info.getLeft());
+                    merch.addItem(shopItem);
+                }
+            }
+
+            return merch;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

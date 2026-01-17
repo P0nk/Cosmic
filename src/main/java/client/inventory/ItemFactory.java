@@ -82,12 +82,16 @@ public enum ItemFactory {
     }
 
     public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, int id, Connection con) throws SQLException {
-        // thanks Arufonsu, MedicOP, BHB for pointing a "synchronized" bottleneck here
+        // Redirect to main method with null prices
+        saveItems(items, bundlesList, null, id, con);
+    }
 
+    // [FIX] New Overload to support Price List for Merchants
+    public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, List<Integer> priceList, int id, Connection con) throws SQLException {
         if (value != 6) {
             saveItemsCommon(items, id, con);
         } else {
-            saveItemsMerchant(items, bundlesList, id, con);
+            saveItemsMerchant(items, bundlesList, priceList, id, con);
         }
     }
 
@@ -150,7 +154,9 @@ public enum ItemFactory {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         Integer cid = rs.getInt("characterid");
-                        items.add(new Pair<>(loadEquipFromResultSet(rs), cid));
+                        Equip equip = loadEquipFromResultSet(rs);
+                        equip.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                        items.add(new Pair<>(equip, cid));
                     }
                 }
             }
@@ -180,7 +186,9 @@ public enum ItemFactory {
                         InventoryType mit = InventoryType.getByType(rs.getByte("inventorytype"));
 
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                            items.add(new Pair<>(loadEquipFromResultSet(rs), mit));
+                            Equip equip = loadEquipFromResultSet(rs);
+                            equip.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                            items.add(new Pair<>(equip, mit));
                         } else {
                             int petid = rs.getInt("petid");
                             if (rs.wasNull()) {
@@ -188,6 +196,7 @@ public enum ItemFactory {
                             }
 
                             Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) rs.getInt("quantity"), petid);
+                            item.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
                             item.setOwner(rs.getString("owner"));
                             item.setExpiration(rs.getLong("expiration"));
                             item.setGiftFrom(rs.getString("giftFrom"));
@@ -220,8 +229,7 @@ public enum ItemFactory {
                 return;
             }
 
-            // 2. PREPARE STATEMENTS ONCE (Huge Performance Boost)
-            // We prepare the equip statement OUTSIDE the loop so we only compile it once.
+            // 2. PREPARE STATEMENTS ONCE
             String itemSql = "INSERT INTO `inventoryitems` VALUES (DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             String equipSql = "INSERT INTO `inventoryequipment` (" +
                     "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
@@ -234,7 +242,7 @@ public enum ItemFactory {
             try (PreparedStatement psItem = con.prepareStatement(itemSql, Statement.RETURN_GENERATED_KEYS);
                  PreparedStatement psEquip = con.prepareStatement(equipSql)) {
 
-                // --- PASS 1: EQUIPS (Must be one-by-one to get Generated Keys) ---
+                // --- PASS 1: EQUIPS ---
                 for (Pair<Item, InventoryType> pair : items) {
                     InventoryType mit = pair.getRight();
                     if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
@@ -254,13 +262,12 @@ public enum ItemFactory {
                         psItem.setLong(11, item.getExpiration());
                         psItem.setString(12, item.getGiftFrom());
 
-                        psItem.executeUpdate(); // Execute immediately to get ID
+                        psItem.executeUpdate();
 
                         try (ResultSet rs = psItem.getGeneratedKeys()) {
                             if (!rs.next()) {
                                 throw new RuntimeException("Inserting item failed.");
                             }
-                            // Set Equip Values using the reused psEquip statement
                             psEquip.setInt(1, rs.getInt(1));
                         }
 
@@ -298,11 +305,10 @@ public enum ItemFactory {
                     }
                 }
 
-                // --- PASS 2: EVERYTHING ELSE (Batch Update) ---
+                // --- PASS 2: EVERYTHING ELSE ---
                 boolean hasBatch = false;
                 for (Pair<Item, InventoryType> pair : items) {
                     InventoryType mit = pair.getRight();
-                    // Skip equips, we already saved them
                     if (!mit.equals(InventoryType.EQUIP) && !mit.equals(InventoryType.EQUIPPED)) {
                         Item item = pair.getLeft();
 
@@ -319,13 +325,13 @@ public enum ItemFactory {
                         psItem.setLong(11, item.getExpiration());
                         psItem.setString(12, item.getGiftFrom());
 
-                        psItem.addBatch(); // Queue it up!
+                        psItem.addBatch();
                         hasBatch = true;
                     }
                 }
 
                 if (hasBatch) {
-                    psItem.executeBatch(); // Send all potions/etc in one packet
+                    psItem.executeBatch();
                 }
             }
         } finally {
@@ -351,10 +357,10 @@ public enum ItemFactory {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
+                        // Bundles aren't strictly needed for the load object itself but good for legacy
                         short bundles = 0;
                         try (PreparedStatement psBundle = con.prepareStatement("SELECT `bundles` FROM `inventorymerchant` WHERE `inventoryitemid` = ?")) {
                             psBundle.setInt(1, rs.getInt("inventoryitemid"));
-
                             try (ResultSet rs2 = psBundle.executeQuery()) {
                                 if (rs2.next()) {
                                     bundles = rs2.getShort("bundles");
@@ -365,7 +371,9 @@ public enum ItemFactory {
                         InventoryType mit = InventoryType.getByType(rs.getByte("inventorytype"));
 
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                            items.add(new Pair<>(loadEquipFromResultSet(rs), mit));
+                            Equip equip = loadEquipFromResultSet(rs);
+                            equip.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                            items.add(new Pair<>(equip, mit));
                         } else {
                             if (bundles > 0) {
                                 int petid = rs.getInt("petid");
@@ -374,6 +382,7 @@ public enum ItemFactory {
                                 }
 
                                 Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) (bundles * rs.getInt("quantity")), petid);
+                                item.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
                                 item.setOwner(rs.getString("owner"));
                                 item.setExpiration(rs.getLong("expiration"));
                                 item.setGiftFrom(rs.getString("giftFrom"));
@@ -389,11 +398,12 @@ public enum ItemFactory {
     }
 
     private static final int MERCHANT_BCOIN_ITEM_ID = 3020002;
-    private static final int MERCHANT_NXT_ITEM_ID   = 3020001; // optional, keep even if unused
+    private static final int MERCHANT_NXT_ITEM_ID   = 3020001;
 
     private void saveItemsMerchant(
             List<Pair<Item, InventoryType>> items,
             List<Short> bundlesList,
+            List<Integer> priceList, // [FIX] Added Price List
             int id,
             Connection con
     ) throws SQLException {
@@ -433,8 +443,11 @@ public enum ItemFactory {
             int i = 0;
             for (Pair<Item, InventoryType> pair : items) {
                 final Item item = pair.getLeft();
-                final short bundles = bundlesList.get(i);
                 final InventoryType mit = pair.getRight();
+
+                // [FIX] Safely get bundles and price
+                final short bundles = (bundlesList != null && i < bundlesList.size()) ? bundlesList.get(i) : 1;
+                final int price = (priceList != null && i < priceList.size()) ? priceList.get(i) : 0;
                 i++;
 
                 final int inventoryItemId;
@@ -468,11 +481,13 @@ public enum ItemFactory {
                 }
 
                 // --- inventorymerchant ---
+                // [FIX] Insert PRICE column
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO inventorymerchant VALUES (DEFAULT, ?, ?, ?)")) {
+                        "INSERT INTO inventorymerchant (inventorymerchantid, inventoryitemid, characterid, bundles, price) VALUES (DEFAULT, ?, ?, ?, ?)")) {
                     ps.setInt(1, inventoryItemId);
                     ps.setInt(2, id);
                     ps.setInt(3, bundles);
+                    ps.setInt(4, price);
                     ps.executeUpdate();
                 }
 
@@ -522,28 +537,10 @@ public enum ItemFactory {
                         }
                         ps.executeUpdate();
                     }
-
-                    // ---- DEBUG GUARDRAIL (error-only) ----
-                    try (PreparedStatement psCheck = con.prepareStatement(
-                            "SELECT COUNT(*) FROM inventoryequipment WHERE inventoryitemid = ?")) {
-                        psCheck.setInt(1, inventoryItemId);
-                        try (ResultSet rsCheck = psCheck.executeQuery()) {
-                            if (rsCheck.next() && rsCheck.getInt(1) == 0) {
-                                System.err.println(
-                                        "[MERCHANT][ERROR] Equip saved WITHOUT inventoryequipment row! " +
-                                                "CID=" + id +
-                                                " itemId=" + item.getItemId() +
-                                                " invItemId=" + inventoryItemId
-                                );
-                            }
-                        }
-                    }
                 }
             }
         } finally {
             lock.unlock();
         }
     }
-
-
 }
