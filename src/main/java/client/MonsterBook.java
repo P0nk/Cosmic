@@ -32,34 +32,26 @@ public final class MonsterBook {
     }
 
     public void addCard(final Client c, final int cardid) {
-        // 1. Check if Book is Full BEFORE doing anything else
+        // 1. Check if Book is Full
         lock.lock();
         try {
             if (cards.getOrDefault(cardid, 0) >= 5) {
-                c.sendPacket(PacketCreator.addCard(true, cardid, 5)); // Send "Book Full" packet
-                return; // Stop here. Do not consume item.
+                // If book is full, we DO NOT add the card.
+                // The pickup logic in Character.java will handle the "Item Unavailable" message
+                // if we return without doing anything?
+                // Actually, just notify the user.
+                c.getPlayer().dropMessage(5, "You have already collected 5 of this card.");
+                return;
             }
         } finally {
             lock.unlock();
         }
 
-        // [FIXED] Removed the "getItemQuantity <= 0 -> Jail" block.
-        // It was causing false bans during auto-loot/pickup lag.
+        // [FIXED] Removed "InventoryManipulator.removeById"
+        // Why: When picking up a card, it is not in the inventory yet.
+        // Trying to remove it causes an error -> function returns -> Card never added.
 
-        // 2. Attempt to Consume the Card
-        try {
-            // InventoryManipulator verifies they have the item.
-            // If they don't, it throws an Exception.
-            InventoryManipulator.removeById(c, InventoryType.ETC, cardid, 1, true, false);
-        } catch (Exception e) {
-            // This Catch Block handles two cases:
-            // A. Hacker sending packet without item -> Exception -> Returns (No Card Added).
-            // B. Lag/Race Condition (Auto-Loot) -> Exception -> Returns (No Card Added, but NO JAIL).
-            // c.getPlayer().dropMessage(5, "Could not add card: Item not found.");
-            return;
-        }
-
-        // 3. Update Book Logic (Only reached if Consume was successful)
+        // 3. Update Book Logic
         c.getPlayer().getMap().broadcastMessage(c.getPlayer(), PacketCreator.showForeignCardEffect(c.getPlayer().getId()), false);
 
         Integer oldQty;
@@ -92,6 +84,7 @@ public final class MonsterBook {
             }
             c.sendPacket(PacketCreator.addCard(false, cardid, oldQty + 1));
             c.sendPacket(PacketCreator.showGainCard());
+            c.getPlayer().dropMessage(5, "Monster Card added to your book.");
         }
     }
 

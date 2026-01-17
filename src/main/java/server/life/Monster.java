@@ -2315,4 +2315,8 @@ public class Monster extends AbstractLoadedLife {
         }
     }
     // End dps dummy
+
+
+
+
 }

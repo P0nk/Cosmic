@@ -112,15 +112,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         long now = System.currentTimeMillis();
         long lastAttackTime = player.getLastAttackTime();
 
-        // Safety buffer: 300ms is roughly the fastest any player can legitimately attack
-        // (Speed 2 Weapon + Booster + Speed Infusion).
-        // Anyone faster than this is packet editing.
-        long globalMinDelay = 300;
-
+        // [DISABLED] This was blocking legitimate normal attacks (CTRL) due to network jitter.
+        /* long globalMinDelay = 300;
         if (now - lastAttackTime < globalMinDelay && attack.skill == 0) {
-            // Ignore attack (Eat the packet)
-            return;
+            return; // Eat the packet
         }
+        */
+
         player.setLastAttackTime(now);
 
         Skill theSkill = null;
@@ -856,6 +854,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     if (ret.skill == NightLord.TRIPLE_THROW) {
                         maxattack = 12; // Allow up to 12 lines (5 stars * 2 SP + safety buffer)
                     }
+
 
                     if (ret.numDamage > maxattack) {
                         // Changed from .addPoint to just logging for now to prevent auto-jail loops while you test
