@@ -426,7 +426,10 @@ public class Character extends AbstractCharacterObject {
     public void updateBotCheckTime() {
         this.lastBotCheckTime = System.currentTimeMillis();
     }
-
+    // [ADDED] Getter for Debugging
+    public long getLastBotCheckTime() {
+        return lastBotCheckTime;
+    }
 
     private Character() {
         super.setListener(new AbstractCharacterListener() {
@@ -12239,8 +12242,8 @@ public class Character extends AbstractCharacterObject {
         // Use your existing method
         this.setFutureJailExpiration(durationMillis);
 
-        // Warp to Jail (Map 999999999 is standard jail, change if needed)
-        this.changeMap(999999999, 0);
+        // Warp to Jail (Map 300000012 is standard jail, change if needed)
+        this.changeMap(300000012, 0);
 
         // Unlock them so they can move in jail
         this.setPendingBotCheck(false);
@@ -12262,7 +12265,7 @@ public class Character extends AbstractCharacterObject {
         long durationMillis = durationMinutes * 60 * 1000L;
 
         this.setFutureJailExpiration(durationMillis);
-        this.changeMap(999999999, 0);
+        this.changeMap(300000012, 0);
 
         this.dropMessage(1, "[SYSTEM] Security Violation Detected.");
         this.dropMessage(1, "God Mode / Packet Blocking detected.");
