@@ -135,12 +135,12 @@ public class AutobanManager {
     public void addMiss() {
         this.consecutiveMisses++;
 
-        // Thresholds: Thief/Bowman have high avoid, Warriors do not.
-        int threshold = 10;
-        if (chr.getJob().isA(Job.THIEF) || chr.getJob().isA(Job.NIGHTWALKER1)) threshold = 35;
-        else if (chr.getJob().isA(Job.BOWMAN) || chr.getJob().isA(Job.WINDARCHER1)) threshold = 20;
+        // [ADJUSTED] Flat limit of 100 misses for ALL classes.
+        // This is generous enough to prevent false bans on high-avoid chars,
+        // but strict enough to catch GodMode users standing in mobs forever.
+        int threshold = 100;
 
-        // [FIX 3] Removed DIVINE_SHIELD check (Symbol not found)
+        // Exception: Dark Sight users are supposed to get misses
         if (chr.getBuffedValue(BuffStat.DARKSIGHT) != null) {
             return;
         }
