@@ -1348,31 +1348,29 @@ public class MapleMap {
             // 1. Increment persistent map kill counter
             int currentKills = chr.incrementMapKillCount();
 
-            // [DEBUG] Print kill count every 10 kills to console
-            if (currentKills % 10 == 0) {
-                System.out.println("[BotCheck] " + chr.getName() + " | Current Kills: " + currentKills);
-            }
-
-            // 2. Check Triggers:
-            //    A. Must be a multiple of 500 kills (Activity Check)
-            //    B. Must be > 30 mins since last check (Cooldown Check)
+            // 2. Activity Gate: Trigger on multiples of 500 kills
             if (currentKills > 0 && (currentKills % 500 == 0)) {
 
-//                System.out.println("[BotCheck] Threshold hit. Scheduling NPC in 500ms...");
+                // 3. Time & Role Gate:
+                //    - User is NOT a GM
+                //    - 30 Minutes have passed since last check
+                if (!chr.isGM() && chr.canTriggerBotCheck()) {
 
-                // Mark time now so we don't trigger multiple times if they kill fast
-                chr.updateBotCheckTime();
+                    // 4. Update the Timer immediately (Resets the 30-min countdown)
+                    chr.updateBotCheckTime();
 
-                // [FIX] Schedule the open with a 500ms delay to allow attack animation to finish
-                server.TimerManager.getInstance().schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Double check they are still online/in map
-                        if (chr != null && chr.getClient() != null) {
-                            scripting.npc.NPCScriptManager.getInstance().start(chr.getClient(), 9010000, chr);
+                    // 5. Schedule the NPC with 500ms delay (Attack Animation Fix)
+                    server.TimerManager.getInstance().schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Verify player is still online/in map before opening
+                            if (chr != null && chr.getClient() != null) {
+                                // IMPORTANT: Ensure this ID matches your script filename (scripts/npc/9901000.js)
+                                scripting.npc.NPCScriptManager.getInstance().start(chr.getClient(), 9901000, chr);
+                            }
                         }
-                    }
-                }, 500); // 500ms delay
+                    }, 500); // 500ms delay
+                }
             }
 
             int nx_chance = 10000; // chance to get nx from mob 5000 for 5%
