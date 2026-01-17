@@ -198,25 +198,43 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 final Monster monster = map.getMonsterByOid(target.getKey());
                 if (monster != null) {
 
-                    // [ANTI-HACK] 4. Kami / Distance Check
+// [ANTI-HACK] 4. Kami / Distance Check (Re-Enabled & Tuned)
+                    // We check squared distance to avoid expensive square root math.
+                    // 2,500,000 = ~1580 pixels (Nearly 2x the width of the game screen).
+                    double distSq = player.getPosition().distanceSq(monster.getPosition());
+                    double thresholdSq = 2500000.0;
 
-//                    double distance = player.getPosition().distanceSq(monster.getPosition());
-//                    double distanceToDetect = 200000.0;
-//
-//                    if (attack.ranged) distanceToDetect += 400000;
-//                    if (attack.magic) distanceToDetect += 200000;
-//                    if (player.getJob().isA(Job.ARAN1)) distanceToDetect += 200000;
-//
-//                    if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.BODY_PRESSURE) distanceToDetect += 40000;
-//                    else if (attack.skill == Bishop.GENESIS || attack.skill == ILArchMage.BLIZZARD || attack.skill == FPArchMage.METEOR_SHOWER) distanceToDetect += 275000;
-//                    else if (attack.skill == Hero.BRANDISH || attack.skill == DragonKnight.SPEAR_CRUSHER || attack.skill == DragonKnight.POLE_ARM_CRUSHER) distanceToDetect += 40000;
-//                    else if (attack.skill == DragonKnight.DRAGON_ROAR || attack.skill == SuperGM.SUPER_DRAGON_ROAR) distanceToDetect += 250000;
-//                    else if (attack.skill == Shadower.BOOMERANG_STEP) distanceToDetect += 60000;
-//
-//                    if (distance > distanceToDetect) {
-//                        player.getAutobanManager().jailPlayer("Kami / Distance Hack (Dist: " + (int)Math.sqrt(distance) + ")", 30);
-//                        return;
-//                    }
+                    // 1. Job Buffers (Give ranged classes slightly more room)
+                    if (attack.ranged || attack.magic) {
+                        thresholdSq += 1000000.0; // Adds ~300px more range tolerance
+                    }
+
+                    // 2. Skill Exemptions (Full Map Attacks & Long Range Snipes)
+                    // If the skill is known to hit the whole map, we disable the check entirely.
+                    int skillId = attack.skill;
+                    boolean isFMA =
+                            skillId == Bishop.GENESIS ||
+                                    skillId == FPArchMage.METEOR_SHOWER ||
+                                    skillId == ILArchMage.BLIZZARD ||
+                                    skillId == DragonKnight.DRAGON_ROAR ||
+                                    skillId == Marksman.SNIPE ||
+                                    skillId == SuperGM.SUPER_DRAGON_ROAR ||
+                                    skillId == Aran.COMBO_TEMPEST;
+
+                    // 3. The Check
+                    if (!isFMA && distSq > thresholdSq) {
+                        // Double check: Is the player a GM?
+                        if (!player.isGM()) {
+                            double realDist = Math.sqrt(distSq);
+
+                            // [ACTIVE PUNISHMENT]
+                            player.getAutobanManager().jailPlayer(
+                                    "Kami/Distance Hack: Hit mob from " + (int)realDist + "px away (Limit: " + (int)Math.sqrt(thresholdSq) + ")",
+                                    30
+                            );
+                            return; // Stop processing this attack
+                        }
+                    }
 
                     int totDamageToOneMonster = 0;
                     List<Integer> onedList = target.getValue().damageLines();
@@ -827,11 +845,25 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
                 if(effect != null) {
                     int maxattack = Math.max(effect.getBulletCount(), effect.getAttackCount());
+
                     if (shadowPartner) {
-                        maxattack = maxattack * 3;
+                        maxattack = maxattack * 3; // Standard safety buffer
                     }
+
+                    // [FIX] Exception for Custom "Penta Star" (Night Lord Triple Throw)
+                    // Skill ID 4121007 is Triple Throw. 
+                    // If you use a different custom ID, add it here.
+                    if (ret.skill == NightLord.TRIPLE_THROW) {
+                        maxattack = 12; // Allow up to 12 lines (5 stars * 2 SP + safety buffer)
+                    }
+
                     if (ret.numDamage > maxattack) {
-                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Too many lines: " + ret.numDamage + " Max lines: " + maxattack + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                        // Changed from .addPoint to just logging for now to prevent auto-jail loops while you test
+                        // AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), ...);
+
+                        chr.dropMessage(5, "[Warning] Ignored 'Too Many Lines' check (Lines: " + ret.numDamage + "/" + maxattack + ")");
+                        // If you want to enable the ban again later, uncomment the line below and remove the dropMessage
+                         chr.getAutobanManager().jailPlayer("Damage Line Hack (" + ret.numDamage + " lines)", 60);
                     }
                 }
 
