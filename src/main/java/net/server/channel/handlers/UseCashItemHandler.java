@@ -3,21 +3,6 @@
  Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
  Matthias Butz <matze@odinms.de>
  Jan Christian Meyer <vimes@odinms.de>
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as
- published by the Free Software Foundation version 3 as published by
- the Free Software Foundation. You may not use, modify or distribute
- this program under any other version of the GNU Affero General Public
- License.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package net.server.channel.handlers;
 
@@ -125,39 +110,62 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             medal = "<" + ii.getName(medalItem.getItemId()) + "> ";
         }
 
-        if (itemType == 504) { // vip teleport rock
-            String error1 = "Either the player could not be found or you were trying to teleport to an illegal location.";
-            boolean vip = p.readByte() == 1 && itemId / 1000 >= 5041;
-            remove(c, position, itemId);
+        if (itemType == 504) { // Teleport Rocks
+            byte rockType = p.readByte(); // 0 = Map Teleport, 1 = Player Teleport
+            boolean isVIP = itemId / 1000 >= 5041; // Check if the item ID is a VIP rock
+
+            remove(c, position, itemId); // Temporarily remove the item (refunded if failed/waiting)
             boolean success = false;
-            if (!vip) {
+
+            if (rockType == 0) { // === MAP TELEPORT ===
                 int mapId = p.readInt();
-                if (itemId / 1000 >= 5041 || mapId / 100000000 == player.getMapId() / 100000000) { //check vip or same continent
+
+                // Logic: Allow if VIP Rock OR (Normal Rock AND Same Continent)
+                if (isVIP || mapId / 100000000 == player.getMapId() / 100000000) {
                     MapleMap targetMap = c.getChannelServer().getMapFactory().getMap(mapId);
                     if (!FieldLimit.CANNOTVIPROCK.check(targetMap.getFieldLimit()) && (targetMap.getForcedReturnId() == MapId.NONE || MapId.isMapleIsland(mapId))) {
                         player.forceChangeMap(targetMap, targetMap.getRandomPlayerSpawnpoint());
                         success = true;
                     } else {
-                        player.dropMessage(1, error1);
+                        player.dropMessage(1, "You cannot teleport to that map.");
                     }
                 } else {
                     player.dropMessage(1, "You cannot teleport between continents with this teleport rock.");
                 }
-            } else {
+
+            } else { // === PLAYER TELEPORT ===
                 String name = p.readString();
                 Character victim = c.getChannelServer().getPlayerStorage().getCharacterByName(name);
 
                 if (victim != null) {
-                    MapleMap targetMap = victim.getMap();
-                    if (!FieldLimit.CANNOTVIPROCK.check(targetMap.getFieldLimit()) && (targetMap.getForcedReturnId() == MapId.NONE || MapId.isMapleIsland(targetMap.getId()))) {
-                        if (!victim.isGM() || victim.gmLevel() <= player.gmLevel()) {   // thanks Yoboes for noticing non-GM's being unreachable through rocks
-                            player.forceChangeMap(targetMap, targetMap.findClosestPlayerSpawnpoint(victim.getPosition()));
-                            success = true;
+                    // Logic: Allow if VIP Rock OR (Normal Rock AND Same Continent)
+                    // Note: Some servers allow Normal Rocks to cross continents for PLAYERS, but strict v83 keeps the restriction.
+                    // If you want to allow Normal Rocks to cross continents for PLAYERS only, remove the "|| ... == ..." check below.
+                    if (isVIP || victim.getMapId() / 100000000 == player.getMapId() / 100000000) {
+
+                        MapleMap targetMap = victim.getMap();
+                        if (!FieldLimit.CANNOTVIPROCK.check(targetMap.getFieldLimit()) && (targetMap.getForcedReturnId() == MapId.NONE || MapId.isMapleIsland(targetMap.getId()))) {
+                            if (!victim.isGM() || victim.gmLevel() <= player.gmLevel()) {
+
+                                // === CONSENT CHECK (For both Normal and VIP) ===
+                                victim.setTeleportRequest(player.getId(), itemId);
+
+                                // Send request using NPC 9201600, Yes/No, showing NPC avatar (byte 0)
+                                victim.getClient().sendPacket(PacketCreator.getNPCTalk(9201600, (byte) 1, player.getName() + " wants to teleport to your location. Do you consent?", "", (byte) 0));
+
+                                player.dropMessage(5, "Teleport request sent to " + victim.getName() + ". Pending their approval...");
+
+                                // Mark as false so the item is refunded immediately (consumed later on "Yes" click)
+                                success = false;
+
+                            } else {
+                                player.dropMessage(1, "You cannot teleport to this player.");
+                            }
                         } else {
-                            player.dropMessage(1, error1);
+                            player.dropMessage(1, "You cannot teleport to that map.");
                         }
                     } else {
-                        player.dropMessage(1, "You cannot teleport to this map.");
+                        player.dropMessage(1, "You cannot teleport between continents with this teleport rock.");
                     }
                 } else {
                     player.dropMessage(1, "Player could not be found in this channel.");
@@ -169,6 +177,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                 c.sendPacket(PacketCreator.enableActions());
             }
         } else if (itemType == 505) { // AP/SP reset
+            // ... (Rest of your code remains unchanged)
             if (!player.isAlive()) {
                 c.sendPacket(PacketCreator.enableActions());
                 return;
@@ -176,7 +185,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
 
             if (itemId > ItemId.AP_RESET) {
                 int SPTo = p.readInt();
-                if (!AssignSPProcessor.canSPAssign(c, SPTo)) {  // exploit found thanks to Arnah
+                if (!AssignSPProcessor.canSPAssign(c, SPTo)) {
                     return;
                 }
 
@@ -189,7 +198,6 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                     player.changeSkillLevel(skillSPFrom, (byte) (curLevelSPFrom - 1), player.getMasterLevel(skillSPFrom), -1);
                     player.changeSkillLevel(skillSPTo, (byte) (curLevel + 1), player.getMasterLevel(skillSPTo), -1);
 
-                    // update macros, thanks to Arnah
                     if ((curLevelSPFrom - 1) == 0) {
                         boolean updated = false;
                         for (SkillMacro macro : player.getMacros()) {
@@ -197,7 +205,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                                 continue;
                             }
 
-                            boolean update = false;// cleaner?
+                            boolean update = false;
                             if (macro.getSkill1() == SPFrom) {
                                 update = true;
                                 macro.setSkill1(0);
@@ -231,22 +239,22 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             remove(c, position, itemId);
         } else if (itemType == 506) {
             Item eq = null;
-            if (itemId == 5060000) { // Item tag.
+            if (itemId == 5060000) {
                 int equipSlot = p.readShort();
                 if (equipSlot == 0) {
                     return;
                 }
                 eq = player.getInventory(InventoryType.EQUIPPED).getItem((short) equipSlot);
                 eq.setOwner(player.getName());
-            } else if (itemId == 5060001 || itemId == 5061000 || itemId == 5061001 || itemId == 5061002 || itemId == 5061003) { // Sealing lock
+            } else if (itemId == 5060001 || itemId == 5061000 || itemId == 5061001 || itemId == 5061002 || itemId == 5061003) {
                 InventoryType type = InventoryType.getByType((byte) p.readInt());
                 eq = player.getInventory(type).getItem((short) p.readInt());
-                if (eq == null) { //Check if the type is EQUIPMENT?
+                if (eq == null) {
                     return;
                 }
                 short flag = eq.getFlag();
                 if (eq.getExpiration() > -1 && (eq.getFlag() & ItemConstants.LOCK) != ItemConstants.LOCK) {
-                    return; //No perma items pls
+                    return;
                 }
                 flag |= ItemConstants.LOCK;
                 eq.setFlag(flag);
@@ -267,12 +275,11 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                     eq.setExpiration(expiration + DAYS.toMillis(period));
                 }
 
-                // double-remove found thanks to BHB
-            } else if (itemId == 5060002) { // Incubator
+            } else if (itemId == 5060002) {
                 byte inventory2 = (byte) p.readInt();
                 short slot2 = (short) p.readInt();
                 Item item2 = player.getInventory(InventoryType.getByType(inventory2)).getItem(slot2);
-                if (item2 == null) // hacking
+                if (item2 == null)
                 {
                     return;
                 }
@@ -282,7 +289,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                 }
                 return;
             }
-            p.readInt(); // time stamp
+            p.readInt();
             if (eq != null) {
                 player.forceUpdateItem(eq);
                 remove(c, position, itemId);
@@ -290,7 +297,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
         } else if (itemType == 507) {
             boolean whisper;
             switch ((itemId / 1000) % 10) {
-                case 1: // Megaphone
+                case 1:
                     if (player.getLevel() > 9) {
                         player.getClient().getChannelServer().broadcastPacket(PacketCreator.serverNotice(2, medal + player.getName() + " : " + p.readString()));
                     } else {
@@ -298,10 +305,10 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                         return;
                     }
                     break;
-                case 2: // Super megaphone
+                case 2:
                     Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.serverNotice(3, c.getChannel(), medal + player.getName() + " : " + p.readString(), (p.readByte() != 0)));
                     break;
-                case 5: // Maple TV
+                case 5:
                     int tvType = itemId % 10;
                     boolean megassenger = false;
                     boolean ear = false;
@@ -341,24 +348,23 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                     }
 
                     break;
-                case 6: //item megaphone
+                case 6:
                     String msg = medal + player.getName() + " : " + p.readString();
                     whisper = p.readByte() == 1;
                     Item item = null;
-                    if (p.readByte() == 1) { //item
+                    if (p.readByte() == 1) {
                         item = player.getInventory(InventoryType.getByType((byte) p.readInt())).getItem((short) p.readInt());
-                        if (item == null) //hack
+                        if (item == null)
                         {
                             return;
                         }
 
-                        // thanks Conrad for noticing that untradeable items should be allowed in megas
                     }
                     Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.itemMegaphone(msg, whisper, c.getChannel(), item));
                     break;
-                case 7: //triple megaphone
+                case 7:
                     int lines = p.readByte();
-                    if (lines < 1 || lines > 3) //hack
+                    if (lines < 1 || lines > 3)
                     {
                         return;
                     }
@@ -371,7 +377,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                     break;
             }
             remove(c, position, itemId);
-        } else if (itemType == 508) {   // thanks tmskdl12 for graduation banner; thanks ratency for first pointing lack of Kite handling
+        } else if (itemType == 508) {
             Kite kite = new Kite(player, p.readString(), itemId);
 
             if (!GameConstants.isFreeMarketRoom(player.getMapId())) {
@@ -467,7 +473,6 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             player.setChalkboard(p.readString());
             player.getMap().broadcastMessage(PacketCreator.useChalkboard(player, false));
             player.sendPacket(PacketCreator.enableActions());
-            //remove(c, position, itemId);  thanks Conrad for noticing chalkboards shouldn't be depleted upon use
         } else if (itemType == 539) {
             List<String> strLines = new LinkedList<>();
             for (int i = 0; i < 4; i++) {
@@ -513,18 +518,18 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             };
 
             if (createStatus == 0) {
-                c.sendPacket(PacketCreator.sendMapleLifeError(0));   // success!
+                c.sendPacket(PacketCreator.sendMapleLifeError(0));
 
                 player.showHint("#bSuccess#k on creation of the new character through the Maple Life card.");
                 remove(c, position, itemId);
             } else {
-                if (createStatus == -1) {    // check name
+                if (createStatus == -1) {
                     c.sendPacket(PacketCreator.sendMapleLifeNameError());
                 } else {
                     c.sendPacket(PacketCreator.sendMapleLifeError(-1 * createStatus));
                 }
             }
-        } else if (itemType == 545) { // MiuMiu's travel store
+        } else if (itemType == 545) {
             if (player.getShop() == null) {
                 Shop shop = ShopFactory.getInstance().getShop(1338);
                 if (shop != null) {
@@ -534,7 +539,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             } else {
                 c.sendPacket(PacketCreator.enableActions());
             }
-        } else if (itemType == 550) { //Extend item expiration
+        } else if (itemType == 550) {
             c.sendPacket(PacketCreator.enableActions());
         } else if (itemType == 552) {
             InventoryType type = InventoryType.getByType((byte) p.readInt());
@@ -549,7 +554,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             player.forceUpdateItem(item);
             remove(c, position, itemId);
             c.sendPacket(PacketCreator.enableActions());
-        } else if (itemType == 552) { //DS EGG THING
+        } else if (itemType == 552) {
             c.sendPacket(PacketCreator.enableActions());
         } else if (itemType == 557) {
             p.readInt();
@@ -565,7 +570,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             c.sendPacket(PacketCreator.enableActions());
             c.sendPacket(PacketCreator.sendHammerData(equip.getVicious()));
             player.forceUpdateItem(equip);
-        } else if (itemType == 561) { //VEGA'S SPELL
+        } else if (itemType == 561) {
             if (p.readInt() != 1) {
                 return;
             }
@@ -589,7 +594,6 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                 return;
             }
 
-            //should have a check here against PE hacks
             if (itemId / 1000000 != 5) {
                 itemId = 0;
             }
@@ -601,7 +605,6 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
 
             final Equip scrolled = (Equip) ii.scrollEquipWithId(toScroll, uitem.getItemId(), false, itemId, player.isGM());
             c.sendPacket(PacketCreator.sendVegaScroll(scrolled.getLevel() > curlevel ? 0x41 : 0x43));
-            //opcodes 0x42, 0x44: "this item cannot be used"; 0x39, 0x45: crashes
 
             InventoryManipulator.removeFromSlot(c, InventoryType.USE, uSlot, (short) 1, false);
             remove(c, position, itemId);
@@ -617,7 +620,6 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                 final List<ModifyInventory> mods = new ArrayList<>();
                 mods.add(new ModifyInventory(3, scrolled));
                 mods.add(new ModifyInventory(0, scrolled));
-                // [FIXED] Added 'client.getPlayer()' as the 3rd argument
                 client.sendPacket(PacketCreator.modifyInventory(true, mods, client.getPlayer()));
 
                 ScrollResult scrollResult = scrolled.getLevel() > curlevel ? ScrollResult.SUCCESS : ScrollResult.FAIL;

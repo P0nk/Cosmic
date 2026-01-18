@@ -373,6 +373,20 @@ public class Character extends AbstractCharacterObject {
     public static final Set<Integer> DAMAGE_TRACKED_MAPS = new HashSet<>(Arrays.asList(280030000));// Zakum Altar
     private boolean isSaveInProgress = false;  // Add this variable in your Character class
 
+    // Add these variables at the top of Character.java
+    private int teleportRequesterId = -1;
+    private int teleportRockId = -1;
+
+    // Add this helper method
+    public void setTeleportRequest(int requesterId, int rockId) {
+        this.teleportRequesterId = requesterId;
+        this.teleportRockId = rockId;
+    }
+
+    // Add getters if you like, or access directly if package-private
+    public int getTeleportRequesterId() { return teleportRequesterId; }
+    public int getTeleportRockId() { return teleportRockId; }
+
     // Monster Book Passive Stats
     private int passiveWatk = 0;
     private int passiveMatk = 0;

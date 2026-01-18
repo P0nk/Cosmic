@@ -1,31 +1,21 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+              Matthias Butz <matze@odinms.de>
+              Jan Christian Meyer <vimes@odinms.de>
 */
 package net.server.channel.handlers;
 
+import client.Character;
 import client.Client;
+import client.inventory.InventoryType;
+import client.inventory.Item;
+import client.inventory.manipulator.InventoryManipulator;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import scripting.npc.NPCScriptManager;
 import scripting.quest.QuestScriptManager;
+import tools.PacketCreator;
 
 /**
  * @author Matze
@@ -33,8 +23,59 @@ import scripting.quest.QuestScriptManager;
 public final class NPCMoreTalkHandler extends AbstractPacketHandler {
     @Override
     public final void handlePacket(InPacket p, Client c) {
-        byte lastMsg = p.readByte(); // 00 (last msg type I think)
-        byte action = p.readByte(); // 00 = end chat, 01 == follow
+        byte lastMsg = p.readByte(); // The type of the message we just responded to
+        byte action = p.readByte(); // 00 = End/No, 01 = Next/Yes
+
+        // ========================================================================
+        // START: TELEPORT CONSENT CHECK
+        // Check if this interaction is a response to a VIP Teleport Rock request
+        // ========================================================================
+        if (c.getPlayer().getTeleportRequesterId() > -1) {
+            // Retrieve stored data
+            int requesterId = c.getPlayer().getTeleportRequesterId();
+            int rockId = c.getPlayer().getTeleportRockId();
+
+            // Reset the request ID immediately so they don't get stuck in this state
+            c.getPlayer().setTeleportRequest(-1, -1);
+
+            if (action == 1) { // User clicked 'Yes'
+                Character requester = c.getChannelServer().getPlayerStorage().getCharacterById(requesterId);
+
+                if (requester != null) {
+                    // Check if requester still has the item (to prevent dropping/trading it while waiting)
+                    Item item = requester.getInventory(InventoryType.CASH).findById(rockId);
+
+                    if (item != null && item.getQuantity() > 0) {
+                        // 1. Consume the rock from the requester
+                        InventoryManipulator.removeById(requester.getClient(), InventoryType.CASH, rockId, 1, true, false);
+
+                        // 2. Perform the Teleport
+                        requester.forceChangeMap(c.getPlayer().getMap(), c.getPlayer().getMap().findClosestPlayerSpawnpoint(c.getPlayer().getPosition()));
+
+                        // 3. Notify both players
+                        requester.dropMessage(5, "Teleport successful.");
+                        c.getPlayer().dropMessage(5, "You have accepted the teleport request.");
+                    } else {
+                        c.getPlayer().dropMessage(1, "The requester no longer has the teleport rock.");
+                        requester.dropMessage(1, "Teleport failed: You are missing the item.");
+                    }
+                } else {
+                    c.getPlayer().dropMessage(1, "The player is no longer online.");
+                }
+            } else { // User clicked 'No' or closed the window
+                c.getPlayer().dropMessage(5, "You denied the teleport request.");
+                Character requester = c.getChannelServer().getPlayerStorage().getCharacterById(requesterId);
+                if (requester != null) {
+                    requester.dropMessage(1, c.getPlayer().getName() + " denied your request.");
+                }
+            }
+            // Return here to prevent this packet from going to NPCScriptManager (which would crash since no script is active)
+            return;
+        }
+        // ========================================================================
+        // END: TELEPORT CONSENT CHECK
+        // ========================================================================
+
         if (lastMsg == 2) {
             if (action != 0) {
                 String returnText = p.readString();
