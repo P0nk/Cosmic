@@ -148,10 +148,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     mobCount = 15;
                 } else if (attack.skill == Aran.HIDDEN_FULL_DOUBLE || attack.skill == Aran.HIDDEN_FULL_TRIPLE || attack.skill == Aran.HIDDEN_OVER_DOUBLE || attack.skill == Aran.HIDDEN_OVER_TRIPLE) {
                     mobCount = 15;
-                } else if (attack.skill == FPWizard.POISON_BREATH) {
+                } else if (attack.skill == FPWizard.POISON_BREATH||attack.skill == ILWizard.COLD_BEAM) {
                 // [FIX] Exception for F/P Wizard - Poison Breath
                 // Causes false positives when hitting multiple mobs
-                mobCount = 15;
+                mobCount = 6;
             }
 
                 // STRICT CHECK: Does packet claim more hits than skill allows?
@@ -204,7 +204,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     // We check squared distance to avoid expensive square root math.
                     // 2,500,000 = ~1580 pixels (Nearly 2x the width of the game screen).
                     double distSq = player.getPosition().distanceSq(monster.getPosition());
-                    double thresholdSq = 2500000.0;
+                    double thresholdSq = 3500000.0;
 
                     // 1. Job Buffers (Give ranged classes slightly more room)
                     if (attack.ranged || attack.magic) {
@@ -219,11 +219,20 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     skillId == FPArchMage.METEOR_SHOWER ||
                                     skillId == ILArchMage.BLIZZARD ||
                                     skillId == DragonKnight.DRAGON_ROAR ||
+                                    skillId == Ranger.ARROW_RAIN ||
+                                    skillId == WindArcher.ARROW_RAIN ||
+                                    skillId == Sniper.ARROW_ERUPTION ||
                                     skillId == Marksman.SNIPE ||
                                     skillId == Crusader.SHOUT ||
                                     skillId == Shadower.SHADOW_VEIL ||
                                     skillId == SuperGM.SUPER_DRAGON_ROAR ||
-                                    skillId == Aran.COMBO_TEMPEST;
+                                    skillId == ILArchMage.CHAIN_LIGHTNING ||
+                                    skillId == DarkKnight.RUSH ||
+                                    skillId == Hero.RUSH ||
+                                    skillId == Paladin.RUSH ||
+                                    skillId == Paladin.HEAVENS_HAMMER ||
+                                    skillId == Aran.COMBO_TEMPEST
+                            ;
 
 
                     // 3. The Check
