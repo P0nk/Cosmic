@@ -870,6 +870,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     if (ret.skill == NightLord.TRIPLE_THROW) {
                         maxattack = 12; // Allow up to 12 lines (5 stars * 2 SP + safety buffer)
                     }
+                    if (ret.skill == Hermit.AVENGER) {
+                        maxattack = 4; // Allow up to 4 lines (2 stars * 2 SP)
+                    }
 
 
                     if (ret.numDamage > maxattack) {
