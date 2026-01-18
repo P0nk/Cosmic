@@ -1370,7 +1370,7 @@ public class MapleMap {
                             // Verify player is still online/in map before opening
                             if (chr != null && chr.getClient() != null) {
                                 // IMPORTANT: Ensure this ID matches your script filename (scripts/npc/9901000.js)
-                                scripting.npc.NPCScriptManager.getInstance().start(chr.getClient(), 9901000, chr);
+                                scripting.npc.NPCScriptManager.getInstance().start(chr.getClient(), 9010000, chr);
                             }
                         }
                     }, 500); // 500ms delay
