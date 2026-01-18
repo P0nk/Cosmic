@@ -207,8 +207,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     double thresholdSq = 4500000.0;
 
                     // 1. Job Buffers (Give ranged classes slightly more room)
-                    if (attack.ranged || attack.magic) {
+                    if (attack.magic) {
                         thresholdSq += 2000000.0; // Adds ~300px more range tolerance
+                    }
+
+                    if (attack.ranged) {
+                        thresholdSq += 5500000.0; // Adds ~300px more range tolerance
                     }
 
                     // 2. Skill Exemptions (Full Map Attacks & Long Range Snipes)
