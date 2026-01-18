@@ -86,7 +86,7 @@ public enum ItemFactory {
         saveItems(items, bundlesList, null, id, con);
     }
 
-    // [FIX] New Overload to support Price List for Merchants
+    // New Overload to support Price List for Merchants
     public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, List<Integer> priceList, int id, Connection con) throws SQLException {
         if (value != 6) {
             saveItemsCommon(items, id, con);
@@ -155,7 +155,7 @@ public enum ItemFactory {
                     while (rs.next()) {
                         Integer cid = rs.getInt("characterid");
                         Equip equip = loadEquipFromResultSet(rs);
-                        equip.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                        equip.setUniqueId(rs.getInt("inventoryitemid"));
                         items.add(new Pair<>(equip, cid));
                     }
                 }
@@ -187,7 +187,7 @@ public enum ItemFactory {
 
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
                             Equip equip = loadEquipFromResultSet(rs);
-                            equip.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                            equip.setUniqueId(rs.getInt("inventoryitemid"));
                             items.add(new Pair<>(equip, mit));
                         } else {
                             int petid = rs.getInt("petid");
@@ -196,7 +196,7 @@ public enum ItemFactory {
                             }
 
                             Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) rs.getInt("quantity"), petid);
-                            item.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                            item.setUniqueId(rs.getInt("inventoryitemid"));
                             item.setOwner(rs.getString("owner"));
                             item.setExpiration(rs.getLong("expiration"));
                             item.setGiftFrom(rs.getString("giftFrom"));
@@ -357,7 +357,7 @@ public enum ItemFactory {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        // We fetch bundles just to ensure validity, but we don't multiply quantity here anymore
+                        // We fetch bundles just to ensure validity
                         short bundles = 0;
                         try (PreparedStatement psBundle = con.prepareStatement("SELECT `bundles` FROM `inventorymerchant` WHERE `inventoryitemid` = ?")) {
                             psBundle.setInt(1, rs.getInt("inventoryitemid"));
@@ -372,7 +372,10 @@ public enum ItemFactory {
 
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
                             Equip equip = loadEquipFromResultSet(rs);
+
+                            // Set the Unique ID so HiredMerchant can match it to a price
                             equip.setUniqueId(rs.getInt("inventoryitemid"));
+
                             items.add(new Pair<>(equip, mit));
                         } else {
                             if (bundles > 0) {
@@ -381,11 +384,11 @@ public enum ItemFactory {
                                     petid = -1;
                                 }
 
-                                // [FIX] Use raw quantity. Do NOT multiply by bundles here.
-                                // HiredMerchant.loadFromPersistence will handle the logic using the bundles value from DB.
                                 Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) rs.getInt("quantity"), petid);
 
+                                // Set the Unique ID so HiredMerchant can match it to a price
                                 item.setUniqueId(rs.getInt("inventoryitemid"));
+
                                 item.setOwner(rs.getString("owner"));
                                 item.setExpiration(rs.getLong("expiration"));
                                 item.setGiftFrom(rs.getString("giftFrom"));
@@ -400,13 +403,12 @@ public enum ItemFactory {
         return items;
     }
 
-    private static final int MERCHANT_BCOIN_ITEM_ID = 3020002;
-    private static final int MERCHANT_NXT_ITEM_ID   = 3020001;
-
+    // [FIX] Update-First Logic for Merchant Saving
+    // Prevents ID churning by updating existing records instead of deleting/re-inserting.
     private void saveItemsMerchant(
             List<Pair<Item, InventoryType>> items,
             List<Short> bundlesList,
-            List<Integer> priceList, // [FIX] Added Price List
+            List<Integer> priceList,
             int id,
             Connection con
     ) throws SQLException {
@@ -414,136 +416,167 @@ public enum ItemFactory {
         Lock lock = locks[id % lockCount];
         lock.lock();
         try {
-            // 1) Delete inventorymerchant rows EXCEPT currency items
-            try (PreparedStatement ps = con.prepareStatement(
-                    "DELETE im FROM inventorymerchant im " +
-                            "INNER JOIN inventoryitems ii ON ii.inventoryitemid = im.inventoryitemid " +
-                            "WHERE im.characterid = ? " +
-                            "AND NOT (ii.itemid IN (?, ?))")) {
+            // 1. Get list of ALL current DB IDs for this merchant (to find deletions later)
+            List<Integer> currentDbIds = new ArrayList<>();
+            try (PreparedStatement ps = con.prepareStatement("SELECT inventoryitemid FROM inventoryitems WHERE type = 6 AND characterid = ?")) {
                 ps.setInt(1, id);
-                ps.setInt(2, MERCHANT_BCOIN_ITEM_ID);
-                ps.setInt(3, MERCHANT_NXT_ITEM_ID);
-                ps.executeUpdate();
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        currentDbIds.add(rs.getInt("inventoryitemid"));
+                    }
+                }
             }
 
-            // 2) Delete inventoryitems + inventoryequipment EXCEPT currency items
-            StringBuilder query = new StringBuilder();
-            query.append("DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` ")
-                    .append("LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) ")
-                    .append("WHERE `type` = ? AND `")
-                    .append(account ? "accountid" : "characterid")
-                    .append("` = ? AND NOT (`itemid` IN (?, ?))");
-
-            try (PreparedStatement ps = con.prepareStatement(query.toString())) {
-                ps.setInt(1, value);
-                ps.setInt(2, id);
-                ps.setInt(3, MERCHANT_BCOIN_ITEM_ID);
-                ps.setInt(4, MERCHANT_NXT_ITEM_ID);
-                ps.executeUpdate();
-            }
-
-            // 3) Re-insert merchant items
             int i = 0;
             for (Pair<Item, InventoryType> pair : items) {
-                final Item item = pair.getLeft();
-                final InventoryType mit = pair.getRight();
+                Item item = pair.getLeft();
+                InventoryType mit = pair.getRight();
 
-                // [FIX] Safely get bundles and price
-                final short bundles = (bundlesList != null && i < bundlesList.size()) ? bundlesList.get(i) : 1;
-                final int price = (priceList != null && i < priceList.size()) ? priceList.get(i) : 0;
+                short bundles = (bundlesList != null && i < bundlesList.size()) ? bundlesList.get(i) : 1;
+                int price = (priceList != null && i < priceList.size()) ? priceList.get(i) : 0;
                 i++;
 
-                final int inventoryItemId;
-
-                // --- inventoryitems ---
-                try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO inventoryitems VALUES " +
-                                "(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-
-                    ps.setInt(1, value);
-                    ps.setString(2, account ? null : String.valueOf(id));
-                    ps.setString(3, account ? String.valueOf(id) : null);
-                    ps.setInt(4, item.getItemId());
-                    ps.setInt(5, mit.getType());
-                    ps.setInt(6, item.getPosition());
-                    ps.setInt(7, item.getQuantity());
-                    ps.setString(8, item.getOwner());
-                    ps.setInt(9, item.getPetId());
-                    ps.setInt(10, item.getFlag());
-                    ps.setLong(11, item.getExpiration());
-                    ps.setString(12, item.getGiftFrom());
-                    ps.executeUpdate();
-
-                    try (ResultSet rs = ps.getGeneratedKeys()) {
-                        if (!rs.next()) {
-                            throw new RuntimeException("Failed to insert inventoryitems");
-                        }
-                        inventoryItemId = rs.getInt(1);
+                // If the item has a UniqueID, it *might* already be in the DB.
+                boolean exists = false;
+                if (item.getUniqueId() > 0) {
+                    // Check if this ID is in our list of current DB IDs
+                    if (currentDbIds.contains(item.getUniqueId())) {
+                        exists = true;
+                        currentDbIds.remove(Integer.valueOf(item.getUniqueId())); // Mark as processed
                     }
                 }
 
-                // --- inventorymerchant ---
-                // [FIX] Insert PRICE column
-                try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO inventorymerchant (inventorymerchantid, inventoryitemid, characterid, bundles, price) VALUES (DEFAULT, ?, ?, ?, ?)")) {
-                    ps.setInt(1, inventoryItemId);
-                    ps.setInt(2, id);
-                    ps.setInt(3, bundles);
-                    ps.setInt(4, price);
-                    ps.executeUpdate();
-                }
-
-                // --- inventoryequipment (if equip) ---
-                if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                    Equip equip = (Equip) item;
+                if (exists) {
+                    // --- OPTION A: UPDATE EXISTING ---
+                    // The ID stays the same. We just update the fields.
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "UPDATE inventoryitems SET quantity = ?, position = ?, owner = ?, flag = ?, expiration = ? WHERE inventoryitemid = ?")) {
+                        ps.setInt(1, item.getQuantity());
+                        ps.setInt(2, item.getPosition());
+                        ps.setString(3, item.getOwner());
+                        ps.setInt(4, item.getFlag());
+                        ps.setLong(5, item.getExpiration());
+                        ps.setInt(6, item.getUniqueId());
+                        ps.executeUpdate();
+                    }
 
                     try (PreparedStatement ps = con.prepareStatement(
-                            "INSERT INTO `inventoryequipment` (" +
-                                    "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
-                                    "`watk`, `matk`, `wdef`, `mdef`, `acc`, `avoid`, `hands`, `speed`, `jump`, `locked`, " +
-                                    "`vicious`, `itemlevel`, `itemexp`, `ringid`, `reqlevel`" +
-                                    ") VALUES (" +
-                                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
-                                    ")")) {
-
-
-                        ps.setInt(1, inventoryItemId);
-                        ps.setInt(2, equip.getUpgradeSlots());
-                        ps.setInt(3, equip.getLevel());
-                        ps.setInt(4, equip.getStr());
-                        ps.setInt(5, equip.getDex());
-                        ps.setInt(6, equip.getInt());
-                        ps.setInt(7, equip.getLuk());
-                        ps.setInt(8, equip.getHp());
-                        ps.setInt(9, equip.getMp());
-                        ps.setInt(10, equip.getWatk());
-                        ps.setInt(11, equip.getMatk());
-                        ps.setInt(12, equip.getWdef());
-                        ps.setInt(13, equip.getMdef());
-                        ps.setInt(14, equip.getAcc());
-                        ps.setInt(15, equip.getAvoid());
-                        ps.setInt(16, equip.getHands());
-                        ps.setInt(17, equip.getSpeed());
-                        ps.setInt(18, equip.getJump());
-                        ps.setInt(19, 0); // locked
-                        ps.setInt(20, equip.getVicious());
-                        ps.setInt(21, equip.getItemLevel());
-                        ps.setInt(22, equip.getItemExp());
-                        ps.setInt(23, equip.getRingId());
-                        // NEW: reqlevel (nullable)
-                        short r = equip.getReqLevelOverride();
-                        if (r > 0) {
-                            ps.setShort(24, r);
-                        } else {
-                            ps.setNull(24, Types.SMALLINT);
-                        }
+                            "UPDATE inventorymerchant SET bundles = ?, price = ? WHERE inventoryitemid = ?")) {
+                        ps.setShort(1, bundles);
+                        ps.setInt(2, price);
+                        ps.setInt(3, item.getUniqueId());
                         ps.executeUpdate();
+                    }
+                } else {
+                    // --- OPTION B: INSERT NEW ---
+                    // This item is new to the shop. Generate a NEW ID.
+                    long newUniqueId = -1;
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO inventoryitems (type, characterid, itemid, inventorytype, position, quantity, owner, petid, flag, expiration, giftFrom) " +
+                                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                        ps.setInt(1, 6);
+                        ps.setInt(2, id);
+                        ps.setInt(3, item.getItemId());
+                        ps.setInt(4, mit.getType());
+                        ps.setInt(5, item.getPosition());
+                        ps.setInt(6, item.getQuantity());
+                        ps.setString(7, item.getOwner());
+                        ps.setInt(8, item.getPetId());
+                        ps.setInt(9, item.getFlag());
+                        ps.setLong(10, item.getExpiration());
+                        ps.setString(11, item.getGiftFrom());
+                        ps.executeUpdate();
+
+                        try (ResultSet rs = ps.getGeneratedKeys()) {
+                            if (rs.next()) newUniqueId = rs.getLong(1);
+                        }
+                    }
+
+                    if (newUniqueId != -1) {
+                        item.setUniqueId((int) newUniqueId); // Update memory object
+
+                        try (PreparedStatement ps = con.prepareStatement(
+                                "INSERT INTO inventorymerchant (inventoryitemid, characterid, bundles, price) VALUES (?, ?, ?, ?)")) {
+                            ps.setLong(1, newUniqueId);
+                            ps.setInt(2, id);
+                            ps.setShort(3, bundles);
+                            ps.setInt(4, price);
+                            ps.executeUpdate();
+                        }
+
+                        if (mit == InventoryType.EQUIP || mit == InventoryType.EQUIPPED) {
+                            saveEquipData((Equip) item, newUniqueId, con); // Use helper for huge insert
+                        }
                     }
                 }
             }
+
+            // [STEP 3] CLEANUP
+            // Any ID left in `currentDbIds` was in the DB but is NOT in the current shop list.
+            // This means it was sold or removed. We must delete it.
+            for (Integer removedId : currentDbIds) {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM inventorymerchant WHERE inventoryitemid = ?")) {
+                    ps.setInt(1, removedId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM inventoryitems WHERE inventoryitemid = ?")) {
+                    ps.setInt(1, removedId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM inventoryequipment WHERE inventoryitemid = ?")) {
+                    ps.setInt(1, removedId);
+                    ps.executeUpdate();
+                }
+            }
+
         } finally {
             lock.unlock();
+        }
+    }
+
+    // Helper for Equips (Keep code clean)
+    private void saveEquipData(Equip equip, long uniqueId, Connection con) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT INTO inventoryequipment (" +
+                        "`inventoryitemid`, `upgradeslots`, `level`, `str`, `dex`, `int`, `luk`, `hp`, `mp`, " +
+                        "`watk`, `matk`, `wdef`, `mdef`, `acc`, `avoid`, `hands`, `speed`, `jump`, `locked`, " +
+                        "`vicious`, `itemlevel`, `itemexp`, `ringid`, `reqlevel`" +
+                        ") VALUES (" +
+                        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
+                        ")")) {
+
+            ps.setLong(1, uniqueId);
+            ps.setInt(2, equip.getUpgradeSlots());
+            ps.setInt(3, equip.getLevel());
+            ps.setInt(4, equip.getStr());
+            ps.setInt(5, equip.getDex());
+            ps.setInt(6, equip.getInt());
+            ps.setInt(7, equip.getLuk());
+            ps.setInt(8, equip.getHp());
+            ps.setInt(9, equip.getMp());
+            ps.setInt(10, equip.getWatk());
+            ps.setInt(11, equip.getMatk());
+            ps.setInt(12, equip.getWdef());
+            ps.setInt(13, equip.getMdef());
+            ps.setInt(14, equip.getAcc());
+            ps.setInt(15, equip.getAvoid());
+            ps.setInt(16, equip.getHands());
+            ps.setInt(17, equip.getSpeed());
+            ps.setInt(18, equip.getJump());
+            ps.setInt(19, 0); // locked
+            ps.setInt(20, equip.getVicious());
+            ps.setInt(21, equip.getItemLevel());
+            ps.setInt(22, equip.getItemExp());
+            ps.setInt(23, equip.getRingId());
+
+            short r = equip.getReqLevelOverride();
+            if (r > 0) {
+                ps.setShort(24, r);
+            } else {
+                ps.setNull(24, Types.SMALLINT);
+            }
+
+            ps.executeUpdate();
         }
     }
 }

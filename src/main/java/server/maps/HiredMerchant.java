@@ -39,8 +39,6 @@ import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.Pair;
 
-
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -58,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.awt.Point;
+
 /**
  * @author XoticStory
  * @author Ronan - concurrency protection
@@ -830,22 +829,19 @@ public class HiredMerchant extends AbstractMapObject {
     public void saveItems(boolean shutdown) throws SQLException {
         List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
         List<Short> bundles = new ArrayList<>();
-        List<Integer> prices = new ArrayList<>(); // [FIX] Added Price List
+        List<Integer> prices = new ArrayList<>();
 
-        synchronized (items) { // Ensure thread safety while reading
+        synchronized (items) {
             for (PlayerShopItem pItems : items) {
-                Item newItem = pItems.getItem(); // Note: Be careful modifying this object directly if it's shared
+                Item newItem = pItems.getItem();
                 short newBundle = pItems.getBundles();
-
-                // It's safer to clone the item to avoid modifying the quantity of the live object
-                // if saveItems is called while the shop is open.
-                // However, following your existing pattern:
+                // Avoid modifying live object quantity directly if possible, but standard flow allows it here
                 newItem.setQuantity(pItems.getItem().getQuantity());
 
                 if (newBundle > 0) {
                     itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
                     bundles.add(newBundle);
-                    prices.add(pItems.getPrice()); // [FIX] Collect Price
+                    prices.add(pItems.getPrice());
                 }
             }
         }
@@ -855,7 +851,7 @@ public class HiredMerchant extends AbstractMapObject {
             con.setAutoCommit(false);
 
             try {
-                // [FIX] Pass 'prices' list to the factory
+                // Pass 'prices' list to the factory
                 ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
                 con.commit();
             } catch (Exception e) {
@@ -1014,10 +1010,6 @@ public class HiredMerchant extends AbstractMapObject {
      * [PERSISTENCE] Saves the merchant to DB during server shutdown.
      * Uses the shared connection from Channel to ensure atomic transaction.
      */
-    /**
-     * [PERSISTENCE] Saves the merchant to DB during server shutdown.
-     * Uses the shared connection from Channel to ensure atomic transaction.
-     */
     public void savePersistence(Connection con) throws SQLException {
         PreparedStatement ps = null;
         try {
@@ -1082,6 +1074,7 @@ public class HiredMerchant extends AbstractMapObject {
             if (ps != null && !ps.isClosed()) ps.close();
         }
     }
+
     public static HiredMerchant loadFromPersistence(net.server.channel.Channel cserv, ResultSet rs) {
         try {
             int ownerId = rs.getInt("ownerid");
@@ -1103,7 +1096,7 @@ public class HiredMerchant extends AbstractMapObject {
 
             // 3. Create Instance
             HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, desc, cserv.getWorld(), cserv.getId(), map, restoredStart);
-            merch.setPosition(new Point(x, y));
+            merch.setPosition(new java.awt.Point(x, y));
 
             // 4. Restore Blacklist
             if (blString != null && !blString.isEmpty()) {
@@ -1112,42 +1105,72 @@ public class HiredMerchant extends AbstractMapObject {
                 }
             }
 
-            // 5. Load Items & Prices
+            // 5. Load Prices (Metadata)
             java.util.Map<Integer, Pair<Integer, Short>> priceInfo = new java.util.HashMap<>();
+            System.out.println("[DEBUG-MERCH] Loading prices for Merchant Owner: " + ownerId);
 
             try (Connection con = DatabaseConnection.getConnection();
                  PreparedStatement ps = con.prepareStatement("SELECT inventoryitemid, price, bundles FROM inventorymerchant WHERE characterid = ?")) {
                 ps.setInt(1, ownerId);
                 try (ResultSet rs2 = ps.executeQuery()) {
                     while (rs2.next()) {
-                        priceInfo.put(rs2.getInt("inventoryitemid"), new Pair<>(rs2.getInt("price"), rs2.getShort("bundles")));
+                        int invId = rs2.getInt("inventoryitemid");
+                        int price = rs2.getInt("price");
+                        short bundles = rs2.getShort("bundles");
+
+                        priceInfo.put(invId, new Pair<>(price, bundles));
+                        System.out.println("[DEBUG-MERCH]  -> Found DB Record: UniqueID=" + invId + " Price=" + price + " Bundles=" + bundles);
                     }
                 }
             }
 
-            List<Pair<Item, InventoryType>> loadedItems = ItemFactory.INVENTORY.loadItems(ownerId, false);
+            // 6. Load Raw Items
+            System.out.println("[DEBUG-MERCH] Loading items from ItemFactory for Owner: " + ownerId);
+            List<Pair<Item, InventoryType>> loadedItems = ItemFactory.MERCHANT.loadItems(ownerId, false);
+            System.out.println("[DEBUG-MERCH]  -> ItemFactory returned " + loadedItems.size() + " total items (including equips/etc).");
+
+            int addedCount = 0;
 
             for (Pair<Item, InventoryType> p : loadedItems) {
                 Item item = p.getLeft();
 
-                // [CRITICAL FIX] Do not load BCoins (3020002) into the shop window.
-                // These are stored revenue and should remain hidden until retrieved via Fredrick/NPC.
-                if (item.getItemId() == 3020002) {
+                int uniqueId = item.getUniqueId(); // This is the critical link
+
+                int itemIdDebug = item.getItemId();
+
+                // Skip BCoins
+                if (itemIdDebug == 3020002) {
+                    System.out.println("[DEBUG-MERCH]  -> Skipping BCoin (Revenue) Item.");
                     continue;
                 }
 
-                int uniqueId = item.getUniqueId();
+                System.out.print("[DEBUG-MERCH]  -> Checking Item: " + itemIdDebug + " (Unique ID: " + uniqueId + ") ... ");
 
                 if (priceInfo.containsKey(uniqueId)) {
                     Pair<Integer, Short> info = priceInfo.get(uniqueId);
-                    PlayerShopItem shopItem = new PlayerShopItem(item, info.getRight(), info.getLeft());
+                    int price = info.getLeft();
+                    short bundles = info.getRight();
+
+                    PlayerShopItem shopItem = new PlayerShopItem(item, bundles, price);
                     merch.addItem(shopItem);
+                    System.out.println("MATCH! Added to shop. (Price: " + price + ")");
+                    addedCount++;
+                } else {
+                    // [FIX] Item exists in DB but missing Price/Bundle info.
+                    // Add it anyway to prevent data loss (it would be deleted on next save otherwise).
+                    // Defaulting to 1 Bundle, Price 0 (Owner should retrieve this item).
+                    System.out.println("NO MATCH in Price Map. Recovering item (Bundles: 1, Price: 0).");
+                    PlayerShopItem shopItem = new PlayerShopItem(item, (short) 1, 0);
+                    merch.addItem(shopItem);
+                    addedCount++;
                 }
             }
 
+            System.out.println("[DEBUG-MERCH] Final Shop Reconstruction: " + addedCount + " items added.");
             return merch;
 
         } catch (Exception e) {
+            System.err.println("[DEBUG-MERCH] CRITICAL ERROR restoring merchant:");
             e.printStackTrace();
             return null;
         }
