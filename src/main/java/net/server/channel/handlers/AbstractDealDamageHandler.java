@@ -900,6 +900,11 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             Monster monster = chr.getMap().getMonsterByOid(mobId); // get monster class
             AttackTarget tgt = entry.getValue(); // get attack details on that monster
 
+            // [FIX] Add this check!
+            if (monster == null) {
+                continue;
+            }
+
             long total = 0; // used to check if damage overflows
             for (Integer dmg : tgt.damageLines) {
                 if (dmg != null) {
