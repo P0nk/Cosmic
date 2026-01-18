@@ -357,7 +357,7 @@ public enum ItemFactory {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        // Bundles aren't strictly needed for the load object itself but good for legacy
+                        // We fetch bundles just to ensure validity, but we don't multiply quantity here anymore
                         short bundles = 0;
                         try (PreparedStatement psBundle = con.prepareStatement("SELECT `bundles` FROM `inventorymerchant` WHERE `inventoryitemid` = ?")) {
                             psBundle.setInt(1, rs.getInt("inventoryitemid"));
@@ -372,7 +372,7 @@ public enum ItemFactory {
 
                         if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
                             Equip equip = loadEquipFromResultSet(rs);
-                            equip.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                            equip.setUniqueId(rs.getInt("inventoryitemid"));
                             items.add(new Pair<>(equip, mit));
                         } else {
                             if (bundles > 0) {
@@ -381,8 +381,11 @@ public enum ItemFactory {
                                     petid = -1;
                                 }
 
-                                Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) (bundles * rs.getInt("quantity")), petid);
-                                item.setUniqueId(rs.getInt("inventoryitemid")); // [FIX] Set Unique ID
+                                // [FIX] Use raw quantity. Do NOT multiply by bundles here.
+                                // HiredMerchant.loadFromPersistence will handle the logic using the bundles value from DB.
+                                Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) rs.getInt("quantity"), petid);
+
+                                item.setUniqueId(rs.getInt("inventoryitemid"));
                                 item.setOwner(rs.getString("owner"));
                                 item.setExpiration(rs.getLong("expiration"));
                                 item.setGiftFrom(rs.getString("giftFrom"));

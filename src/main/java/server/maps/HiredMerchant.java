@@ -1014,6 +1014,10 @@ public class HiredMerchant extends AbstractMapObject {
      * [PERSISTENCE] Saves the merchant to DB during server shutdown.
      * Uses the shared connection from Channel to ensure atomic transaction.
      */
+    /**
+     * [PERSISTENCE] Saves the merchant to DB during server shutdown.
+     * Uses the shared connection from Channel to ensure atomic transaction.
+     */
     public void savePersistence(Connection con) throws SQLException {
         PreparedStatement ps = null;
         try {
@@ -1048,31 +1052,30 @@ public class HiredMerchant extends AbstractMapObject {
             ps.close();
 
             // 3. Save Items
-            // First, delete old items to prevent dupes (Safety measure)
-            ps = con.prepareStatement("DELETE FROM inventoryitems WHERE type = 6 AND characterid = ?");
-            ps.setInt(1, ownerId);
-            ps.executeUpdate();
-            ps.close();
+            // [CRITICAL FIX] REMOVED THE RAW 'DELETE FROM inventoryitems' HERE.
+            // That delete was destroying BCoins (Revenue) that were just inserted by sales.
+            // We rely on ItemFactory.MERCHANT.saveItems to handle the synchronization safely.
 
             List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
             List<Short> bundles = new ArrayList<>();
-            List<Integer> prices = new ArrayList<>(); // [FIX] Added Price List
+            List<Integer> prices = new ArrayList<>();
 
             synchronized (items) {
                 for (PlayerShopItem pItems : items) {
                     Item newItem = pItems.getItem();
                     short newBundle = pItems.getBundles();
+                    // Avoid modifying live object quantity directly if possible, but standard flow allows it here
                     newItem.setQuantity(pItems.getItem().getQuantity());
 
                     if (newBundle > 0) {
                         itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
                         bundles.add(newBundle);
-                        prices.add(pItems.getPrice()); // [FIX] Collect Price
+                        prices.add(pItems.getPrice());
                     }
                 }
             }
 
-            // [FIX] Pass 'prices' list to the factory
+            // Pass to factory (Ensure your ItemFactory.saveItemsMerchant has the logic to NOT delete BCoins/3020002)
             ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
 
         } finally {
@@ -1098,9 +1101,9 @@ public class HiredMerchant extends AbstractMapObject {
             // 2. Calculate time
             long restoredStart = System.currentTimeMillis() - (minutesOpen * 60000L);
 
-            // 3. Create Instance using NEW constructor
+            // 3. Create Instance
             HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, desc, cserv.getWorld(), cserv.getId(), map, restoredStart);
-            merch.setPosition(new java.awt.Point(x, y));
+            merch.setPosition(new Point(x, y));
 
             // 4. Restore Blacklist
             if (blString != null && !blString.isEmpty()) {
@@ -1110,7 +1113,6 @@ public class HiredMerchant extends AbstractMapObject {
             }
 
             // 5. Load Items & Prices
-            // Map<Unique_DB_ID, Pair<Price, Bundles>>
             java.util.Map<Integer, Pair<Integer, Short>> priceInfo = new java.util.HashMap<>();
 
             try (Connection con = DatabaseConnection.getConnection();
@@ -1123,15 +1125,18 @@ public class HiredMerchant extends AbstractMapObject {
                 }
             }
 
-            // Load raw items (Type 6 = Merchant)
-            // Ensure your ItemFactory loads items with 'type = 6' in the DB!
             List<Pair<Item, InventoryType>> loadedItems = ItemFactory.INVENTORY.loadItems(ownerId, false);
 
             for (Pair<Item, InventoryType> p : loadedItems) {
                 Item item = p.getLeft();
 
-                // [FIX] Use getUniqueId() to match the DB Key, NOT getItemId()
-                int uniqueId = item.getUniqueId(); // Check Item.java if this is named getDbId() or getInventoryItemId()
+                // [CRITICAL FIX] Do not load BCoins (3020002) into the shop window.
+                // These are stored revenue and should remain hidden until retrieved via Fredrick/NPC.
+                if (item.getItemId() == 3020002) {
+                    continue;
+                }
+
+                int uniqueId = item.getUniqueId();
 
                 if (priceInfo.containsKey(uniqueId)) {
                     Pair<Integer, Short> info = priceInfo.get(uniqueId);
