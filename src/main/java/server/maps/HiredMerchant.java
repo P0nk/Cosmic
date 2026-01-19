@@ -560,6 +560,10 @@ public class HiredMerchant extends AbstractMapObject {
 
         try {
             saveItems(true);
+
+            // [FIX] Notify Fredrick ONLY now that the shop is truly closed
+            FredrickProcessor.insertFredrickLog(this.ownerId);
+
             synchronized (items) {
                 items.clear();
             }
@@ -600,6 +604,9 @@ public class HiredMerchant extends AbstractMapObject {
 
         try {
             List<PlayerShopItem> copyItems = getItems();
+
+            // Attempt to return items to the player's inventory
+            // Condition: Inventory has space AND it is not a timeout/maintenance close
             if (check(c.getPlayer(), copyItems) && !timeout) {
                 for (PlayerShopItem mpsi : copyItems) {
                     if (mpsi.isExist()) {
@@ -611,18 +618,30 @@ public class HiredMerchant extends AbstractMapObject {
                     }
                 }
 
+                // If successful, clear the shop list so we save an empty state to DB
                 synchronized (items) {
                     items.clear();
                 }
             }
 
             try {
+                // Save the current state to DB (Empty if claimed above, populated if not)
                 this.saveItems(timeout);
+
+                // [FIX] Trigger Fredrick ONLY if items remain in the shop.
+                // This handles cases where:
+                // 1. Inventory was full (check() returned false)
+                // 2. It was a timeout (timeout == true)
+                synchronized (items) {
+                    if (!items.isEmpty()) {
+                        FredrickProcessor.insertFredrickLog(this.ownerId);
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            // thanks Rohenn for noticing a possible dupe scenario on closing shop
+            // Reset 'HasMerchant' flag
             Character player = c.getWorldServer().getPlayerStorage().getCharacterById(ownerId);
             if (player != null) {
                 player.setHasMerchant(false);
@@ -638,6 +657,7 @@ public class HiredMerchant extends AbstractMapObject {
                 c.getPlayer().saveCharToDB(false);
             }
 
+            // Final cleanup of memory
             synchronized (items) {
                 items.clear();
             }
@@ -835,7 +855,6 @@ public class HiredMerchant extends AbstractMapObject {
             for (PlayerShopItem pItems : items) {
                 Item newItem = pItems.getItem();
                 short newBundle = pItems.getBundles();
-                // Avoid modifying live object quantity directly if possible, but standard flow allows it here
                 newItem.setQuantity(pItems.getItem().getQuantity());
 
                 if (newBundle > 0) {
@@ -851,7 +870,6 @@ public class HiredMerchant extends AbstractMapObject {
             con.setAutoCommit(false);
 
             try {
-                // Pass 'prices' list to the factory
                 ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
                 con.commit();
             } catch (Exception e) {
@@ -864,8 +882,8 @@ public class HiredMerchant extends AbstractMapObject {
             }
         }
 
-        // Keep your existing Fredrick activity marker
-        FredrickProcessor.insertFredrickLog(this.ownerId);
+        // [FIX] REMOVED FredrickProcessor.insertFredrickLog(this.ownerId);
+        // We do not want to flag items for pickup just because we saved!
     }
 
     private static boolean check(Character chr, List<PlayerShopItem> items) {
