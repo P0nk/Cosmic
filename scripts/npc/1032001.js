@@ -35,7 +35,7 @@ function start() {
             if (cm.haveItem(4031012)) { // Proof of Hero
                 cm.sendNext("I see you have done well. I will allow you to take the next step on your long road. Please, choose your path.");
             } else if (cm.haveItem(4031009)) { // Letter to Grendel (Already has it)
-                cm.sendOk("Go and see the #b#p1032002##k in the Forest North of Ellinia."); // ID 1032002 or 1072001 depending on source, adjusted to likely Instructor ID
+                cm.sendOk("Go and see the #b#p1032002##k in the Forest North of Ellinia.");
                 cm.dispose();
             } else {
                 cm.sendYesNo("The progress you have made is astonishing. You look strong, but I need to see if you really are strong enough to pass the test. Do you wish to take the test for the 2nd Job Advancement?");
@@ -173,16 +173,21 @@ function action(mode, type, selection) {
                 }
             }
         } else if (status == 2) {
-            if (cm.haveItem(4031009)) { // Safety check
-                cm.dispose();
-                return;
-            }
-            job += selection * 10;
+            // [FIX] Reset Job ID Calculation logic
+            // 0 = Fire/Poison (210), 1 = Ice/Lightning (220), 2 = Cleric (230)
+            job = 210 + (selection * 10);
+
             cm.sendYesNo("So you want to make the second job advancement as the " + (job == 210 ? "#bWizard (Fire / Poison)#k" : job == 220 ? "#bWizard (Ice / Lighting)#k" : "#bCleric#k") + "? You know you won't be able to choose a different job once you make your decision here, right?");
         } else if (status == 3) {
+            // Consume Proof
             if (cm.haveItem(4031012)) {
                 cm.gainItem(4031012, -1);
             }
+            // [FIX] Clean up Letter if it still exists
+            if (cm.haveItem(4031009)) {
+                cm.gainItem(4031009, -1);
+            }
+
             cm.completeQuest(100008);
             cm.sendNext("Alright, you're the " + (job == 210 ? "#bWizard (Fire / Poison)#k" : job == 220 ? "#bWizard (Ice / Lighting)#k" : "#bCleric#k") + " from here on out. Please train yourself each and everyday.");
             if (cm.getJobId() != job) {

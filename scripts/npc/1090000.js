@@ -72,13 +72,13 @@ function start() {
                 cm.sendNext("I see you have done well. I will allow you to take the next step on your long road.");
 
             // 2. Check if Reborn (Bypass Quests)
+            // Priority: Rebirth check must come before standard quest check to ensure veterans get the skip
             } else if (cm.getPlayer().getReborns() > 0) {
                 actionx["2ndJobReborn"] = true;
                 cm.sendNext("I see the spirit of a veteran pirate in you. Since you have been reborn, you do not need to hunt the crystals manually. Let's get you to the test.");
 
             // 3. Standard Quest Path
             } else if (cm.isQuestCompleted(2191) || cm.isQuestCompleted(2192)) {
-                 // Fallback if they finished quest but lost the item, or old method
                  actionx["2ndJob"] = true;
                  cm.sendNext("I see you have done well. I will allow you to take the next step on your long road.");
             } else {

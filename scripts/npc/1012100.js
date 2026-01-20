@@ -27,15 +27,15 @@ function start() {
         // 1st Job Advancement (Beginner -> Bowman)
         if (cm.getJobId() == 0) {
             actionx["1stJob"] = true;
-            cm.sendNext("So you decided to become a #rbowman#k? There are some standards to meet, y'know... #bYour level should be at least 10, with at least " + cm.getFirstJobStatRequirement(jobType) + "#k. Let's see.");
+            cm.sendNext("So you decided to become a #rbowman#k? There are some standards to meet, y'know... #bYour level should be at least 10, with at least " + cm.getFirstJobStatRequirement(jobType) + " DEX#k. Let's see.");
 
         // 2nd Job Advancement (Bowman -> Hunter/Crossbowman)
         } else if (cm.getLevel() >= 30 && cm.getJobId() == 300) {
             actionx["2ndJob"] = true;
             if (cm.haveItem(4031012)) { // Proof of Hero
                 cm.sendNext("Haha...I knew you'd breeze through that test. I'll admit, you are a great bowman. I'll make you much stronger than you're right now. Before that, however... you'll need to choose one of two paths given to you. It'll be a difficult decision for you to make, but... if there's any question to ask, please do so.");
-            } else if (cm.haveItem(4031010)) { // [FIXED] Was 4031011 (Thief Letter) in original
-                cm.sendOk("Go and see the #b#p106010000##k."); // Point to Bowman Job Instructor
+            } else if (cm.haveItem(4031010)) { // Bowman Letter
+                cm.sendOk("Go and see the #b#p106010000##k in the Road to the Dungeon.");
                 cm.dispose();
             } else {
                 cm.sendYesNo("Hmmm... you have grown a lot since I last saw you. I don't see the weakling I saw before, and instead, look much more like a bowman now. Well, what do you think? Don't you want to get even more powerful than that? Pass a simple test and I'll do just that for you. Do you want to do it?");
@@ -115,7 +115,7 @@ function action(mode, type, selection) {
                 if (cm.getJobId() == 0) {
                     cm.changeJobById(300);
                     cm.gainItem(1452051, 1); // Bow
-                    cm.gainItem(2060000, 1000); // Arrows (Increased count for QoL)
+                    cm.gainItem(2060000, 1000); // Arrows
                     cm.gainItem(1462092, 1); // Crossbow
                     cm.gainItem(2061000, 1000); // XBow Arrows
 
@@ -171,12 +171,24 @@ function action(mode, type, selection) {
                 }
             }
         } else if (status == 2) {
-            job += selection * 10;
+            // [FIX] Reset Job ID Calculation logic
+            // 0 = Hunter (310), 1 = Crossbowman (320)
+            job = 310 + (selection * 10);
+
             cm.sendYesNo("So you want to make the second job advancement as the " + (job == 310 ? "#bHunter#k" : "#bCrossbowman#k") + "? You know you won't be able to choose a different job once you make your decision here, right?");
         } else if (status == 3) {
+            // Consume Proof
             if (cm.haveItem(4031012)) {
                 cm.gainItem(4031012, -1);
             }
+            // [FIX] Clean up Letter if it still exists
+            if (cm.haveItem(4031010)) {
+                cm.gainItem(4031010, -1);
+            }
+
+            // Standard quest completion for Bowman 2nd Job
+            cm.completeQuest(100002);
+
             cm.sendNext("Alright, you're the " + (job == 310 ? "#bHunter#k" : "#bCrossbowman#k") + " from here on out. Please train yourself each and everyday.");
             if (cm.getJobId() != job) {
                 cm.changeJobById(job);
