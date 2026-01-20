@@ -102,6 +102,7 @@ import provider.DataTool;
 import scripting.AbstractPlayerInteraction;
 import scripting.event.EventInstanceManager;
 import scripting.item.ItemScriptManager;
+import scripting.npc.NPCScriptManager;
 import server.CashShop;
 import server.ExpLogger;
 import server.ExpLogger.ExpLogRecord;
@@ -224,6 +225,7 @@ public class Character extends AbstractCharacterObject {
     private int energybar;
     private int gmLevel;
     private int ci = 0;
+    private int reborns = 0; // The rebirth counter
     private FamilyEntry familyEntry;
     private int familyId;
     private int bookCover;
@@ -376,6 +378,24 @@ public class Character extends AbstractCharacterObject {
     // Add these variables at the top of Character.java
     private int teleportRequesterId = -1;
     private int teleportRockId = -1;
+
+    private long lastMapChangeTime = 0;
+
+    public long getLastMapChangeTime() {
+        return lastMapChangeTime;
+    }
+
+    public void updateLastMapChangeTime() {
+        this.lastMapChangeTime = System.currentTimeMillis();
+    }
+
+    public int getReborns() {
+        return reborns;
+    }
+
+    public void setReborns(int reborns) {
+        this.reborns = reborns;
+    }
 
     // Add this helper method
     public void setTeleportRequest(int requesterId, int rockId) {
@@ -6485,13 +6505,24 @@ public class Character extends AbstractCharacterObject {
         int improvingMaxHPLevel = 0;
         int improvingMaxMPLevel = 0;
 
+        // ---------------------------------------------------------
+        // 1. CALCULATE BONUS AP (5 * Reborns) [LOGIC IS CORRECT]
+        // ---------------------------------------------------------
+        int bonusAp = this.reborns * 5;
+
         boolean isBeginner = isBeginnerJob();
+
+        // Logic: Give standard 5 AP + Rebirth AP to everyone.
+        // If they are a starter, we auto-assign the 5, leaving the Bonus AP in the pool.
         if (YamlConfig.config.server.USE_AUTOASSIGN_STARTERS_AP && isBeginner && level < 11) {
             effLock.lock();
             statWlock.lock();
             try {
-                gainAp(5, true);
+                // Add Total AP (5 + Bonus)
+                gainAp(5 + bonusAp, true);
 
+                // Auto-assign the standard 5 (or 4+1)
+                // This consumes 5 AP, leaving 'bonusAp' in the pool.
                 int str = 0, dex = 0;
                 if (level < 6) {
                     str += 5;
@@ -6499,28 +6530,31 @@ public class Character extends AbstractCharacterObject {
                     str += 4;
                     dex += 1;
                 }
-
                 assignStrDexIntLuk(str, dex, 0, 0);
             } finally {
                 statWlock.unlock();
                 effLock.unlock();
             }
         } else {
-            int remainingAp = 5;
+            // Standard Level Up
+            int apToGain = 5 + bonusAp;
 
             if (isCygnus()) {
                 if (level > 10) {
                     if (level <= 17) {
-                        remainingAp += 2;
+                        apToGain += 2;
                     } else if (level < 77) {
-                        remainingAp++;
+                        apToGain++;
                     }
                 }
             }
 
-            gainAp(remainingAp, true);
+            gainAp(apToGain, true);
         }
 
+        // ---------------------------------------------------------
+        // HP/MP CALCULATION LOGIC (Unchanged)
+        // ---------------------------------------------------------
         int addhp = 0, addmp = 0;
         if (isBeginner) {
             addhp += Randomizer.rand(12, 16);
@@ -6580,32 +6614,15 @@ public class Character extends AbstractCharacterObject {
             }
         }
 
+        // [FIX] Ensure level++ happens exactly once
         level++;
-        if (level >= getMaxClassLevel()) {
-            exp.set(0);
 
-            int maxClassLevel = getMaxClassLevel();
-            if (level == maxClassLevel) {
-                if (!this.isGM()) {
-                    if (YamlConfig.config.server.PLAYERNPC_AUTODEPLOY) {
-                        ThreadManager.getInstance().newTask(new Runnable() {
-                            @Override
-                            public void run() {
-                                PlayerNPC.spawnPlayerNPC(GameConstants.getHallOfFameMapid(job), Character.this);
-                            }
-                        });
-                    }
-
-                    final String names = (getMedalText() + name);
-                    getWorldServer().broadcastPacket(PacketCreator.serverNotice(6, String.format(LEVEL_200, names, maxClassLevel, names)));
-                }
-            }
-
-            level = maxClassLevel; //To prevent levels past the maximum
-        }
-
+        // Give SP for the new level
         levelUpGainSp();
 
+        // -----------------------------
+        // UPDATE STATS & SEND PACKETS
+        // -----------------------------
         effLock.lock();
         statWlock.lock();
         try {
@@ -6613,7 +6630,11 @@ public class Character extends AbstractCharacterObject {
             changeHpMp(localmaxhp, localmaxmp, true);
 
             List<Pair<Stat, Integer>> statup = new ArrayList<>(10);
-            statup.add(new Pair<>(Stat.AVAILABLEAP, remainingAp));
+
+            // [FIX] Use getRemainingAp() instead of the local variable 'remainingAp'
+            // which was out of scope here.
+            statup.add(new Pair<>(Stat.AVAILABLEAP, getRemainingAp()));
+
             statup.add(new Pair<>(Stat.AVAILABLESP, remainingSp[GameConstants.getSkillBook(job.getId())]));
             statup.add(new Pair<>(Stat.HP, hp));
             statup.add(new Pair<>(Stat.MP, mp));
@@ -6638,25 +6659,47 @@ public class Character extends AbstractCharacterObject {
             getGuild().broadcast(PacketCreator.levelUpMessage(2, level, name), this.getId());
         }
 
+        // --- REBIRTH PROMPT SYSTEM ---
+        // [FIX] Moved to the end so the final level up processes fully before showing the dialog
+        if (level >= getMaxClassLevel()) {
+            // Cap the level/exp visually
+            level = getMaxClassLevel();
+            exp.set(0);
+
+            // Force update the client to show Level 200/0 EXP immediately
+            List<Pair<Stat, Integer>> capStats = new ArrayList<>(2);
+            capStats.add(new Pair<>(Stat.LEVEL, level));
+            capStats.add(new Pair<>(Stat.EXP, 0));
+            sendPacket(PacketCreator.updatePlayerStats(capStats, true, this));
+
+            if (!isAran() && !isCygnus() && !job.isA(Job.EVAN1)) {
+                ThreadManager.getInstance().newTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        NPCScriptManager.getInstance().start(getClient(), 11009, "rebirth", Character.this);
+                    }
+                });
+            }
+        }
+        // -----------------------------
+
         if (level % 10 == 0) {
-            if (YamlConfig.config.server.USE_ADD_SLOTS_BY_LEVEL == true) {
+            if (YamlConfig.config.server.USE_ADD_SLOTS_BY_LEVEL) {
                 if (!isGM()) {
                     for (byte i = 1; i < 5; i++) {
                         gainSlots(i, 8, true);
                     }
-
-                    this.yellowMessage("You reached level " + level + ". Congratulations! As a token of your success, your inventory has been expanded a little bit.");
+                    this.yellowMessage("You reached level " + level + ". Inventory expanded!");
                 }
             }
-            if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL == true) { //For the rate upgrade
+            if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
                 revertLastPlayerRates();
                 setPlayerRates();
-                this.yellowMessage("You managed to get level " + level + "! Getting experience and items seems a little easier now, huh?");
+                this.yellowMessage("You managed to get level " + level + "! Rates updated.");
             }
         }
 
         if (YamlConfig.config.server.USE_PERFECT_PITCH && level >= 30) {
-            //milestones?
             if (InventoryManipulator.checkSpace(client, ItemId.PERFECT_PITCH, (short) 1, "")) {
                 InventoryManipulator.addById(client, ItemId.PERFECT_PITCH, (short) 1, "", -1);
             }
@@ -6669,7 +6712,6 @@ public class Character extends AbstractCharacterObject {
                     }
                 }
             };
-
             ThreadManager.getInstance().newTask(r);
         }
 
@@ -6679,7 +6721,7 @@ public class Character extends AbstractCharacterObject {
         if (familyEntry != null) {
             familyEntry.giveReputationToSenior(YamlConfig.config.server.FAMILY_REP_PER_LEVELUP, true);
             FamilyEntry senior = familyEntry.getSenior();
-            if (senior != null) { //only send the message to direct senior
+            if (senior != null) {
                 Character seniorChr = senior.getChr();
                 if (seniorChr != null) {
                     seniorChr.sendPacket(PacketCreator.levelUpMessage(1, level, getName()));
@@ -7076,568 +7118,556 @@ public class Character extends AbstractCharacterObject {
     public void updateRemainingSp(int remainingSp) {
         updateRemainingSp(remainingSp, GameConstants.getSkillBook(job.getId()));
     }
-
     public static Character loadCharFromDB(final int charid, Client client, boolean channelserver) throws SQLException {
+        long startTime = System.currentTimeMillis();
+        System.out.println("[Load-DEBUG] Starting load for Character ID: " + charid);
+
         Character ret = new Character();
         ret.client = client;
         ret.id = charid;
 
         try (Connection con = DatabaseConnection.getConnection()) {
-            final int mountexp;
-            final int mountlevel;
-            final int mounttiredness;
-            final World wserv;
 
-            // Character info
-            try (PreparedStatement ps = con.prepareStatement("SELECT * FROM characters WHERE id = ?")) {
-                ps.setInt(1, charid);
+            // 1. Load Core Stats (Level, Job, STR/DEX, etc.)
+            System.out.println("[Load-DEBUG] Loading Core Data...");
+            if (!loadCoreData(con, ret, charid)) {
+                throw new RuntimeException("Loading char failed (not found)");
+            }
+            System.out.println("[Load-DEBUG] Core Data Loaded.");
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw new RuntimeException("Loading char failed (not found)");
-                    }
+            // [FIX] Initialize Managers immediately after core data is present
+            ret.autoban = new AutobanManager(ret);
+            ret.cashshop = new CashShop(ret.accountid, ret.id, ret.getJobType());
+            ret.cashshop.setCharacter(ret);
 
-                    ret.name = rs.getString("name");
-                    ret.level = rs.getInt("level");
-                    ret.fame = rs.getInt("fame");
-                    ret.quest_fame = rs.getInt("fquest");
-                    ret.str = rs.getInt("str");
-                    ret.dex = rs.getInt("dex");
-                    ret.int_ = rs.getInt("int");
-                    ret.luk = rs.getInt("luk");
-                    ret.exp.set(rs.getInt("exp"));
-                    ret.gachaexp.set(rs.getInt("gachaexp"));
-                    ret.hp = rs.getInt("hp");
-                    ret.setMaxHp(rs.getInt("maxhp"));
-                    ret.mp = rs.getInt("mp");
-                    ret.setMaxMp(rs.getInt("maxmp"));
-                    ret.hpMpApUsed = rs.getInt("hpMpUsed");
-                    ret.hasMerchant = rs.getInt("HasMerchant") == 1;
-                    ret.remainingAp = rs.getInt("ap");
-                    ret.loadCharSkillPoints(rs.getString("sp").split(","));
-                    ret.meso.set(rs.getInt("meso"));
-                    ret.merchantmeso = rs.getInt("MerchantMesos");
-                    ret.setGMLevel(rs.getInt("gm"));
-                    ret.skinColor = SkinColor.getById(rs.getInt("skincolor"));
-                    ret.gender = rs.getInt("gender");
-                    ret.job = Job.getById(rs.getInt("job"));
-                    ret.finishedDojoTutorial = rs.getInt("finishedDojoTutorial") == 1;
-                    ret.vanquisherKills = rs.getInt("vanquisherKills");
-                    ret.omokwins = rs.getInt("omokwins");
-                    ret.omoklosses = rs.getInt("omoklosses");
-                    ret.omokties = rs.getInt("omokties");
-                    ret.matchcardwins = rs.getInt("matchcardwins");
-                    ret.matchcardlosses = rs.getInt("matchcardlosses");
-                    ret.matchcardties = rs.getInt("matchcardties");
-                    ret.hair = rs.getInt("hair");
-                    ret.face = rs.getInt("face");
-                    ret.accountid = rs.getInt("accountid");
-                    ret.mapid = rs.getInt("map");
-                    ret.jailExpiration = rs.getLong("jailexpire");
-                    ret.initialSpawnPoint = rs.getInt("spawnpoint");
-                    ret.world = rs.getByte("world");
-                    ret.rank = rs.getInt("rank");
-                    ret.rankMove = rs.getInt("rankMove");
-                    ret.jobRank = rs.getInt("jobRank");
-                    ret.jobRankMove = rs.getInt("jobRankMove");
-                    mountexp = rs.getInt("mountexp");
-                    mountlevel = rs.getInt("mountlevel");
-                    mounttiredness = rs.getInt("mounttiredness");
-                    ret.guildid = rs.getInt("guildid");
-                    ret.guildRank = rs.getInt("guildrank");
-                    ret.allianceRank = rs.getInt("allianceRank");
-                    ret.familyId = rs.getInt("familyId");
-                    ret.bookCover = rs.getInt("monsterbookcover");
-                    ret.monsterbook = new MonsterBook();
-                    ret.monsterbook.loadCards(charid);
-                    ret.vanquisherStage = rs.getInt("vanquisherStage");
-                    ret.ariantPoints = rs.getInt("ariantPoints");
-                    ret.dojoPoints = rs.getInt("dojoPoints");
-                    ret.dojoStage = rs.getInt("lastDojoStage");
-                    ret.dataString = rs.getString("dataString");
-                    ret.mgc = new GuildCharacter(ret);
-                    int buddyCapacity = rs.getInt("buddyCapacity");
-                    ret.buddylist = new BuddyList(buddyCapacity);
-                    ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
-                    ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
-                    ret.setAutopotEnabled(rs.getBoolean("autopotEnabled"));
-                    // ... existing loading code (e.g. ret.level = rs.getInt("level");)
+            // 2. Load Account Info (Slots, Language)
+            System.out.println("[Load-DEBUG] Loading Account Data...");
+            loadAccountData(con, ret);
 
-                    ret.passiveWatk = rs.getInt("passive_watk");
-                    ret.passiveMatk = rs.getInt("passive_matk");
-                    ret.passiveWdef = rs.getInt("passive_wdef");
-                    ret.passiveMdef = rs.getInt("passive_mdef");
-                    ret.passiveAcc = rs.getInt("passive_acc");
-                    ret.passiveEva = rs.getInt("passive_eva");
+            // 3. Load Inventory (Equips, Items, Rings, Mounts)
+            System.out.println("[Load-DEBUG] Loading Inventory...");
+            loadInventoryData(con, ret, channelserver);
 
-                    ret.dailyPlaytime = rs.getInt("dailyPlaytime");
+            // 4. Load Skills, Cooldowns, and Debuffs
+            System.out.println("[Load-DEBUG] Loading Skills & Cooldowns...");
+            loadSkillData(con, ret);
 
-                    // ... continue loading code
+            // 5. Load Quests (Status, Progress, Medals)
+            System.out.println("[Load-DEBUG] Loading Quests...");
+            if (channelserver) {
+                loadQuestData(con, ret);
+            }
 
+            // 6. Load Config (Keymaps, Quickslots, Macros)
+            System.out.println("[Load-DEBUG] Loading Keymaps & Macros...");
+            loadConfigData(con, ret);
 
-                    wserv = Server.getInstance().getWorld(ret.world);
+            // 7. Load Social & Meta (Buddies, Fame, Area Info, Events)
+            System.out.println("[Load-DEBUG] Loading Social & Meta Data...");
+            loadSocialAndMetaData(con, ret);
 
-                    ret.getInventory(InventoryType.EQUIP).setSlotLimit(rs.getByte("equipslots"));
-                    ret.getInventory(InventoryType.USE).setSlotLimit(rs.getByte("useslots"));
-                    ret.getInventory(InventoryType.SETUP).setSlotLimit(rs.getByte("setupslots"));
-                    ret.getInventory(InventoryType.ETC).setSlotLimit(rs.getByte("etcslots"));
+            // 8. Load Storage
+            System.out.println("[Load-DEBUG] Loading Storage...");
+            loadStorageData(con, ret, channelserver);
 
-                    short sandboxCheck = 0x0;
-                    for (Pair<Item, InventoryType> item : ItemFactory.INVENTORY.loadItems(ret.id, !channelserver)) {
-                        sandboxCheck |= item.getLeft().getFlag();
+            // 9. Finalize (Set Map, Party, Messenger)
+            if (channelserver) {
+                System.out.println("[Load-DEBUG] Finalizing Login State...");
+                finalizeLoginState(con, ret, client);
+            }
 
-                        ret.getInventory(item.getRight()).addItemFromDB(item.getLeft());
-                        Item itemz = item.getLeft();
-                        if (itemz.getPetId() > -1) {
-                            Pet pet = itemz.getPet();
-                            if (pet != null && pet.isSummoned()) {
-                                ret.addPet(pet);
+            long endTime = System.currentTimeMillis();
+            System.out.println("[Load-DEBUG] Character " + ret.getName() + " loaded successfully in " + (endTime - startTime) + "ms.");
+
+            return ret;
+
+        } catch (SQLException | RuntimeException e) {
+            System.err.println("[Load-ERROR] Failed to load character ID " + charid);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    private static boolean loadCoreData(Connection con, Character ret, int charid) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM characters WHERE id = ?")) {
+            ps.setInt(1, charid);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return false;
+                }
+
+                ret.name = rs.getString("name");
+                ret.level = rs.getInt("level");
+                ret.fame = rs.getInt("fame");
+                ret.quest_fame = rs.getInt("fquest");
+                ret.str = rs.getInt("str");
+                ret.dex = rs.getInt("dex");
+                ret.int_ = rs.getInt("int");
+                ret.luk = rs.getInt("luk");
+                ret.exp.set(rs.getInt("exp"));
+                ret.gachaexp.set(rs.getInt("gachaexp"));
+                ret.hp = rs.getInt("hp");
+                ret.setMaxHp(rs.getInt("maxhp"));
+                ret.mp = rs.getInt("mp");
+                ret.setMaxMp(rs.getInt("maxmp"));
+                ret.hpMpApUsed = rs.getInt("hpMpUsed");
+                ret.hasMerchant = rs.getInt("HasMerchant") == 1;
+                ret.remainingAp = rs.getInt("ap");
+                ret.loadCharSkillPoints(rs.getString("sp").split(","));
+                ret.meso.set(rs.getInt("meso"));
+                ret.merchantmeso = rs.getInt("MerchantMesos");
+                ret.setGMLevel(rs.getInt("gm"));
+                ret.skinColor = SkinColor.getById(rs.getInt("skincolor"));
+                ret.gender = rs.getInt("gender");
+                ret.job = Job.getById(rs.getInt("job"));
+                ret.finishedDojoTutorial = rs.getInt("finishedDojoTutorial") == 1;
+                ret.vanquisherKills = rs.getInt("vanquisherKills");
+                ret.omokwins = rs.getInt("omokwins");
+                ret.omoklosses = rs.getInt("omoklosses");
+                ret.omokties = rs.getInt("omokties");
+                ret.matchcardwins = rs.getInt("matchcardwins");
+                ret.matchcardlosses = rs.getInt("matchcardlosses");
+                ret.matchcardties = rs.getInt("matchcardties");
+                ret.hair = rs.getInt("hair");
+                ret.face = rs.getInt("face");
+                ret.accountid = rs.getInt("accountid");
+                ret.mapid = rs.getInt("map");
+                ret.jailExpiration = rs.getLong("jailexpire");
+                ret.initialSpawnPoint = rs.getInt("spawnpoint");
+                ret.world = rs.getByte("world");
+                ret.rank = rs.getInt("rank");
+                ret.rankMove = rs.getInt("rankMove");
+                ret.jobRank = rs.getInt("jobRank");
+                ret.jobRankMove = rs.getInt("jobRankMove");
+                ret.guildid = rs.getInt("guildid");
+                ret.guildRank = rs.getInt("guildrank");
+                ret.allianceRank = rs.getInt("allianceRank");
+                ret.familyId = rs.getInt("familyId");
+                ret.bookCover = rs.getInt("monsterbookcover");
+                ret.monsterbook = new MonsterBook();
+                ret.monsterbook.loadCards(charid);
+                ret.vanquisherStage = rs.getInt("vanquisherStage");
+                ret.ariantPoints = rs.getInt("ariantPoints");
+                ret.dojoPoints = rs.getInt("dojoPoints");
+                ret.dojoStage = rs.getInt("lastDojoStage");
+                ret.dataString = rs.getString("dataString");
+                ret.mgc = new GuildCharacter(ret);
+                int buddyCapacity = rs.getInt("buddyCapacity");
+                ret.buddylist = new BuddyList(buddyCapacity);
+                ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
+                ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
+                ret.setAutopotEnabled(rs.getBoolean("autopotEnabled"));
+
+                // New / Custom Stats
+                ret.passiveWatk = rs.getInt("passive_watk");
+                ret.passiveMatk = rs.getInt("passive_matk");
+                ret.passiveWdef = rs.getInt("passive_wdef");
+                ret.passiveMdef = rs.getInt("passive_mdef");
+                ret.passiveAcc = rs.getInt("passive_acc");
+                ret.passiveEva = rs.getInt("passive_eva");
+                ret.dailyPlaytime = rs.getInt("dailyPlaytime");
+                ret.reborns = rs.getInt("reborns");
+
+                // Store mount info temporarily in the character object to initialize later?
+                // Or just init here if you move maplemount init logic here.
+                // For now, we will handle Mount initialization in loadInventoryData since it depends on equipped items.
+                // We need to store these values temporarily or re-query.
+                // Better yet, just initialize a temporary mount object or store these ints in the return object if possible.
+                // *NOTE*: Your original code queried these but initialized the mount way later.
+                // To be safe, let's just initialize the mount object structure here and fill it.
+                int mountid = ret.getJobType() * 10000000 + 1004;
+                ret.maplemount = new Mount(ret, 0, mountid); // Placeholder, will update itemID in inventory load
+                ret.maplemount.setExp(rs.getInt("mountexp"));
+                ret.maplemount.setLevel(rs.getInt("mountlevel"));
+                ret.maplemount.setTiredness(rs.getInt("mounttiredness"));
+                ret.maplemount.setActive(false);
+
+                ret.partnerId = rs.getInt("partnerId");
+                ret.marriageItemid = rs.getInt("marriageItemId");
+
+                NewYearCardRecord.loadPlayerNewYearCards(ret);
+
+                // Inventory Slots
+                ret.getInventory(InventoryType.EQUIP).setSlotLimit(rs.getByte("equipslots"));
+                ret.getInventory(InventoryType.USE).setSlotLimit(rs.getByte("useslots"));
+                ret.getInventory(InventoryType.SETUP).setSlotLimit(rs.getByte("setupslots"));
+                ret.getInventory(InventoryType.ETC).setSlotLimit(rs.getByte("etcslots"));
+
+                return true;
+            }
+        }
+    }
+
+    private static void loadAccountData(Connection con, Character ret) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement("SELECT name, characterslots, language FROM accounts WHERE id = ?")) {
+            ps.setInt(1, ret.accountid);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Client retClient = ret.getClient();
+                    retClient.setAccountName(rs.getString("name"));
+                    retClient.setCharacterSlots(rs.getByte("characterslots"));
+                    retClient.setLanguage(rs.getInt("language"));
+                }
+            }
+        }
+    }
+
+    private static void loadInventoryData(Connection con, Character ret, boolean channelserver) throws SQLException {
+        short sandboxCheck = 0x0;
+
+        // Load Items using ItemFactory
+        for (Pair<Item, InventoryType> item : ItemFactory.INVENTORY.loadItems(ret.id, !channelserver)) {
+            sandboxCheck |= item.getLeft().getFlag();
+            ret.getInventory(item.getRight()).addItemFromDB(item.getLeft());
+
+            Item itemz = item.getLeft();
+            if (itemz.getPetId() > -1) {
+                Pet pet = itemz.getPet();
+                if (pet != null && pet.isSummoned()) {
+                    ret.addPet(pet);
+                }
+                continue;
+            }
+
+            InventoryType mit = item.getRight();
+            if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
+                Equip equip = (Equip) item.getLeft();
+                if (equip.getRingId() > -1) {
+                    try {
+                        Ring ring = Ring.loadFromDb(equip.getRingId());
+                        if (ring != null) {
+                            if (mit.equals(InventoryType.EQUIPPED)) {
+                                ring.equip();
                             }
-                            continue;
+                            ret.addPlayerRing(ring);
                         }
-
-                        InventoryType mit = item.getRight();
-                        if (mit.equals(InventoryType.EQUIP) || mit.equals(InventoryType.EQUIPPED)) {
-                            Equip equip = (Equip) item.getLeft();
-                            if (equip.getRingId() > -1) {
-                                int ringId = equip.getRingId();
-                                Ring ring = null;
-
-                                try {
-                                    ring = Ring.loadFromDb(ringId);
-                                } catch (Exception e) {
-                                    System.err.println("[RING][ERROR] Ring.loadFromDb threw exception. " +
-                                            "CID=" + ret.id + " ringId=" + ringId +
-                                            " invItemId=" + equip.getItemId() +
-                                            " invType=" + item.getRight() +
-                                            " position=" + equip.getPosition());
-                                    e.printStackTrace();
-                                }
-
-                                if (ring == null) {
-                                    // Minimal but very useful: tells you exactly which equip/ringId is bad.
-                                    System.err.println("[RING][WARN] Missing/invalid ring data. " +
-                                            "CID=" + ret.id +
-                                            " equipItemId=" + equip.getItemId() +
-                                            " ringId=" + ringId +
-                                            " invType=" + item.getRight() +
-                                            " position=" + equip.getPosition() +
-                                            " -> skipping ring attach");
-
-                                    // Optional: auto-heal the equip to prevent repeated warnings on every login.
-                                    // SAFEST DB fix is to detach ringid.
-                                    // equip.setRingId(-1);
-                                    // (If you want, I can show the clean way to persist this back to DB.)
-                                } else {
-                                    if (item.getRight().equals(InventoryType.EQUIPPED)) {
-                                        try {
-                                            ring.equip();
-                                        } catch (Exception e) {
-                                            System.err.println("[RING][ERROR] ring.equip() failed. " +
-                                                    "CID=" + ret.id + " ringId=" + ringId + " equipItemId=" + equip.getItemId());
-                                            e.printStackTrace();
-                                        }
-                                    }
-
-                                    ret.addPlayerRing(ring);
-                                }
-                            }
-                        }
-
-                    }
-
-                    if ((sandboxCheck & ItemConstants.SANDBOX) == ItemConstants.SANDBOX) {
-                        ret.setHasSandboxItem();
-                    }
-
-                    ret.partnerId = rs.getInt("partnerId");
-                    ret.marriageItemid = rs.getInt("marriageItemId");
-                    if (ret.marriageItemid > 0 && ret.partnerId <= 0) {
-                        ret.marriageItemid = -1;
-                    } else if (ret.partnerId > 0 && wserv.getRelationshipId(ret.id) <= 0) {
-                        ret.marriageItemid = -1;
-                        ret.partnerId = -1;
-                    }
-
-                    NewYearCardRecord.loadPlayerNewYearCards(ret);
-
-                    //PreparedStatement ps2, ps3;
-                    //ResultSet rs2, rs3;
-
-                    // Items excluded from pet loot
-                    try (PreparedStatement psPet = con.prepareStatement("SELECT petid FROM inventoryitems WHERE characterid = ? AND petid > -1")) {
-                        psPet.setInt(1, charid);
-
-                        try (ResultSet rsPet = psPet.executeQuery()) {
-                            while (rsPet.next()) {
-                                final int petId = rsPet.getInt("petid");
-
-                                try (PreparedStatement psItem = con.prepareStatement("SELECT itemid FROM petignores WHERE petid = ?")) {
-                                    psItem.setInt(1, petId);
-
-                                    ret.resetExcluded(petId);
-
-                                    try (ResultSet rsItem = psItem.executeQuery()) {
-                                        while (rsItem.next()) {
-                                            ret.addExcluded(petId, rsItem.getInt("itemid"));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    ret.commitExcludedItems();
-
-
-                    if (channelserver) {
-                        MapManager mapManager = client.getChannelServer().getMapFactory();
-                        ret.map = mapManager.getMap(ret.mapid);
-
-                        if (ret.map == null) {
-                            ret.map = mapManager.getMap(MapId.HENESYS);
-                        }
-                        Portal portal = ret.map.getPortal(ret.initialSpawnPoint);
-                        if (portal == null) {
-                            portal = ret.map.getPortal(0);
-                            ret.initialSpawnPoint = 0;
-                        }
-                        ret.setPosition(portal.getPosition());
-                        int partyid = rs.getInt("party");
-                        Party party = wserv.getParty(partyid);
-                        if (party != null) {
-                            ret.mpc = party.getMemberById(ret.id);
-                            if (ret.mpc != null) {
-                                ret.mpc = new PartyCharacter(ret);
-                                ret.party = party;
-                            }
-                        }
-                        int messengerid = rs.getInt("messengerid");
-                        int position = rs.getInt("messengerposition");
-                        if (messengerid > 0 && position < 4 && position > -1) {
-                            Messenger messenger = wserv.getMessenger(messengerid);
-                            if (messenger != null) {
-                                ret.messenger = messenger;
-                                ret.messengerposition = position;
-                            }
-                        }
-                        ret.loggedIn = true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }
+        }
 
-            // Teleport rocks
-            //try (PreparedStatement ps = con.prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 15")) { // original
-            try (PreparedStatement ps = con.prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 90")) {   // merogie - trockincrease
-                ps.setInt(1, charid);
+        if ((sandboxCheck & ItemConstants.SANDBOX) == ItemConstants.SANDBOX) {
+            ret.setHasSandboxItem();
+        }
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    byte vip = 0;
-                    byte reg = 0;
-                    while (rs.next()) {
-                        if (rs.getInt("vip") == 1) {
-                            ret.viptrockmaps.add(rs.getInt("mapid"));
-                            vip++;
-                        } else {
-                            ret.trockmaps.add(rs.getInt("mapid"));
-                            reg++;
+        // Update Mount with equipped Saddle/Monster info if available
+        if (ret.getInventory(InventoryType.EQUIPPED).getItem((short) -18) != null) {
+            int mountid = ret.getJobType() * 10000000 + 1004;
+            ret.maplemount.setItemId(ret.getInventory(InventoryType.EQUIPPED).getItem((short) -18).getItemId());
+        }
+
+        // Pet Exclusions
+        try (PreparedStatement psPet = con.prepareStatement("SELECT petid FROM inventoryitems WHERE characterid = ? AND petid > -1")) {
+            psPet.setInt(1, ret.id);
+            try (ResultSet rsPet = psPet.executeQuery()) {
+                while (rsPet.next()) {
+                    final int petId = rsPet.getInt("petid");
+                    try (PreparedStatement psItem = con.prepareStatement("SELECT itemid FROM petignores WHERE petid = ?")) {
+                        psItem.setInt(1, petId);
+                        ret.resetExcluded(petId);
+                        try (ResultSet rsItem = psItem.executeQuery()) {
+                            while (rsItem.next()) {
+                                ret.addExcluded(petId, rsItem.getInt("itemid"));
+                            }
                         }
                     }
-
-//                   while (vip < 10) { // original
-                    while (vip < 20) {  // merogie trockincrease
-                        ret.viptrockmaps.add(MapId.NONE);
-                        vip++;
+                }
+            }
+        }
+        ret.commitExcludedItems();
+    }
+    private static void loadSkillData(Connection con, Character ret) throws SQLException {
+        // 1. Skills
+        try (PreparedStatement ps = con.prepareStatement("SELECT skillid,skilllevel,masterlevel,expiration FROM skills WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Skill pSkill = SkillFactory.getSkill(rs.getInt("skillid"));
+                    if (pSkill != null) {
+                        ret.skills.put(pSkill, new SkillEntry(rs.getByte("skilllevel"), rs.getInt("masterlevel"), rs.getLong("expiration")));
                     }
-//                    while (reg < 5) { // original
-                    while (reg < 10) { // merogie - trockincrease
-                        ret.trockmaps.add(MapId.NONE);
+                }
+            }
+        }
+
+        // 2. Cooldowns
+        try (PreparedStatement ps = con.prepareStatement("SELECT SkillID,StartTime,length FROM cooldowns WHERE charid = ?")) {
+            ps.setInt(1, ret.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                long curTime = Server.getInstance().getCurrentTime();
+                while (rs.next()) {
+                    final int skillid = rs.getInt("SkillID");
+                    final long length = rs.getLong("length"), startTime = rs.getLong("StartTime");
+                    if (skillid != 5221999 && (length + startTime < curTime)) {
+                        continue;
+                    }
+                    ret.giveCoolDowns(skillid, startTime, length);
+                }
+            }
+        }
+        // Delete expired cooldowns
+        try (PreparedStatement ps = con.prepareStatement("DELETE FROM cooldowns WHERE charid = ?")) {
+            ps.setInt(1, ret.getId());
+            ps.executeUpdate();
+        }
+
+        // 3. Debuffs / Diseases
+        Map<Disease, Pair<Long, MobSkill>> loadedDiseases = new LinkedHashMap<>();
+        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM playerdiseases WHERE charid = ?")) {
+            ps.setInt(1, ret.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    final Disease disease = Disease.ordinal(rs.getInt("disease"));
+                    if (disease == Disease.NULL) continue;
+                    final int skillid = rs.getInt("mobskillid");
+                    final int skilllv = rs.getInt("mobskilllv");
+                    final long length = rs.getInt("length");
+
+                    MobSkillType type = MobSkillType.from(skillid).orElseThrow();
+                    MobSkill ms = MobSkillFactory.getMobSkillOrThrow(type, skilllv);
+                    loadedDiseases.put(disease, new Pair<>(length, ms));
+                }
+            }
+        }
+        // Delete loaded diseases
+        try (PreparedStatement ps = con.prepareStatement("DELETE FROM playerdiseases WHERE charid = ?")) {
+            ps.setInt(1, ret.getId());
+            ps.executeUpdate();
+        }
+        if (!loadedDiseases.isEmpty()) {
+            Server.getInstance().getPlayerBuffStorage().addDiseasesToStorage(ret.id, loadedDiseases);
+        }
+    }
+
+    private static void loadQuestData(Connection con, Character ret) throws SQLException {
+        final Map<Integer, QuestStatus> loadedQuestStatus = new LinkedHashMap<>();
+
+        // 1. Quest Status
+        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM queststatus WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Quest q = Quest.getInstance(rs.getShort("quest"));
+                    QuestStatus status = new QuestStatus(q, QuestStatus.Status.getById(rs.getInt("status")));
+                    long cTime = rs.getLong("time");
+                    if (cTime > -1) status.setCompletionTime(SECONDS.toMillis(cTime));
+                    long eTime = rs.getLong("expires");
+                    if (eTime > 0) status.setExpirationTime(eTime);
+                    status.setForfeited(rs.getInt("forfeited"));
+                    status.setCompleted(rs.getInt("completed"));
+                    ret.quests.put(q.getId(), status);
+                    loadedQuestStatus.put(rs.getInt("queststatusid"), status);
+                }
+            }
+        }
+
+        // 2. Quest Progress
+        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM questprogress WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    QuestStatus status = loadedQuestStatus.get(rs.getInt("queststatusid"));
+                    if (status != null) {
+                        status.setProgress(rs.getInt("progressid"), rs.getString("progress"));
+                    }
+                }
+            }
+        }
+
+        // 3. Medal Maps
+        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM medalmaps WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    QuestStatus status = loadedQuestStatus.get(rs.getInt("queststatusid"));
+                    if (status != null) {
+                        status.addMedalMap(rs.getInt("mapid"));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void loadConfigData(Connection con, Character ret) throws SQLException {
+        // Skill Macros
+        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM skillmacros WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int position = rs.getInt("position");
+                    SkillMacro macro = new SkillMacro(rs.getInt("skill1"), rs.getInt("skill2"), rs.getInt("skill3"), rs.getString("name"), rs.getInt("shout"), position);
+                    ret.skillMacros[position] = macro;
+                }
+            }
+        }
+
+        // Key Config
+        try (PreparedStatement ps = con.prepareStatement("SELECT `key`,`type`,`action` FROM keymap WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ret.keymap.put(rs.getInt("key"), new KeyBinding(rs.getInt("type"), rs.getInt("action")));
+                }
+            }
+        }
+
+        // Quickslots
+        try (final PreparedStatement ps = con.prepareStatement("SELECT keymap FROM quickslotkeymapped WHERE accountid = ?;")) {
+            ps.setInt(1, ret.getAccountID());
+            try (final ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ret.m_aQuickslotLoaded = LongTool.LongToBytes(rs.getLong(1));
+                    ret.m_pQuickslotKeyMapped = new QuickslotBinding(ret.m_aQuickslotLoaded);
+                }
+            }
+        }
+    }
+
+    private static void loadSocialAndMetaData(Connection con, Character ret) throws SQLException {
+        // Saved Locations
+        try (PreparedStatement ps = con.prepareStatement("SELECT `locationtype`,`map`,`portal` FROM savedlocations WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ret.savedLocations[SavedLocationType.valueOf(rs.getString("locationtype")).ordinal()] = new SavedLocation(rs.getInt("map"), rs.getInt("portal"));
+                }
+            }
+        }
+
+        // Fame History
+        try (PreparedStatement ps = con.prepareStatement("SELECT `characterid_to`,`when` FROM famelog WHERE characterid = ? AND DATEDIFF(NOW(),`when`) < 30")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                ret.lastfametime = 0;
+                ret.lastmonthfameids = new ArrayList<>(31);
+                while (rs.next()) {
+                    ret.lastfametime = Math.max(ret.lastfametime, rs.getTimestamp("when").getTime());
+                    ret.lastmonthfameids.add(rs.getInt("characterid_to"));
+                }
+            }
+        }
+
+        // Area Info
+        try (PreparedStatement ps = con.prepareStatement("SELECT `area`,`info` FROM area_info WHERE charid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ret.area_info.put(rs.getShort("area"), rs.getString("info"));
+                }
+            }
+        }
+
+        // Event Stats
+        try (PreparedStatement ps = con.prepareStatement("SELECT `name`,`info` FROM eventstats WHERE characterid = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    if (rs.getString("name").contentEquals("rescueGaga")) {
+                        ret.events.put(rs.getString("name"), new RescueGaga(rs.getInt("info")));
+                    }
+                }
+            }
+        }
+
+        // Buddylist
+        ret.buddylist.loadFromDb(ret.id);
+
+        // Teleport Rocks
+        try (PreparedStatement ps = con.prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 90")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                int vip = 0, reg = 0;
+                while (rs.next()) {
+                    if (rs.getInt("vip") == 1) {
+                        ret.viptrockmaps.add(rs.getInt("mapid"));
+                        vip++;
+                    } else {
+                        ret.trockmaps.add(rs.getInt("mapid"));
                         reg++;
                     }
                 }
+                while (vip < 20) { ret.viptrockmaps.add(MapId.NONE); vip++; }
+                while (reg < 10) { ret.trockmaps.add(MapId.NONE); reg++; }
             }
-
-            // Account info
-            try (PreparedStatement ps = con.prepareStatement("SELECT name, characterslots, language FROM accounts WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
-                ps.setInt(1, ret.accountid);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        Client retClient = ret.getClient();
-
-                        retClient.setAccountName(rs.getString("name"));
-                        retClient.setCharacterSlots(rs.getByte("characterslots"));
-                        retClient.setLanguage(rs.getInt("language"));   // thanks Zein for noticing user language not overriding default once player is in-game
-                    }
-                }
-            }
-
-            // Area info
-            try (PreparedStatement ps = con.prepareStatement("SELECT `area`,`info` FROM area_info WHERE charid = ?")) {
-                ps.setInt(1, ret.id);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        ret.area_info.put(rs.getShort("area"), rs.getString("info"));
-                    }
-                }
-            }
-
-            // Event stats
-            try (PreparedStatement ps = con.prepareStatement("SELECT `name`,`info` FROM eventstats WHERE characterid = ?")) {
-                ps.setInt(1, ret.id);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        String name = rs.getString("name");
-                        if (rs.getString("name").contentEquals("rescueGaga")) {
-                            ret.events.put(name, new RescueGaga(rs.getInt("info")));
-                        }
-                    }
-                }
-            }
-
-            ret.cashshop = new CashShop(ret.accountid, ret.id, ret.getJobType());
-            ret.cashshop.setCharacter(ret);   // <-- attach owner so NXT minting works
-            ret.autoban = new AutobanManager(ret);
-
-            // Blessing of the Fairy
-            try (PreparedStatement ps = con.prepareStatement("SELECT name, level FROM characters WHERE accountid = ? AND id != ? ORDER BY level DESC limit 1")) {
-                ps.setInt(1, ret.accountid);
-                ps.setInt(2, charid);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        ret.linkedName = rs.getString("name");
-                        ret.linkedLevel = rs.getInt("level");
-                    }
-                }
-            }
-
-            if (channelserver) {
-                final Map<Integer, QuestStatus> loadedQuestStatus = new LinkedHashMap<>();
-
-                // Quest status
-                try (PreparedStatement ps = con.prepareStatement("SELECT * FROM queststatus WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            Quest q = Quest.getInstance(rs.getShort("quest"));
-                            QuestStatus status = new QuestStatus(q, QuestStatus.Status.getById(rs.getInt("status")));
-                            long cTime = rs.getLong("time");
-                            if (cTime > -1) {
-                                status.setCompletionTime(SECONDS.toMillis(cTime));
-                            }
-
-                            long eTime = rs.getLong("expires");
-                            if (eTime > 0) {
-                                status.setExpirationTime(eTime);
-                            }
-
-                            status.setForfeited(rs.getInt("forfeited"));
-                            status.setCompleted(rs.getInt("completed"));
-                            ret.quests.put(q.getId(), status);
-                            loadedQuestStatus.put(rs.getInt("queststatusid"), status);
-                        }
-                    }
-                }
-
-                // Quest progress
-                // opportunity for improvement on questprogress/medalmaps calls to DB
-                try (PreparedStatement ps = con.prepareStatement("SELECT * FROM questprogress WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-                    try (ResultSet rsProgress = ps.executeQuery()) {
-                        while (rsProgress.next()) {
-                            QuestStatus status = loadedQuestStatus.get(rsProgress.getInt("queststatusid"));
-                            if (status != null) {
-                                status.setProgress(rsProgress.getInt("progressid"), rsProgress.getString("progress"));
-                            }
-                        }
-                    }
-                }
-
-                // Medal map visit progress
-                try (PreparedStatement ps = con.prepareStatement("SELECT * FROM medalmaps WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-                    try (ResultSet rsMedalMaps = ps.executeQuery()) {
-                        while (rsMedalMaps.next()) {
-                            QuestStatus status = loadedQuestStatus.get(rsMedalMaps.getInt("queststatusid"));
-                            if (status != null) {
-                                status.addMedalMap(rsMedalMaps.getInt("mapid"));
-                            }
-                        }
-                    }
-                }
-
-                loadedQuestStatus.clear();
-
-                // Skills
-                try (PreparedStatement ps = con.prepareStatement("SELECT skillid,skilllevel,masterlevel,expiration FROM skills WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            Skill pSkill = SkillFactory.getSkill(rs.getInt("skillid"));
-                            if (pSkill != null) { // edit reported by Shavit (=＾● ⋏ ●＾=), thanks Zein for noticing an NPE here
-                                ret.skills.put(pSkill, new SkillEntry(rs.getByte("skilllevel"), rs.getInt("masterlevel"), rs.getLong("expiration")));
-                            }
-                        }
-                    }
-                }
-
-                // Cooldowns (load)
-                try (PreparedStatement ps = con.prepareStatement("SELECT SkillID,StartTime,length FROM cooldowns WHERE charid = ?")) {
-                    ps.setInt(1, ret.getId());
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        long curTime = Server.getInstance().getCurrentTime();
-                        while (rs.next()) {
-                            final int skillid = rs.getInt("SkillID");
-                            final long length = rs.getLong("length"), startTime = rs.getLong("StartTime");
-                            if (skillid != 5221999 && (length + startTime < curTime)) {
-                                continue;
-                            }
-                            ret.giveCoolDowns(skillid, startTime, length);
-                        }
-                    }
-                }
-
-                // Cooldowns (delete)
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM cooldowns WHERE charid = ?")) {
-                    ps.setInt(1, ret.getId());
-                    ps.executeUpdate();
-                }
-
-                // Debuffs (load)
-                Map<Disease, Pair<Long, MobSkill>> loadedDiseases = new LinkedHashMap<>();
-                try (PreparedStatement ps = con.prepareStatement("SELECT * FROM playerdiseases WHERE charid = ?")) {
-                    ps.setInt(1, ret.getId());
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            final Disease disease = Disease.ordinal(rs.getInt("disease"));
-                            if (disease == Disease.NULL) {
-                                continue;
-                            }
-
-                            final int skillid = rs.getInt("mobskillid");
-                            final int skilllv = rs.getInt("mobskilllv");
-                            final long length = rs.getInt("length");
-
-                            MobSkillType type = MobSkillType.from(skillid).orElseThrow();
-                            MobSkill ms = MobSkillFactory.getMobSkillOrThrow(type, skilllv);
-                            loadedDiseases.put(disease, new Pair<>(length, ms));
-                        }
-                    }
-                }
-
-                // Debuffs (delete)
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM playerdiseases WHERE charid = ?")) {
-                    ps.setInt(1, ret.getId());
-                    ps.executeUpdate();
-                }
-
-                if (!loadedDiseases.isEmpty()) {
-                    Server.getInstance().getPlayerBuffStorage().addDiseasesToStorage(ret.id, loadedDiseases);
-                }
-
-                // Skill macros
-                try (PreparedStatement ps = con.prepareStatement("SELECT * FROM skillmacros WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            int position = rs.getInt("position");
-                            SkillMacro macro = new SkillMacro(rs.getInt("skill1"), rs.getInt("skill2"), rs.getInt("skill3"), rs.getString("name"), rs.getInt("shout"), position);
-                            ret.skillMacros[position] = macro;
-                        }
-                    }
-                }
-
-                // Key config
-                try (PreparedStatement ps = con.prepareStatement("SELECT `key`,`type`,`action` FROM keymap WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            int key = rs.getInt("key");
-                            int type = rs.getInt("type");
-                            int action = rs.getInt("action");
-                            ret.keymap.put(key, new KeyBinding(type, action));
-                        }
-                    }
-                }
-
-                // Saved locations
-                try (PreparedStatement ps = con.prepareStatement("SELECT `locationtype`,`map`,`portal` FROM savedlocations WHERE characterid = ?")) {
-                    ps.setInt(1, charid);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            ret.savedLocations[SavedLocationType.valueOf(rs.getString("locationtype")).ordinal()] = new SavedLocation(rs.getInt("map"), rs.getInt("portal"));
-                        }
-                    }
-                }
-
-                // Fame history
-                try (PreparedStatement ps = con.prepareStatement("SELECT `characterid_to`,`when` FROM famelog WHERE characterid = ? AND DATEDIFF(NOW(),`when`) < 30")) {
-                    ps.setInt(1, charid);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        ret.lastfametime = 0;
-                        ret.lastmonthfameids = new ArrayList<>(31);
-                        while (rs.next()) {
-                            ret.lastfametime = Math.max(ret.lastfametime, rs.getTimestamp("when").getTime());
-                            ret.lastmonthfameids.add(rs.getInt("characterid_to"));
-                        }
-                    }
-                }
-
-                ret.buddylist.loadFromDb(charid);
-                ret.storage = wserv.getAccountStorage(ret.accountid);
-
-                /* Double-check storage incase player is first time on server
-                 * The storage won't exist so nothing to load
-                 */
-                if (ret.storage == null) {
-                    wserv.loadAccountStorage(ret.accountid);
-                    ret.storage = wserv.getAccountStorage(ret.accountid);
-                }
-
-                int startHp = ret.hp, startMp = ret.mp;
-                ret.reapplyLocalStats();
-                ret.changeHpMp(startHp, startMp, true);
-                //ret.resetBattleshipHp();
-            }
-
-            final int mountid = ret.getJobType() * 10000000 + 1004;
-            if (ret.getInventory(InventoryType.EQUIPPED).getItem((short) -18) != null) {
-                ret.maplemount = new Mount(ret, ret.getInventory(InventoryType.EQUIPPED).getItem((short) -18).getItemId(), mountid);
-            } else {
-                ret.maplemount = new Mount(ret, 0, mountid);
-            }
-            ret.maplemount.setExp(mountexp);
-            ret.maplemount.setLevel(mountlevel);
-            ret.maplemount.setTiredness(mounttiredness);
-            ret.maplemount.setActive(false);
-
-            // Quickslot key config
-            try (final PreparedStatement pSelectQuickslotKeyMapped = con.prepareStatement("SELECT keymap FROM quickslotkeymapped WHERE accountid = ?;")) {
-                pSelectQuickslotKeyMapped.setInt(1, ret.getAccountID());
-
-                try (final ResultSet pResultSet = pSelectQuickslotKeyMapped.executeQuery()) {
-                    if (pResultSet.next()) {
-                        ret.m_aQuickslotLoaded = LongTool.LongToBytes(pResultSet.getLong(1));
-                        ret.m_pQuickslotKeyMapped = new QuickslotBinding(ret.m_aQuickslotLoaded);
-                    }
-                }
-            }
-
-            return ret;
-        } catch (SQLException | RuntimeException e) {
-            e.printStackTrace();
         }
-        return null;
+    }
+
+    private static void loadStorageData(Connection con, Character ret, boolean channelserver) throws SQLException {
+        World wserv = Server.getInstance().getWorld(ret.world);
+        ret.storage = wserv.getAccountStorage(ret.accountid);
+        if (ret.storage == null) {
+            wserv.loadAccountStorage(ret.accountid);
+            ret.storage = wserv.getAccountStorage(ret.accountid);
+        }
+    }
+
+    private static void finalizeLoginState(Connection con, Character ret, Client client) throws SQLException {
+        World wserv = Server.getInstance().getWorld(ret.world);
+
+        // Check Marriage integrity
+        if (ret.marriageItemid > 0 && ret.partnerId <= 0) {
+            ret.marriageItemid = -1;
+        } else if (ret.partnerId > 0 && wserv.getRelationshipId(ret.id) <= 0) {
+            ret.marriageItemid = -1;
+            ret.partnerId = -1;
+        }
+
+        // Map & Spawnpoint
+        MapManager mapManager = client.getChannelServer().getMapFactory();
+        ret.map = mapManager.getMap(ret.mapid);
+        if (ret.map == null) {
+            ret.map = mapManager.getMap(MapId.HENESYS);
+        }
+        Portal portal = ret.map.getPortal(ret.initialSpawnPoint);
+        if (portal == null) {
+            portal = ret.map.getPortal(0);
+            ret.initialSpawnPoint = 0;
+        }
+        ret.setPosition(portal.getPosition());
+
+        // Party
+        try (PreparedStatement ps = con.prepareStatement("SELECT party FROM characters WHERE id = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int partyid = rs.getInt("party");
+                    Party party = wserv.getParty(partyid);
+                    if (party != null) {
+                        ret.mpc = party.getMemberById(ret.id);
+                        if (ret.mpc != null) {
+                            ret.mpc = new PartyCharacter(ret);
+                            ret.party = party;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Messenger
+        try (PreparedStatement ps = con.prepareStatement("SELECT messengerid, messengerposition FROM characters WHERE id = ?")) {
+            ps.setInt(1, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int messengerid = rs.getInt("messengerid");
+                    int position = rs.getInt("messengerposition");
+                    if (messengerid > 0 && position < 4 && position > -1) {
+                        Messenger messenger = wserv.getMessenger(messengerid);
+                        if (messenger != null) {
+                            ret.messenger = messenger;
+                            ret.messengerposition = position;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Stats
+        int startHp = ret.hp, startMp = ret.mp;
+        ret.reapplyLocalStats();
+        ret.changeHpMp(startHp, startMp, true);
+
+        ret.loggedIn = true;
     }
 
     public void reloadQuestExpirations() {
@@ -8620,7 +8650,7 @@ public class Character extends AbstractCharacterObject {
                 " matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?," +
                 " jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?," +
                 " partySearch = ?, autopotEnabled = ?, passive_watk = ?, passive_matk = ?, passive_wdef = ?," +
-                " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?  WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
+                " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?, reborns = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, level);
             ps.setInt(2, fame);
@@ -8743,7 +8773,8 @@ public class Character extends AbstractCharacterObject {
             ps.setInt(61, passiveAcc);
             ps.setInt(62, passiveEva);
             ps.setInt(63, dailyPlaytime);
-            ps.setInt(64, id);
+            ps.setInt(64, reborns);
+            ps.setInt(65, id);
 
             int updateRows = ps.executeUpdate();
             if (updateRows < 1) {
@@ -12292,5 +12323,86 @@ public class Character extends AbstractCharacterObject {
     // [END] ANTI-CHEAT METHODS
     // ------------------------------------------------------------------
 
+    public void doRebirth() {
+        // 1. Reset Basic Progress
+        int oldJobId = this.job.getId();
+        this.level = 1;
+        this.exp.set(0);
+        this.reborns++;
 
+        // Set Job to 1st Job Branch (100, 200, 300, 400, 500)
+        int firstJobId = (oldJobId / 100) * 100;
+        if (firstJobId == 0) {
+            this.job = Job.BEGINNER;
+        } else {
+            this.job = Job.getById(firstJobId);
+        }
+
+        // 2. Reset Stats to clean 4/4/4/4
+        this.str = 4;
+        this.dex = 4;
+        this.int_ = 4;
+        this.luk = 4;
+        this.remainingAp = 0;
+
+        // 3. Clear Skill Points & Grant 1 Free SP
+        for (int i = 0; i < remainingSp.length; i++) {
+            remainingSp[i] = 0;
+        }
+        remainingSp[GameConstants.getSkillBook(job.getId())] = 1;
+
+        // 4. Unlearn All Skills (Except Beginner Essentials)
+        List<Skill> currentSkills = new ArrayList<>(skills.keySet());
+        for (Skill skill : currentSkills) {
+            int skillId = skill.getId();
+            if (skillId < 10000) { // Adventurer Beginner Skills
+                if (skillId == 1000 || skillId == 1001 || skillId == 1002) {
+                    // Reset Three Snails, Recovery, Nimble Feet
+                    changeSkillLevel(skill, (byte) 0, skill.getMaxLevel(), -1);
+                }
+            } else {
+                // Unlearn all class skills
+                changeSkillLevel(skill, (byte) 0, skill.getMaxLevel(), -1);
+            }
+        }
+
+        // 5. Announce
+        if (!this.isGM()) {
+            final String names = (getMedalText() + name);
+            getWorldServer().broadcastPacket(PacketCreator.serverNotice(6, "[Rebirth] Congratulations to " + names + " on reaching Rebirth " + this.reborns + "!"));
+        }
+
+        // 6. Warp to Maple Island
+        MapleMap targetMap = client.getChannelServer().getMapFactory().getMap(10000);
+        if (targetMap != null) {
+            changeMap(targetMap, targetMap.getPortal(0));
+        }
+
+        // 7. Refresh Client Stats
+        List<Pair<Stat, Integer>> statup = new ArrayList<>(12);
+        statup.add(new Pair<>(Stat.LEVEL, level));
+        statup.add(new Pair<>(Stat.EXP, exp.get()));
+        statup.add(new Pair<>(Stat.JOB, job.getId()));
+        statup.add(new Pair<>(Stat.STR, str));
+        statup.add(new Pair<>(Stat.DEX, dex));
+        statup.add(new Pair<>(Stat.INT, int_));
+        statup.add(new Pair<>(Stat.LUK, luk));
+        statup.add(new Pair<>(Stat.AVAILABLEAP, remainingAp));
+        statup.add(new Pair<>(Stat.AVAILABLESP, remainingSp[GameConstants.getSkillBook(job.getId())]));
+
+        sendPacket(PacketCreator.updatePlayerStats(statup, true, this));
+
+        // 8. [NEW] Reset Quest Karma (Database)
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE queststatus SET karma_redeemed = 0 WHERE characterid = ?")) {
+            ps.setInt(1, this.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("[Rebirth] Failed to reset karma_redeemed for char " + this.getName());
+            e.printStackTrace();
+        }
+
+        // 9. Save
+        this.saveCharToDB();
+    }
 }

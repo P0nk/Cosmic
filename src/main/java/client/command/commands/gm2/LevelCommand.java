@@ -64,12 +64,24 @@ public class LevelCommand extends Command {
             }
         }
 
+        // [DEBUG] Initial State
+        player.yellowMessage("[DEBUG] Target: " + target.getName() + " | Current Level: " + target.getLevel());
+        player.yellowMessage("[DEBUG] Requested Level: " + targetLevel);
+
         // Step 3: Execute Leveling Logic on Target
         // We strip the EXP first so they start fresh at the new level
         target.loseExp(target.getExp(), false, false);
 
+        // [DEBUG] Calculate the 'Pre-Level' value
+        int calculatedPreLevel = Math.min(targetLevel, target.getMaxClassLevel()) - 1;
+        player.yellowMessage("[DEBUG] Calculated Pre-Level (Target - 1): " + calculatedPreLevel);
+
         // Set level to (Target - 1) because levelUp() is called immediately after to refresh stats
-        target.setLevel(Math.min(targetLevel, target.getMaxClassLevel()) - 1);
+        target.setLevel(calculatedPreLevel);
+
+        // [DEBUG] Check if setLevel actually worked
+        // If this says "1" when you expected "0", that is why you end up at level 2.
+        player.yellowMessage("[DEBUG] Level AFTER setLevel(" + calculatedPreLevel + "): " + target.getLevel());
 
         target.resetPlayerRates();
         if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
@@ -79,6 +91,9 @@ public class LevelCommand extends Command {
 
         // This triggers the level up effect and recalculates stats
         target.levelUp(false);
+
+        // [DEBUG] Final Result
+        player.yellowMessage("[DEBUG] Level AFTER levelUp(): " + target.getLevel());
 
         // Confirmation
         if (player != target) {

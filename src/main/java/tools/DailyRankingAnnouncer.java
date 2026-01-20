@@ -31,32 +31,39 @@ public class DailyRankingAnnouncer implements Runnable {
 
             // --- DATA SECTIONS (Now Filtered for Banned = 0) ---
 
-            appendField(json, "🏆 Top Overall", getTopPlayersQuery(3), false);
+            // 1. Top Overall
+            appendField(json, "🏆 Top Overall", getTopPlayersQuery(3), false, false);
             json.append(",");
 
-            appendField(json, "⚔️ Top Warriors", getJobQuery(100, 3), true);
+            // 2. Top Rebirths (New)
+            appendField(json, "⭐ Top Rebirths", getTopRebirthsQuery(3), false, false);
             json.append(",");
 
-            appendField(json, "🔮 Top Magicians", getJobQuery(200, 3), true);
+            // 3. Job Classes
+            appendField(json, "⚔️ Top Warriors", getJobQuery(100, 3), true, false);
             json.append(",");
 
-            appendField(json, "🏹 Top Bowmen", getJobQuery(300, 3), true);
+            appendField(json, "🔮 Top Magicians", getJobQuery(200, 3), true, false);
             json.append(",");
 
-            appendField(json, "🗡️ Top Thieves", getJobQuery(400, 3), true);
+            appendField(json, "🏹 Top Bowmen", getJobQuery(300, 3), true, false);
             json.append(",");
 
-            appendField(json, "🏴‍☠️ Top Pirates", getJobQuery(500, 3), true);
+            appendField(json, "🗡️ Top Thieves", getJobQuery(400, 3), true, false);
             json.append(",");
 
-            // Guilds: Filtered if Leader is banned
-            appendField(json, "🛡️ Top Guilds", getTopGuildsQuery(3), true);
+            appendField(json, "🏴‍☠️ Top Pirates", getJobQuery(500, 3), true, false);
             json.append(",");
 
-            appendField(json, "📜 Quest Masters", getTopQuestersQuery(3), true);
+            // 4. Guilds & Quests
+            appendField(json, "🛡️ Top Guilds", getTopGuildsQuery(3), true, false);
             json.append(",");
 
-            appendField(json, "⏳ Most Played Today", getMostPlayedQuery(3), false);
+            appendField(json, "📜 Quest Masters", getTopQuestersQuery(3), true, false);
+            json.append(",");
+
+            // 5. Playtime (Updated Logic)
+            appendField(json, "⏳ Most Played Today", getMostPlayedQuery(3), false, true);
 
             // --- END DATA SECTIONS ---
 
@@ -74,17 +81,21 @@ public class DailyRankingAnnouncer implements Runnable {
         }
     }
 
-    private void appendField(StringBuilder sb, String title, String query, boolean inline) {
+    /**
+     * Appends a JSON field object to the string builder.
+     * @param isPlaytime If true, formats the integer value as Hours/Minutes.
+     */
+    private void appendField(StringBuilder sb, String title, String query, boolean inline, boolean isPlaytime) {
         sb.append("{");
         sb.append("\"name\": \"").append(title).append("\",");
-        String value = fetchData(query);
+        String value = fetchData(query, isPlaytime);
         String safeValue = DiscordWebhook.escape(value);
         sb.append("\"value\": \"").append(safeValue).append("\",");
         sb.append("\"inline\": ").append(inline);
         sb.append("}");
     }
 
-    private String fetchData(String query) {
+    private String fetchData(String query, boolean isPlaytime) {
         StringBuilder sb = new StringBuilder();
 
         try (Connection con = DatabaseConnection.getConnection();
@@ -97,12 +108,17 @@ public class DailyRankingAnnouncer implements Runnable {
                 int score = rs.getInt(2);
                 String displayScore;
 
-                if (query.contains("dailyPlaytime")) {
+                if (isPlaytime) {
+                    // Assuming dailyPlaytime is stored in MINUTES in the DB
                     int hours = score / 60;
                     int minutes = score % 60;
-                    displayScore = String.format("%dh %dm", hours, minutes);
+                    if (hours > 0) {
+                        displayScore = String.format("%dh %dm", hours, minutes);
+                    } else {
+                        displayScore = String.format("%dm", minutes);
+                    }
                 } else {
-                    displayScore = String.valueOf(score);
+                    displayScore = String.valueOf(score); // Levels, Rebirths, GP, etc.
                 }
 
                 sb.append(rank).append(". **").append(name).append("** (")
@@ -120,6 +136,7 @@ public class DailyRankingAnnouncer implements Runnable {
     }
 
     private void resetDailyStats() {
+        // Important: Ensure this runs AFTER the announcement is sent, otherwise the Most Played board will always be empty!
         String query = "UPDATE characters SET dailyPlaytime = 0";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
@@ -129,7 +146,7 @@ public class DailyRankingAnnouncer implements Runnable {
         }
     }
 
-    // --- UPDATED SQL QUERIES (Now Checking Accounts.banned) ---
+    // --- SQL QUERIES ---
 
     private String getTopPlayersQuery(int limit) {
         return "SELECT c.name, c.level " +
@@ -137,6 +154,14 @@ public class DailyRankingAnnouncer implements Runnable {
                 "JOIN accounts a ON c.accountid = a.id " +
                 "WHERE c.gm = 0 AND a.banned = 0 " +
                 "ORDER BY c.level DESC, c.exp DESC LIMIT " + limit;
+    }
+
+    private String getTopRebirthsQuery(int limit) {
+        return "SELECT c.name, c.reborns " +
+                "FROM characters c " +
+                "JOIN accounts a ON c.accountid = a.id " +
+                "WHERE c.gm = 0 AND a.banned = 0 AND c.reborns > 0 " +
+                "ORDER BY c.reborns DESC, c.level DESC LIMIT " + limit;
     }
 
     private String getJobQuery(int jobID, int limit) {
@@ -149,7 +174,6 @@ public class DailyRankingAnnouncer implements Runnable {
     }
 
     private String getTopGuildsQuery(int limit) {
-        // Filters out guilds where the LEADER is banned
         return "SELECT g.name, g.GP " +
                 "FROM guilds g " +
                 "JOIN characters c ON g.leader = c.id " +

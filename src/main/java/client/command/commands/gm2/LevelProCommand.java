@@ -6,61 +6,59 @@ import client.command.Command;
 
 public class LevelProCommand extends Command {
     {
-        setDescription("Set a level. Usage: !levelpro <level> [ign]");
+        setDescription("Level up to target (Gains AP/SP). Usage: !levelpro <level> [ign]");
     }
 
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
-        Character target = player; // Default target is self
+        Character target = player;
         int targetLevel = 0;
 
-        // Validation: Check arguments
         if (params.length < 1) {
             player.yellowMessage("Syntax: !levelpro <level> [ign]");
             return;
         }
 
-        // Step 1: Always parse the first parameter as the Level
         try {
             targetLevel = Integer.parseInt(params[0]);
         } catch (NumberFormatException e) {
-            player.yellowMessage("Invalid Level. Please enter a number first. Syntax: !levelpro <level> [ign]");
+            player.yellowMessage("Invalid Number.");
             return;
         }
 
-        // Step 2: Check for optional target name (Second parameter)
         if (params.length > 1) {
             String targetName = params[1];
             target = c.getChannelServer().getPlayerStorage().getCharacterByName(targetName);
-
             if (target == null) {
-                player.yellowMessage("Player '" + targetName + "' could not be found in this channel.");
+                player.yellowMessage("Player '" + targetName + "' not found.");
                 return;
             }
         }
 
-        // Step 3: Execute Leveling Logic
         int currentLevel = target.getLevel();
         int maxPossible = target.getMaxClassLevel();
-        // Ensure we don't exceed the class max level
         int finalLevel = Math.min(maxPossible, targetLevel);
 
         if (currentLevel >= finalLevel) {
-            player.yellowMessage(target.getName() + " is already level " + currentLevel + " (Targeting: " + finalLevel + ")");
+            player.yellowMessage(target.getName() + " is already level " + currentLevel);
             return;
         }
 
-        // Loop level up until target is reached
-        while (target.getLevel() < finalLevel) {
+        // [FIX] Calculate the exact number of level-ups needed beforehand
+        int levelsNeeded = finalLevel - currentLevel;
+
+        // Run the loop exactly that many times.
+        // We do NOT check target.getLevel() inside the condition to avoid race conditions.
+        for (int i = 0; i < levelsNeeded; i++) {
             target.levelUp(false);
         }
 
-        // Confirmation message
+        // If target is self, message is redundant as level up effect plays, but good for logs
         if (player != target) {
             player.yellowMessage("Leveled up " + target.getName() + " to " + target.getLevel());
         } else {
-            player.yellowMessage("Leveled yourself to " + target.getLevel());
+            player.yellowMessage("You are now Level " + target.getLevel());
         }
     }
 }

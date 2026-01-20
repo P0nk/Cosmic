@@ -210,6 +210,7 @@ public class CommandsExecutor {
         addCommand("loot", LootCommand.class);
         addCommand("mylawn", MapOwnerClaimCommand.class);
         addCommand("tp", TPCommand.class);
+        addCommand("reborn",RebornCommand.class);
 
         // --- Events & Community ---
         addCommand("joinevent", JoinEventCommand.class);
