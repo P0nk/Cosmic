@@ -12324,13 +12324,16 @@ public class Character extends AbstractCharacterObject {
     // ------------------------------------------------------------------
 
     public void doRebirth() {
-        // 1. Reset Basic Progress
         int oldJobId = this.job.getId();
-        this.level = 1;
-        this.exp.set(0);
+
+        // 1. Increment Rebirths
         this.reborns++;
 
-        // Set Job to 1st Job Branch (100, 200, 300, 400, 500)
+        // 2. Reset Basic Progress (Level 1)
+        this.level = 1;
+        this.exp.set(0);
+
+        // 3. Set Job to 1st Job Branch
         int firstJobId = (oldJobId / 100) * 100;
         if (firstJobId == 0) {
             this.job = Job.BEGINNER;
@@ -12338,47 +12341,51 @@ public class Character extends AbstractCharacterObject {
             this.job = Job.getById(firstJobId);
         }
 
-        // 2. Reset Stats to clean 4/4/4/4
+        // 4. Reset Stats to clean 4/4/4/4
         this.str = 4;
         this.dex = 4;
         this.int_ = 4;
         this.luk = 4;
-        this.remainingAp = 0;
+        this.remainingAp = 9;
 
-        // 3. Clear Skill Points & Grant 1 Free SP
+        // 5. Clear Skill Points & Grant 1 Free SP
         for (int i = 0; i < remainingSp.length; i++) {
             remainingSp[i] = 0;
         }
         remainingSp[GameConstants.getSkillBook(job.getId())] = 1;
 
-        // 4. Unlearn All Skills (Except Beginner Essentials)
+        // 6. Unlearn All Skills
         List<Skill> currentSkills = new ArrayList<>(skills.keySet());
         for (Skill skill : currentSkills) {
             int skillId = skill.getId();
-            if (skillId < 10000) { // Adventurer Beginner Skills
+            if (skillId < 10000) {
                 if (skillId == 1000 || skillId == 1001 || skillId == 1002) {
-                    // Reset Three Snails, Recovery, Nimble Feet
                     changeSkillLevel(skill, (byte) 0, skill.getMaxLevel(), -1);
                 }
             } else {
-                // Unlearn all class skills
                 changeSkillLevel(skill, (byte) 0, skill.getMaxLevel(), -1);
             }
         }
 
-        // 5. Announce
+        // 7. [FIXED] Recalculate Rates Correctly
+        this.resetPlayerRates();   // 1. Reset to 1x
+        this.setWorldRates();      // 2. Apply Server Base Rate (e.g. 5x)
+        this.updateCouponRates();  // 3. Re-apply any active 2x Cards
+        this.setPlayerRates();     // 4. Apply Level 1 Tier Bonus
+
+        // 8. Announce
         if (!this.isGM()) {
             final String names = (getMedalText() + name);
             getWorldServer().broadcastPacket(PacketCreator.serverNotice(6, "[Rebirth] Congratulations to " + names + " on reaching Rebirth " + this.reborns + "!"));
         }
 
-        // 6. Warp to Maple Island
+        // 9. Warp to Maple Island
         MapleMap targetMap = client.getChannelServer().getMapFactory().getMap(10000);
         if (targetMap != null) {
             changeMap(targetMap, targetMap.getPortal(0));
         }
 
-        // 7. Refresh Client Stats
+        // 10. Refresh Client Stats
         List<Pair<Stat, Integer>> statup = new ArrayList<>(12);
         statup.add(new Pair<>(Stat.LEVEL, level));
         statup.add(new Pair<>(Stat.EXP, exp.get()));
@@ -12392,7 +12399,7 @@ public class Character extends AbstractCharacterObject {
 
         sendPacket(PacketCreator.updatePlayerStats(statup, true, this));
 
-        // 8. [NEW] Reset Quest Karma (Database)
+        // 11. Reset Quest Karma
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("UPDATE queststatus SET karma_redeemed = 0 WHERE characterid = ?")) {
             ps.setInt(1, this.getId());
@@ -12402,7 +12409,7 @@ public class Character extends AbstractCharacterObject {
             e.printStackTrace();
         }
 
-        // 9. Save
+        // 12. Save
         this.saveCharToDB();
     }
 }

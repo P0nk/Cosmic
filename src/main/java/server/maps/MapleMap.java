@@ -2039,19 +2039,49 @@ public class MapleMap {
 
         monster.changeDifficulty(difficulty, isPq);
 
-        // --- [EVOLVING MAP INTEGRATION] ---
+// --- [EVOLVING MAP INTEGRATION] ---
         if (this.evolveTier > 0 && !monster.isBoss()) {
-            // 1. Scale Level (for Damage/Acc/Exp)
-            monster.changeLevel(monster.getLevel() + this.evolveTier);
+            try {
+                // 1. Calculate New Level (Cap at 199 to prevent overflow crashes)
+                int currentLevel = monster.getLevel();
+                int newLevel = Math.min(199, currentLevel + this.evolveTier);
 
-            // 2. Fix HP Scaling (Long support)
-            // changeLevel() resets HP to an int cap. We must re-apply our tier scaling manually.
-            long originalHp = monster.getStats().getHp(); // Get raw stats from XML/LifeFactory
-            double multiplier = 1.0 + (this.evolveTier * 0.10); // +10% per tier
+                if (newLevel > currentLevel) {
+                    monster.changeLevel(newLevel);
 
-            long newHp = (long)(originalHp * multiplier);
-            monster.setStartingHp(newHp);
+                    // 2. Fix HP Scaling
+                    long originalHp = monster.getStats().getHp();
+
+                    // [DEBUG] Check specifically for the broken Orange Mushroom
+                    if (monster.getId() == 1210102) {
+                        System.out.println("[DEBUG] Spawning Mob 1210102. Original HP: " + originalHp);
+                    }
+
+                    // [FIX] Handle broken mobs with 0 HP in WZ/Data
+                    if (originalHp <= 0) {
+                        originalHp = 100; // Force a base HP if data is missing
+                    }
+
+                    double multiplier = 1.0 + (this.evolveTier * 0.10);
+                    long newHp = (long)(originalHp * multiplier);
+
+                    // [FIX] Enforce Minimum and Maximum HP limits
+                    if (newHp < 1) newHp = 100; // Prevent instant death
+                    if (newHp > 2100000000) newHp = 2100000000; // Prevent Int Overflow
+
+                    monster.setStartingHp(newHp);
+
+                    // [DEBUG] Confirm final stats
+                    if (monster.getId() == 1210102) {
+                        System.out.println("[DEBUG] Mob 1210102 Evolved. New HP: " + newHp);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[Evolving] Failed to evolve mob " + monster.getId() + ": " + e.getMessage());
+            }
         }
+        // ----------------------------------
+        // ----------------------------------
         // ----------------------------------
 
         monster.setMap(this);
@@ -4545,7 +4575,9 @@ public class MapleMap {
             statUpdateRunnables.clear();
 
             for (Runnable r : toRun) {
-                r.run();
+                if (r != null) { // <--- ADD THIS CHECK
+                    r.run();
+                }
             }
         }
     }

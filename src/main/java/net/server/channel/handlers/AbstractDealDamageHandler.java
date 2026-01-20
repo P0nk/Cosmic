@@ -215,6 +215,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         thresholdSq += 8500000.0; // Adds ~300px more range tolerance
                     }
 
+
+
                     // 2. Skill Exemptions (Full Map Attacks & Long Range Snipes)
                     // If the skill is known to hit the whole map, we disable the check entirely.
                     int skillId = attack.skill;
@@ -239,16 +241,19 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     skillId == Aran.COMBO_TEMPEST
                             ;
 
+                    // [FIX] Grace Period Check
+                    // If the player changed maps less than 2 seconds (2000ms) ago, SKIP the check.
+                    boolean isLoading = (System.currentTimeMillis() - player.getLastMapChangeTime() < 2000);
+
 
                     // 3. The Check
-                    if (!isFMA && distSq > thresholdSq) {
-                        // Double check: Is the player a GM?
+                    if (!isFMA && !isLoading && distSq > thresholdSq) {
                         if (!player.isGM()) {
                             double realDist = Math.sqrt(distSq);
+                            int allowedDist = (int) Math.sqrt(thresholdSq);
 
-                            // [ACTIVE PUNISHMENT]
                             player.getAutobanManager().jailPlayer(
-                                    "Kami/Distance Hack: Hit mob from " + (int)realDist + "px away (Limit: " + (int)Math.sqrt(thresholdSq) + ")",
+                                    "Kami/Distance Hack: Hit mob from " + (int)realDist + "px away (Limit: " + allowedDist + ") Skill: " + attack.skill,
                                     30
                             );
                             return; // Stop processing this attack
