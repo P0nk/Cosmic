@@ -1,6 +1,6 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
+    This file is part of the OdinMS Maple Story Server
+    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
                        Matthias Butz <matze@odinms.de>
                        Jan Christian Meyer <vimes@odinms.de>
 
@@ -19,8 +19,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* Magician Job Instructor
+    Magician 2nd Job Advancement
+    Victoria Road : The Forest North of Ellinia (101020000)
+*/
+
 var status;
-var completed;
 
 function start() {
     status = -1;
@@ -41,23 +45,63 @@ function action(mode, type, selection) {
             status--;
         }
 
+        // -------------------------------------------------------------
+        // REBIRTH PATH (Fix for "Marbles not dropping")
+        // -------------------------------------------------------------
+        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 200) {
+            if (status == 0) {
+                 cm.sendNext("I see the wisdom of a veteran magician in you. Since you have been reborn, you do not need to hunt the monsters again.");
+            } else if (status == 1) {
+                 cm.sendAcceptDecline("I will give you the **30 Dark Marbles** directly and warp you in. Simply hand them to the instructor inside to pass the test. Are you ready?");
+            } else if (status == 2) {
+                 if (cm.canHold(4031013, 30)) {
+                     // Give the 30 Marbles directly
+                     cm.gainItem(4031013, 30);
+                     // Warp to Magician Test Map
+                     cm.warp(108000200, 0);
+                     cm.dispose();
+                 } else {
+                     cm.sendOk("Please make some space in your Etc inventory for the marbles.");
+                     cm.dispose();
+                 }
+            }
+            return;
+        }
+
+        // -------------------------------------------------------------
+        // STANDARD PATH (First-time players)
+        // -------------------------------------------------------------
         if (status == 0) {
-            if (cm.haveItem(4031013, 30)) {
-                completed = true;
-                cm.sendNext("Ohhhhh.. you collected all 30 Dark Marbles!! It should have been difficult.. just incredible! Alright. You've passed the test and for that, I'll reward you #bThe Proof of a Hero#k. Take that and go back to Ellinia.");
+            if (cm.isQuestCompleted(100007)) {
+                cm.sendOk("You're truly a hero!");
+                cm.dispose();
+            } else if (cm.isQuestCompleted(100006)) {
+                cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
+                status = 4;
+            } else if (cm.isQuestStarted(100006)) {
+                cm.sendNext("Hmmm...it is definitely the letter from #bGrendell the Really Old#k...so you came all the way here to take the test and make the 2nd job advancement as a magician. Alright, I'll explain the test to you. Don't sweat it too much, it's not that complicated.");
             } else {
-                completed = false;
-                cm.sendSimple("You will have to collect me #b30 #t4031013##k. Good luck. \r\n#b#L1#I would like to leave#l");
+                cm.sendOk("I can show you the way once your ready for it.");
+                cm.dispose();
             }
         } else if (status == 1) {
-            if (completed) {
-                cm.removeAll(4031013);
-                cm.completeQuest(100007);
-                cm.startQuest(100008);
-                cm.gainItem(4031012);
-            }
+            cm.sendNextPrev("I'll send you to a hidden map. You'll see monsters you don't normally see. They look the same like the regular ones, but with a totally different attitude. They neither boost your experience level nor provide you with item.");
+        } else if (status == 2) {
+            cm.sendNextPrev("You'll be able to acquire a marble called #b#t4031013##k while knocking down those monsters. It is a special marble made out of their sinister, evil minds. Collect 30 of those, and then go talk to a colleague of mine in there. That's how you pass the test.");
+        } else if (status == 3) {
+            cm.sendYesNo("Once you go inside, you can't leave until you take care of your mission. If you die, your experience level will decrease.. So you better really buckle up and get ready...well, do you want to go for it now?");
+        } else if (status == 4) {
+            cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
 
-            cm.warp(101020000, 1);
+            if (!cm.isQuestCompleted(100006)) {
+                cm.completeQuest(100006);
+                cm.startQuest(100007);
+                cm.gainItem(4031009, -1);
+            }
+        } else if (status == 5) {
+            cm.warp(108000200, 0);
+            cm.dispose();
+        } else {
             cm.dispose();
         }
     }

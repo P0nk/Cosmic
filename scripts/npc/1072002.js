@@ -20,8 +20,8 @@
 */
 
 /* Bowman Job Instructor
-Hunter Job Advancement
-Warning Street : The Road to the Dungeon (106010000)
+    Hunter Job Advancement
+    Warning Street : The Road to the Dungeon (106010000)
 */
 
 var status;
@@ -45,6 +45,27 @@ function action(mode, type, selection) {
             status--;
         }
 
+        // -------------------------------------------------------------
+        // REBIRTH PATH
+        // If player is a Bowman (300) and has Rebirths, we allow re-entry
+        // regardless of previous quest completion status.
+        // -------------------------------------------------------------
+        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 300) {
+            if (status == 0) {
+                 cm.sendNext("I see the sharp eyes of a veteran bowman in you. Although you have been reborn, you must prove your skills again for this life.");
+            } else if (status == 1) {
+                 cm.sendAcceptDecline("I will let you enter the testing grounds immediately. Are you ready?");
+            } else if (status == 2) {
+                 // Warp directly to the Bowman Test Map (108000100)
+                 cm.warp(108000100, 0);
+                 cm.dispose();
+            }
+            return;
+        }
+
+        // -------------------------------------------------------------
+        // STANDARD PATH (First-time players)
+        // -------------------------------------------------------------
         if (status == 0) {
             if (cm.isQuestCompleted(100001)) {
                 cm.sendOk("You're truly a hero!");
@@ -63,10 +84,13 @@ function action(mode, type, selection) {
         } else if (status == 2) {
             cm.sendAcceptDecline("I will give you a chance if you're ready.");
         } else if (status == 3) {
-            cm.completeQuest(100000);
-            cm.startQuest(100001);
-            cm.gainItem(4031010, -1);
-            cm.sendOk("You will have to collect me #b30 #t4031013##k. Good luck.")
+            // Only update quest logic if standard path
+            if (!cm.isQuestCompleted(100000)) {
+                cm.completeQuest(100000);
+                cm.startQuest(100001);
+                cm.gainItem(4031010, -1); // Remove Letter from Athena
+            }
+            cm.sendOk("You will have to collect me #b30 #t4031013##k. Good luck.");
         } else if (status == 4) {
             cm.warp(108000100, 0);
             cm.dispose();

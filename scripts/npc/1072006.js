@@ -1,6 +1,6 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
+    This file is part of the OdinMS Maple Story Server
+    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
                        Matthias Butz <matze@odinms.de>
                        Jan Christian Meyer <vimes@odinms.de>
 
@@ -22,17 +22,11 @@
 /**
  -- Odin JavaScript --------------------------------------------------------------------------------
  Bowman Job Instructor - Ant Tunnel For Bowman (108000100)
- -- By ---------------------------------------------------------------------------------------------
- Unknown
- -- Version Info -----------------------------------------------------------------------------------
- 1.2 - Cleanup by Moogra
- 1.1 - Statement fix [Information]
- 1.0 - First Version by Unknown
  ---------------------------------------------------------------------------------------------------
  **/
 
 var status;
-var completed;
+var completed = false;
 
 function start() {
     status = -1;
@@ -54,21 +48,32 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
+            // Check for marbles (provided by Outer NPC for reborns)
             if (cm.haveItem(4031013, 30)) {
                 completed = true;
-                cm.sendOk("You're a true hero! Take this and Athena will acknowledge you.");
+                cm.sendNext("You're a true hero! Take this and Athena will acknowledge you.");
             } else {
                 completed = false;
                 cm.sendSimple("You will have to collect me #b30 #t4031013##k. Good luck. \r\n#b#L1#I would like to leave#l");
             }
         } else if (status == 1) {
             if (completed) {
-                cm.removeAll(4031013);
-                cm.completeQuest(100001);
-                cm.startQuest(100002);
-                cm.gainItem(4031012);
+                cm.removeAll(4031013); // Remove Marbles
+
+                // [REBIRTH OPTIMIZATION]
+                // Only update quests if first time. Reborns skip to avoid DB errors.
+                if (cm.getPlayer().getReborns() == 0) {
+                    cm.completeQuest(100001);
+                    cm.startQuest(100002);
+                }
+
+                // Always give Proof of Hero
+                if (!cm.haveItem(4031012)) {
+                    cm.gainItem(4031012, 1);
+                }
             }
 
+            // Warp back to Warning Street (The Road to the Dungeon)
             cm.warp(106010000, 9);
             cm.dispose();
         }

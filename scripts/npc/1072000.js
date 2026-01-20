@@ -1,6 +1,6 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
+    This file is part of the OdinMS Maple Story Server
+    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
                        Matthias Butz <matze@odinms.de>
                        Jan Christian Meyer <vimes@odinms.de>
 
@@ -20,8 +20,8 @@
 */
 
 /* Warrior Job Instructor
-	Warrior 2nd Job Advancement
-	Victoria Road : West Rocky Mountain IV (102020300)
+    Warrior 2nd Job Advancement
+    Victoria Road : West Rocky Mountain IV (102020300)
 */
 
 var status;
@@ -45,13 +45,34 @@ function action(mode, type, selection) {
             status--;
         }
 
+        // -------------------------------------------------------------
+        // REBIRTH PATH
+        // If player is a Warrior (100) and has Rebirths, we allow re-entry
+        // regardless of previous quest completion status.
+        // -------------------------------------------------------------
+        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 100) {
+            if (status == 0) {
+                 cm.sendNext("I see the courage of a veteran warrior in you. Although you have been reborn, you must prove your skills again for this life.");
+            } else if (status == 1) {
+                 cm.sendAcceptDecline("I will let you enter the testing grounds immediately. Are you ready?");
+            } else if (status == 2) {
+                 // Warp directly to the Warrior Test Map (108000300)
+                 cm.warp(108000300, 0);
+                 cm.dispose();
+            }
+            return;
+        }
+
+        // -------------------------------------------------------------
+        // STANDARD PATH (First-time players)
+        // -------------------------------------------------------------
         if (status == 0) {
             if (cm.isQuestCompleted(100004)) {
                 cm.sendOk("You're truly a hero!");
                 cm.dispose();
             } else if (cm.isQuestCompleted(100003)) {
                 cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-                status = 4;
+                status = 4; // Jump to the item handling/warp block
             } else if (cm.isQuestStarted(100003)) {
                 cm.sendNext("Hmmm...it is definitely the letter from #bDances with Balrog#k...so you came all the way here to take the test and make the 2nd job advancement as the warrior. Alright, I'll explain the test to you. Don't sweat it too much, it's not that complicated.");
             } else {
@@ -66,9 +87,13 @@ function action(mode, type, selection) {
             cm.sendYesNo("Once you go inside, you can't leave until you take care of your mission. If you die, your experience level will decrease..so you better really buckle up and get ready...well, do you want to go for it now?");
         } else if (status == 4) {
             cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-            cm.completeQuest(100003);
-            cm.startQuest(100004);
-            cm.gainItem(4031008, -1);
+
+            // Only run quest update logic if strictly necessary to avoid errors
+            if (!cm.isQuestCompleted(100003)) {
+                cm.completeQuest(100003);
+                cm.startQuest(100004);
+                cm.gainItem(4031008, -1); // Remove Letter from Dances with Balrog
+            }
         } else if (status == 5) {
             cm.warp(108000300, 0);
             cm.dispose();
