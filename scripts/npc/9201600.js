@@ -1,10 +1,11 @@
 /* Cootie the Really Small – Teleport NPC (DROP-IN)
  *
  * - Uses TeleportSavedMapManager (server.teleport) for:
- *   getAccountIdByCharacterName, getSavedMaps, saveCurrentMap, getMapLimit, increaseMapLimit, removeSavedMap, getMapName
+ * getAccountIdByCharacterName, getSavedMaps, saveCurrentMap, getMapLimit, increaseMapLimit, removeSavedMap, getMapName
  *
  * - Prevents duplicate saved map PK errors by relying on manager-side existence check.
  * - Patched: no more cm.getMapName(...) calls (since helpers removed from NPCConversationManager).
+ * - Updated: Added Level 10 requirement.
  */
 
 var TeleportSavedMapManager = Java.type("server.teleport.TeleportSavedMapManager");
@@ -34,6 +35,15 @@ var blacklist = [
 
 function start() {
   status = 0;
+
+  // ---------------------------------------------------------
+  // LEVEL CHECK (New Requirement)
+  // ---------------------------------------------------------
+  if (cm.getLevel() < 10) {
+      cm.sendOk("You must be at least level 10 to use my teleportation services.");
+      cm.dispose();
+      return;
+  }
 
   // Block boss maps
   if (blacklist.includes(cm.getPlayer().getMapId())) {
