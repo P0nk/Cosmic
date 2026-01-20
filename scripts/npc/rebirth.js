@@ -25,7 +25,7 @@ function action(mode, type, selection) {
         status--;
 
     if (status == 0) {
-        cm.sendYesNo("Slimy here! Congratulations! You have reached the absolute limit of your power.\r\n\r\nWould you like to #bRebirth#k?\r\n\r\n#e[Implications]:#n\r\n- Level reset to 1\r\n- Job reset to Beginner\r\n- Skills unlearned\r\n- Stats reset to 13/5/4/4 \r\n- You gain #b+5 bonus AP#k per level per rebirth permanently.");
+        cm.sendYesNo("Slimy here! Congratulations! You have reached the absolute limit of your power.\r\n\r\nWould you like to #bRebirth#k?\r\n\r\n#e[Implications]:#n\r\n- Level reset to 1\r\n- Job reset to your class first job\r\n- Skills unlearned (1 Starter AP for job change)\r\n- Stats reset to 4/4/4/4 + 9 unused AP \r\n- You gain #b+5 bonus AP#k per level per rebirth permanently.");
     } else if (status == 1) {
         // The player clicked Yes
         cm.getPlayer().doRebirth(); // Calls the Java method we created in Part 1
