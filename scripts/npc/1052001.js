@@ -4,7 +4,6 @@
 */
 
 var status = -1;
-// Track which flow we are in
 var actionx = {"1stJob": false, "2ndJob": false, "3thJobI": false, "3thJobC": false};
 var job = 410;
 
@@ -34,7 +33,7 @@ function start() {
             actionx["2ndJob"] = true;
             if (cm.haveItem(4031012)) { // Proof of Hero
                 cm.sendNext("I see you have done well. I will allow you to take the next step on your long road. Please, choose your path.");
-            } else if (cm.haveItem(4031011)) { // Letter to Dark Lord (Already has it)
+            } else if (cm.haveItem(4031011)) { // Letter to Dark Lord
                 cm.sendOk("Go and see the #b#p102040000##k in the Construction Site North of Kerning City.");
                 cm.dispose();
             } else {
@@ -171,16 +170,22 @@ function action(mode, type, selection) {
                 }
             }
         } else if (status == 2) {
-            if (cm.haveItem(4031011)) { // Safety check
-                cm.dispose();
-                return;
-            }
-            job += selection * 10;
+            // [FIX] Removed "if (cm.haveItem(4031011)) { dispose }" check.
+            // If they have the letter AND proof, we just ignore the letter.
+
+            // [FIX] Ensure job ID is reset before calculation to prevent loop accumulation errors
+            job = 410 + (selection * 10);
+
             cm.sendYesNo("So you want to make the second job advancement as the " + (job == 410 ? "#bAssassin#k" : "#bBandit#k") + "? You know you won't be able to choose a different job once you make your decision here, right?");
         } else if (status == 3) {
             if (cm.haveItem(4031012)) {
                 cm.gainItem(4031012, -1);
             }
+            // Just in case they still have the letter, remove it now to be clean
+            if (cm.haveItem(4031011)) {
+                cm.gainItem(4031011, -1);
+            }
+
             cm.completeQuest(100011);
 
             if (job == 410) {
@@ -201,6 +206,7 @@ function action(mode, type, selection) {
         }
 
     } else if (actionx["3thJobI"]) {
+        // ... (3rd Job Logic Unchanged)
         if (status == 0) {
             if (cm.getPlayer().gotPartyQuestItem("JB3")) {
                 cm.getPlayer().removePartyQuestItem("JB3");
