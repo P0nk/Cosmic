@@ -40,7 +40,7 @@ public final class MonsterBook {
                 // The pickup logic in Character.java will handle the "Item Unavailable" message
                 // if we return without doing anything?
                 // Actually, just notify the user.
-                c.getPlayer().dropMessage(5, "You have already collected 5 of this card.");
+//                c.getPlayer().dropMessage(5, "You have already collected 5 of this card.");
                 return;
             }
         } finally {
