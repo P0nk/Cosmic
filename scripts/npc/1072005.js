@@ -1,108 +1,82 @@
-/*
-    This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-                       Matthias Butz <matze@odinms.de>
-                       Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation. You may not use, modify
-    or distribute this program under any other version of the
-    GNU Affero General Public License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+/* Magician Test Instructor
+   Inside Magician Testing Ground (108000200)
+   NPC ID: 1032003
 */
 
-/* Magician Job Instructor
-    Magician 2nd Job Advancement
-    Victoria Road : The Forest North of Ellinia (101020000)
-*/
-
-var status;
+var status = -1;
 
 function start() {
-    status = -1;
     action(1, 0, 0);
 }
 
 function action(mode, type, selection) {
     if (mode == -1) {
         cm.dispose();
-    } else {
-        if (mode == 0 && type > 0) {
-            cm.dispose();
-            return;
-        }
-        if (mode == 1) {
-            status++;
-        } else {
-            status--;
-        }
+        return;
+    }
+    if (mode == 0 && status == 0) {
+        cm.dispose();
+        return;
+    }
+    if (mode == 1) status++;
+    else status--;
 
+    if (status == 0) {
         // -------------------------------------------------------------
-        // REBIRTH PATH (Fix for "Marbles not dropping")
+        // 1. REBIRTH CHECK (Bypass for Veterans)
         // -------------------------------------------------------------
-        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 200) {
-            if (status == 0) {
-                 cm.sendNext("I see the wisdom of a veteran magician in you. Since you have been reborn, you do not need to hunt the monsters again.");
-            } else if (status == 1) {
-                 cm.sendAcceptDecline("I will give you the **30 Dark Marbles** directly and warp you in. Simply hand them to the instructor inside to pass the test. Are you ready?");
-            } else if (status == 2) {
-                 if (cm.canHold(4031013, 30)) {
-                     // Give the 30 Marbles directly
-                     cm.gainItem(4031013, 30);
-                     // Warp to Magician Test Map
-                     cm.warp(108000200, 0);
-                     cm.dispose();
-                 } else {
-                     cm.sendOk("Please make some space in your Etc inventory for the marbles.");
-                     cm.dispose();
-                 }
+        if (cm.getPlayer().getReborns() > 0) {
+            cm.sendNext("I see that you are a veteran magician who has been #breborn#k. You do not need to prove your wisdom to me again via these marbles.");
+        }
+        // -------------------------------------------------------------
+        // 2. STANDARD CHECK (Has 30 Marbles)
+        // -------------------------------------------------------------
+        else if (cm.haveItem(4031013, 30)) {
+            cm.sendNext("Oh, you have collected all 30 #bDark Marbles#k! That is incredible. You have passed the test.");
+        }
+        // -------------------------------------------------------------
+        // 3. IN PROGRESS (Need more marbles)
+        // -------------------------------------------------------------
+        else {
+            cm.sendSimple("You need to collect #b30 Dark Marbles#k from the monsters in this map. Good luck.\r\n#L1#I want to give up and leave.#l");
+        }
+    }
+    else if (status == 1) {
+        // Handling Success (Reborn OR Has Marbles)
+        if (cm.getPlayer().getReborns() > 0 || cm.haveItem(4031013, 30)) {
+
+            // Only remove marbles if they actually have them (Standard path)
+            if (cm.haveItem(4031013, 30)) {
+                cm.removeAll(4031013);
             }
-            return;
-        }
 
-        // -------------------------------------------------------------
-        // STANDARD PATH (First-time players)
-        // -------------------------------------------------------------
-        if (status == 0) {
-            if (cm.isQuestCompleted(100007)) {
-                cm.sendOk("You're truly a hero!");
-                cm.dispose();
-            } else if (cm.isQuestCompleted(100006)) {
-                cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-                status = 4;
-            } else if (cm.isQuestStarted(100006)) {
-                cm.sendNext("Hmmm...it is definitely the letter from #bGrendell the Really Old#k...so you came all the way here to take the test and make the 2nd job advancement as a magician. Alright, I'll explain the test to you. Don't sweat it too much, it's not that complicated.");
+            // Give the Proof of Hero if they don't have it
+            if (!cm.haveItem(4031012)) {
+                cm.gainItem(4031012, 1);
+            }
+
+            // [QUEST HANDLING]
+            // Standard Magician Quest Flow:
+            // 100006 (Start at Grendel) -> 100007 (Collection) -> 100008 (Return with Proof)
+            if (cm.isQuestStarted(100007)) {
+                cm.completeQuest(100007);
+                cm.startQuest(100008);
+            }
+
+            cm.sendNextPrev("Here is #bThe Proof of a Hero#k. Take this back to #bGrendel the Really Old#k in Ellinia.");
+        }
+        // Handling "Give Up" Selection
+        else {
+            if (selection == 1) {
+                cm.sendYesNo("Are you sure you want to leave? You will have to start over if you return.");
             } else {
-                cm.sendOk("I can show you the way once your ready for it.");
                 cm.dispose();
             }
-        } else if (status == 1) {
-            cm.sendNextPrev("I'll send you to a hidden map. You'll see monsters you don't normally see. They look the same like the regular ones, but with a totally different attitude. They neither boost your experience level nor provide you with item.");
-        } else if (status == 2) {
-            cm.sendNextPrev("You'll be able to acquire a marble called #b#t4031013##k while knocking down those monsters. It is a special marble made out of their sinister, evil minds. Collect 30 of those, and then go talk to a colleague of mine in there. That's how you pass the test.");
-        } else if (status == 3) {
-            cm.sendYesNo("Once you go inside, you can't leave until you take care of your mission. If you die, your experience level will decrease.. So you better really buckle up and get ready...well, do you want to go for it now?");
-        } else if (status == 4) {
-            cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-
-            if (!cm.isQuestCompleted(100006)) {
-                cm.completeQuest(100006);
-                cm.startQuest(100007);
-                cm.gainItem(4031009, -1);
-            }
-        } else if (status == 5) {
-            cm.warp(108000200, 0);
-            cm.dispose();
-        } else {
-            cm.dispose();
         }
+    }
+    else if (status == 2) {
+        // Warp OUT to The Forest North of Ellinia (101020000)
+        cm.warp(101020000, 0);
+        cm.dispose();
     }
 }
