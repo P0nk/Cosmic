@@ -6,6 +6,7 @@
 var status = -1;
 var actionx = {"1stJob": false, "2ndJob": false, "3thJobI": false, "3thJobC": false};
 var job = 110;
+var sel = -1; // Added to track selection
 
 var spawnPnpc = false;
 var spawnPnpcFee = 7000000;
@@ -22,9 +23,9 @@ function start() {
             cm.sendNext("Want to be a #rWarrior#k? The requirements are Level 10 and 35 STR.");
         } else if (cm.getLevel() >= 30 && cm.getJobId() == 100) {
             actionx["2ndJob"] = true;
-            if (cm.haveItem(4031012)) {
+            if (cm.haveItem(4031012)) { // Proof of Hero
                 cm.sendNext("I see you have done well. I will allow you to take the next step on your long road.");
-            } else if (cm.haveItem(4031008)) {
+            } else if (cm.haveItem(4031008)) { // Letter
                 cm.sendOk("Go and see the #b#p102020300##k in the West Rocky Mountain IV.");
                 cm.dispose();
             } else {
@@ -131,23 +132,35 @@ function action(mode, type, selection) {
                     cm.dispose();
                 }
             } else {
-                if (selection == 0) cm.sendNext("Fighters have high power.");
-                else if (selection == 1) cm.sendNext("Pages use elemental magic.");
-                else cm.sendNext("Spearmen use range and power.");
-                status -= 2; // Loop explanation
+                // [FIX] Capture Selection & Ask Confirmation immediately
+                sel = selection;
+                var jobName = "";
+                var desc = "";
+
+                if (sel == 0) {
+                    jobName = "Fighter";
+                    desc = "Fighters have high power. ";
+                } else if (sel == 1) {
+                    jobName = "Page";
+                    desc = "Pages use elemental magic. ";
+                } else {
+                    jobName = "Spearman";
+                    desc = "Spearmen use range and power. ";
+                }
+
+                cm.sendYesNo(desc + "Do you want to become a #b" + jobName + "#k?");
             }
         } else if (status == 2) {
-            // [FIX] Reset Job Calculation
-            job = 110 + (selection * 10);
-            cm.sendYesNo("Are you sure you want to become a " + ((job == 110) ? "Fighter" : (job == 120) ? "Page" : "Spearman") + "?");
-        } else if (status == 3) {
+            // [FIX] Use stored 'sel' variable
+            job = 110 + (sel * 10);
+
             if (cm.haveItem(4031012)) cm.gainItem(4031012, -1);
             if (cm.haveItem(4031008)) cm.gainItem(4031008, -1);
 
             cm.completeQuest(100005);
             cm.changeJobById(job);
-            cm.sendNext("Congratulations on your advancement!");
-        } else if (status == 4) {
+            cm.sendNext("Congratulations on your advancement! You are now a " + (job == 110 ? "Fighter" : job == 120 ? "Page" : "Spearman") + ".");
+        } else if (status == 3) {
             cm.dispose();
         }
 
