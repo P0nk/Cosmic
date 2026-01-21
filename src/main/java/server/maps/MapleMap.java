@@ -2044,7 +2044,7 @@ public class MapleMap {
             try {
                 // 1. Calculate New Level (Cap at 199 to prevent overflow crashes)
                 int currentLevel = monster.getLevel();
-                int newLevel = Math.min(199, currentLevel + this.evolveTier);
+                int newLevel = Math.min(300, currentLevel + this.evolveTier);
 
                 if (newLevel > currentLevel) {
                     monster.changeLevel(newLevel);
@@ -2052,10 +2052,10 @@ public class MapleMap {
                     // 2. Fix HP Scaling
                     long originalHp = monster.getStats().getHp();
 
-                    // [DEBUG] Check specifically for the broken Orange Mushroom
-                    if (monster.getId() == 1210102) {
-                        System.out.println("[DEBUG] Spawning Mob 1210102. Original HP: " + originalHp);
-                    }
+//                    // [DEBUG] Check specifically for the broken Orange Mushroom
+//                    if (monster.getId() == 1210102) {
+//                        System.out.println("[DEBUG] Spawning Mob 1210102. Original HP: " + originalHp);
+//                    }
 
                     // [FIX] Handle broken mobs with 0 HP in WZ/Data
                     if (originalHp <= 0) {
@@ -2071,10 +2071,10 @@ public class MapleMap {
 
                     monster.setStartingHp(newHp);
 
-                    // [DEBUG] Confirm final stats
-                    if (monster.getId() == 1210102) {
-                        System.out.println("[DEBUG] Mob 1210102 Evolved. New HP: " + newHp);
-                    }
+//                    // [DEBUG] Confirm final stats
+//                    if (monster.getId() == 1210102) {
+//                        System.out.println("[DEBUG] Mob 1210102 Evolved. New HP: " + newHp);
+//                    }
                 }
             } catch (Exception e) {
                 System.err.println("[Evolving] Failed to evolve mob " + monster.getId() + ": " + e.getMessage());
