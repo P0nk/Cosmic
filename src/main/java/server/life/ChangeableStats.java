@@ -1,23 +1,7 @@
 /*
-This file is part of the OdinMS Maple Story Server
-Copyright (C) 2008 ~ 2010 Patrick Huy <patrick.huy@frz.cc>
-Matthias Butz <matze@odinms.de>
-Jan Christian Meyer <vimes@odinms.de>
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License version 3
-as published by the Free Software Foundation. You may not use, modify
-or distribute this program under any other version of the
-GNU Affero General Public License.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Corrected ChangeableStats for High-Level Mobs (>200)
  */
 package server.life;
-
-import constants.game.GameConstants;
 
 public class ChangeableStats extends OverrideMonsterStats {
 
@@ -34,17 +18,42 @@ public class ChangeableStats extends OverrideMonsterStats {
         level = stats.getLevel();
     }
 
-    public ChangeableStats(MonsterStats stats, int newLevel, boolean pqMob) { // here we go i think
-        final double mod = (double) newLevel / (double) stats.getLevel();
-        final double hpRatio = (double) stats.getHp() / (double) stats.getExp();
-        final double pqMod = (pqMob ? 1.5 : 1.0); // god damn
-        hp = Math.min((int) Math.round((!stats.isBoss() ? GameConstants.getMonsterHP(newLevel) : (stats.getHp() * mod)) * pqMod), Integer.MAX_VALUE); // right here lol
-        exp = Math.min((int) Math.round((!stats.isBoss() ? (GameConstants.getMonsterHP(newLevel) / hpRatio) : (stats.getExp())) * pqMod), Integer.MAX_VALUE);
-        mp = Math.min((int) Math.round(stats.getMp() * mod * pqMod), Integer.MAX_VALUE);
-        watk = Math.min((int) Math.round(stats.getPADamage() * mod), Integer.MAX_VALUE);
-        matk = Math.min((int) Math.round(stats.getMADamage() * mod), Integer.MAX_VALUE);
-        wdef = Math.min(Math.min(stats.isBoss() ? 30 : 20, (int) Math.round(stats.getPDDamage() * mod)), Integer.MAX_VALUE);
-        mdef = Math.min(Math.min(stats.isBoss() ? 30 : 20, (int) Math.round(stats.getMDDamage() * mod)), Integer.MAX_VALUE);
+    public ChangeableStats(MonsterStats stats, int newLevel, boolean pqMob) {
+        // Safety: Prevent division by zero
+        double oldLevel = stats.getLevel() <= 0 ? 1 : stats.getLevel();
+
+        // Calculate modifier
+        final double mod = (double) newLevel / oldLevel;
+
+        // Calculate HP/Exp Ratio (to scale EXP properly without looking up a table)
+        double hpRatio = (double) stats.getHp() / (double) stats.getExp();
+        if (Double.isNaN(hpRatio) || Double.isInfinite(hpRatio)) hpRatio = 1.0;
+
+        final double pqMod = (pqMob ? 1.5 : 1.0);
+
+        // 1. HP Calculation (Pure Math, No Lookup)
+        long newHp = Math.round(stats.getHp() * mod * pqMod);
+        hp = (int) Math.min(newHp, Integer.MAX_VALUE);
+
+        // 2. EXP Calculation (Based on Ratio)
+        if (stats.getExp() > 0) {
+            exp = (int) Math.min(Math.round((hp / hpRatio) * pqMod), Integer.MAX_VALUE);
+        } else {
+            exp = 0;
+        }
+
+        // 3. Scale other stats
+        mp = (int) Math.min(Math.round(stats.getMp() * mod * pqMod), Integer.MAX_VALUE);
+        watk = (int) Math.min(Math.round(stats.getPADamage() * mod), Integer.MAX_VALUE);
+        matk = (int) Math.min(Math.round(stats.getMADamage() * mod), Integer.MAX_VALUE);
+
+        // Cap defense to prevent "Miss GodMode" if stats get too high
+        int pDefCap = stats.isBoss() ? 30 : 20;
+        int mDefCap = stats.isBoss() ? 30 : 20;
+
+        wdef = (int) Math.min(pDefCap, Math.round(stats.getPDDamage() * mod));
+        mdef = (int) Math.min(mDefCap, Math.round(stats.getMDDamage() * mod));
+
         level = newLevel;
     }
 

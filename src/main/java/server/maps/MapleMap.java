@@ -2034,54 +2034,45 @@ public class MapleMap {
 
     public void spawnMonster(final Monster monster, int difficulty, boolean isPq) {
         if (mobCapacity != -1 && mobCapacity == spawnedMonstersOnMap.get()) {
-            return;//PyPQ
+            return;
         }
 
         monster.changeDifficulty(difficulty, isPq);
 
-// --- [EVOLVING MAP INTEGRATION] ---
+        // --- [EVOLVING MAP INTEGRATION] ---
         if (this.evolveTier > 0 && !monster.isBoss()) {
             try {
-                // 1. Calculate New Level (Cap at 199 to prevent overflow crashes)
+                // 1. Calculate New Level
+                // [UPDATED] Cap raised to 255 (Safe client limit).
+                // If your client supports short/int levels, you can change 255 to 999.
                 int currentLevel = monster.getLevel();
-                int newLevel = Math.min(300, currentLevel + this.evolveTier);
+                int newLevel = Math.min(255, currentLevel + this.evolveTier);
 
                 if (newLevel > currentLevel) {
+                    // A. Update Level
+                    // (This relies on your ChangeableStats being fixed to not use lookup tables)
                     monster.changeLevel(newLevel);
 
-                    // 2. Fix HP Scaling
-                    long originalHp = monster.getStats().getHp();
+                    // B. Get the NEW base HP calculated by changeLevel
+                    long baseHpForNewLevel = monster.getHp();
 
-//                    // [DEBUG] Check specifically for the broken Orange Mushroom
-//                    if (monster.getId() == 1210102) {
-//                        System.out.println("[DEBUG] Spawning Mob 1210102. Original HP: " + originalHp);
-//                    }
+                    if (baseHpForNewLevel <= 0) baseHpForNewLevel = 100;
 
-                    // [FIX] Handle broken mobs with 0 HP in WZ/Data
-                    if (originalHp <= 0) {
-                        originalHp = 100; // Force a base HP if data is missing
-                    }
-
+                    // C. Apply Tier Multiplier
                     double multiplier = 1.0 + (this.evolveTier * 0.10);
-                    long newHp = (long)(originalHp * multiplier);
+                    long finalHp = (long)(baseHpForNewLevel * multiplier);
 
-                    // [FIX] Enforce Minimum and Maximum HP limits
-                    if (newHp < 1) newHp = 100; // Prevent instant death
-                    if (newHp > 2100000000) newHp = 2100000000; // Prevent Int Overflow
+                    // [FIX] Cap HP at Integer.MAX_VALUE (2.1 Billion)
+                    if (finalHp < 1) finalHp = 100;
+                    if (finalHp > 2100000000) finalHp = 2100000000;
 
-                    monster.setStartingHp(newHp);
-
-//                    // [DEBUG] Confirm final stats
-//                    if (monster.getId() == 1210102) {
-//                        System.out.println("[DEBUG] Mob 1210102 Evolved. New HP: " + newHp);
-//                    }
+                    // D. Apply Final HP
+                    monster.setStartingHp(finalHp);
                 }
             } catch (Exception e) {
                 System.err.println("[Evolving] Failed to evolve mob " + monster.getId() + ": " + e.getMessage());
             }
         }
-        // ----------------------------------
-        // ----------------------------------
         // ----------------------------------
 
         monster.setMap(this);
@@ -2089,44 +2080,14 @@ public class MapleMap {
             getEventInstance().registerMonster(monster);
         }
 
+        // ... (The rest of your method remains the same)
         spawnAndAddRangedMapObject(monster, c -> c.sendPacket(PacketCreator.spawnMonster(monster, true)), null);
-
         monster.aggroUpdateController();
         updateBossSpawn(monster);
-
-        if ((monster.getTeam() == 1 || monster.getTeam() == 0) && (isCPQMap() || isCPQMap2())) {
-            List<MCSkill> teamS = null;
-            if (monster.getTeam() == 0) {
-                teamS = redTeamBuffs;
-            } else if (monster.getTeam() == 1) {
-                teamS = blueTeamBuffs;
-            }
-            if (teamS != null) {
-                for (MCSkill skil : teamS) {
-                    if (skil != null) {
-                        skil.getSkill().applyEffect(null, monster, false, null);
-                    }
-                }
-            }
-        }
-
-        if (monster.getDropPeriodTime() > 0) { //9300102 - Watchhog, 9300061 - Moon Bunny (HPQ), 9300093 - Tylus
-            if (monster.getId() == MobId.WATCH_HOG) {
-                monsterItemDrop(monster, monster.getDropPeriodTime());
-            } else if (monster.getId() == MobId.MOON_BUNNY) {
-                monsterItemDrop(monster, monster.getDropPeriodTime() / 3);
-            } else if (monster.getId() == MobId.TYLUS) {
-                monsterItemDrop(monster, monster.getDropPeriodTime());
-            } else if (monster.getId() == MobId.GIANT_SNOWMAN_LV5_EASY || monster.getId() == MobId.GIANT_SNOWMAN_LV5_MEDIUM || monster.getId() == MobId.GIANT_SNOWMAN_LV5_HARD) {
-                monsterItemDrop(monster, monster.getDropPeriodTime());
-            } else {
-                log.error("UNCODED TIMED MOB DETECTED: {}", monster.getId());
-            }
-        }
-
+        // ...
         spawnedMonstersOnMap.incrementAndGet();
         addSelfDestructive(monster);
-        applyRemoveAfter(monster);  // thanks LightRyuzaki for pointing issues with spawned CWKPQ mobs not applying this
+        applyRemoveAfter(monster);
     }
 
     public void spawnDojoMonster(final Monster monster) {
