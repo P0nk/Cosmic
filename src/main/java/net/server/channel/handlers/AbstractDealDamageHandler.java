@@ -204,15 +204,15 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     // We check squared distance to avoid expensive square root math.
                     // 2,500,000 = ~1580 pixels (Nearly 2x the width of the game screen).
                     double distSq = player.getPosition().distanceSq(monster.getPosition());
-                    double thresholdSq = 8500000.0;
+                    double thresholdSq = 11000000.0;
 
                     // 1. Job Buffers (Give ranged classes slightly more room)
                     if (attack.magic) {
-                        thresholdSq += 8500000.0; // Adds ~300px more range tolerance
+                        thresholdSq += 7500000.0; // Adds ~300px more range tolerance
                     }
 
                     if (attack.ranged) {
-                        thresholdSq += 8500000.0; // Adds ~300px more range tolerance
+                        thresholdSq += 7500000.0; // Adds ~300px more range tolerance
                     }
 
 
@@ -230,6 +230,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     skillId == Sniper.ARROW_ERUPTION ||
                                     skillId == Marksman.SNIPE ||
                                     skillId == Crusader.SHOUT ||
+                                    skillId == NightLord.SHADOW_RAIN||
+                                    skillId == ChiefBandit.ASSAULTER||
                                     skillId == ChiefBandit.EDGE_CARNIVAL ||  // 3241 px
                                     skillId == Shadower.SHADOW_VEIL ||
                                     skillId == SuperGM.SUPER_DRAGON_ROAR ||
