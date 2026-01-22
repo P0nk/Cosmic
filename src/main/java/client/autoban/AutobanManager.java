@@ -185,7 +185,7 @@ public class AutobanManager {
     // --- [ANTI-HACK] 3. Fast Attack Counter ---
     public void checkFastAttack() {
         this.fastAttackCount++;
-        if (this.fastAttackCount > 5) {
+        if (this.fastAttackCount > 8) {
             jailPlayer("Unlimited Attack / No Delay", 60);
             this.fastAttackCount = 0;
         }
