@@ -293,7 +293,7 @@ public final class InventorySortHandler extends AbstractPacketHandler {
     public final void handlePacket(InPacket p, Client c) {
         Character chr = c.getPlayer();
         p.readInt();
-        chr.getAutobanManager().setTimestamp(3, Server.getInstance().getCurrentTimestamp(), 4);
+        chr.getAutobanManager().setTimestamp(3, Server.getInstance().getCurrentTimestamp(), 5);
 
         if (!YamlConfig.config.server.USE_ITEM_SORT) {
             c.sendPacket(PacketCreator.enableActions());
