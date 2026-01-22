@@ -45,7 +45,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
         Character chr = c.getPlayer();
         AutobanManager abm = chr.getAutobanManager();
         p.readInt();
-        abm.setTimestamp(5, Server.getInstance().getCurrentTimestamp(), 4);
+        abm.setTimestamp(5, Server.getInstance().getCurrentTimestamp(), 5);
         p.readShort();
         int itemId = p.readInt();
         int monsterid = p.readInt();
