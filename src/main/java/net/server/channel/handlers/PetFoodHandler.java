@@ -46,7 +46,7 @@ public final class PetFoodHandler extends AbstractPacketHandler {
         }
         abm.spam(2);
         p.readInt(); // timestamp issue detected thanks to Masterrulax
-        abm.setTimestamp(1, Server.getInstance().getCurrentTimestamp(), 3);
+        abm.setTimestamp(1, Server.getInstance().getCurrentTimestamp(), 10);
         if (chr.getNoPets() == 0) {
             c.sendPacket(PacketCreator.enableActions());
             return;
