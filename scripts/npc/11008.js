@@ -236,7 +236,7 @@ function listSearchName() {
     searchResults = [];
 
     var allItems = qm.getItemInformationProvider();  // List<Pair<Integer,String>>
-    var maxResults = 32; // "magical" (34) crashes game
+    var maxResults = 30; // "magical" (34) crashes game
 
     for each (var itemPair in allItems) {
         var id = itemPair.getLeft();
