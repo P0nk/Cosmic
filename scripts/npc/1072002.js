@@ -51,11 +51,17 @@ function action(mode, type, selection) {
         // regardless of previous quest completion status.
         // -------------------------------------------------------------
        if (cm.haveItem(4031012, 1)){
-                 cm.sendSimple("Well done great bowman! Now return to Athena to complete your job advancement!");
-                 cm.warp(100000201, 0);
-                 cm.dispose();
-       }
-
+             if (status == 0) {
+                        cm.sendNext("Well done great bowman! Now return to Athena to complete your job advancement!");
+                   } else if (status == 1) {
+                        cm.sendAcceptDecline("Would you like me to send you back to Athena?");
+                   } else if (status == 2) {
+                        // Warp directly to the Bowman Test Map (108000100)
+                        cm.warp(100000201, 0);
+                        cm.dispose();
+                   }
+                   return;
+               }
 
         if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 300) {
 
