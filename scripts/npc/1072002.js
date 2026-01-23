@@ -66,11 +66,11 @@ function action(mode, type, selection) {
         if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 300 && cm.haveItem(4031010)) {
 
             if (status == 0) {
-                 cm.gainItem(4031010, -1);
                  cm.sendNext("Oh! Its you again! I didn't think I'd see you again! I see the sharp eyes of a veteran bowman in you. You must have been reborn, I'll let my colleague check and see if you have the skills still..");
             } else if (status == 1) {
-                 cm.sendAcceptDecline("I will send you to the testing grounds. Are you ready?");
+                 cm.sendAcceptDecline("I see Athena has sent you here once more, I will send you to the testing grounds. Are you ready?");
             } else if (status == 2) {
+                  cm.gainItem(4031010, -1);
                  // Warp directly to the Bowman Test Map (108000100)
                  cm.warp(108000100, 0);
                  cm.dispose();
