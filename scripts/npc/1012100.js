@@ -151,7 +151,7 @@ function action(mode, type, selection) {
                     if (!cm.haveItem(4031010)) {
                         cm.gainItem(4031010, 1); // Bowman Letter
                     }
-                    cm.sendNextPrev("Please get this letter to #b#p106010000##k who's around #b#m106010000##k near Henesys. She is taking care of the job of an instructor in place of me.");
+                    cm.sendNextPrev("Please get this letter to #rBowman Job Instructor#k who's around #b#m106010000##k near Henesys. She is taking care of the job of an instructor in place of me.");
                     cm.dispose();
                 } else {
                     cm.sendNext("Please, make some space in your inventory.");
