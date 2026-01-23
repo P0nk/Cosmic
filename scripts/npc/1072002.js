@@ -50,7 +50,9 @@ function action(mode, type, selection) {
         // If player is a Bowman (300) and has Rebirths, we allow re-entry
         // regardless of previous quest completion status.
         // -------------------------------------------------------------
-        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 300) {
+        console.log("cm.getPlayer().getReborns():" ,cm.getPlayer().getReborns())
+        if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 300) {
+
             if (status == 0) {
                  cm.sendNext("I see the sharp eyes of a veteran bowman in you. Although you have been reborn, you must prove your skills again for this life.");
             } else if (status == 1) {
