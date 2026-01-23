@@ -15,12 +15,10 @@ function action(mode, type, selection) {
         cm.dispose();
         return;
     }
-
     if (mode == 0 && type > 0) {
         cm.dispose();
         return;
     }
-
     if (mode == 1) {
         status++;
     } else {
@@ -28,18 +26,32 @@ function action(mode, type, selection) {
     }
 
     // -------------------------------------------------------------
-    // REBIRTH PATH
-    // If player is a Thief (400) and has Rebirths, we allow re-entry
-    // regardless of previous quest completion status.
+    // REBIRTH PATH - RETURN
+    // If player has the Proof (4031012), send them back.
     // -------------------------------------------------------------
-    if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 400) {
+    if (cm.haveItem(4031012, 1)){
+         if (status == 0) {
+             cm.sendNext("Shhh... You have the Proof. Good work. Now get back to the #bDark Lord#k before anyone sees you.");
+         } else if (status == 1) {
+             cm.sendAcceptDecline("I can sneak you back to the Hideout. Ready?");
+         } else if (status == 2) {
+             cm.warp(103000003, 0); // Warp to Dark Lord
+             cm.dispose();
+         }
+         return;
+    }
+
+    // -------------------------------------------------------------
+    // REBIRTH SKIP (Veterans)
+    // -------------------------------------------------------------
+    if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 400 && cm.haveItem(4031011)) {
         if (status == 0) {
-             cm.sendNext("I see the spirit of a veteran thief in you. Although you have been reborn, you must prove your skills again for this life.");
+             cm.sendNext("I recognize that shadow... You are a veteran. You don't need to prove your stealth to me again.");
         } else if (status == 1) {
-             cm.sendAcceptDecline("I will let you enter the testing grounds immediately. Are you ready?");
+             cm.sendAcceptDecline("I'll open the back door to the testing grounds. Go.");
         } else if (status == 2) {
-             // Warp directly to the test map
-             cm.warp(108000400, 0);
+             cm.gainItem(4031011, -1); // Remove Letter
+             cm.warp(108000400, 0); // Warp to Thief Test Map
              cm.dispose();
         }
         return;
@@ -49,34 +61,33 @@ function action(mode, type, selection) {
     // STANDARD PATH (First-time players)
     // -------------------------------------------------------------
     if (status == 0) {
-        if (cm.isQuestCompleted(100010)) {
-            cm.sendOk("You're truly a hero!");
+        if (cm.isQuestCompleted(100011)) {
+            cm.sendOk("You are already one of us. Go away.");
             cm.dispose();
-        } else if (cm.isQuestCompleted(100009)) {
-            cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-            status = 3; // Jumps to the warp confirmation block
+        } else if (cm.isQuestCompleted(100010)) {
+            // Quest Active state
+            cm.sendNext("You're back. Get in there, hunt #b30 Dark Marbles#k, and give them to the agent inside. He has the Proof.");
+            status = 3; // Skip explanation
         } else if (cm.isQuestStarted(100009)) {
-            cm.sendNext("Oh, isn't this a letter from the #bDark Lord#k?");
+            cm.sendNext("Hand it over... Ah, the #bDark Lord#k's seal. So you want to move up in the organization?");
         } else {
-            cm.sendOk("I can show you the way once you're ready for it.");
+            cm.sendOk("I'm working here. Get lost.");
             cm.dispose();
         }
     } else if (status == 1) {
-        cm.sendNextPrev("So you want to prove your skills? Very well...");
+        cm.sendNextPrev("I'm sending you to an abandoned area. It's crawling with monsters that have been corrupted. They don't give EXP, but they drop what we need.");
     } else if (status == 2) {
-        cm.sendAcceptDecline("I will give you a chance if you're ready.");
+        cm.sendNextPrev("Bring back #b30 #t4031013##k. Collect them and find the agent hiding inside. He will give you the Proof.");
     } else if (status == 3) {
-        // Status 3 is shared by the 'isQuestCompleted(100009)' jump above
-        cm.sendOk("You will have to collect me #b30 #t4031013##k. Good luck.");
-
-        // Only run quest logic if not already completed/started to avoid errors
+        cm.sendAcceptDecline("If you die, you lose EXP. If you leave, you fail. Do you have the guts?");
+    } else if (status == 4) {
+        // Standard Quest Update
         if (!cm.isQuestCompleted(100009)) {
             cm.completeQuest(100009);
             cm.startQuest(100010);
-            cm.gainItem(4031011, -1); // Remove Letter from Dark Lord
+            cm.gainItem(4031011, -1); // Remove Letter
         }
-    } else if (status == 4) {
-        cm.warp(108000400, 0);
+        cm.warp(108000400, 0); // Warp to Test Map
         cm.dispose();
     } else {
         cm.dispose();

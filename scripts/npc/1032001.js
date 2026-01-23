@@ -4,9 +4,9 @@
 */
 
 var status = -1;
-// Track which flow we are in
 var actionx = {"1stJob": false, "2ndJob": false, "3thJobI": false, "3thJobC": false};
 var job = 210;
+var sel = -1;
 
 var spawnPnpc = false;
 var spawnPnpcFee = 7000000;
@@ -18,39 +18,39 @@ function start() {
     // Hall of Fame Logic
     if (parseInt(cm.getJobId() / 100) == jobType && cm.canSpawnPlayerNpc(GameConstants.getHallOfFameMapid(cm.getJob()))) {
         spawnPnpc = true;
-        var sendStr = "You have walked a long way to reach the power, wisdom and courage you hold today, haven't you? What do you say about having right now #ra NPC on the Hall of Fame holding the current image of your character#k? Do you like it?";
+        var sendStr = "You have walked a long path of enlightenment to reach the wisdom you hold today. What do you say about having a #rNPC on the Hall of Fame#k holding your image? Do you wish to be immortalized in history?";
         if (spawnPnpcFee > 0) {
-            sendStr += " I can do it for you, for the fee of #b " + cm.numberWithCommas(spawnPnpcFee) + " mesos.#k";
+            sendStr += " I can do it for the fee of #b " + cm.numberWithCommas(spawnPnpcFee) + " mesos.#k";
         }
         cm.sendYesNo(sendStr);
     } else {
         // 1st Job Advancement (Beginner -> Magician)
         if (cm.getJobId() == 0) {
             actionx["1stJob"] = true;
-            cm.sendNext("Want to be a #rmagician#k? There are some standards to meet. We can't just accept EVERYONE in... #bYour level should be at least 8#k, with at least " + cm.getFirstJobStatRequirement(jobType) + " INT. Let's see.");
+            cm.sendNext("You wish to walk the path of the #rMagician#k? It requires a sharp mind. #bYour level should be at least 8, with at least " + cm.getFirstJobStatRequirement(jobType) + " INT#k. Let me sense your aura.");
 
         // 2nd Job Advancement (Magician -> Wizard/Cleric)
         } else if (cm.getLevel() >= 30 && cm.getJobId() == 200) {
             actionx["2ndJob"] = true;
             if (cm.haveItem(4031012)) { // Proof of Hero
-                cm.sendNext("I see you have done well. I will allow you to take the next step on your long road. Please, choose your path.");
-            } else if (cm.haveItem(4031009)) { // Letter to Grendel (Already has it)
-                cm.sendOk("Go and see the #b#p1032002##k in the Forest North of Ellinia.");
+                cm.sendNext("Ah... I sense a powerful object in your possession. You have returned with the Proof of a Hero. Truly magnificent. You are ready to ascend to the next level of magical mastery.");
+            } else if (cm.haveItem(4031009)) { // Letter to Grendel
+                cm.sendOk("Do not tarry, young one. Go and see the #bMagician Job Instructor#k in the #rForest North of Ellinia#k. The dimension of testing awaits.");
                 cm.dispose();
             } else {
-                cm.sendYesNo("The progress you have made is astonishing. You look strong, but I need to see if you really are strong enough to pass the test. Do you wish to take the test for the 2nd Job Advancement?");
+                cm.sendYesNo("Harrumph! You have grown... your mana pool is deeper than before. But are you wise enough for the next step? I must test your intellect and resolve. Do you wish to take the test for the 2nd Job Advancement?");
             }
 
         // 3rd Job Advancement
         } else if (actionx["3thJobI"] || (cm.getPlayer().gotPartyQuestItem("JB3") && cm.getLevel() >= 70 && cm.getJobId() % 10 == 0 && parseInt(cm.getJobId() / 100) == 2 && !cm.getPlayer().gotPartyQuestItem("JBP"))) {
             actionx["3thJobI"] = true;
-            cm.sendNext("There you are. A few days ago, #b#p2020009##k of Ossyria talked to me about you. I see that you are interested in making the leap to the enlightened of the third job advancement for magicians. To achieve that goal, I will have to test your strength in order to see whether you are worthy of the advancement. There is an opening in the middle of a deep forest of evil in Victoria Island, where it'll lead you to a secret passage. Once inside, you'll face a clone of myself. Your task is to defeat him and bring #b#t4031059##k back with you.");
+            cm.sendNext("There you are. I have been meditating on your progress. I see that you are interested in the third job advancement. To achieve this, I must test your strength against a clone of myself. Defeat him and bring back the #b#t4031059##k.");
         } else if (cm.getPlayer().gotPartyQuestItem("JBP") && !cm.haveItem(4031059)) {
-            cm.sendNext("Please, bring me the #b#t4031059##k from my clone. You can find him inside a hole in space which is deep in a forest of evil.");
+            cm.sendNext("Please, bring me the #b#t4031059##k from my clone. Focus your mind, and you shall succeed.");
             cm.dispose();
         } else if (cm.haveItem(4031059) && cm.getPlayer().gotPartyQuestItem("JBP")) {
             actionx["3thJobC"] = true;
-            cm.sendNext("Nice work. You have defeated my clone and brought #b#t4031059##k back safely. You have now proven yourself worthy of the 3rd job advancement from the physical standpoint. Now you should give this necklace to #b#p2020011##k in Ossyria to take on the second part of the test. Good luck. You'll need it.");
+            cm.sendNext("Excellent. You have defeated my clone and returned safely. Your wisdom now rivals my own... almost. Take this necklace to #b#p2020009##k in Ossyria.");
         } else {
             cm.sendOk("You have chosen wisely.");
             cm.dispose();
@@ -74,25 +74,25 @@ function action(mode, type, selection) {
         if (spawnPnpc) {
             if (mode > 0) {
                 if (cm.getMeso() < spawnPnpcFee) {
-                    cm.sendOk("Sorry, you don't have enough mesos to purchase your place on the Hall of Fame.");
+                    cm.sendOk("Knowledge is free, but the Hall of Fame is not. You lack the mesos.");
                     cm.dispose();
                     return;
                 }
                 var PlayerNPC = Java.type('server.life.PlayerNPC');
                 var GameConstants = Java.type('constants.game.GameConstants');
                 if (PlayerNPC.spawnPlayerNPC(GameConstants.getHallOfFameMapid(cm.getJob()), cm.getPlayer())) {
-                    cm.sendOk("There you go! Hope you will like it.");
+                    cm.sendOk("It is done. May your image inspire future generations.");
                     cm.gainMeso(-spawnPnpcFee);
                 } else {
-                    cm.sendOk("Sorry, the Hall of Fame is currently full...");
+                    cm.sendOk("The Hall of Fame is currently full...");
                 }
             }
             cm.dispose();
             return;
         } else {
-            if (mode != 1 || status == 7 || (actionx["1stJob"] && status == 4) || (cm.haveItem(4031008) && status == 2) || (actionx["3thJobI"] && status == 1)) {
+            if (mode != 1 || status == 7 || (actionx["1stJob"] && status == 4) || (cm.haveItem(4031009) && status == 2) || (actionx["3thJobI"] && status == 1)) {
                 if (mode == 0 && status == 2 && type == 1) {
-                    cm.sendOk("You know there is no other choice...");
+                    cm.sendOk("The path of magic is not for the wavering mind...");
                 }
                 if (!(mode == 0 && type != 1)) {
                     cm.dispose();
@@ -105,9 +105,9 @@ function action(mode, type, selection) {
     if (actionx["1stJob"]) {
         if (status == 0) {
             if (cm.getLevel() >= 8 && cm.canGetFirstJob(jobType)) {
-                cm.sendYesNo("Oh...! You look like someone that can definitely be a part of us... all you need is a little sinister mind, and... yeah... so, what do you think? Wanna be the Magician?");
+                cm.sendYesNo("Oh...! You look like someone with the spark of intelligence. Do you wish to become a #rMagician#k?");
             } else {
-                cm.sendOk("Train a bit more until you reach the base requirements and I can show you the way of the #rMagician#k.");
+                cm.sendOk("Train a bit more. Read more books. Return when you meet the requirements.");
                 cm.dispose();
             }
         } else if (status == 1) {
@@ -117,19 +117,17 @@ function action(mode, type, selection) {
                     cm.gainItem(1372043, 1); // Wooden Wand
                     cm.resetStats();
                 }
-                cm.sendNext("Alright, from here out, you are a part of us! You'll be living the life of a wanderer at ..., but just be patient as soon, you'll be living the high life. Alright, it ain't much, but I'll give you some of my abilities... HAAAHHH!!!");
+                cm.sendNext("Huzzah! You are now a Magician! I have given you a wand. It is humble, but it channels your will. Go forth and study the elements!");
             } else {
-                cm.sendNext("Make some room in your inventory and talk back to me.");
+                cm.sendNext("Your inventory is full. Order is the first step to wisdom. Make space.");
                 cm.dispose();
             }
         } else if (status == 2) {
-            cm.sendNextPrev("You've gotten much stronger now. Plus every single one of your inventories have added slots. A whole row, to be exact. Go see for it yourself. I just gave you a little bit of #bSP#k.");
+            cm.sendNextPrev("I have also expanded your inventory slots and given you some #bSP#k. Use it to learn the basics of magic.");
         } else if (status == 3) {
-            cm.sendNextPrev("But remember, skills aren't everything. Your stats should support your skills as a Magician, also. Magicians use INT as their main stat, and LUK as their secondary stat.");
+            cm.sendNextPrev("Remember, Magicians rely on #bINT#k for power and #bLUK#k for equipment usage. Do not neglect your studies.");
         } else if (status == 4) {
-            cm.sendNextPrev("Now, one more word of warning to you. If you fail in battle from this point on, you will lose a portion of your total EXP. Be extra mindful of this, since you have less HP than most.");
-        } else if (status == 5) {
-            cm.sendNextPrev("This is all I can teach you. Good luck on your journey, young Magician.");
+            cm.sendNextPrev("Be careful. We are physically weak. If you die, you will lose experience. Keep your distance and strike with your mind.");
         } else {
             cm.dispose();
         }
@@ -137,10 +135,10 @@ function action(mode, type, selection) {
     } else if (actionx["2ndJob"]) {
         if (status == 0) {
             if (cm.haveItem(4031012)) {
-                cm.sendSimple("Alright, when you have made your decision, click on [I'll choose my occupation] at the bottom.#b\r\n#L0#Please explain to me what being the Wizard (Fire / Poison) is all about.\r\n#L1#Please explain to me what being the Wizard (Ice / Lightning) is all about.\r\n#L2#Please explain to me what being the Cleric is all about.\r\n#L3#I'll choose my occupation!");
+                cm.sendSimple("You have returned! Now, the final choice lies before you. Which path of magic calls to you?#b\r\n#L0#Wizard (Fire / Poison)\r\n#L1#Wizard (Ice / Lightning)\r\n#L2#Cleric\r\n#L3#I have made my decision.");
             } else {
                 // Giving the Letter
-                cm.sendNext("Good decision. You look strong, but I need to see if you really are strong enough to pass the test. Here, take my letter first... make sure you don't lose it!");
+                cm.sendNext("Excellent attitude. But knowledge must be tested. Take this letter... it is enchanted, do not lose it!");
                 if (!cm.isQuestStarted(100006)) {
                     cm.startQuest(100006);
                 }
@@ -151,7 +149,7 @@ function action(mode, type, selection) {
                     if (!cm.haveItem(4031009)) {
                         cm.gainItem(4031009, 1); // Letter to Grendel
                     }
-                    cm.sendNextPrev("Please get this letter to #b#p1032002##k who's around #b#m101020000##k near Ellinia. He is taking care of the job of an instructor in place of me.");
+                    cm.sendNextPrev("Deliver this letter to the #bMagician Job Instructor#k. He is meditating in the #bForest North of Ellinia#k. Go now.");
                     cm.dispose();
                 } else {
                     cm.sendNext("Please, make some space in your inventory.");
@@ -161,44 +159,41 @@ function action(mode, type, selection) {
                 // Explaining Jobs
                 if (selection < 3) {
                     if (selection == 0) {
-                        cm.sendNext("Magicians that master #rFire/Poison-based magic#k.\r\n\r\n#bWizards#k are a active class that deal magical, elemental damage. #bFire/Poison Wizards#k contains a powerful flame arrow attack and poison attack.");
+                        cm.sendNext("The #rFire/Poison Wizard#k harnesses the destructive power of alchemy. They use Poison Breath to weaken foes and Fire Arrows to burn them.");
                     } else if (selection == 1) {
-                        cm.sendNext("Magicians that master #rIce/Lightning-based magic#k.\r\n\r\n#bWizards#k are a active class that deal magical, elemental damage. #bIce/Lightning Wizards#k have a freezing ice attack and a striking lightning attack.");
+                        cm.sendNext("The #rIce/Lightning Wizard#k commands the weather. They can freeze enemies solid with Cold Beam or strike groups with Thunder Bolt.");
                     } else {
-                        cm.sendNext("Magicians that master #rHoly magic#k.\r\n\r\n#bClerics#k are a powerful supportive class. They have the power to #rHeal#k themselves and others. #bClerics#k are especially effective against undead monsters.");
+                        cm.sendNext("The #rCleric#k walks the path of light. They are the only ones who can #rHeal#k wounds and are the bane of all Undead monsters.");
                     }
                     status -= 2;
                 } else {
-                    cm.sendSimple("Now... have you made up your mind? Please choose the job you'd like to select for your 2nd job advancement. #b\r\n#L0#Wizard (Fire / Poison)\r\n#L1#Wizard (Ice / Lighting)\r\n#L2#Cleric");
+                    cm.sendSimple("The cosmos awaits your decision... Choose your path!#b\r\n#L0#Wizard (Fire / Poison)\r\n#L1#Wizard (Ice / Lighting)\r\n#L2#Cleric");
                 }
             }
         } else if (status == 2) {
-            // [FIX] Reset Job ID Calculation logic
             // 0 = Fire/Poison (210), 1 = Ice/Lightning (220), 2 = Cleric (230)
-            job = 210 + (selection * 10);
+            sel = selection;
+            job = 210 + (sel * 10);
 
-            cm.sendYesNo("So you want to make the second job advancement as the " + (job == 210 ? "#bWizard (Fire / Poison)#k" : job == 220 ? "#bWizard (Ice / Lighting)#k" : "#bCleric#k") + "? You know you won't be able to choose a different job once you make your decision here, right?");
+            var jobName = (job == 210 ? "Wizard (Fire / Poison)" : job == 220 ? "Wizard (Ice / Lightning)" : "Cleric");
+            cm.sendYesNo("So you wish to become a #b" + jobName + "#k? Once the spell is cast, it cannot be undone. Are you certain?");
         } else if (status == 3) {
-            // Consume Proof
-            if (cm.haveItem(4031012)) {
-                cm.gainItem(4031012, -1);
-            }
-            // [FIX] Clean up Letter if it still exists
-            if (cm.haveItem(4031009)) {
-                cm.gainItem(4031009, -1);
-            }
+            // Consume Proof and Letter
+            if (cm.haveItem(4031012)) cm.gainItem(4031012, -1);
+            if (cm.haveItem(4031009)) cm.gainItem(4031009, -1);
 
             cm.completeQuest(100008);
-            cm.sendNext("Alright, you're the " + (job == 210 ? "#bWizard (Fire / Poison)#k" : job == 220 ? "#bWizard (Ice / Lighting)#k" : "#bCleric#k") + " from here on out. Please train yourself each and everyday.");
+
+            cm.sendNext("Huzzah! You are now a #b" + (job == 210 ? "Wizard (Fire / Poison)" : job == 220 ? "Wizard (Ice / Lightning)" : "Cleric") + "#k! Use your magic to bring balance to the world.");
             if (cm.getJobId() != job) {
                 cm.changeJobById(job);
             }
         } else if (status == 4) {
-            cm.sendNextPrev("I have just given you a book that gives you the list of skills you can acquire. Your max HP and MP have increased, too.");
+            cm.sendNextPrev("I have given you a spellbook containing new techniques. Study them well.");
         } else if (status == 5) {
-            cm.sendNextPrev("I have also given you a little bit of #bSP#k. Open the #bSkill Menu#k located at the bottomleft corner.");
+            cm.sendNextPrev("I have also granted you a small amount of #bSP#k. Do not waste it.");
         } else if (status == 6) {
-            cm.sendNextPrev("Please find me after you have advanced much further. I'll be waiting for you.");
+            cm.sendNextPrev("Come see me again when you have mastered these arts. I will be here, in the library.");
         }
 
     } else if (actionx["3thJobI"]) {
@@ -207,7 +202,7 @@ function action(mode, type, selection) {
                 cm.getPlayer().removePartyQuestItem("JB3");
                 cm.getPlayer().setPartyQuestItemObtained("JBP");
             }
-            cm.sendNextPrev("Since he is a clone of myself, you can expect a tough battle ahead. Good luck.");
+            cm.sendNextPrev("My clone is a reflection of my younger, more volatile self. Be careful.");
         }
     } else if (actionx["3thJobC"]) {
         cm.getPlayer().removePartyQuestItem("JBP");

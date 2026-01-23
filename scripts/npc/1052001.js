@@ -17,43 +17,41 @@ function start() {
     // Hall of Fame Logic
     if (parseInt(cm.getJobId() / 100) == jobType && cm.canSpawnPlayerNpc(GameConstants.getHallOfFameMapid(cm.getJob()))) {
         spawnPnpc = true;
-        var sendStr = "You have walked a long way to reach the power, wisdom and courage you hold today, haven't you? What do you say about having right now #ra NPC on the Hall of Fame holding the current image of your character#k? Do you like it?";
+        var sendStr = "You have walked a path of shadows to reach where you are today. Do you wish to leave a phantom image of yourself in the Hall of Fame? It will remain... while you vanish.";
         if (spawnPnpcFee > 0) {
-            sendStr += " I can do it for you, for the fee of #b " + cm.numberWithCommas(spawnPnpcFee) + " mesos.#k";
+            sendStr += " The fee is #b " + cm.numberWithCommas(spawnPnpcFee) + " mesos.#k";
         }
         cm.sendYesNo(sendStr);
     } else {
         // 1st Job Advancement (Beginner -> Thief)
         if (cm.getJobId() == 0) {
             actionx["1stJob"] = true;
-            cm.sendNext("Want to be a #rthief#k? There are some standards to meet. We can't just accept EVERYONE in... #bYour level should be at least 10, with at least 25 DEX#k. Let's see.");
+            cm.sendNext("So... you wish to walk the path of the #rRogue#k? It is a lonely road. #bYour level must be at least 10, with at least 25 DEX#k. Let me see if you have the agility.");
 
         // 2nd Job Advancement (Thief -> Assassin/Bandit)
         } else if (cm.getLevel() >= 30 && cm.getJobId() == 400) {
             actionx["2ndJob"] = true;
             if (cm.haveItem(4031012)) { // Proof of Hero
-                cm.sendNext("I see you have done well. I will allow you to take the next step on your long road. Please, choose your path.");
+                cm.sendNext("You have returned. And I see the Proof of a Hero in your hands. You have passed the test of shadows. I am impressed.");
             } else if (cm.haveItem(4031011)) { // Letter to Dark Lord
-                cm.sendOk("Go and see the #b#p102040000##k in the Construction Site North of Kerning City.");
+                cm.sendOk("Do not waste my time. Take the letter to the #bThief Job Instructor#k at the #rConstruction Site North of Kerning City#k. Do not be seen.");
                 cm.dispose();
             } else {
-                cm.sendYesNo("The progress you have made is astonishing. You look strong, but I need to see if you really are strong enough to pass the test. Do you wish to take the test for the 2nd Job Advancement?");
+                cm.sendYesNo("You move quietly, but are you deadly? I must test your skills before I teach you the higher arts. Are you ready for the test of the 2nd Job Advancement?");
             }
 
         // 3rd Job Advancement
         } else if (actionx["3thJobI"] || (cm.getPlayer().gotPartyQuestItem("JB3") && cm.getLevel() >= 70 && cm.getJobId() % 10 == 0 && parseInt(cm.getJobId() / 100) == 4 && !cm.getPlayer().gotPartyQuestItem("JBP"))) {
             actionx["3thJobI"] = true;
-            cm.sendNext("There you are. A few days ago, #b#p2020011##k of Ossyria talked to me about you. I see that you are interested in making the leap to the dark world of the third job advancement for thieves. To achieve that goal, I will have to test your strength in order to see whether you are worthy of the advancement. There is an opening in the middle of a deep swamp in Victoria Island, where it'll lead you to a secret passage. Once inside, you'll face a clone of myself. Your task is to defeat him and bring #b#t4031059##k back with you.");
+            cm.sendNext("I have received word from #b#p2020011##k in Ossyria. You seek the Third Path. To achieve this, you must defeat a clone of myself. It awaits in the deep swamp. Bring me the #b#t4031059##k.");
         } else if (cm.getPlayer().gotPartyQuestItem("JBP") && !cm.haveItem(4031059)) {
-            cm.sendNext("Please, bring me the #b#t4031059##k.");
+            cm.sendNext("Return only when you have the #b#t4031059##k. Failure is not an option.");
             cm.dispose();
         } else if (cm.haveItem(4031059) && cm.getPlayer().gotPartyQuestItem("JBP")) {
             actionx["3thJobC"] = true;
-            cm.sendNext("Nice work. You have defeated my clone and brought #b#t4031059##k back safely. You have now proven yourself worthy of the 3rd job advancement from the physical standpoint. Now you should give this necklace to #b#p2020011##k in Ossyria to take on the second part of the test. Good luck. You'll need it.");
-        } else if (cm.isQuestStarted(6141)) {
-            cm.warp(910300000, 3);
+            cm.sendNext("You have defeated my shadow and returned the #b#t4031059##k. You are truly worthy. Take this necklace to #b#p2020011##k in Ossyria.");
         } else {
-            cm.sendOk("You have chosen wisely.");
+            cm.sendOk("The shadows protect you.");
             cm.dispose();
         }
     }
@@ -75,25 +73,25 @@ function action(mode, type, selection) {
         if (spawnPnpc) {
             if (mode > 0) {
                 if (cm.getMeso() < spawnPnpcFee) {
-                    cm.sendOk("Sorry, you don't have enough mesos to purchase your place on the Hall of Fame.");
+                    cm.sendOk("You cannot afford the price of fame.");
                     cm.dispose();
                     return;
                 }
                 var PlayerNPC = Java.type('server.life.PlayerNPC');
                 var GameConstants = Java.type('constants.game.GameConstants');
                 if (PlayerNPC.spawnPlayerNPC(GameConstants.getHallOfFameMapid(cm.getJob()), cm.getPlayer())) {
-                    cm.sendOk("There you go! Hope you will like it.");
+                    cm.sendOk("It is done.");
                     cm.gainMeso(-spawnPnpcFee);
                 } else {
-                    cm.sendOk("Sorry, the Hall of Fame is currently full...");
+                    cm.sendOk("The Hall of Fame is full.");
                 }
             }
             cm.dispose();
             return;
         } else {
-            if (mode != 1 || status == 7 || (actionx["1stJob"] && status == 4) || (cm.haveItem(4031008) && status == 2) || (actionx["3thJobI"] && status == 1)) {
+            if (mode != 1 || status == 7 || (actionx["1stJob"] && status == 4) || (cm.haveItem(4031011) && status == 2) || (actionx["3thJobI"] && status == 1)) {
                 if (mode == 0 && status == 2 && type == 1) {
-                    cm.sendOk("You know there is no other choice...");
+                    cm.sendOk("Hesitation leads to death.");
                 }
                 if (!(mode == 0 && type != 1)) {
                     cm.dispose();
@@ -106,9 +104,9 @@ function action(mode, type, selection) {
     if (actionx["1stJob"]) {
         if (status == 0) {
             if (cm.getLevel() >= 10 && cm.canGetFirstJob(jobType)) {
-                cm.sendYesNo("Oh...! You look like someone that can definitely be a part of us... all you need is a little sinister mind, and... yeah... so, what do you think? Wanna be the Rogue?");
+                cm.sendYesNo("You have the look of a survivor. Do you wish to join the brotherhood and become a #rThief#k?");
             } else {
-                cm.sendOk("Train a bit more until you reach the base requirements and I can show you the way of the #rThief#k.");
+                cm.sendOk("You are not ready. Train until you meet the requirements.");
                 cm.dispose();
             }
         } else if (status == 1) {
@@ -120,15 +118,15 @@ function action(mode, type, selection) {
                     cm.gainItem(1332063, 1); // Knife
                     cm.resetStats();
                 }
-                cm.sendNext("Alright, from here out, you are a part of us! You'll be living the life of a wanderer at ..., but just be patient as soon, you'll be living the high life. Alright, it ain't much, but I'll give you some of my abilities... HAAAHHH!!!");
+                cm.sendNext("You are now a Rogue. You live in the shadows now. I have given you the basic tools of our trade.");
             } else {
-                cm.sendNext("Make some room in your inventory and talk back to me.");
+                cm.sendNext("Clear your inventory. We travel light.");
                 cm.dispose();
             }
         } else if (status == 2) {
-            cm.sendNextPrev("You've gotten much stronger now. Plus every single one of your inventories have added slots. A whole row, to be exact. Go see for it yourself. I just gave you a little bit of #bSP#k.");
+            cm.sendNextPrev("I have improved your stats and given you #bSP#k. Use it to sharpen your skills.");
         } else if (status == 3) {
-            cm.sendNextPrev("Now a reminder. Once you have chosen, you cannot change up your mind and try to pick another path. Go now, and live as a proud Thief.");
+            cm.sendNextPrev("Once you choose this life, there is no turning back. Go.");
         } else {
             cm.dispose();
         }
@@ -136,10 +134,10 @@ function action(mode, type, selection) {
     } else if (actionx["2ndJob"]) {
         if (status == 0) {
             if (cm.haveItem(4031012)) {
-                cm.sendSimple("Alright, when you have made your decision, click on [I'll choose my occupation] at the bottom.#b\r\n#L0#Please explain to me what being the Assassin is all about.\r\n#L1#Please explain to me what being the Bandit is all about.\r\n#L3#I'll choose my occupation!");
+                cm.sendSimple("You have passed the test. Now... choose your specialty.#b\r\n#L0#Explain the Assassin.\r\n#L1#Explain the Bandit.\r\n#L2#I have made my choice.");
             } else {
                 // Giving the Letter
-                cm.sendNext("Good decision. You look strong, but I need to see if you really are strong enough to pass the test. Here, take my letter first... make sure you don't lose it!");
+                cm.sendNext("Take this letter. It is sealed. If the seal is broken, you fail. Deliver it to the #bThief Job Instructor#k.");
                 if (!cm.isQuestStarted(100009)) {
                     cm.startQuest(100009);
                 }
@@ -150,69 +148,58 @@ function action(mode, type, selection) {
                     if (!cm.haveItem(4031011)) {
                         cm.gainItem(4031011, 1); // Letter to Dark Lord
                     }
-                    cm.sendNextPrev("Please get this letter to #b#p102040000##k who's around #b#m102040000##k near Kerning City. He is taking care of the job of an instructor in place of me.");
+                    cm.sendNextPrev("He is hiding at the #bConstruction Site North of Kerning City#k. Go.");
                     cm.dispose();
                 } else {
-                    cm.sendNext("Please, make some space in your inventory.");
+                    cm.sendNext("Make space in your inventory.");
                     cm.dispose();
                 }
             } else {
                 // Explaining Jobs
-                if (selection < 3) {
+                if (selection < 2) {
                     if (selection == 0) {    // Assassin
-                        cm.sendNext("Thieves that master #rClaws#k.\r\n\r\n#bAssassins#k are far ranged attackers. They are quite Meso efficient and have good damage potential, but cost more than Bandits.");
+                        cm.sendNext("The #rAssassin#k strikes from the shadows with throwing stars. They rely on critical hits and range. A costly path, but deadly.");
                     } else if (selection == 1) {    // Bandit
-                        cm.sendNext("Thieves that master #rDaggers#k.\r\n\r\n#bBandits#k are quick melee attackers and are quite powerful among the 2nd jobs. They aren't as Meso efficient as Assassins but make up for it in much greater raw power.");
+                        cm.sendNext("The #rBandit#k strikes up close with daggers. They are agile and use the #rSavage Blow#k to decimate enemies.");
                     }
                     status -= 2;
                 } else {
-                    cm.sendSimple("Now... have you made up your mind? Please choose the job you'd like to select for your 2nd job advancement. #b\r\n#L0#Assassin\r\n#L1#Bandit");
+                    cm.sendSimple("Time is money. Choose.#b\r\n#L0#Assassin\r\n#L1#Bandit");
                 }
             }
         } else if (status == 2) {
-            // [FIX] Removed "if (cm.haveItem(4031011)) { dispose }" check.
-            // If they have the letter AND proof, we just ignore the letter.
-
-            // [FIX] Ensure job ID is reset before calculation to prevent loop accumulation errors
             job = 410 + (selection * 10);
-
-            cm.sendYesNo("So you want to make the second job advancement as the " + (job == 410 ? "#bAssassin#k" : "#bBandit#k") + "? You know you won't be able to choose a different job once you make your decision here, right?");
+            cm.sendYesNo("So you want to be an " + (job == 410 ? "#bAssassin#k" : "#bBandit#k") + "? There is no turning back.");
         } else if (status == 3) {
-            if (cm.haveItem(4031012)) {
-                cm.gainItem(4031012, -1);
-            }
-            // Just in case they still have the letter, remove it now to be clean
-            if (cm.haveItem(4031011)) {
-                cm.gainItem(4031011, -1);
-            }
+            if (cm.haveItem(4031012)) cm.gainItem(4031012, -1);
+            if (cm.haveItem(4031011)) cm.gainItem(4031011, -1);
 
             cm.completeQuest(100011);
 
             if (job == 410) {
-                cm.sendNext("Alright, from here on out you are the #bAssassin#k. Assassins have quick hands and quicker feet to dominate the enemies. Please keep training. I'll make you even more powerful than you are right now!");
+                cm.sendNext("You are now an #bAssassin#k. Your hands must be quick.");
             } else {
-                cm.sendNext("Alright, you're the #bBandit#k from here on out. Bandits revel in shadows and darkness, waiting until the right time comes for them to stick a dagger through the enemy's heart... please keep training. I'll make you even more powerful than you are right now.");
+                cm.sendNext("You are now a #bBandit#k. Strike fast and hard.");
             }
 
             if (cm.getJobId() != job) {
                 cm.changeJobById(job);
             }
         } else if (status == 4) {
-            cm.sendNextPrev("I have just given you a book that gives you the list of skills you can acquire as a " + (job == 410 ? "assassin" : "bandit") + ". Your max HP and MP have increased, too.");
+            cm.sendNextPrev("I have given you the skill book. Memorize it.");
         } else if (status == 5) {
-            cm.sendNextPrev("I have also given you a little bit of #bSP#k. Open the #bSkill Menu#k located at the bottomleft corner.");
+            cm.sendNextPrev("I have also granted you some #bSP#k.");
         } else if (status == 6) {
-            cm.sendNextPrev("Please find me after you have advanced much further. I'll be waiting for you.");
+            cm.sendNextPrev("Do not fail me. Dismissed.");
         }
 
     } else if (actionx["3thJobI"]) {
-        // ... (3rd Job Logic Unchanged)
         if (status == 0) {
             if (cm.getPlayer().gotPartyQuestItem("JB3")) {
                 cm.getPlayer().removePartyQuestItem("JB3");
                 cm.getPlayer().setPartyQuestItemObtained("JBP");
             }
-            cm.sendNextPrev("Since he is a clone of myself, you can expect a tough battle ahead. Good luck.");
+            cm.sendNextPrev("My clone is as deadly as I am. Be careful.");
         }
     } else if (actionx["3thJobC"]) {
         cm.getPlayer().removePartyQuestItem("JBP");

@@ -4,10 +4,11 @@
 */
 
 var status = -1;
-var actionx = {"1stJob": false, "2ndJob": false, "2ndJobReborn": false, "3thJobI": false, "3thJobC": false};
+// Simplified Flow Control
+var actionx = {"1stJob": false, "2ndJob": false, "3thJobI": false, "3thJobC": false};
+
 var job = 510;
 var advQuest = 0;
-
 var spawnPnpc = false;
 var spawnPnpcFee = 7000000;
 var jobType = 5; // Pirate
@@ -18,31 +19,31 @@ function start() {
     // ---------------------------------------------------------
     // SKILL QUESTS (Super Transformation / Battleship)
     // ---------------------------------------------------------
-    if (cm.isQuestStarted(6330)) { // Super Transformation
+    if (cm.isQuestStarted(6330)) {
         if (cm.getEventInstance() != null) {
             advQuest = 5;
-            cm.sendNext("Not bad at all. Let's discuss this outside!");
+            cm.sendNext("Hah! You survived! Let's discuss this outside, matey.");
         } else if (cm.getQuestProgressInt(6330, 6331) == 0) {
             advQuest = 1;
-            cm.sendNext("You're ready, right? Now try to withstand my attacks for 2 minutes. I won't go easy on you.");
+            cm.sendNext("Batton down the hatches! Survive my attacks for 2 minutes.");
         } else {
             advQuest = 3;
             cm.teachSkill(5121003, 0, 10, -1);
             cm.forceCompleteQuest(6330);
-            cm.sendNext("Congratulations. You have managed to pass my test. I'll teach you a new skill called \"Super Transformation\".");
+            cm.sendNext("You have a hull of steel. I'll teach you \"Super Transformation\".");
         }
-    } else if (cm.isQuestStarted(6370)) { // Battleship
+    } else if (cm.isQuestStarted(6370)) {
         if (cm.getEventInstance() != null) {
             advQuest = 6;
-            cm.sendNext("Not bad at all. Let's discuss this outside!");
+            cm.sendNext("Impressive sailing! Let's discuss this outside.");
         } else if (cm.getQuestProgressInt(6370, 6371) == 0) {
             advQuest = 2;
-            cm.sendNext("You're ready, right? Now try to withstand my attacks for 2 minutes. I won't go easy on you.");
+            cm.sendNext("Man the cannons! Survive my attacks for 2 minutes. Ready?");
         } else {
             advQuest = 4;
             cm.teachSkill(5221006, 0, 10, -1);
             cm.forceCompleteQuest(6370);
-            cm.sendNext("Congratulations. You have managed to pass my test. I'll teach you a new skill called \"Battleship\".");
+            cm.sendNext("Good work! I'll teach you how to command a \"Battleship\". Rule the seas!");
         }
 
     // ---------------------------------------------------------
@@ -50,8 +51,7 @@ function start() {
     // ---------------------------------------------------------
     } else if (parseInt(cm.getJobId() / 100) == jobType && cm.canSpawnPlayerNpc(GameConstants.getHallOfFameMapid(cm.getJob()))) {
         spawnPnpc = true;
-        var sendStr = "You have walked a long way... What do you say about having a NPC on the Hall of Fame? Fee: " + cm.numberWithCommas(spawnPnpcFee) + " mesos.";
-        cm.sendYesNo(sendStr);
+        cm.sendYesNo("Ahoy! You've sailed rough waters to reach this level of infamy. What do you say about having a #rstatue in the Hall of Fame#k? It'll cost you #b" + cm.numberWithCommas(spawnPnpcFee) + " mesos.#k");
 
     } else {
         // ---------------------------------------------------------
@@ -59,48 +59,31 @@ function start() {
         // ---------------------------------------------------------
         if (cm.getJobId() == 0) {
             actionx["1stJob"] = true;
-            cm.sendNext("Want to be a #rpirate#k? There are some standards to meet. #bYour level should be at least 10, with 20 DEX minimum#k. Let's see.");
+            cm.sendNext("So, you want to join my crew and become a #rPirate#k? The sea is a harsh mistress. #bYou need to be Level 10 with at least 20 DEX#k. Let me see your sea legs.");
 
         // ---------------------------------------------------------
         // 2ND JOB ADVANCEMENT (Pirate -> Brawler/Gunslinger)
         // ---------------------------------------------------------
         } else if (cm.getLevel() >= 30 && cm.getJobId() == 500) {
-
-            // 1. Check if they have the PROOF (Completion)
-            if (cm.haveItem(4031858) || cm.haveItem(4031859)) {
-                actionx["2ndJob"] = true;
-                cm.sendNext("I see you have done well. I will allow you to take the next step on your long road.");
-
-            // 2. Check if Reborn (Bypass Quests)
-            // Priority: Rebirth check must come before standard quest check to ensure veterans get the skip
-            } else if (cm.getPlayer().getReborns() > 0) {
-                actionx["2ndJobReborn"] = true;
-                cm.sendNext("I see the spirit of a veteran pirate in you. Since you have been reborn, you do not need to hunt the crystals manually. Let's get you to the test.");
-
-            // 3. Standard Quest Path
-            } else if (cm.isQuestCompleted(2191) || cm.isQuestCompleted(2192)) {
-                 actionx["2ndJob"] = true;
-                 cm.sendNext("I see you have done well. I will allow you to take the next step on your long road.");
-            } else {
-                // hasn't started test yet
-                actionx["2ndJob"] = true;
-                cm.sendNext("The progress you have made is astonishing. But you must pass the test first.");
-            }
+            // IMMEDIATE ADVANCEMENT LOGIC
+            // No checks for items, proofs, or quests. Just Level 30 + Job 500.
+            actionx["2ndJob"] = true;
+            cm.sendSimple("Ahoy! I can see the strength in your eyes, matey. You don't need a test to prove your worth to me. I'll let you advance right now! Which path will you sail?\r\n#b#L0#Brawler (Knuckles)#l\r\n#L1#Gunslinger (Guns)#l");
 
         // ---------------------------------------------------------
         // 3RD JOB ADVANCEMENT
         // ---------------------------------------------------------
         } else if (actionx["3thJobI"] || (cm.getPlayer().gotPartyQuestItem("JB3") && cm.getLevel() >= 70 && cm.getJobId() % 10 == 0 && parseInt(cm.getJobId() / 100) == 5 && !cm.getPlayer().gotPartyQuestItem("JBP"))) {
             actionx["3thJobI"] = true;
-            cm.sendNext("There you are. A few days ago, #b#p2020013##k of Ossyria talked to me about you. I see that you are interested in making the leap to the world of the third job advancement.");
+            cm.sendNext("There you are! #b#p2020013##k sent word from Ossyria. You're looking to become a true Captain? To do that, you must defeat my shadow. Go to the hidden door in the engine room.");
         } else if (cm.getPlayer().gotPartyQuestItem("JBP") && !cm.haveItem(4031059)) {
-            cm.sendNext("Please, bring me the #b#t4031059##k.");
+            cm.sendNext("Don't come back until you have the #b#t4031059##k! A Pirate never gives up!");
             cm.dispose();
         } else if (cm.haveItem(4031059) && cm.getPlayer().gotPartyQuestItem("JBP")) {
             actionx["3thJobC"] = true;
-            cm.sendNext("Nice work. You have defeated my clone. You have proven yourself worthy.");
+            cm.sendNext("Hah! You defeated my clone! You're tougher than a kraken. Take this necklace to #b#p2020011##k in El Nath.");
         } else {
-            cm.sendOk("You have chosen wisely.");
+            cm.sendOk("The wind is in your sails. Keep training.");
             cm.dispose();
         }
     }
@@ -119,12 +102,12 @@ function action(mode, type, selection) {
         start();
         return;
     } else {
-        // Skill Quest Logic
+        // Skill Quest Handling
         if (advQuest > 0) {
             if (advQuest < 3) {
                 var em = cm.getEventManager(advQuest == 1 ? "4jship" : "4jsuper");
                 if (!em.startInstance(cm.getPlayer())) {
-                    cm.sendOk("Someone is already challenging the test. Please try again later.");
+                    cm.sendOk("The testing room is occupied. Wait your turn, matey!");
                 }
             } else {
                 if (advQuest < 6) cm.setQuestProgress(6330, 6331, 2);
@@ -139,25 +122,26 @@ function action(mode, type, selection) {
         else if (spawnPnpc) {
             if (mode > 0) {
                 if (cm.getMeso() < spawnPnpcFee) {
-                    cm.sendOk("Sorry, you don't have enough mesos.");
+                    cm.sendOk("You're short on gold, matey.");
                     cm.dispose();
                     return;
                 }
                 var PlayerNPC = Java.type('server.life.PlayerNPC');
                 var GameConstants = Java.type('constants.game.GameConstants');
                 if (PlayerNPC.spawnPlayerNPC(GameConstants.getHallOfFameMapid(cm.getJob()), cm.getPlayer())) {
-                    cm.sendOk("There you go! Hope you will like it.");
+                    cm.sendOk("Aye! Your legend shall live on!");
                     cm.gainMeso(-spawnPnpcFee);
                 } else {
-                    cm.sendOk("Sorry, the Hall of Fame is currently full...");
+                    cm.sendOk("The Hall of Fame is full! Come back later.");
                 }
             }
             cm.dispose();
             return;
         } else {
-            if (mode != 1 || status == 7 || (actionx["1stJob"] && status == 4) || (cm.haveItem(4031008) && status == 2) || (actionx["3thJobI"] && status == 1)) {
+            // General Exit Logic
+            if (mode != 1 || status == 7 || (actionx["1stJob"] && status == 4) || (actionx["3thJobI"] && status == 1)) {
                 if (mode == 0 && status == 2 && type == 1) {
-                    cm.sendOk("You know there is no other choice...");
+                    cm.sendOk("Lost your nerve? Come back when you find it!");
                 }
                 if (!(mode == 0 && type != 1)) {
                     cm.dispose();
@@ -170,9 +154,9 @@ function action(mode, type, selection) {
     if (actionx["1stJob"]) {
         if (status == 0) {
             if (cm.getLevel() >= 10 && cm.canGetFirstJob(jobType)) {
-                cm.sendYesNo("Oh...! You look like someone that can definitely be a part of us... all you need is a little slang, and... yeah... so, what do you think? Wanna be the Pirate?");
+                cm.sendYesNo("The life of a Pirate is dangerous. We fight for freedom and treasure! Do you want to join us?");
             } else {
-                cm.sendOk("Train a bit more until you reach the base requirements and I can show you the way of the #rPirate#k.");
+                cm.sendOk("You're too weak. Come back when you're Level 10.");
                 cm.dispose();
             }
         } else if (status == 1) {
@@ -184,132 +168,43 @@ function action(mode, type, selection) {
                     cm.gainItem(2330000, 1000); // Bullets
                     cm.resetStats();
                 }
-                cm.sendNext("Alright, from here out, you are a part of us! You'll be living the life of a wanderer at ..., but just be patient as soon, you'll be living the high life. Alright, it ain't much, but I'll give you some of my abilities... HAAAHHH!!!");
+                cm.sendNext("Hah! Welcome aboard! I've given you a gun and a knuckle. Use them well.");
             } else {
-                cm.sendNext("Make some room in your inventory and talk back to me.");
+                cm.sendNext("Your bags are full! Clear some space!");
                 cm.dispose();
             }
         } else if (status == 2) {
-            cm.sendNextPrev("You've gotten much stronger now. Plus every single one of your inventories have added slots. Go see for it yourself. I just gave you a little bit of #bSP#k.");
+            cm.sendNextPrev("I've unlocked your potential and given you some #bSP#k. Don't waste it.");
         } else if (status == 3) {
-            cm.sendNextPrev("Now a reminder. Once you have chosen, you cannot change up your mind and try to pick another path. Go now, and live as a proud Pirate.");
+            cm.sendNextPrev("Once a Pirate, always a Pirate. There is no turning back!");
         } else {
             cm.dispose();
         }
 
     // -------------------------------------------------------------
-    // 2ND JOB: REBIRTH ENTRY PATH
-    // -------------------------------------------------------------
-    } else if (actionx["2ndJobReborn"]) {
-        if (status == 0) {
-            cm.sendSimple("Which path are you taking this time? I will give you the required crystals directly.\r\n#b#L0#Brawler (Knuckles)#l\r\n#L1#Gunslinger (Guns)#l");
-        } else if (status == 1) {
-            var mapId = 0;
-            var crystalId = 0;
-
-            if (selection == 0) { // Brawler
-                mapId = 108000502;
-                crystalId = 4031856;
-            } else { // Gunslinger
-                mapId = 108000501;
-                crystalId = 4031857;
-            }
-
-            if (cm.getPlayerCount(mapId) > 0) {
-                cm.sendOk("All the training maps are currently in use. Please try again later.");
-                cm.dispose();
-            } else if (cm.canHold(crystalId, 15)) {
-                cm.gainItem(crystalId, 15);
-                cm.warp(mapId, 0);
-                cm.dispose();
-            } else {
-                cm.sendOk("Please make space in your Etc inventory for the crystals.");
-                cm.dispose();
-            }
-        }
-
-    // -------------------------------------------------------------
-    // 2ND JOB: ADVANCEMENT / STANDARD ENTRY
+    // 2ND JOB: IMMEDIATE ADVANCEMENT LOGIC
     // -------------------------------------------------------------
     } else if (actionx["2ndJob"]) {
         if (status == 0) {
-            if (cm.haveItem(4031858) || cm.haveItem(4031859)) {
-                // Has Proof, ready to advance
-                cm.sendSimple("Alright, it looks like you are ready. Click on [I'll choose my occupation] at the bottom.#b\r\n#L0#Please explain to me what being the Brawler is all about.\r\n#L1#Please explain to me what being the Gunslinger is all about.\r\n#L3#I'll choose my occupation!");
-            } else if (cm.isQuestCompleted(2191) || cm.isQuestCompleted(2192)) {
-                // Fallback for old quest system
-                cm.sendSimple("Alright, when you have made your decision, click on [I'll choose my occupation] at the bottom.#b\r\n#L0#Please explain to me what being the Brawler is all about.\r\n#L1#Please explain to me what being the Gunslinger is all about.\r\n#L3#I'll choose my occupation!");
-            } else {
-                // Standard Player: Has not started test
-                cm.sendYesNo("Would you like to take the test now?");
-            }
+            // Selection happens here from start()'s sendSimple
+            // 0 = Brawler, 1 = Gunslinger
+            job = (selection == 0) ? 510 : 520;
+            cm.sendYesNo("So you want to be a " + (job == 510 ? "#bBrawler#k" : "#bGunslinger#k") + "? There's no turning back once you sign the contract, matey. Are you sure?");
         } else if (status == 1) {
-            // Logic for entering test (Standard Player)
-            if (!cm.haveItem(4031858) && !cm.haveItem(4031859) && !cm.isQuestCompleted(2191) && !cm.isQuestCompleted(2192)) {
-                var map = 0;
-                if (cm.isQuestStarted(2191)) {
-                    map = 108000502;
-                } else {
-                    map = 108000501; // Default to Gunslinger map if quest 2192 or neither
-                }
-
-                if (cm.getPlayerCount(map) > 0) {
-                    cm.sendOk("All the training maps are currently in use. Please try again later.");
-                    cm.dispose();
-                } else {
-                    cm.warp(map, 0);
-                    cm.dispose();
-                }
-            }
-            // Logic for Advancement (Has Proof)
-            else {
-                if (selection < 3) {
-                    if (selection == 0) {    //brawler
-                        cm.sendNext("Pirates that master #rKnuckles#k.\r\n\r\n#bBrawlers#k are melee, close-ranged fist fighters who deal lots of damage and have high HP.");
-                    } else if (selection == 1) {    //gunslinger
-                        cm.sendNext("Pirates that master #rGuns#k.\r\n\r\n#bGunslingers#k are faster and ranged attackers.");
-                    }
-                    status -= 2;
-                } else {
-                    cm.sendSimple("Now... have you made up your mind? #b\r\n#L0#Brawler\r\n#L1#Gunslinger");
-                }
-            }
-        } else if (status == 2) {
-            // Determine Job based on Proof Item first (Rebirth Safe)
-            if (cm.haveItem(4031858)) {
-                job = 510; // Brawler Proof
-            } else if (cm.haveItem(4031859)) {
-                job = 520; // Gunslinger Proof
-            }
-            // Fallback to Selection if user somehow has both or neither but passed checks (Legacy)
-            else {
-                job = (selection == 0) ? 510 : 520;
-            }
-
-            cm.sendYesNo("So you want to make the second job advancement as the " + (job == 510 ? "#bBrawler#k" : "#bGunslinger#k") + "? You know you won't be able to choose a different job for the 2nd job advancement once you make your decision here, right?");
-        } else if (status == 3) {
-            // Consume Proofs
-            if (cm.haveItem(4031858)) cm.gainItem(4031858, -1);
-            if (cm.haveItem(4031859)) cm.gainItem(4031859, -1);
-
-            // Fallback consumption for old letter
-            if (cm.haveItem(4031012)) cm.gainItem(4031012, -1);
+            // Apply Job Change
+            cm.changeJobById(job);
 
             if (job == 510) {
-                cm.sendNext("From here on out, you are a #bBrawler#k. Brawlers rule the world with the power of their bare fists...which means they need to train their body more than others.");
+                cm.sendNext("Welcome to the brotherhood! You are now a #bBrawler#k. Let your fists do the talking!");
             } else {
-                cm.sendNext("From here on out, you are a #bGunslinger#k. Gunslingers are notable for their long-range attacks with sniper-like accuracy.");
+                cm.sendNext("Welcome to the brotherhood! You are now a #bGunslinger#k. Keep your powder dry and your aim true!");
             }
-
-            if (cm.getJobId() != job) {
-                cm.changeJobById(job);
-            }
-        } else if (status == 4) {
+        } else if (status == 2) {
             cm.sendNextPrev("I have just given you a book that gives you the list of skills you can acquire. Your max HP and MP have increased, too.");
-        } else if (status == 5) {
+        } else if (status == 3) {
             cm.sendNextPrev("I have also given you a little bit of #bSP#k. Open the #bSkill Menu#k located at the bottom left corner.");
-        } else if (status == 6) {
-            cm.sendNextPrev("Please find me after you have advanced much further. I'll be waiting for you.");
+        } else if (status == 4) {
+            cm.sendNextPrev("Now get out there and make a name for yourself!");
         }
 
     } else if (actionx["3thJobI"]) {
@@ -318,7 +213,7 @@ function action(mode, type, selection) {
                 cm.getPlayer().removePartyQuestItem("JB3");
                 cm.getPlayer().setPartyQuestItemObtained("JBP");
             }
-            cm.sendNextPrev("Since he is a clone of myself, you can expect a tough battle ahead. Good luck.");
+            cm.sendNextPrev("My clone is strong. Don't underestimate yourself.");
         }
     } else if (actionx["3thJobC"]) {
         cm.getPlayer().removePartyQuestItem("JBP");

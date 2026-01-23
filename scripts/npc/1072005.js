@@ -4,6 +4,7 @@
 */
 
 var status = -1;
+var completed = false;
 
 function start() {
     action(1, 0, 0);
@@ -26,19 +27,19 @@ function action(mode, type, selection) {
         // 1. REBIRTH CHECK (Bypass for Veterans)
         // -------------------------------------------------------------
         if (cm.getPlayer().getReborns() > 0) {
-            cm.sendNext("I see that you are a veteran magician who has been #breborn#k. You do not need to prove your wisdom to me again via these marbles.");
+            cm.sendNext("I sense a powerful aura from you. You have walked this path before, Reborn One. You need not prove your wisdom with these marbles again.");
         }
         // -------------------------------------------------------------
         // 2. STANDARD CHECK (Has 30 Marbles)
         // -------------------------------------------------------------
         else if (cm.haveItem(4031013, 30)) {
-            cm.sendNext("Oh, you have collected all 30 #bDark Marbles#k! That is incredible. You have passed the test.");
+            cm.sendNext("Wonderful. You have collected all 30 #bDark Marbles#k. Your focus is absolute.");
         }
         // -------------------------------------------------------------
         // 3. IN PROGRESS (Need more marbles)
         // -------------------------------------------------------------
         else {
-            cm.sendSimple("You need to collect #b30 Dark Marbles#k from the monsters in this map. Good luck.\r\n#L1#I want to give up and leave.#l");
+            cm.sendSimple("The test is simple, yet demanding. Collect #b30 #t4031013##k from the creatures here to prove your resolve. \r\n#b#L1#I wish to leave this place.#l");
         }
     }
     else if (status == 1) {
@@ -56,26 +57,26 @@ function action(mode, type, selection) {
             }
 
             // [QUEST HANDLING]
-            // Standard Magician Quest Flow:
-            // 100006 (Start at Grendel) -> 100007 (Collection) -> 100008 (Return with Proof)
-            if (cm.isQuestStarted(100007)) {
+            // Quest 100007 (Collection) -> 100008 (Return to Grendel)
+            // Only update if not reborn/already done to avoid DB errors
+            if (cm.getPlayer().getReborns() == 0 && cm.isQuestStarted(100007)) {
                 cm.completeQuest(100007);
                 cm.startQuest(100008);
             }
 
-            cm.sendNextPrev("Here is #bThe Proof of a Hero#k. Take this back to #bGrendel the Really Old#k in Ellinia.");
+            cm.sendNextPrev("Take this #bProof of a Hero#k. Return to #bGrendel the Really Old#k. He awaits your return in the Magic Library.");
         }
         // Handling "Give Up" Selection
         else {
             if (selection == 1) {
-                cm.sendYesNo("Are you sure you want to leave? You will have to start over if you return.");
+                cm.sendYesNo("Are you certain? Wisdom requires perseverance. If you leave now, you must start the test anew.");
             } else {
                 cm.dispose();
             }
         }
     }
     else if (status == 2) {
-        // Warp OUT to The Forest North of Ellinia (101020000)
+        // Warp OUT to Forest North of Ellinia (101020000)
         cm.warp(101020000, 0);
         cm.dispose();
     }

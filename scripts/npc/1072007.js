@@ -1,87 +1,78 @@
 /* Thief Job Instructor
-    Thief 2nd Job Advancement
-    Victoria Road : Construction Site North of Kerning City (102040000)
+   Inside Thief Testing Ground (108000400)
+   NPC ID: 1072007
 */
 
-var status;
+var status = -1;
+var completed = false;
 
 function start() {
-    status = -1;
     action(1, 0, 0);
 }
 
 function action(mode, type, selection) {
     if (mode == -1) {
         cm.dispose();
-    } else {
-        if (mode == 0 && type > 0) {
-            cm.dispose();
-            return;
-        }
-        if (mode == 1) {
-            status++;
-        } else {
-            status--;
-        }
+        return;
+    }
+    if (mode == 0 && status == 0) {
+        cm.dispose();
+        return;
+    }
+    if (mode == 1) status++;
+    else status--;
 
+    if (status == 0) {
         // -------------------------------------------------------------
-        // REBIRTH PATH (Fix for "Marbles not dropping")
+        // 1. REBIRTH CHECK (Bypass for Veterans)
         // -------------------------------------------------------------
-        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 400) {
-            if (status == 0) {
-                 cm.sendNext("I see the spirit of a veteran thief in you. Since you have been reborn, you do not need to hunt the monsters again.");
-            } else if (status == 1) {
-                 cm.sendAcceptDecline("I will give you the **30 Dark Marbles** directly and warp you in. Simply hand them to the instructor inside to pass the test. Are you ready?");
-            } else if (status == 2) {
-                 if (cm.canHold(4031013, 30)) {
-                     // Give the 30 Marbles directly
-                     cm.gainItem(4031013, 30);
-                     // Warp to Thief Test Map
-                     cm.warp(108000400, 0);
-                     cm.dispose();
-                 } else {
-                     cm.sendOk("Please make some space in your Etc inventory for the marbles.");
-                     cm.dispose();
-                 }
+        if (cm.getPlayer().getReborns() > 0) {
+            cm.sendNext("You move like a ghost. I see you are a veteran. I will not insult you by counting marbles.");
+        }
+        // -------------------------------------------------------------
+        // 2. STANDARD CHECK (Has 30 Marbles)
+        // -------------------------------------------------------------
+        else if (cm.haveItem(4031013, 30)) {
+            cm.sendNext("Thirty marbles... exactly. You are efficient. I like that.");
+        }
+        // -------------------------------------------------------------
+        // 3. IN PROGRESS (Need more marbles)
+        // -------------------------------------------------------------
+        else {
+            cm.sendSimple("You are not done yet. Bring me #b30 #t4031013##k from the Cold Eyes and Blue Mushrooms here. \r\n#b#L1#I can't do it. Let me out.#l");
+        }
+    } else if (status == 1) {
+        if (completed || cm.getPlayer().getReborns() > 0 || cm.haveItem(4031013, 30)) {
+
+            // Only remove marbles if they actually have them (Standard path)
+            if (cm.haveItem(4031013, 30)) {
+                cm.removeAll(4031013);
             }
-            return;
-        }
 
-        // -------------------------------------------------------------
-        // STANDARD PATH (First-time players)
-        // -------------------------------------------------------------
-        if (status == 0) {
-            if (cm.isQuestCompleted(100010)) {
-                cm.sendOk("You're truly a hero!");
-                cm.dispose();
-            } else if (cm.isQuestCompleted(100009)) {
-                cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-                status = 3; // Jump to the item handling/warp block
-            } else if (cm.isQuestStarted(100009)) {
-                cm.sendNext("Oh, isn't this a letter from the #bDark Lord#k?");
+            // Give the Proof of Hero
+            if (!cm.haveItem(4031012)) {
+                cm.gainItem(4031012, 1);
+            }
+
+            // [QUEST HANDLING]
+            // Quest 100010 (Collection) -> 100011 (Return to Dark Lord)
+            if (cm.getPlayer().getReborns() == 0 && cm.isQuestStarted(100010)) {
+                cm.completeQuest(100010);
+                cm.startQuest(100011);
+            }
+
+            cm.sendNextPrev("Here is the #bProof of a Hero#k. Hide it well. Return to the #bDark Lord#k in the Hideout.");
+        } else {
+            // Selection for "I want to leave"
+            if (selection == 1) {
+                cm.sendYesNo("Giving up? The Dark Lord does not tolerate failure. You will have to start over.");
             } else {
-                cm.sendOk("I can show you the way once you're ready for it.");
                 cm.dispose();
             }
-        } else if (status == 1) {
-            cm.sendNextPrev("So you want to prove your skills? Very well...");
-        } else if (status == 2) {
-            cm.sendAcceptDecline("I will give you a chance if you're ready.");
-        } else if (status == 3) {
-            // Status 3 is shared by the 'isQuestCompleted(100009)' jump above
-            cm.sendOk("You will have to collect me #b30 #t4031013##k. Good luck.");
-
-            // Only run quest logic if not already completed/started
-            if (!cm.isQuestCompleted(100009)) {
-                cm.completeQuest(100009);
-                cm.startQuest(100010);
-                cm.gainItem(4031011, -1); // Remove Letter from Dark Lord
-            }
-        } else if (status == 4) {
-            cm.warp(108000400, 0);
-            cm.dispose();
-        } else {
-            cm.dispose();
         }
+    } else if (status == 2) {
+        // Warp back to Construction Site (102040000)
+        cm.warp(102040000, 0);
+        cm.dispose();
     }
 }

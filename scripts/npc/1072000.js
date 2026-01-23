@@ -1,24 +1,3 @@
-/*
-    This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-                       Matthias Butz <matze@odinms.de>
-                       Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation. You may not use, modify
-    or distribute this program under any other version of the
-    GNU Affero General Public License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 /* Warrior Job Instructor
     Warrior 2nd Job Advancement
     Victoria Road : West Rocky Mountain IV (102020300)
@@ -47,17 +26,31 @@ function action(mode, type, selection) {
 
         // -------------------------------------------------------------
         // REBIRTH PATH
-        // If player is a Warrior (100) and has Rebirths, we allow re-entry
-        // regardless of previous quest completion status.
+        // If player has the Proof (4031012), send them back.
         // -------------------------------------------------------------
-        if (cm.getPlayer().getReborns() > 0 && cm.getJob() == 100) {
+       if (cm.haveItem(4031012, 1)){
+             if (status == 0) {
+                        cm.sendNext("Hau! You have returned with the proof! You are truly a great warrior. Now, return to #bDances with Balrog#k to complete your ritual!");
+                   } else if (status == 1) {
+                        cm.sendAcceptDecline("Would you like me to warp you back to Perion?");
+                   } else if (status == 2) {
+                        cm.warp(102000003, 0); // Warp to Dances with Balrog
+                        cm.dispose();
+                   }
+                   return;
+               }
+
+        // -------------------------------------------------------------
+        // REBIRTH SKIP (Veterans)
+        // -------------------------------------------------------------
+        if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 100 && cm.haveItem(4031008)) {
             if (status == 0) {
-                 cm.sendNext("I see the courage of a veteran warrior in you. Although you have been reborn, you must prove your skills again for this life.");
+                 cm.sendNext("Hau! It is you again! I see the scars of a thousand battles on you. Although you have been reborn, you must walk the path again... but I know your strength.");
             } else if (status == 1) {
-                 cm.sendAcceptDecline("I will let you enter the testing grounds immediately. Are you ready?");
+                 cm.sendAcceptDecline("I will send you straight to the testing grounds. Are you ready, brave one?");
             } else if (status == 2) {
-                 // Warp directly to the Warrior Test Map (108000300)
-                 cm.warp(108000300, 0);
+                 cm.gainItem(4031008, -1); // Remove Letter
+                 cm.warp(108000300, 0); // Warp to Test Map
                  cm.dispose();
             }
             return;
@@ -68,34 +61,32 @@ function action(mode, type, selection) {
         // -------------------------------------------------------------
         if (status == 0) {
             if (cm.isQuestCompleted(100004)) {
-                cm.sendOk("You're truly a hero!");
+                cm.sendOk("You are truly a hero of Perion!");
                 cm.dispose();
             } else if (cm.isQuestCompleted(100003)) {
-                cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-                status = 4; // Jump to the item handling/warp block
+                // Quest Active state
+                cm.sendNext("Alright! Defeat the monsters inside, collect #b30 Dark Marbles#k, and speak to my brother inside. He will give you the #bProof of a Hero#k. May the spirits guide your blade.");
+                status = 3; // Skip explanation
             } else if (cm.isQuestStarted(100003)) {
-                cm.sendNext("Hmmm...it is definitely the letter from #bDances with Balrog#k...so you came all the way here to take the test and make the 2nd job advancement as the warrior. Alright, I'll explain the test to you. Don't sweat it too much, it's not that complicated.");
+                cm.sendNext("Hau... Is that a letter from #bDances with Balrog#k? So you have come to prove your strength. Listen well, young brave.");
             } else {
-                cm.sendOk("I can show you the way once your ready for it.");
+                cm.sendOk("I can show you the way only when you are ready.");
                 cm.dispose();
             }
         } else if (status == 1) {
-            cm.sendNextPrev("I'll send you to a hidden map. You'll see monsters you don't normally see. They look the same like the regular ones, but with a totally different attitude. They neither boost your experience level nor provide you with item.");
+            cm.sendNextPrev("I will send you to a hidden rocky canyon. The monsters there are possessed by evil spirits. They give no experience, only death.");
         } else if (status == 2) {
-            cm.sendNextPrev("You'll be able to acquire a marble called #b#t4031013##k while knocking down those monsters. It is a special marble made out of their sinister, evil minds. Collect 30 of those, and then go talk to a colleague of mine in there. That's how you pass the test.");
+            cm.sendNextPrev("You must hunt them and collect #b30 #t4031013##k. These marbles contain their evil essence. Collect them and speak to my brother inside.");
         } else if (status == 3) {
-            cm.sendYesNo("Once you go inside, you can't leave until you take care of your mission. If you die, your experience level will decrease..so you better really buckle up and get ready...well, do you want to go for it now?");
+            cm.sendAcceptDecline("If you leave before finishing, you fail. If you die, you lose experience. Are you brave enough to enter?");
         } else if (status == 4) {
-            cm.sendNext("Alright I'll let you in! Defeat the monsters inside, collect 30 Dark Marbles, then strike up a conversation with a colleague of mine inside. He'll give you #bThe Proof of a Hero#k, the proof that you've passed the test. Best of luck to you.");
-
-            // Only run quest update logic if strictly necessary to avoid errors
+            // Standard Quest Update
             if (!cm.isQuestCompleted(100003)) {
                 cm.completeQuest(100003);
                 cm.startQuest(100004);
-                cm.gainItem(4031008, -1); // Remove Letter from Dances with Balrog
+                cm.gainItem(4031008, -1); // Remove Letter
             }
-        } else if (status == 5) {
-            cm.warp(108000300, 0);
+            cm.warp(108000300, 0); // Warp to Test Map
             cm.dispose();
         } else {
             cm.dispose();
