@@ -35,7 +35,7 @@ function start() {
             if (cm.haveItem(4031012)) { // Proof of Hero
                 cm.sendNext("Haha...I knew you'd breeze through that test. I'll admit, you are a great bowman. I'll make you much stronger than you're right now. Before that, however... you'll need to choose one of two paths given to you. It'll be a difficult decision for you to make, but... if there's any question to ask, please do so.");
             } else if (cm.haveItem(4031010)) { // Bowman Letter
-                cm.sendOk("Go and see the #b#p106010000##k in the Road to the Dungeon.");
+                cm.sendOk("Go and see the #rBowman Job Instructor#k in the Road to the Dungeon.");
                 cm.dispose();
             } else {
                 cm.sendYesNo("Hmmm... you have grown a lot since I last saw you. I don't see the weakling I saw before, and instead, look much more like a bowman now. Well, what do you think? Don't you want to get even more powerful than that? Pass a simple test and I'll do just that for you. Do you want to do it?");
