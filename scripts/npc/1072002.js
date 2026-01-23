@@ -50,7 +50,13 @@ function action(mode, type, selection) {
         // If player is a Bowman (300) and has Rebirths, we allow re-entry
         // regardless of previous quest completion status.
         // -------------------------------------------------------------
-        console.log("cm.getPlayer().getReborns():" ,cm.getPlayer().getReborns())
+       if (cm.haveItem(4031012, 1)){
+                 cm.sendSimple("Well done great bowman! Now return to Athena to complete your job advancement!");
+                 cm.warp(100000201, 0);
+                 cm.dispose();
+       }
+
+
         if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 300) {
 
             if (status == 0) {
