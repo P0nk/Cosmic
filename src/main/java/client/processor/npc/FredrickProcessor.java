@@ -1,25 +1,10 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+              Matthias Butz <matze@odinms.de>
+              Jan Christian Meyer <vimes@odinms.de>
 
     Copyleft (L) 2016 - 2019 RonanLana (HeavenMS)
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 package client.processor.npc;
 
@@ -188,7 +173,7 @@ public class FredrickProcessor {
                             Timestamp logoutTs = rs.getTimestamp("lastLogoutTime");
                             int inactivityDays = timestampElapsedDays(logoutTs, curTime);
 
-                            if (inactivityDays < 7 || daynotes >= dailyReminders.length - 1) {  // don't spam inactive players
+                            if (inactivityDays < 7 || daynotes >= dailyReminders.length - 1) {
                                 String name = rs.getString("name");
                                 notifCids.add(new Pair<>(new Pair<>(cid, name), daynotes));
                             }
@@ -272,10 +257,25 @@ public class FredrickProcessor {
         }
     }
 
-    public void fredrickRetrieveItems(Client c) {     // thanks Gustav for pointing out the dupe on Fredrick handling
+    public void fredrickRetrieveItems(Client c) {
         if (c.tryacquireClient()) {
             try {
                 Character chr = c.getPlayer();
+
+                // [FIX] Anti-Dupe Gatekeeper
+                // Check 1: Character flag
+                if (chr.hasMerchant()) {
+                    chr.dropMessage(1, "You cannot use Fredrick while your store is open.\r\nPlease close your Hired Merchant first.");
+                    return;
+                }
+
+                // Check 2: World Server Registry
+                // We use 'getHiredMerchant' to see if the world has a registered shop for this ID.
+                World w = Server.getInstance().getWorld(chr.getWorld());
+                if (w != null && w.getHiredMerchant(chr.getId()) != null) {
+                    chr.dropMessage(1, "Your store is currently open in the Free Market.\r\nPlease close it before retrieving items.");
+                    return;
+                }
 
                 List<Pair<Item, InventoryType>> items;
                 try {

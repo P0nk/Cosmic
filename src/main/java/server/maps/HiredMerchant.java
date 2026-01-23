@@ -170,7 +170,6 @@ public class HiredMerchant extends AbstractMapObject {
 
     private static void creditMerchantOfflineWithBCoinOverflow(int ownerId, int add) throws SQLException {
         if (add <= 0) {
-            System.err.println("[HMERCH][DB] add<=0 skip. ownerId=" + ownerId);
             return;
         }
 
@@ -196,19 +195,11 @@ public class HiredMerchant extends AbstractMapObject {
             int coinsToAdd = (int) (total / MESO_PER_BCOIN);
             int remainder = (int) (total % MESO_PER_BCOIN);
 
-            System.err.println("[HMERCH][DB] ownerId=" + ownerId
-                    + " merchantMesos(before)=" + merchantMesos
-                    + " add=" + add
-                    + " total=" + total
-                    + " coinsToAdd=" + coinsToAdd
-                    + " remainder=" + remainder);
-
             // 1) update remainder into characters.MerchantMesos
             try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET MerchantMesos = ? WHERE id = ?")) {
                 ps.setInt(1, remainder);
                 ps.setInt(2, ownerId);
-                int rows = ps.executeUpdate();
-                System.err.println("[HMERCH][DB] UPDATE characters rows=" + rows);
+                ps.executeUpdate();
             }
 
             // 2) touch fredstorage timestamp (decay logic uses this)
@@ -216,14 +207,12 @@ public class HiredMerchant extends AbstractMapObject {
             try (PreparedStatement ps = con.prepareStatement("UPDATE fredstorage SET timestamp = NOW() WHERE cid = ?")) {
                 ps.setInt(1, ownerId);
                 updated = ps.executeUpdate();
-                System.err.println("[HMERCH][DB] UPDATE fredstorage rows=" + updated);
             }
             if (updated == 0) {
                 try (PreparedStatement ps = con.prepareStatement(
                         "INSERT INTO fredstorage (cid, daynotes, timestamp) VALUES (?, 0, NOW())")) {
                     ps.setInt(1, ownerId);
-                    int ins = ps.executeUpdate();
-                    System.err.println("[HMERCH][DB] INSERT fredstorage rows=" + ins);
+                    ps.executeUpdate();
                 }
             }
 
@@ -259,24 +248,17 @@ public class HiredMerchant extends AbstractMapObject {
                     }
                 }
 
-                System.err.println("[HMERCH][DB] Inserted BCoin inventoryitemid=" + inventoryItemId + " qty=" + coinsToAdd);
-
                 try (PreparedStatement ps = con.prepareStatement(
                         "INSERT INTO inventorymerchant (inventorymerchantid, inventoryitemid, characterid, bundles) VALUES (DEFAULT, ?, ?, ?)")) {
                     ps.setInt(1, inventoryItemId);
                     ps.setInt(2, ownerId);
                     ps.setInt(3, 1);
-                    int rows = ps.executeUpdate();
-                    System.err.println("[HMERCH][DB] INSERT inventorymerchant rows=" + rows);
+                    ps.executeUpdate();
                 }
-            } else {
-                System.err.println("[HMERCH][DB] coinsToAdd=0, no BCoin insert required.");
             }
 
             con.commit();
-            System.err.println("[HMERCH][DB] COMMIT SUCCESS");
         } catch (SQLException e) {
-            System.err.println("[HMERCH][DB][ERROR] rollback");
             if (con != null) {
                 try { con.rollback(); } catch (SQLException ignore) {}
             }
@@ -400,7 +382,7 @@ public class HiredMerchant extends AbstractMapObject {
         }
     }
 
-    private static boolean canBuy(Client c, Item newItem) {    // thanks xiaokelvin (Conrad) for noticing a leaked test code here
+    private static boolean canBuy(Client c, Item newItem) {
         return InventoryManipulator.checkSpace(c, newItem.getItemId(), newItem.getQuantity(), newItem.getOwner()) && InventoryManipulator.addFromDrop(c, newItem, false);
     }
 
@@ -425,68 +407,36 @@ public class HiredMerchant extends AbstractMapObject {
 
             newItem.setQuantity((short) ((pItem.getItem().getQuantity() * quantity)));
             if (quantity < 1 || !pItem.isExist() || pItem.getBundles() < quantity) {
-                System.err.println("[HMERCH][BUY][FAIL] invalid qty/bundles buyer=" + c.getPlayer().getName()
-                        + " qty=" + quantity + " exist=" + pItem.isExist() + " bundles=" + pItem.getBundles());
-                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL invalid qty/bundles");
+                c.getPlayer().dropMessage(1, "The item is not available.");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             } else if (newItem.getInventoryType().equals(InventoryType.EQUIP) && newItem.getQuantity() > 1) {
-                System.err.println("[HMERCH][BUY][FAIL] equip qty>1 buyer=" + c.getPlayer().getName()
-                        + " item=" + newItem.getItemId() + " qty=" + newItem.getQuantity());
-                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL equip qty>1");
+                c.getPlayer().dropMessage(1, "You can only buy one of this item at a time.");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             }
 
             KarmaManipulator.toggleKarmaFlagToUntradeable(newItem);
 
-            // --- long-safe calc so we can SEE what happens for >=2b pricing tests ---
             long rawPrice = (long) pItem.getPrice() * (long) quantity;
             int price = rawPrice > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rawPrice;
 
-            String hdr = "[HMERCH-DBG] buyer=" + c.getPlayer().getName()
-                    + " ownerName=" + ownerName
-                    + " ownerId=" + ownerId
-                    + " itemId=" + pItem.getItem().getItemId()
-                    + " unitPrice=" + pItem.getPrice()
-                    + " buyBundles=" + quantity
-                    + " rawPrice=" + rawPrice
-                    + " price(intCap)=" + price;
-
-            System.err.println(hdr);
-            c.getPlayer().dropMessage(6, hdr);
-
             if (c.getPlayer().getMeso() < price) {
-                System.err.println("[HMERCH][BUY][FAIL] insufficient mesos buyer=" + c.getPlayer().getName()
-                        + " has=" + c.getPlayer().getMeso() + " need=" + price);
                 c.getPlayer().dropMessage(1, "You don't have enough mesos to purchase this item.");
-                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL insufficient mesos");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             }
 
-            boolean canBuyResult = canBuy(c, newItem);
-            System.err.println("[HMERCH][BUY] canBuy=" + canBuyResult);
-            c.getPlayer().dropMessage(6, "[HMERCH-DBG] canBuy=" + canBuyResult);
-
-            if (!canBuyResult) {
+            if (!canBuy(c, newItem)) {
                 c.getPlayer().dropMessage(1, "Your inventory is full. Please clear a slot before buying this item.");
-                c.getPlayer().dropMessage(6, "[HMERCH-DBG] FAIL inventory full");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
             }
 
-            int beforeBuyer = c.getPlayer().getMeso();
             c.getPlayer().gainMeso(-price, false);
-            int afterBuyer = c.getPlayer().getMeso();
-
             int fee = Trade.getFee(price);
             int afterFee = price - fee;
             if (afterFee < 0) afterFee = 0;
-
-            System.err.println("[HMERCH][BUY] buyerMeso " + beforeBuyer + " -> " + afterBuyer
-                    + " fee=" + fee + " afterFee=" + afterFee);
-            c.getPlayer().dropMessage(6, "[HMERCH-DBG] fee=" + fee + " afterFee=" + afterFee);
 
             synchronized (sold) {
                 sold.add(new SoldItem(c.getPlayer().getName(), pItem.getItem().getItemId(), newItem.getQuantity(), afterFee));
@@ -504,16 +454,11 @@ public class HiredMerchant extends AbstractMapObject {
             // --- CREDIT TO MERCHANT STORAGE (BCoin overflow supported) ---
             Character owner = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterByName(ownerName);
             if (owner != null) {
-                owner.dropMessage(6, "[HMERCH-DBG] credited(afterFee)=" + afterFee + " via addMerchantMesosAsBCoinOverflow()");
-                System.err.println("[HMERCH][CREDIT] owner ONLINE -> addMerchantMesosAsBCoinOverflow(" + afterFee + ")");
                 owner.addMerchantMesosAsBCoinOverflow(afterFee);
             } else {
-                System.err.println("[HMERCH][CREDIT] owner OFFLINE -> DB credit with BCoin overflow. afterFee=" + afterFee);
                 try {
                     creditMerchantOfflineWithBCoinOverflow(ownerId, afterFee);
-                    System.err.println("[HMERCH][CREDIT] offline DB credit DONE");
                 } catch (Exception e) {
-                    System.err.println("[HMERCH][CREDIT][ERROR] offline DB credit failed");
                     e.printStackTrace();
                 }
             }
@@ -521,7 +466,6 @@ public class HiredMerchant extends AbstractMapObject {
             try {
                 this.saveItems(false);
             } catch (Exception e) {
-                System.err.println("[HMERCH][BUY][ERROR] saveItems failed");
                 e.printStackTrace();
             }
         }
@@ -538,7 +482,6 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public void forceClose() {
-        //Server.getInstance().getChannel(world, channel).removeHiredMerchant(ownerId);
         map.broadcastMessage(PacketCreator.removeHiredMerchantBox(getOwnerId()));
         map.removeMapObject(this);
 
@@ -618,7 +561,6 @@ public class HiredMerchant extends AbstractMapObject {
                     }
                 }
 
-                // If successful, clear the shop list so we save an empty state to DB
                 synchronized (items) {
                     items.clear();
                 }
@@ -628,10 +570,6 @@ public class HiredMerchant extends AbstractMapObject {
                 // Save the current state to DB (Empty if claimed above, populated if not)
                 this.saveItems(timeout);
 
-                // [FIX] Trigger Fredrick ONLY if items remain in the shop.
-                // This handles cases where:
-                // 1. Inventory was full (check() returned false)
-                // 2. It was a timeout (timeout == true)
                 synchronized (items) {
                     if (!items.isEmpty()) {
                         FredrickProcessor.insertFredrickLog(this.ownerId);
@@ -873,17 +811,12 @@ public class HiredMerchant extends AbstractMapObject {
                 ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
                 con.commit();
             } catch (Exception e) {
-                System.err.println("[MERCHANT][FATAL] HiredMerchant.saveItems FAILED -> rollback. CID=" + ownerId);
-                e.printStackTrace();
                 try { con.rollback(); } catch (SQLException re) { re.printStackTrace(); }
                 throw e;
             } finally {
                 try { con.setAutoCommit(oldAutoCommit); } catch (SQLException ignore) {}
             }
         }
-
-        // [FIX] REMOVED FredrickProcessor.insertFredrickLog(this.ownerId);
-        // We do not want to flag items for pickup just because we saved!
     }
 
     private static boolean check(Character chr, List<PlayerShopItem> items) {
@@ -904,7 +837,7 @@ public class HiredMerchant extends AbstractMapObject {
 
     public int getTimeOpen() {
         double openTime = (System.currentTimeMillis() - start) / 60000;
-        openTime /= 1440;   // heuristics since engineered method to count time here is unknown
+        openTime /= 1440;
         openTime *= 1318;
 
         return (int) Math.ceil(openTime);
@@ -995,7 +928,6 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public class SoldItem {
-
         int itemid, mesos;
         short quantity;
         String buyer;
@@ -1007,34 +939,20 @@ public class HiredMerchant extends AbstractMapObject {
             this.mesos = mesos;
         }
 
-        public String getBuyer() {
-            return buyer;
-        }
-
-        public int getItemId() {
-            return itemid;
-        }
-
-        public short getQuantity() {
-            return quantity;
-        }
-
-        public int getMesos() {
-            return mesos;
-        }
+        public String getBuyer() { return buyer; }
+        public int getItemId() { return itemid; }
+        public short getQuantity() { return quantity; }
+        public int getMesos() { return mesos; }
     }
 
     /**
      * [PERSISTENCE] Saves the merchant to DB during server shutdown.
-     * Uses the shared connection from Channel to ensure atomic transaction.
      */
     public void savePersistence(Connection con) throws SQLException {
         PreparedStatement ps = null;
         try {
-            // 1. Calculate accumulated time open
             long minutesOpen = (System.currentTimeMillis() - this.start) / 60000;
 
-            // 2. Save Metadata
             ps = con.prepareStatement("REPLACE INTO hiredmerchants (ownerid, ownername, itemid, description, world, channel, mapid, x, y, minutesopen, isopen, blacklist) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
             ps.setInt(1, ownerId);
             ps.setString(2, ownerName);
@@ -1047,7 +965,6 @@ public class HiredMerchant extends AbstractMapObject {
             ps.setInt(9, getPosition().y);
             ps.setInt(10, (int) minutesOpen);
 
-            // Serialize blacklist
             StringBuilder bl = new StringBuilder();
             visitorLock.lock();
             try {
@@ -1061,11 +978,6 @@ public class HiredMerchant extends AbstractMapObject {
             ps.executeUpdate();
             ps.close();
 
-            // 3. Save Items
-            // [CRITICAL FIX] REMOVED THE RAW 'DELETE FROM inventoryitems' HERE.
-            // That delete was destroying BCoins (Revenue) that were just inserted by sales.
-            // We rely on ItemFactory.MERCHANT.saveItems to handle the synchronization safely.
-
             List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
             List<Short> bundles = new ArrayList<>();
             List<Integer> prices = new ArrayList<>();
@@ -1074,7 +986,6 @@ public class HiredMerchant extends AbstractMapObject {
                 for (PlayerShopItem pItems : items) {
                     Item newItem = pItems.getItem();
                     short newBundle = pItems.getBundles();
-                    // Avoid modifying live object quantity directly if possible, but standard flow allows it here
                     newItem.setQuantity(pItems.getItem().getQuantity());
 
                     if (newBundle > 0) {
@@ -1085,7 +996,6 @@ public class HiredMerchant extends AbstractMapObject {
                 }
             }
 
-            // Pass to factory (Ensure your ItemFactory.saveItemsMerchant has the logic to NOT delete BCoins/3020002)
             ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
 
         } finally {
@@ -1098,35 +1008,28 @@ public class HiredMerchant extends AbstractMapObject {
             int ownerId = rs.getInt("ownerid");
             String ownerName = rs.getString("ownername");
             int itemId = rs.getInt("itemid");
-            String desc = rs.getString("description");
+            String description = rs.getString("description");
             int mapId = rs.getInt("mapid");
             int x = rs.getInt("x");
             int y = rs.getInt("y");
             int minutesOpen = rs.getInt("minutesopen");
             String blString = rs.getString("blacklist");
 
-            // 1. Validate Map
             MapleMap map = cserv.getMapFactory().getMap(mapId);
             if (map == null) return null;
 
-            // 2. Calculate time
             long restoredStart = System.currentTimeMillis() - (minutesOpen * 60000L);
 
-            // 3. Create Instance
-            HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, desc, cserv.getWorld(), cserv.getId(), map, restoredStart);
+            HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, description, cserv.getWorld(), cserv.getId(), map, restoredStart);
             merch.setPosition(new java.awt.Point(x, y));
 
-            // 4. Restore Blacklist
             if (blString != null && !blString.isEmpty()) {
                 for (String s : blString.split(";")) {
                     if (!s.isEmpty()) merch.addToBlacklist(s);
                 }
             }
 
-            // 5. Load Prices (Metadata)
             java.util.Map<Integer, Pair<Integer, Short>> priceInfo = new java.util.HashMap<>();
-            System.out.println("[DEBUG-MERCH] Loading prices for Merchant Owner: " + ownerId);
-
             try (Connection con = DatabaseConnection.getConnection();
                  PreparedStatement ps = con.prepareStatement("SELECT inventoryitemid, price, bundles FROM inventorymerchant WHERE characterid = ?")) {
                 ps.setInt(1, ownerId);
@@ -1137,32 +1040,23 @@ public class HiredMerchant extends AbstractMapObject {
                         short bundles = rs2.getShort("bundles");
 
                         priceInfo.put(invId, new Pair<>(price, bundles));
-                        System.out.println("[DEBUG-MERCH]  -> Found DB Record: UniqueID=" + invId + " Price=" + price + " Bundles=" + bundles);
                     }
                 }
             }
 
-            // 6. Load Raw Items
-            System.out.println("[DEBUG-MERCH] Loading items from ItemFactory for Owner: " + ownerId);
             List<Pair<Item, InventoryType>> loadedItems = ItemFactory.MERCHANT.loadItems(ownerId, false);
-            System.out.println("[DEBUG-MERCH]  -> ItemFactory returned " + loadedItems.size() + " total items (including equips/etc).");
 
             int addedCount = 0;
 
             for (Pair<Item, InventoryType> p : loadedItems) {
                 Item item = p.getLeft();
-
-                int uniqueId = item.getUniqueId(); // This is the critical link
-
+                int uniqueId = item.getUniqueId();
                 int itemIdDebug = item.getItemId();
 
                 // Skip BCoins
                 if (itemIdDebug == 3020002) {
-                    System.out.println("[DEBUG-MERCH]  -> Skipping BCoin (Revenue) Item.");
                     continue;
                 }
-
-                System.out.print("[DEBUG-MERCH]  -> Checking Item: " + itemIdDebug + " (Unique ID: " + uniqueId + ") ... ");
 
                 if (priceInfo.containsKey(uniqueId)) {
                     Pair<Integer, Short> info = priceInfo.get(uniqueId);
@@ -1171,24 +1065,26 @@ public class HiredMerchant extends AbstractMapObject {
 
                     PlayerShopItem shopItem = new PlayerShopItem(item, bundles, price);
                     merch.addItem(shopItem);
-                    System.out.println("MATCH! Added to shop. (Price: " + price + ")");
                     addedCount++;
                 } else {
-                    // [FIX] Item exists in DB but missing Price/Bundle info.
-                    // Add it anyway to prevent data loss (it would be deleted on next save otherwise).
-                    // Defaulting to 1 Bundle, Price 0 (Owner should retrieve this item).
-                    System.out.println("NO MATCH in Price Map. Recovering item (Bundles: 1, Price: 0).");
-                    PlayerShopItem shopItem = new PlayerShopItem(item, (short) 1, 0);
-                    merch.addItem(shopItem);
-                    addedCount++;
+                    // [FIXED] Dropped the 'else' block that added dummy items.
+                    // If price info is missing, we simply skip loading the item into the shop.
+                    // It remains safe in the database (inventoryitems table) for Fredrick to retrieve later.
+                    System.err.println("[HMERCH][RESTORE] Item loaded but Price Info missing. Skipping load. ItemID: " + itemIdDebug);
                 }
             }
 
-            System.out.println("[DEBUG-MERCH] Final Shop Reconstruction: " + addedCount + " items added.");
+            // [FIXED] If shop is empty (0 items) or all items were skipped, RETURN NULL.
+            // This triggers the fallback logic in Channel.java to send items to Fredrick.
+            if (addedCount == 0) {
+                System.out.println("[HMERCH][RESTORE] Merchant " + ownerId + " loaded with 0 valid items. Aborting open.");
+                return null;
+            }
+
             return merch;
 
         } catch (Exception e) {
-            System.err.println("[DEBUG-MERCH] CRITICAL ERROR restoring merchant:");
+            System.err.println("[HMERCH][RESTORE] Critical error restoring merchant:");
             e.printStackTrace();
             return null;
         }
