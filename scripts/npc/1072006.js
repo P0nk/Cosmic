@@ -54,7 +54,7 @@ function action(mode, type, selection) {
                 cm.sendNext("You're a true hero! Take this and Athena will acknowledge you.");
             } else if (cm.getPlayer().getReborns() > 0 && cm.getJob().getId() == 300) {
                 completed = true;
-                cm.sendNext("I see the sharp eyes of a veteran bowman in you. I know you can pass this test easily. I will let you pass now.");
+                cm.sendNext("I trained you before! I know you can pass this test easily. I will let you pass now but dont tell my colleague!");
             } else {
                 completed = false;
                 cm.sendSimple("You will have to collect me #b30 #t4031013##k. Good luck. \r\n#b#L1#I would like to leave#l");
