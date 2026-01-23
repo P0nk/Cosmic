@@ -148,11 +148,23 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     mobCount = 15;
                 } else if (attack.skill == Aran.HIDDEN_FULL_DOUBLE || attack.skill == Aran.HIDDEN_FULL_TRIPLE || attack.skill == Aran.HIDDEN_OVER_DOUBLE || attack.skill == Aran.HIDDEN_OVER_TRIPLE) {
                     mobCount = 15;
-                } else if (attack.skill == FPWizard.POISON_BREATH||attack.skill == ILWizard.COLD_BEAM) {
-                // [FIX] Exception for F/P Wizard - Poison Breath
-                // Causes false positives when hitting multiple mobs
-                mobCount = 6;
-            }
+                } else if (attack.skill == FPWizard.POISON_BREATH || attack.skill == ILWizard.COLD_BEAM) {
+                    // [FIX] Exception for F/P Wizard - Poison Breath
+                    // Causes false positives when hitting multiple mobs
+                    mobCount = 6;
+                }
+                // [NEW FIX] Big Bang Mob Count Correction
+                // Manual override because WZ data might be returning base level count (5) instead of scaled count.
+                else if (attack.skill == FPArchMage.BIG_BANG || attack.skill == ILArchMage.BIG_BANG || attack.skill == Bishop.BIG_BANG) {
+                    int bbLevel = player.getSkillLevel(theSkill);
+                    if (bbLevel > 20) {
+                        mobCount = 15;
+                    } else if (bbLevel > 10) {
+                        mobCount = 10;
+                    } else {
+                        mobCount = 5;
+                    }
+                }
 
                 // STRICT CHECK: Does packet claim more hits than skill allows?
                 if (attack.numAttacked > mobCount) {
@@ -243,9 +255,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     skillId == Aran.COMBO_TEMPEST
                             ;
 
-                    // [FIX] Grace Period Check
-                    // If the player changed maps less than 2 seconds (2000ms) ago, SKIP the check.
-                    boolean isLoading = (System.currentTimeMillis() - player.getLastMapChangeTime() < 2000);
+                            // [FIX] Grace Period Check
+                            // If the player changed maps less than 10 seconds (10000ms) ago, SKIP the check.
+                            boolean isLoading = (System.currentTimeMillis() - player.getLastMapChangeTime() < 10000);
 
 
                     // 3. The Check
