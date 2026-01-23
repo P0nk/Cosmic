@@ -26,7 +26,7 @@ function start() {
             if (cm.haveItem(4031012)) { // Proof of Hero
                 cm.sendNext("I see you have done well. I will allow you to take the next step on your long road.");
             } else if (cm.haveItem(4031008)) { // Letter
-                cm.sendOk("Go and see the #Warrior Job Instructor#k in the West Rocky Mountain IV.");
+                cm.sendOk("Go and see the #bWarrior Job Instructor#k in the West Rocky Mountain IV.");
                 cm.dispose();
             } else {
                 cm.sendYesNo("You look strong. Do you wish to take the test for the 2nd Job Advancement?");
@@ -119,7 +119,7 @@ function action(mode, type, selection) {
             if (cm.haveItem(4031012)) {
                 cm.sendSimple("Choose your path:#b\r\n#L0#Fighter\r\n#L1#Page\r\n#L2#Spearman");
             } else {
-                cm.sendNext("Take this letter to #Warrior Job Instructor#k.");
+                cm.sendNext("Take this letter to #bWarrior Job Instructor#k.");
                 if (!cm.isQuestStarted(100003)) cm.startQuest(100003);
             }
         } else if (status == 1) {
