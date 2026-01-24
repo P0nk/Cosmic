@@ -7133,7 +7133,6 @@ public class Character extends AbstractCharacterObject {
     }
     public static Character loadCharFromDB(final int charid, Client client, boolean channelserver) throws SQLException {
         long startTime = System.currentTimeMillis();
-        System.out.println("[Load-DEBUG] Starting load for Character ID: " + charid);
 
         Character ret = new Character();
         ret.client = client;
@@ -7141,62 +7140,43 @@ public class Character extends AbstractCharacterObject {
 
         try (Connection con = DatabaseConnection.getConnection()) {
 
-            // 1. Load Core Stats (Level, Job, STR/DEX, etc.)
-            System.out.println("[Load-DEBUG] Loading Core Data...");
+            // 1. Load Core Stats
             if (!loadCoreData(con, ret, charid)) {
                 throw new RuntimeException("Loading char failed (not found)");
             }
-            System.out.println("[Load-DEBUG] Core Data Loaded.");
 
-            // [FIX] Initialize Managers immediately after core data is present
+            // Initialize Managers
             ret.autoban = new AutobanManager(ret);
             ret.cashshop = new CashShop(ret.accountid, ret.id, ret.getJobType());
             ret.cashshop.setCharacter(ret);
 
-            // 2. Load Account Info (Slots, Language)
-            System.out.println("[Load-DEBUG] Loading Account Data...");
+            // 2-8. Execute Data Loading Modules
             loadAccountData(con, ret);
-
-            // 3. Load Inventory (Equips, Items, Rings, Mounts)
-            System.out.println("[Load-DEBUG] Loading Inventory...");
             loadInventoryData(con, ret, channelserver);
-
-            // 4. Load Skills, Cooldowns, and Debuffs
-            System.out.println("[Load-DEBUG] Loading Skills & Cooldowns...");
             loadSkillData(con, ret);
 
-            // 5. Load Quests (Status, Progress, Medals)
-            System.out.println("[Load-DEBUG] Loading Quests...");
             if (channelserver) {
                 loadQuestData(con, ret);
             }
 
-            // 6. Load Config (Keymaps, Quickslots, Macros)
-            System.out.println("[Load-DEBUG] Loading Keymaps & Macros...");
             loadConfigData(con, ret);
-
-            // 7. Load Social & Meta (Buddies, Fame, Area Info, Events)
-            System.out.println("[Load-DEBUG] Loading Social & Meta Data...");
             loadSocialAndMetaData(con, ret);
-
-            // 8. Load Storage
-            System.out.println("[Load-DEBUG] Loading Storage...");
             loadStorageData(con, ret, channelserver);
 
-            // 9. Finalize (Set Map, Party, Messenger)
+            // 9. Finalize
             if (channelserver) {
-                System.out.println("[Load-DEBUG] Finalizing Login State...");
                 finalizeLoginState(con, ret, client);
             }
 
             long endTime = System.currentTimeMillis();
-            System.out.println("[Load-DEBUG] Character " + ret.getName() + " loaded successfully in " + (endTime - startTime) + "ms.");
+            // Retained long-term printout for performance tracking and success verification
+            System.out.println(String.format("[CharacterLoad] ID: %d | Name: %s | Time: %dms", charid, ret.getName(), (endTime - startTime)));
 
             return ret;
 
         } catch (SQLException | RuntimeException e) {
-            System.err.println("[Load-ERROR] Failed to load character ID " + charid);
-            e.printStackTrace();
+            // Retained for critical error tracking
+            System.err.println("[Load-ERROR] Failed to load character ID " + charid + " - " + e.getMessage());
             return null;
         }
     }

@@ -337,6 +337,14 @@ public class MapFactory {
 
     private static AbstractLoadedLife loadLife(int id, String type, int cy, int f, int fh, int rx0, int rx1, int x, int y, int hide) {
         AbstractLoadedLife myLife = LifeFactory.getLife(id, type);
+
+        // --- NULL CHECK ADDED HERE ---
+        if (myLife == null) {
+            System.err.println("[MapFactory] SEVERE: Life object ID " + id + " (Type: " + type + ") returned null. Skipping to prevent crash.");
+            return null;
+        }
+        // -----------------------------
+
         myLife.setCy(cy);
         myLife.setF(f);
         myLife.setFh(fh);
