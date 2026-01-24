@@ -26,8 +26,8 @@ import client.inventory.InventoryType;
 import client.inventory.Item;
 import client.inventory.ItemFactory;
 import client.inventory.manipulator.InventoryManipulator;
-import scripting.event.EventInstanceManager;
-import scripting.event.EventManager;
+import server.events.EventInstanceManager;
+import server.events.EventManager;
 import tools.DatabaseConnection;
 import tools.Pair;
 

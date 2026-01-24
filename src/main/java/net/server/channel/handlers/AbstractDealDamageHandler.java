@@ -260,18 +260,35 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             boolean isLoading = (System.currentTimeMillis() - player.getLastMapChangeTime() < 10000);
 
 
-                    // 3. The Check
+                    // 4. THE CHECK
                     if (!isFMA && !isLoading && distSq > thresholdSq) {
                         if (!player.isGM()) {
-                            double realDist = Math.sqrt(distSq);
-                            int allowedDist = (int) Math.sqrt(thresholdSq);
+                            // [FIX] Do not Jail immediately. Add suspicion.
+                            player.addKamiViolation();
 
-                            player.getAutobanManager().jailPlayer(
-                                    "Kami/Distance Hack: Hit mob from " + (int)realDist + "px away (Limit: " + allowedDist + ") Skill: " + attack.skill,
-                                    30
-                            );
-                            return; // Stop processing this attack
-                        }
+                            // Only jail if they trigger this 15 TIMES IN A ROW without a valid hit.
+                            // A legit player lagging will usually fix their position within 1-2 hits.
+                            if (player.getKamiViolations() > 15) {
+                                double realDist = Math.sqrt(distSq);
+                                int allowedDist = (int) Math.sqrt(thresholdSq);
+
+                                player.getAutobanManager().jailPlayer(
+                                        "Kami/Distance Hack: Consistent mismatch > 15 times. Dist: " + (int)realDist,
+                                        30
+                                );
+                                return;
+                            }
+
+                            // Optional: Return here to block damage from this specific hit,
+                            // but don't ban yet. This prevents "Glitch" damage.
+                            // return;
+
+                    } else {
+                        // [FIX] Valid Hit!
+                        // If the player hits a monster within range, the server knows they are
+                        // in the correct spot. Reset the counter.
+                        player.resetKamiViolations();
+                    }
                     }
 
                     int totDamageToOneMonster = 0;

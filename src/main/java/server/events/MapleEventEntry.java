@@ -25,8 +25,8 @@ package server.events;
 /**
  * @author kevintjuh93
  */
-public abstract class Events {
-    public Events() {
+public abstract class MapleEventEntry {
+    public MapleEventEntry() {
 
     }
 

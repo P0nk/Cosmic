@@ -61,7 +61,7 @@ import net.server.task.TimeoutTask;
 import net.server.task.WeddingReservationTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import server.Storage;
 import server.TimerManager;
 import server.maps.AbstractMapObject;

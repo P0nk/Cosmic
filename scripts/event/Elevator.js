@@ -1,28 +1,9 @@
 /*
-This file is part of the OdinMS Maple Story Server
-Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
-				   Matthias Butz <matze@odinms.de>
-				   Jan Christian Meyer <vimes@odinms.de>
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation version 3 as published by
-the Free Software Foundation. You may not use, modify or distribute
-this program under any other version of the GNU Affero General Public
-License.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Elevator (Refactored & Fixed)
 */
 
-//Time Setting is in millisecond
-var beginTime = 60 * 1000; //The time to begin the ride
-var rideTime = 60 * 1000; //The time that require move to destination
+var beginTime = 60 * 1000;
+var rideTime = 60 * 1000;
 
 function init() {
     beginTime = em.getTransportationTime(beginTime);
@@ -68,7 +49,7 @@ function goingDownNow() {
 }
 
 function isUpNow() {
-    em.setProperty("goingDown", "false"); // clear
+    em.setProperty("goingDown", "false");
     em.getChannelServer().getMapFactory().getMap(222020200).resetReactors();
     em.getChannelServer().getMapFactory().getMap(222020111).warpEveryone(222020200, 0);
 
@@ -76,44 +57,27 @@ function isUpNow() {
 }
 
 function isDownNow() {
-    em.setProperty("goingUp", "false"); // clear
+    em.setProperty("goingUp", "false");
     em.getChannelServer().getMapFactory().getMap(222020100).resetReactors();
     em.getChannelServer().getMapFactory().getMap(222020211).warpEveryone(222020100, 4);
 
     goUp();
 }
 
-function cancelSchedule() {}
-
 // ---------- FILLER FUNCTIONS ----------
-
+function cancelSchedule() {}
 function dispose() {}
-
 function setup(eim, leaderid) {}
-
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function playerDisconnected(eim, player) {}
-
 function playerEntry(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function playerExit(eim, player) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-
 function playerUnregistered(eim, player) {}
-

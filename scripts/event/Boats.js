@@ -1,3 +1,7 @@
+/*
+    Boats Event Script (Refactored)
+*/
+
 var Orbis_btf;
 var Boat_to_Orbis;
 var Orbis_Boat_Cabin;
@@ -6,13 +10,13 @@ var Ellinia_btf;
 var Ellinia_Boat_Cabin;
 var Ellinia_docked;
 
-//Time Setting is in millisecond
-var closeTime = 4 * 60 * 1000; //The time to close the gate
-var beginTime = 5 * 60 * 1000; //The time to begin the ride
-var rideTime = 10 * 60 * 1000; //The time that require move to destination
-var invasionStartTime = 3 * 60 * 1000; //The time to balrog ship approach
-var invasionDelayTime = 1 * 60 * 1000; //The time to balrog ship approach
-var invasionDelay = 5 * 1000; //The time that spawn balrog
+// Time Setting is in millisecond
+var closeTime = 4 * 60 * 1000;
+var beginTime = 5 * 60 * 1000;
+var rideTime = 10 * 60 * 1000;
+var invasionStartTime = 3 * 60 * 1000;
+var invasionDelayTime = 1 * 60 * 1000;
+var invasionDelay = 5 * 1000;
 
 function init() {
     closeTime = em.getTransportationTime(closeTime);
@@ -39,7 +43,6 @@ function init() {
 
 function scheduleNew() {
     em.setProperty("docked", "true");
-
     em.setProperty("entry", "true");
     em.setProperty("haveBalrog", "false");
     em.schedule("stopentry", closeTime);
@@ -48,7 +51,7 @@ function scheduleNew() {
 
 function stopentry() {
     em.setProperty("entry", "false");
-    Orbis_Boat_Cabin.clearMapObjects();   //boxes
+    Orbis_Boat_Cabin.clearMapObjects();   // boxes
     Ellinia_Boat_Cabin.clearMapObjects();
 }
 
@@ -86,7 +89,6 @@ function approach() {
         em.setProperty("haveBalrog", "true");
         Boat_to_Orbis.broadcastEnemyShip(true);
         Boat_to_Ellinia.broadcastEnemyShip(true);
-        const PacketCreator = Java.type('tools.PacketCreator');
         Boat_to_Orbis.broadcastMessage(PacketCreator.musicChange("Bgm04/ArabPirate"));
         Boat_to_Ellinia.broadcastMessage(PacketCreator.musicChange("Bgm04/ArabPirate"));
 
@@ -95,8 +97,6 @@ function approach() {
 }
 
 function invasion() {
-    const LifeFactory = Java.type('server.life.LifeFactory');
-
     var map1 = Boat_to_Ellinia;
     var pos1 = new java.awt.Point(-538, 143);
     map1.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8150000), pos1);
@@ -108,37 +108,20 @@ function invasion() {
     map2.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8150000), pos2);
 }
 
-function cancelSchedule() {}
-
 // ---------- FILLER FUNCTIONS ----------
-
+function cancelSchedule() {}
 function dispose() {}
-
 function setup(eim, leaderid) {}
-
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function playerDisconnected(eim, player) {}
-
 function playerEntry(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function playerExit(eim, player) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-
 function playerUnregistered(eim, player) {}
-

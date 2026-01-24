@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Balrog Battle (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Vs Balrog
- */
 
 var isPq = true;
 var minPlayers = 6, maxPlayers = 30;
@@ -38,9 +17,8 @@ var minMobId = 8830000;
 var maxMobId = 8830006;
 var bossMobId = 8830003;
 
-var eventTime = 60;         // 60 minutes
+var eventTime = 60; // 60 minutes
 var releaseClawTime = 1;
-
 const maxLobbies = 1;
 
 function init() {
@@ -53,58 +31,34 @@ function getMaxLobbies() {
 
 function setEventRequirements() {
     var reqStr = "";
-
     reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
+    reqStr += (maxPlayers - minPlayers >= 1) ? minPlayers + " ~ " + maxPlayers : minPlayers;
     reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
+    reqStr += (maxLevel - minLevel >= 1) ? minLevel + " ~ " + maxLevel : minLevel;
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
 
     em.setProperty("party", reqStr);
 }
 
 function setEventExclusives(eim) {
-    var itemSet = [];
-    eim.setExclusiveItems(itemSet);
+    eim.setExclusiveItems([]);
 }
 
 function setEventRewards(eim) {
-    var itemSet, itemQty, evLevel, expStages;
-
-    evLevel = 1;    //Rewards at clear PQ
-    itemSet = [];
-    itemQty = [];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    expStages = [];    //bonus exp given on CLEAR stage signal
-    eim.setEventClearStageExp(expStages);
+    eim.setEventRewards(1, [], []);
+    eim.setEventClearStageExp([]);
 }
 
-function getEligibleParty(party) {      //selects, from the given party, the team that is allowed to attempt this event
+function getEligibleParty(party) {
     var eligible = [];
     var hasLeader = false;
 
     if (party.size() > 0) {
         var partyList = party.toArray();
-
         for (var i = 0; i < party.size(); i++) {
             var ch = partyList[i];
-
             if (ch.getMapId() == recruitMap && ch.getLevel() >= minLevel && ch.getLevel() <= maxLevel) {
-                if (ch.isLeader()) {
-                    hasLeader = true;
-                }
+                if (ch.isLeader()) hasLeader = true;
                 eligible.push(ch);
             }
         }
@@ -144,17 +98,15 @@ function releaseLeftClaw(eim) {
 
 function spawnBalrog(eim) {
     var mapObj = eim.getInstanceMap(entryMap);
+    var spawnPoint = new java.awt.Point(412, 258);
 
-    const LifeFactory = Java.type('server.life.LifeFactory');
-    const Point = Java.type('java.awt.Point');
-    mapObj.spawnFakeMonsterOnGroundBelow(LifeFactory.getMonster(8830000), new Point(412, 258));
-    mapObj.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8830002), new Point(412, 258));
-    mapObj.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8830006), new Point(412, 258));
+    mapObj.spawnFakeMonsterOnGroundBelow(LifeFactory.getMonster(8830000), spawnPoint);
+    mapObj.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8830002), spawnPoint);
+    mapObj.spawnMonsterOnGroundBelow(LifeFactory.getMonster(8830006), spawnPoint);
 }
 
 function spawnSealedBalrog(eim) {
-    const Point = Java.type('java.awt.Point');
-    eim.getInstanceMap(entryMap).spawnMonsterOnGroundBelow(LifeFactory.getMonster(bossMobId), new Point(412, 258));
+    eim.getInstanceMap(entryMap).spawnMonsterOnGroundBelow(LifeFactory.getMonster(bossMobId), new java.awt.Point(412, 258));
 }
 
 function playerEntry(eim, player) {
@@ -165,8 +117,6 @@ function playerEntry(eim, player) {
 function scheduledTimeout(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -190,11 +140,7 @@ function changedMap(eim, player, mapid) {
     }
 }
 
-function changedLeader(eim, leader) {}
-
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
+function playerRevive(eim, player) {
     if (eim.isExpeditionTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
         end(eim);
@@ -212,17 +158,12 @@ function playerDisconnected(eim, player) {
     }
 }
 
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
 function monsterValue(eim, mobId) {
     return 1;
 }
 
 function end(eim) {
     var party = eim.getPlayers();
-
     for (var i = 0; i < party.size(); i++) {
         playerExit(eim, party.get(i));
     }
@@ -256,14 +197,13 @@ function monsterKilled(mob, eim) {
             eim.clearPQ();
 
             eim.dispatchRaiseQuestMobCount(bossMobId, entryMap);
-            eim.dispatchRaiseQuestMobCount(9101003, entryMap); // thanks Atoot for noticing quest not getting updated after boss kill
+            eim.dispatchRaiseQuestMobCount(9101003, entryMap);
             mob.getMap().broadcastBalrogVictory(eim.getLeader().getName());
         } else {
             if (count == 1) {
                 var mapobj = eim.getInstanceMap(entryMap);
                 mapobj.makeMonsterReal(mapobj.getMonsterById(8830000));
             }
-
             eim.setIntProperty("boss", count + 1);
         }
 
@@ -273,9 +213,12 @@ function monsterKilled(mob, eim) {
     }
 }
 
+// ---------- FILLER FUNCTIONS ----------
+function playerUnregistered(eim, player) {}
+function changedLeader(eim, leader) {}
+function playerDead(eim, player) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}
-

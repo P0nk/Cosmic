@@ -1,5 +1,9 @@
+/*
+    King Pepe and Yetis (Refactored)
+*/
+
 var minPlayers = 1;
-var timeLimit = 20; //20 minutes
+var timeLimit = 20; // 20 minutes
 var eventTimer = 1000 * 60 * timeLimit;
 var exitMap = 106021400;
 var eventMap = 106021500;
@@ -15,8 +19,6 @@ function setup(difficulty, lobbyId) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
 function playerEntry(eim, player) {
     var yetiMap = eim.getMapInstance(eventMap);
     player.changeMap(yetiMap, yetiMap.getPortal(1));
@@ -24,15 +26,11 @@ function playerEntry(eim, player) {
 
 function scheduledTimeout(eim) {
     var party = eim.getPlayers();
-
     for (var i = 0; i < party.size(); i++) {
         playerExit(eim, party.get(i));
     }
-
     eim.dispose();
 }
-
-function playerDead(eim, player) {}
 
 function playerDisconnected(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
@@ -43,10 +41,6 @@ function playerDisconnected(eim, player) {
     }
 }
 
-function monsterValue(eim, mobId) {
-    return -1;
-}
-
 function end(eim) {
     var party = eim.getPlayers();
     for (var i = 0; i < party.size(); i++) {
@@ -54,12 +48,6 @@ function end(eim) {
     }
     eim.dispose();
 }
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -77,17 +65,17 @@ function changedMap(eim, chr, mapid) {
     }
 }
 
-function cancelSchedule() {}
-
-function dispose() {}
-
-function clearPQ(eim) {}
-
-function monsterKilled(mob, eim) {}
-
-function allMonstersDead(eim) {}
+function monsterValue(eim, mobId) { return -1; }
 
 // ---------- FILLER FUNCTIONS ----------
-
+function afterSetup(eim) {}
+function playerDead(eim, player) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function playerUnregistered(eim, player) {}
+function cancelSchedule() {}
+function dispose() {}
+function clearPQ(eim) {}
+function monsterKilled(mob, eim) {}
+function allMonstersDead(eim) {}
 function changedLeader(eim, leader) {}
-

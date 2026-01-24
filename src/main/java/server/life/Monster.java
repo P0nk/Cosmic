@@ -53,7 +53,7 @@ import net.server.world.Party;
 import net.server.world.PartyCharacter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import server.StatEffect;
 import server.TimerManager;
 import server.loot.LootManager;

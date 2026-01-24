@@ -1,29 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Holiday PQ 3 (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Holiday PQ
- */
-
-// GMS-like event string data thanks to iHealForLove
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 6;
@@ -35,8 +12,7 @@ var clearMap = 889100022;
 
 var minMapId = 889100021;
 var maxMapId = 889100021;
-
-var eventTime = 25;     // 25 minutes
+var eventTime = 25;
 
 const maxLobbies = 1;
 
@@ -50,68 +26,33 @@ function getMaxLobbies() {
 
 function setEventRequirements() {
     var reqStr = "";
-
-    reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
-    reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
-
+    reqStr += "\r\n    Number of players: " + (maxPlayers - minPlayers >= 1 ? minPlayers + " ~ " + maxPlayers : minPlayers);
+    reqStr += "\r\n    Level range: " + (maxLevel - minLevel >= 1 ? minLevel + " ~ " + maxLevel : minLevel);
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
     em.setProperty("party", reqStr);
 }
 
 function setEventExclusives(eim) {
-    var itemSet = [4032094, 4032095];
-    eim.setExclusiveItems(itemSet);
+    eim.setExclusiveItems([4032094, 4032095]);
 }
 
 function setEventRewards(eim) {
-    var itemSet, itemQty, evLevel, expStages;
-
-    evLevel = 3;    //Rewards at Hard difficulty
-    itemSet = [1302080, 1002033, 2022153, 2022042, 2020006, 2020009, 2020016, 2020024, 4010006, 4010007, 4020004, 4020005, 4003002];
-    itemQty = [1, 1, 1, 5, 20, 15, 10, 10, 2, 4, 4, 4, 1];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    evLevel = 2;    //Rewards at Normal difficulty
-    itemSet = [1302080, 1002033, 2012005, 2012006, 2020002, 2020025, 2020026, 4010003, 4010004, 4010005, 4020002, 4020003, 4020007];
-    itemQty = [1, 1, 15, 15, 15, 10, 10, 3, 3, 3, 3, 3, 3];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    evLevel = 1;    //Rewards at Easy difficulty
-    itemSet = [1002033, 2012005, 2012006, 2020002, 2022006, 2022002, 4010000, 4010001, 4010002, 4020000, 4020001, 4020006];
-    itemQty = [1, 15, 15, 10, 5, 5, 2, 2, 2, 2, 2, 2];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    expStages = [210, 620, 500, 1400, 950, 2200];    //bonus exp given on CLEAR stage signal
-    eim.setEventClearStageExp(expStages);
+    eim.setEventRewards(3, [1302080, 1002033, 2022153, 2022042, 2020006, 2020009, 2020016, 2020024, 4010006, 4010007, 4020004, 4020005, 4003002], [1, 1, 1, 5, 20, 15, 10, 10, 2, 4, 4, 4, 1]);
+    eim.setEventRewards(2, [1302080, 1002033, 2012005, 2012006, 2020002, 2020025, 2020026, 4010003, 4010004, 4010005, 4020002, 4020003, 4020007], [1, 1, 15, 15, 15, 10, 10, 3, 3, 3, 3, 3, 3]);
+    eim.setEventRewards(1, [1002033, 2012005, 2012006, 2020002, 2022006, 2022002, 4010000, 4010001, 4010002, 4020000, 4020001, 4020006], [1, 15, 15, 10, 5, 5, 2, 2, 2, 2, 2, 2]);
+    eim.setEventClearStageExp([210, 620, 500, 1400, 950, 2200]);
 }
 
-function getEligibleParty(party) {      //selects, from the given party, the team that is allowed to attempt this event
+function getEligibleParty(party) {
     var eligible = [];
     var hasLeader = false;
 
     if (party.size() > 0) {
         var partyList = party.toArray();
-
         for (var i = 0; i < party.size(); i++) {
             var ch = partyList[i];
-
             if (ch.getMapId() == recruitMap && ch.getLevel() >= minLevel && ch.getLevel() <= maxLevel) {
-                if (ch.isLeader()) {
-                    hasLeader = true;
-                }
+                if (ch.isLeader()) hasLeader = true;
                 eligible.push(ch);
             }
         }
@@ -144,8 +85,6 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
 function respawnStages(eim) {
     eim.getInstanceMap(entryMap).instanceMapRespawn();
     eim.schedule("respawnStages", 10 * 1000);
@@ -154,7 +93,6 @@ function respawnStages(eim) {
 function snowmanHeal(eim) {
     var difficulty = eim.getIntProperty("level");
     var snowman = eim.getInstanceMap(entryMap).getMonsterById(9400316 + (5 * difficulty) + 5);
-
     snowman.heal(200 + 200 * difficulty, 0);
     eim.schedule("snowmanHeal", 10 * 1000);
 }
@@ -167,8 +105,6 @@ function playerEntry(eim, player) {
 function scheduledTimeout(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -199,9 +135,7 @@ function changedLeader(eim, leader) {
     }
 }
 
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
+function playerRevive(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
         end(eim);
@@ -233,10 +167,6 @@ function disbandParty(eim) {
     }
 }
 
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function end(eim) {
     var party = eim.getPlayers();
     for (var i = 0; i < party.size(); i++) {
@@ -245,14 +175,9 @@ function end(eim) {
     eim.dispose();
 }
 
-function giveRandomEventReward(eim, player) {
-    eim.giveEventReward(player);
-}
-
 function clearPQ(eim) {
     eim.stopEventTimer();
     eim.setEventCleared();
-
     eim.applyEventPlayersItemBuff(2022438);
 }
 
@@ -274,28 +199,23 @@ function monsterKilled(mob, eim) {
 
         var rnd = Math.random();
         var forceDrop = false;
-        if (rnd >= 0.42) {   // 42% chance of dropping token
+        if (rnd >= 0.42) {
             var miss = eim.getIntProperty("missingDrops");
             if (miss < 5) {
                 eim.setIntProperty("missingDrops", miss + 1);
                 return;
             }
-
             forceDrop = true;
         }
 
         var mapObj = mob.getMap();
-        const Item = Java.type('client.inventory.Item');
-        var itemObj = new Item((forceDrop || Math.random() < 0.77) ? 4032094 : 4032095, 0, 1);   // 77% chance of not fake
+        var itemObj = new Packages.client.inventory.Item((forceDrop || Math.random() < 0.77) ? 4032094 : 4032095, 0, 1);
         var dropper = eim.getPlayers().get(0);
 
         mapObj.spawnItemDrop(mob, dropper, itemObj, mob.getPosition(), true, false);
         eim.setIntProperty("missingDrops", 0);
-    } catch (err) {
-    } // PQ not started yet
+    } catch (err) {}
 }
-
-function allMonstersDead(eim) {}
 
 function friendlyKilled(mob, eim) {
     eim.setIntProperty("snowmanStep", 0);
@@ -313,28 +233,23 @@ function snowmanEvolve(eim, curLevel) {
     var difficulty = eim.getIntProperty("level");
     var snowman = mapobj.getMonsterById(9400317 + (5 * difficulty) + (curLevel - 1));
 
-    eim.setIntProperty("snowmanLevel", curLevel + 2);   // increment by 2 to decrement by 1 on friendlyKilled
+    eim.setIntProperty("snowmanLevel", curLevel + 2);
     mapobj.killMonster(snowman, null, false, 2);
 
-    const LifeFactory = Java.type('server.life.LifeFactory');
-    const Point = Java.type('java.awt.Point');
-    var snowman = LifeFactory.getMonster(9400317 + (5 * difficulty) + curLevel);
-    mapobj.spawnMonsterOnGroundBelow(snowman, new Point(-180, 15));
+    var newSnowman = LifeFactory.getMonster(9400317 + (5 * difficulty) + curLevel);
+    mapobj.spawnMonsterOnGroundBelow(newSnowman, new java.awt.Point(-180, 15));
 
     if (curLevel >= 4) {
         mapobj.allowSummonState(false);
         mapobj.killAllMonstersNotFriendly();
         mapobj.setReactorState();
-
         eim.giveEventPlayersStageReward(2 * difficulty - 1);
         eim.showClearEffect();
     }
 }
 
 function snowmanSnack(eim) {
-    if (eim.getIntProperty("snowmanLevel") >= 5) {
-        return;
-    }
+    if (eim.getIntProperty("snowmanLevel") >= 5) return;
 
     var step = eim.getIntProperty("snowmanStep");
     var snowmanLevel = eim.getIntProperty("snowmanLevel");
@@ -350,25 +265,23 @@ function snowmanSnack(eim) {
         snowman.heal(200 + (200 * snowmanLevel), 0);
         step += 1;
     }
-
     eim.setIntProperty("snowmanStep", step);
 }
 
 function snowmanSnackFake(eim) {
-    if (eim.getIntProperty("snowmanLevel") >= 5) {
-        return;
-    }
+    if (eim.getIntProperty("snowmanLevel") >= 5) return;
 
     var step = eim.getIntProperty("snowmanStep");
-    if (step > 0) {
-        eim.setIntProperty("snowmanStep", step - 1);
-    }
-
+    if (step > 0) eim.setIntProperty("snowmanStep", step - 1);
     eim.dropMessage(5, "The snowman absorbed a Fake Snow Vigor!");
 }
 
-
+// ---------- FILLER FUNCTIONS ----------
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function playerDead(eim, player) {}
+function monsterValue(eim, mobId) { return 1; }
+function giveRandomEventReward(eim, player) { eim.giveEventReward(player); }
+function allMonstersDead(eim) {}
 function cancelSchedule() {}
-
 function dispose(eim) {}
-

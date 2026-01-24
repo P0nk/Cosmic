@@ -1,3 +1,7 @@
+/*
+    Kerning Train (Refactored)
+*/
+
 var returnTo = [103000100, 103000310];
 var rideTo = [103000310, 103000100];
 var trainRide = [103000301, 103000302];
@@ -7,7 +11,6 @@ var exitMap;
 var map;
 var onRide;
 
-//Time Setting is in millisecond
 var rideTime = 10 * 1000;
 
 function init() {
@@ -18,8 +21,6 @@ function setup(level, lobbyid) {
     var eim = em.newInstance("KerningTrain_" + lobbyid);
     return eim;
 }
-
-function afterSetup(eim) {}
 
 function playerEntry(eim, player) {
     if (player.getMapId() == returnTo[0]) {
@@ -33,7 +34,6 @@ function playerEntry(eim, player) {
     onRide = eim.getMapFactory().getMap(trainRide[myRide]);
     player.changeMap(onRide, onRide.getPortal(0));
 
-    const PacketCreator = Java.type('tools.PacketCreator');
     player.sendPacket(PacketCreator.getClock(rideTime / 1000));
     player.sendPacket(PacketCreator.earnTitleMessage("The next stop is at Kerning " + (myRide == 0 ? "Square" : "Subway") + " Station. The exit is to your left."));
     eim.schedule("timeOut", rideTime);
@@ -42,8 +42,6 @@ function playerEntry(eim, player) {
 function timeOut(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player, success) {
     eim.unregisterPlayer(player);
@@ -62,26 +60,16 @@ function playerDisconnected(eim, player) {
     playerExit(eim, player, false);
 }
 
-function cancelSchedule() {}
-
-function dispose(eim) {}
-
-
 // ---------- FILLER FUNCTIONS ----------
-
-function monsterValue(eim, mobid) {return 0;}
-
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function cancelSchedule() {}
+function dispose(eim) {}
+function monsterValue(eim, mobId) {return 0;}
 function disbandParty(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-

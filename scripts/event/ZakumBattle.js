@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Zakum Battle (Refactored & Fixed)
 */
-
-/**
- * @author: Ronan
- * @event: Zakum Battle
- */
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 30;
@@ -33,60 +12,26 @@ var clearMap = 211042400;
 
 var minMapId = 280030000;
 var maxMapId = 280030000;
-
-var eventTime = 120;     // 120 minutes
-
+var eventTime = 120;
 const maxLobbies = 1;
 
-function init() {
-    setEventRequirements();
-}
-
-function getMaxLobbies() {
-    return maxLobbies;
-}
+function init() { setEventRequirements(); }
+function getMaxLobbies() { return maxLobbies; }
 
 function setEventRequirements() {
     var reqStr = "";
-
-    reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
-    reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
-
+    reqStr += "\r\n    Number of players: " + minPlayers + " ~ " + maxPlayers;
+    reqStr += "\r\n    Level range: " + minLevel + " ~ " + maxLevel;
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
     em.setProperty("party", reqStr);
 }
 
-function setEventExclusives(eim) {
-    var itemSet = [];
-    eim.setExclusiveItems(itemSet);
-}
+function setEventExclusives(eim) { eim.setExclusiveItems([]); }
 
 function setEventRewards(eim) {
-    var itemSet, itemQty, evLevel, expStages, mesoStages;
-
-    evLevel = 1;    //Rewards at clear PQ
-    itemSet = [];
-    itemQty = [];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    expStages = [];    //bonus exp given on CLEAR stage signal
-    eim.setEventClearStageExp(expStages);
-
-    mesoStages = [];    //bonus meso given on CLEAR stage signal
-    eim.setEventClearStageMeso(mesoStages);
+    eim.setEventRewards(1, [], []);
+    eim.setEventClearStageExp([]);
+    eim.setEventClearStageMeso([]);
 }
 
 function afterSetup(eim) {
@@ -97,14 +42,10 @@ function setup(channel) {
     var eim = em.newInstance("Zakum" + channel);
     eim.setProperty("canJoin", 1);
     eim.setProperty("defeatedBoss", 0);
-
-    var level = 1;
-    eim.getInstanceMap(280030000).resetPQ(level);
-
+    eim.getInstanceMap(280030000).resetPQ(1);
     eim.startEventTimer(eventTime * 60000);
     setEventRewards(eim);
     setEventExclusives(eim);
-
     return eim;
 }
 
@@ -114,15 +55,13 @@ function playerEntry(eim, player) {
     player.changeMap(map, map.getPortal(0));
 }
 
-function scheduledTimeout(eim) {
-    end(eim);
-}
+function scheduledTimeout(eim) { end(eim); }
 
 function changedMap(eim, player, mapid) {
     if (mapid < minMapId || mapid > maxMapId) {
         if (eim.isExpeditionTeamLackingNow(true, minPlayers, player)) {
             eim.unregisterPlayer(player);
-            eim.dropMessage(5, "[Expedition] Either the leader has quit the expedition or there is no longer the minimum number of members required to continue it.");
+            eim.dropMessage(5, "[Expedition] Team disbanded.");
             end(eim);
         } else {
             if (!player.isGM()) {
@@ -133,14 +72,9 @@ function changedMap(eim, player, mapid) {
     }
 }
 
-function changedLeader(eim, leader) {}
-
-function playerDead(eim, player) {}
-
 function playerRevive(eim, player) {
     if (eim.isExpeditionTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
-        eim.dropMessage(5, "[Expedition] Either the leader has quit the expedition or there is no longer the minimum number of members required to continue it.");
         end(eim);
     } else {
         eim.dropMessage(5, "[Expedition] " + player.getName() + " has left the instance.");
@@ -151,20 +85,11 @@ function playerRevive(eim, player) {
 function playerDisconnected(eim, player) {
     if (eim.isExpeditionTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
-        eim.dropMessage(5, "[Expedition] Either the leader has quit the expedition or there is no longer the minimum number of members required to continue it.");
         end(eim);
     } else {
         eim.dropMessage(5, "[Expedition] " + player.getName() + " has left the instance.");
         eim.unregisterPlayer(player);
     }
-}
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function monsterValue(eim, mobId) {
-    return 1;
 }
 
 function playerUnregistered(eim, player) {
@@ -186,41 +111,37 @@ function end(eim) {
     eim.dispose();
 }
 
-function giveRandomEventReward(eim, player) {
-    eim.giveEventReward(player);
-}
-
 function clearPQ(eim) {
     eim.stopEventTimer();
     eim.setEventCleared();
     updateGateState(0);
 }
 
-function isZakum(mob) {
-    var mobid = mob.getId();
-    return (mobid == 8800002);
-}
+function isZakum(mob) { return mob.getId() == 8800002; }
 
 function monsterKilled(mob, eim) {
     if (isZakum(mob)) {
         eim.setIntProperty("defeatedBoss", 1);
         eim.showClearEffect(mob.getMap().getId());
-        eim.clearPQ();
-
+        clearPQ(eim);
         mob.getMap().broadcastZakumVictory();
     }
 }
 
-function allMonstersDead(eim) {}
-
-function cancelSchedule() {}
-
-function updateGateState(newState) {    // thanks Conrad for noticing missing gate update
+function updateGateState(newState) {
     em.getChannelServer().getMapFactory().getMap(211042300).getReactorById(2118002).forceHitReactor(newState);
 }
 
 function dispose(eim) {
-    if (!eim.isEventCleared()) {
-        updateGateState(0);
-    }
+    if (!eim.isEventCleared()) updateGateState(0);
 }
+
+// ---------- FILLER FUNCTIONS ----------
+function changedLeader(eim, leader) {}
+function playerDead(eim, player) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function monsterValue(eim, mobId) { return 1; }
+function giveRandomEventReward(eim, player) { eim.giveEventReward(player); }
+function allMonstersDead(eim) {}
+function cancelSchedule() {}

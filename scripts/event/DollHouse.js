@@ -1,31 +1,10 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-					   Matthias Butz <matze@odinms.de>
-					   Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Dollhouse Event (Refactored)
 */
-/**
- *Dollhouse Event
- **/
 
 var entryMap = 922000010;
 var exitMap = 221024400;
-var eventTime = 10;     //10 minutes
+var eventTime = 10; // 10 minutes
 
 function init() {
     em.setProperty("noEntry", "false");
@@ -35,7 +14,6 @@ function setup(level, lobbyid) {
     var eim = em.newInstance("DollHouse_" + lobbyid);
     eim.setProperty("level", level);
     eim.setProperty("boss", "0");
-
     return eim;
 }
 
@@ -46,12 +24,9 @@ function playerEntry(eim, player) {
     player.changeMap(entryMap, 0);
     em.setProperty("noEntry", "true");
 
-    const PacketCreator = Java.type('tools.PacketCreator');
     player.sendPacket(PacketCreator.getClock(eventTime * 60));
     eim.startEventTimer(eventTime * 60000);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -84,26 +59,15 @@ function changedMap(eim, chr, mapid) {
     }
 }
 
-function cancelSchedule() {}
-
-function dispose() {}
-
-
 // ---------- FILLER FUNCTIONS ----------
-
+function playerUnregistered(eim, player) {}
+function cancelSchedule() {}
+function dispose() {}
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-

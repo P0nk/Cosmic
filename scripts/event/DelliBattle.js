@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Delli Battle (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Delli Battle
- */
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 2;
@@ -33,8 +12,7 @@ var recruitMap = 925010200;
 var minMapId = 925010300;
 var maxMapId = 925010300;
 
-var eventTime = 6;     // 6 minutes
-
+var eventTime = 6; // 6 minutes
 const maxLobbies = 7;
 
 function init() {
@@ -47,41 +25,22 @@ function getMaxLobbies() {
 
 function setEventRequirements() {
     var reqStr = "";
-
-    reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
-    reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
-
+    reqStr += "\r\n    Number of players: " + (maxPlayers - minPlayers >= 1 ? minPlayers + " ~ " + maxPlayers : minPlayers);
+    reqStr += "\r\n    Level range: " + (maxLevel - minLevel >= 1 ? minLevel + " ~ " + maxLevel : minLevel);
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
     em.setProperty("party", reqStr);
 }
 
-function getEligibleParty(party) {      //selects, from the given party, the team that is allowed to attempt this event
+function getEligibleParty(party) {
     var eligible = [];
     var hasLeader = false;
 
     if (party.size() > 0) {
         var partyList = party.toArray();
-
         for (var i = 0; i < party.size(); i++) {
             var ch = partyList[i];
-
             if (ch.getMapId() == recruitMap && ch.getLevel() >= minLevel && ch.getLevel() <= maxLevel) {
-                if (ch.isLeader()) {
-                    hasLeader = true;
-                }
+                if (ch.isLeader()) hasLeader = true;
                 eligible.push(ch);
             }
         }
@@ -99,12 +58,9 @@ function setup(level, lobbyid) {
 
     respawnStages(eim);
     eim.startEventTimer(eventTime * 60000);
-
     eim.getMapInstance(entryMap).toggleDrops();
     return eim;
 }
-
-function afterSetup(eim) {}
 
 function respawnStages(eim) {
     eim.getMapInstance(entryMap).instanceMapRespawn();
@@ -121,8 +77,6 @@ function scheduledTimeout(eim) {
     eim.showClearEffect();
     clearPQ(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -153,9 +107,7 @@ function changedLeader(eim, leader) {
     }
 }
 
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
+function playerRevive(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
         end(eim);
@@ -187,10 +139,6 @@ function disbandParty(eim) {
     }
 }
 
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function friendlyKilled(mob, eim) {
     if (mob.getId() == 9300162) {
         end(eim);
@@ -210,10 +158,12 @@ function clearPQ(eim) {
     eim.setEventCleared();
 }
 
+// ---------- FILLER FUNCTIONS ----------
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function playerDead(eim, player) {}
+function monsterValue(eim, mobId) { return 1; }
 function monsterKilled(mob, eim) {}
-
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}

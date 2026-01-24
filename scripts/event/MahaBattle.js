@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Vs Uncontrollable Maha (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Vs Uncontrollable Maha
- */
 
 var entryMap = 914020000;
 var exitMap = 140000000;
@@ -31,8 +10,7 @@ var clearMap = 140000000;
 var minMapId = 914020000;
 var maxMapId = 914020000;
 
-var eventTime = 10;     // 10 minutes
-
+var eventTime = 10; // 10 minutes
 const maxLobbies = 7;
 
 function init() {}
@@ -51,10 +29,6 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
-function respawnStages(eim) {}
-
 function playerEntry(eim, player) {
     var map = eim.getMapInstance(entryMap);
     player.changeMap(map, map.getPortal(0));
@@ -63,8 +37,6 @@ function playerEntry(eim, player) {
 function scheduledTimeout(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -88,11 +60,7 @@ function changedMap(eim, player, mapid) {
     }
 }
 
-function changedLeader(eim, leader) {}
-
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
+function playerRevive(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
         end(eim);
@@ -110,25 +78,12 @@ function playerDisconnected(eim, player) {
     }
 }
 
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function end(eim) {
     var party = eim.getPlayers();
-
     for (var i = 0; i < party.size(); i++) {
         playerExit(eim, party.get(i));
     }
     eim.dispose();
-}
-
-function giveRandomEventReward(eim, player) {
-    eim.giveEventReward(player);
 }
 
 function clearPQ(eim) {
@@ -137,8 +92,7 @@ function clearPQ(eim) {
 }
 
 function isMaha(mob) {
-    var mobid = mob.getId();
-    return mobid == 9001014;
+    return mob.getId() == 9001014;
 }
 
 function monsterKilled(mob, eim) {
@@ -147,9 +101,16 @@ function monsterKilled(mob, eim) {
     }
 }
 
+// ---------- FILLER FUNCTIONS ----------
+function afterSetup(eim) {}
+function respawnStages(eim) {}
+function playerUnregistered(eim, player) {}
+function changedLeader(eim, leader) {}
+function playerDead(eim, player) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function monsterValue(eim, mobId) { return 1; }
+function giveRandomEventReward(eim, player) { eim.giveEventReward(player); }
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}
-

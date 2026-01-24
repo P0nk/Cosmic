@@ -1,5 +1,9 @@
+/*
+    Nine Spirit (Refactored)
+*/
+
 var minPlayers = 1;
-var timeLimit = 5; //5 minutes
+var timeLimit = 5; // 5 minutes
 var eventTimer = 1000 * 60 * timeLimit;
 var exitMap = 240040610;
 var eventMap = 240040611;
@@ -18,26 +22,19 @@ function setup(difficulty, lobbyId) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
-function respawn(eim) {}
-
 function playerEntry(eim, player) {
     var nest = eim.getMapInstance(eventMap);
     if (!player.haveItem(4001094)) {
         eim.spawnNpc(2081008, nest.getReactorById(2406000).getPosition(), nest);
     }
-
     player.changeMap(nest, 1);
 }
 
 function scheduledTimeout(eim) {
     var party = eim.getPlayers();
-
     for (var i = 0; i < party.size(); i++) {
         playerExit(eim, party.get(i));
     }
-
     eim.dispose();
 }
 
@@ -46,11 +43,8 @@ function playerRevive(eim, player) {
     return false;
 }
 
-function playerDead(eim, player) {}
-
 function playerDisconnected(eim, player) {
     var party = eim.getPlayers();
-
     for (var i = 0; i < party.size(); i++) {
         if (party.get(i).equals(player)) {
             removePlayer(eim, player);
@@ -64,12 +58,6 @@ function playerDisconnected(eim, player) {
 function monsterValue(eim, mobId) {
     return -1;
 }
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -91,17 +79,16 @@ function removePlayer(eim, player) {
     player.setMap(exitMap);
 }
 
-function cancelSchedule() {}
-
-function dispose() {}
-
-function clearPQ(eim) {}
-
-function monsterKilled(mob, eim) {}
-
-function allMonstersDead(eim) {}
-
 // ---------- FILLER FUNCTIONS ----------
-
+function afterSetup(eim) {}
+function respawn(eim) {}
+function playerDead(eim, player) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function playerUnregistered(eim, player) {}
+function cancelSchedule() {}
+function dispose() {}
+function clearPQ(eim) {}
+function monsterKilled(mob, eim) {}
+function allMonstersDead(eim) {}
 function changedLeader(eim, leader) {}
-

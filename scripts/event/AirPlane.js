@@ -1,3 +1,7 @@
+/*
+    Airplane Event Script (Refactored)
+*/
+
 var KC_bfd;
 var Plane_to_CBD;
 var CBD_docked;
@@ -5,10 +9,10 @@ var CBD_bfd;
 var Plane_to_KC;
 var KC_docked;
 
-//Time Setting is in millisecond
-var closeTime = 4 * 60 * 1000; //The time to close the gate
-var beginTime = 5 * 60 * 1000; //The time to begin the ride
-var rideTime = 1 * 60 * 1000; //The time that require move to destination
+// Time Setting is in millisecond
+var closeTime = 4 * 60 * 1000; // The time to close the gate
+var beginTime = 5 * 60 * 1000; // The time to begin the ride
+var rideTime = 1 * 60 * 1000;  // The time that require move to destination
 
 function init() {
     closeTime = em.getTransportationTime(closeTime);
@@ -39,7 +43,7 @@ function takeoff() {
     em.setProperty("docked", "false");
     KC_bfd.warpEveryone(Plane_to_CBD.getId());
     CBD_bfd.warpEveryone(Plane_to_KC.getId());
-    em.schedule("arrived", rideTime); //The time that require move to destination
+    em.schedule("arrived", rideTime);
 }
 
 function arrived() {
@@ -51,36 +55,19 @@ function arrived() {
 
 function cancelSchedule() {}
 
-
 // ---------- FILLER FUNCTIONS ----------
-
 function dispose() {}
-
 function setup(eim, leaderid) {}
-
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function playerDisconnected(eim, player) {}
-
 function playerEntry(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function playerExit(eim, player) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-
 function playerUnregistered(eim, player) {}
-

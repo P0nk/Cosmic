@@ -1,23 +1,5 @@
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
-					   Matthias Butz <matze@odinms.de>
-					   Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Genie Transport (Refactored)
 */
 
 var Orbis_btf;
@@ -27,10 +9,10 @@ var Ariant_btf;
 var Genie_to_Ariant;
 var Ariant_docked;
 
-//Time Setting is in millisecond
-var closeTime = 4 * 60 * 1000; //The time to close the gate
-var beginTime = 5 * 60 * 1000; //The time to begin the ride
-var rideTime = 5 * 60 * 1000; //The time that require move to destination
+// Time Setting is in millisecond
+var closeTime = 4 * 60 * 1000;
+var beginTime = 5 * 60 * 1000;
+var rideTime = 5 * 60 * 1000;
 
 function init() {
     closeTime = em.getTransportationTime(closeTime);
@@ -54,8 +36,8 @@ function scheduleNew() {
     Ariant_docked.setDocked(true);
 
     em.setProperty("entry", "true");
-    em.schedule("stopEntry", closeTime); //The time to close the gate
-    em.schedule("takeoff", beginTime); //The time to begin the ride
+    em.schedule("stopEntry", closeTime);
+    em.schedule("takeoff", beginTime);
 }
 
 function stopEntry() {
@@ -72,7 +54,7 @@ function takeoff() {
     Orbis_docked.setDocked(false);
     Ariant_docked.setDocked(false);
 
-    em.schedule("arrived", rideTime); //The time that require move to destination
+    em.schedule("arrived", rideTime);
 }
 
 function arrived() {
@@ -84,37 +66,20 @@ function arrived() {
     scheduleNew();
 }
 
-function cancelSchedule() {}
-
 // ---------- FILLER FUNCTIONS ----------
-
+function cancelSchedule() {}
 function dispose() {}
-
 function setup(eim, leaderid) {}
-
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function playerDisconnected(eim, player) {}
-
 function playerEntry(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function playerExit(eim, player) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-
 function playerUnregistered(eim, player) {}
-

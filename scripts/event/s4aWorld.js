@@ -1,6 +1,6 @@
 /*
- * 4th Job Snipe / Concentration
- */
+    4th Job Snipe / Concentration (Refactored)
+*/
 
 var minPlayers = 1;
 
@@ -8,24 +8,16 @@ function init() {
     em.setProperty("started", "false");
 }
 
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
-function getEligibleParty(party) {      //selects, from the given party, the team that is allowed to attempt this event
+function getEligibleParty(party) {
     var eligible = [];
     var hasLeader = false;
 
     if (party.size() > 0) {
         var partyList = party.toArray();
-
         for (var i = 0; i < party.size(); i++) {
             var ch = partyList[i];
-
             if (ch.getMapId() == 105090200 && ch.getLevel() >= 120) {
-                if (ch.isLeader()) {
-                    hasLeader = true;
-                }
+                if (ch.isLeader()) hasLeader = true;
                 eligible.push(ch);
             }
         }
@@ -47,11 +39,8 @@ function setup(level, lobbyid) {
     eim.startEventTimer(1200000);
 
     em.setProperty("started", "true");
-
     return eim;
 }
-
-function afterSetup(eim) {}
 
 function respawnStages(eim) {
     eim.getMapInstance(910500000).instanceMapRespawn();
@@ -63,22 +52,14 @@ function playerEntry(eim, player) {
     player.changeMap(map, map.getPortal(0));
 }
 
-function playerDead(eim, player) {
-}
-
-function playerRevive(eim, player) {
-}
-
 function scheduledTimeout(eim) {
     eim.disposeIfPlayerBelow(100, 105090200);
-
     em.setProperty("started", "false");
 }
 
 function changedMap(eim, player, mapid) {
     if (mapid != 910500000) {
         eim.unregisterPlayer(player);
-
         if (eim.disposeIfPlayerBelow(minPlayers, 105090200)) {
             em.setProperty("started", "false");
         }
@@ -90,18 +71,13 @@ function playerDisconnected(eim, player) {
 }
 
 function leftParty(eim, player) {
-    // If only 2 players are left, uncompletable:
     playerExit(eim, player);
 }
 
 function disbandParty(eim) {
-    //boot whole party and end
     eim.disposeIfPlayerBelow(100, 105090200);
-
     em.setProperty("started", "false");
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -111,19 +87,17 @@ function playerExit(eim, player) {
 
 function clearPQ(eim) {
     eim.disposeIfPlayerBelow(100, 105090200);
-
     em.setProperty("started", "false");
 }
 
-function monsterKilled(mob, eim) {}
-
-function allMonstersDead(eim) {}
-
-function cancelSchedule() {}
-
-function dispose() {}
-
 // ---------- FILLER FUNCTIONS ----------
-
+function afterSetup(eim) {}
+function monsterValue(eim, mobId) { return 1; }
+function playerDead(eim, player) {}
+function playerRevive(eim, player) {}
+function playerUnregistered(eim, player) {}
+function monsterKilled(mob, eim) {}
+function allMonstersDead(eim) {}
+function cancelSchedule() {}
+function dispose() {}
 function changedLeader(eim, leader) {}
-

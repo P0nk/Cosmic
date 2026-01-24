@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Pink Bean Battle (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Pink Bean Battle
- */
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 30;
@@ -33,8 +12,7 @@ var clearMap = 270050300;
 
 var minMapId = 270050100;
 var maxMapId = 270050300;
-
-var eventTime = 140;     // 140 minutes
+var eventTime = 140;
 
 const maxLobbies = 1;
 
@@ -48,45 +26,20 @@ function getMaxLobbies() {
 
 function setEventRequirements() {
     var reqStr = "";
-
-    reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
-    reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
-
+    reqStr += "\r\n    Number of players: " + (maxPlayers - minPlayers >= 1 ? minPlayers + " ~ " + maxPlayers : minPlayers);
+    reqStr += "\r\n    Level range: " + (maxLevel - minLevel >= 1 ? minLevel + " ~ " + maxLevel : minLevel);
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
     em.setProperty("party", reqStr);
 }
 
 function setEventExclusives(eim) {
-    var itemSet = [];
-    eim.setExclusiveItems(itemSet);
+    eim.setExclusiveItems([]);
 }
 
 function setEventRewards(eim) {
-    var itemSet, itemQty, evLevel, expStages, mesoStages;
-
-    evLevel = 1;    //Rewards at clear PQ
-    itemSet = [];
-    itemQty = [];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    expStages = [];    //bonus exp given on CLEAR stage signal
-    eim.setEventClearStageExp(expStages);
-
-    mesoStages = [];    //bonus meso given on CLEAR stage signal
-    eim.setEventClearStageMeso(mesoStages);
+    eim.setEventRewards(1, [], []);
+    eim.setEventClearStageExp([]);
+    eim.setEventClearStageMeso([]);
 }
 
 function afterSetup(eim) {
@@ -100,7 +53,6 @@ function setup(channel) {
     eim.setProperty("canJoin", 1);
     eim.setProperty("defeatedBoss", 0);
     eim.setProperty("fallenPlayers", 0);
-
     eim.setProperty("stage", 1);
     eim.setProperty("channel", channel);
 
@@ -109,16 +61,13 @@ function setup(channel) {
     eim.getInstanceMap(270050200).resetPQ(level);
     eim.getInstanceMap(270050300).resetPQ(level);
 
-    const LifeFactory = Java.type('server.life.LifeFactory');
-    const Point = Java.type('java.awt.Point');
     var mob = LifeFactory.getMonster(8820000);
     mob.disableDrops();
-    eim.getInstanceMap(270050100).spawnMonsterOnGroundBelow(mob, new Point(0, -42));
+    eim.getInstanceMap(270050100).spawnMonsterOnGroundBelow(mob, new java.awt.Point(0, -42));
 
     eim.startEventTimer(eventTime * 60000);
     setEventRewards(eim);
     setEventExclusives(eim);
-
     return eim;
 }
 
@@ -136,7 +85,6 @@ function changedMap(eim, player, mapid) {
     if (mapid < minMapId || mapid > maxMapId) {
         if (eim.isExpeditionTeamLackingNow(true, minPlayers, player)) {
             eim.unregisterPlayer(player);
-            eim.dropMessage(5, "[Expedition] Either the leader has quit the expedition or there is no longer the minimum number of members required to continue it.");
             end(eim);
         } else {
             eim.dropMessage(5, "[Expedition] " + player.getName() + " has left the expedition.");
@@ -145,12 +93,8 @@ function changedMap(eim, player, mapid) {
     }
 }
 
-function changedLeader(eim, leader) {}
-
 function playerDead(eim, player) {
-    var count = eim.getIntProperty("fallenPlayers");
-    count = count + 1;
-
+    var count = eim.getIntProperty("fallenPlayers") + 1;
     eim.setIntProperty("fallenPlayers", count);
 
     if (count == 5) {
@@ -176,23 +120,12 @@ function monsterRevive(eim, mob) {
 function playerDisconnected(eim, player) {
     if (eim.isExpeditionTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
-        eim.dropMessage(5, "[Expedition] Either the leader has quit the expedition or there is no longer the minimum number of members required to continue it.");
         end(eim);
     } else {
         eim.dropMessage(5, "[Expedition] " + player.getName() + " has left the expedition.");
         eim.unregisterPlayer(player);
     }
 }
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -207,18 +140,13 @@ function end(eim) {
     eim.dispose();
 }
 
-function giveRandomEventReward(eim, player) {
-    eim.giveEventReward(player);
-}
-
 function clearPQ(eim) {
     eim.stopEventTimer();
     eim.setEventCleared();
 }
 
 function isPinkBean(mob) {
-    var mobid = mob.getId();
-    return (mobid == 8820001);
+    return mob.getId() == 8820001;
 }
 
 function isJrBoss(mob) {
@@ -231,14 +159,9 @@ function noJrBossesLeft(map) {
 }
 
 function spawnJrBoss(mobObj, gotKilled) {
-    if (gotKilled) {
-        spawnid = mobObj.getId() + 17;
-    } else {
-        mobObj.getMap().killMonster(mobObj.getId());
-        spawnid = mobObj.getId() - 17;
-    }
+    var spawnid = gotKilled ? mobObj.getId() + 17 : mobObj.getId() - 17;
+    if (!gotKilled) mobObj.getMap().killMonster(mobObj.getId());
 
-    const LifeFactory = Java.type('server.life.LifeFactory');
     var mob = LifeFactory.getMonster(spawnid);
     mobObj.getMap().spawnMonsterOnGroundBelow(mob, mobObj.getPosition());
 }
@@ -249,28 +172,21 @@ function monsterKilled(mob, eim) {
         eim.showClearEffect(mob.getMap().getId());
         mob.getMap().killAllMonsters();
         eim.clearPQ();
-
         var ch = eim.getIntProperty("channel");
         mob.getMap().broadcastPinkBeanVictory(ch);
     } else if (isJrBoss(mob)) {
         if (noJrBossesLeft(mob.getMap())) {
             var stage = eim.getIntProperty("stage");
-
             if (stage == 5) {
-                var iid = 4001193;
-                const Item = Java.type('client.inventory.Item');
-                var itemObj = new Item(iid, 0, 1);
+                var itemObj = new Packages.client.inventory.Item(4001193, 0, 1);
                 var mapObj = eim.getMapFactory().getMap(270050100);
                 var reactObj = mapObj.getReactorById(2708000);
                 var dropper = eim.getPlayers().get(0);
                 mapObj.spawnItemDrop(dropper, dropper, itemObj, reactObj.getPosition(), true, true);
-
-
                 eim.dropMessage(6, "With the last of its guardians fallen, Pink Bean loses its invulnerability. The real fight starts now!");
             } else {
                 stage++;
                 eim.setIntProperty("stage", stage);
-
                 eim.dropMessage(5, "The next wave will start, prepare yourselves.");
                 startWave(eim)
             }
@@ -279,9 +195,6 @@ function monsterKilled(mob, eim) {
 }
 
 function startWave(eim) {
-    const LifeFactory = Java.type('server.life.LifeFactory');
-    const Point = Java.type('java.awt.Point');
-
     var mapObj = eim.getMapInstance(270050100);
     if (!mapObj) {
         eim.dropMessage(5, "Map not ready, retrying...");
@@ -291,16 +204,14 @@ function startWave(eim) {
 
     var stage = parseInt(eim.getProperty("stage"));
     var spawnPositions = [
-        new Point(5, -42), // All Jr bosses from WZ use this same spot
-        new Point(5, -42), // All Jr bosses from WZ use this same spot
-        new Point(5, -42), // All Jr bosses from WZ use this same spot
-        new Point(5, -42), // All Jr bosses from WZ use this same spot
-        new Point(5, -42), // All Jr bosses from WZ use this same spot
+        new java.awt.Point(5, -42),
+        new java.awt.Point(5, -42),
+        new java.awt.Point(5, -42),
+        new java.awt.Point(5, -42),
+        new java.awt.Point(5, -42)
     ];
 
     var spawnedMobs = [];
-
-    // Spawn base mobs at different positions for Jr bosses
     for (var i = 1; i <= stage; i++) {
         var baseMobId = 8820019 + (i % 5);
         var baseMob = LifeFactory.getMonster(baseMobId);
@@ -309,14 +220,18 @@ function startWave(eim) {
         spawnedMobs.push(baseMob);
     }
 
-    // Evolve base mobs into Jr bosses
     for (var i = 0; i < spawnedMobs.length; i++) {
         spawnJrBoss(spawnedMobs[i], false);
     }
 }
 
+// ---------- FILLER FUNCTIONS ----------
+function changedLeader(eim, leader) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function monsterValue(eim, mobId) { return 1; }
+function playerUnregistered(eim, player) {}
+function giveRandomEventReward(eim, player) { eim.giveEventReward(player); }
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}

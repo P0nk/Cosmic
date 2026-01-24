@@ -23,6 +23,7 @@ package server.events.gm;
 
 import client.Character;
 import constants.id.MapId;
+import net.packet.Packet; // <--- Added Import
 import server.TimerManager;
 import server.maps.MapleMap;
 import tools.PacketCreator;
@@ -37,11 +38,11 @@ public class Snowball {
     private final MapleMap map;
     private int position = 0;
     private int hits = 3;
-    private int snowmanhp = 1000;
+    private int snowmanHp = 1000;
     private boolean hittable = false;
     private final int team;
     private boolean winner = false;
-    List<Character> characters = new LinkedList<>();
+    private final List<Character> characters = new LinkedList<>();
 
     public Snowball(int team, MapleMap map) {
         this.map = map;
@@ -55,9 +56,7 @@ public class Snowball {
     }
 
     public void startEvent() {
-        if (hittable == true) {
-            return;
-        }
+        if (hittable) return;
 
         for (Character chr : characters) {
             if (chr != null) {
@@ -67,78 +66,53 @@ public class Snowball {
         }
         hittable = true;
         TimerManager.getInstance().schedule(() -> {
-            if (map.getSnowball(team).getPosition() > map.getSnowball(team == 0 ? 1 : 0).getPosition()) {
-                for (Character chr : characters) {
-                    if (chr != null) {
-                        chr.sendPacket(PacketCreator.rollSnowBall(false, 3, map.getSnowball(0), map.getSnowball(0)));
-                    }
-                }
+            int posTeam = map.getSnowball(team).getPosition();
+            int posEnemy = map.getSnowball(team == 0 ? 1 : 0).getPosition();
+
+            if (posTeam > posEnemy) {
+                broadcast(PacketCreator.rollSnowBall(false, 3, map.getSnowball(0), map.getSnowball(0)));
                 winner = true;
-            } else if (map.getSnowball(team == 0 ? 1 : 0).getPosition() > map.getSnowball(team).getPosition()) {
-                for (Character chr : characters) {
-                    if (chr != null) {
-                        chr.sendPacket(PacketCreator.rollSnowBall(false, 4, map.getSnowball(0), map.getSnowball(0)));
-                    }
-                }
+            } else if (posEnemy > posTeam) {
+                broadcast(PacketCreator.rollSnowBall(false, 4, map.getSnowball(0), map.getSnowball(0)));
                 winner = true;
-            } //Else
+            }
             warpOut();
         }, 600000);
-
     }
 
-    public boolean isHittable() {
-        return hittable;
-    }
+    public boolean isHittable() { return hittable; }
+    public void setHittable(boolean hit) { this.hittable = hit; }
 
-    public void setHittable(boolean hit) {
-        this.hittable = hit;
-    }
+    public int getPosition() { return position; }
 
-    public int getPosition() {
-        return position;
-    }
-
-    public int getSnowmanHP() {
-        return snowmanhp;
-    }
-
-    public void setSnowmanHP(int hp) {
-        this.snowmanhp = hp;
-    }
+    public int getSnowmanHP() { return snowmanHp; }
+    public void setSnowmanHP(int hp) { this.snowmanHp = hp; }
 
     public void hit(int what, int damage) {
         if (what < 2) {
             if (damage > 0) {
                 this.hits--;
             } else {
-                if (this.snowmanhp - damage < 0) {
-                    this.snowmanhp = 0;
-
+                if (this.snowmanHp - damage < 0) {
+                    this.snowmanHp = 0;
                     TimerManager.getInstance().schedule(() -> {
                         setSnowmanHP(7500);
                         message(5);
                     }, 10000);
                 } else {
-                    this.snowmanhp -= damage;
+                    this.snowmanHp -= damage;
                 }
                 map.broadcastMessage(PacketCreator.rollSnowBall(false, 1, map.getSnowball(0), map.getSnowball(1)));
             }
         }
 
-        if (this.hits == 0) {
+        if (this.hits <= 0) {
             this.position += 1;
-            switch (this.position) {
-            case 45:
-                map.getSnowball(team == 0 ? 1 : 0).message(1);
-                break;
-            case 290:
-                map.getSnowball(team == 0 ? 1 : 0).message(2);
-                break;
-            case 560:
-                map.getSnowball(team == 0 ? 1 : 0).message(3);
-                break;
-            }
+
+            Snowball otherBall = map.getSnowball(team == 0 ? 1 : 0);
+            if (this.position == 45) otherBall.message(1);
+            else if (this.position == 290) otherBall.message(2);
+            else if (this.position == 560) otherBall.message(3);
 
             this.hits = 3;
             map.broadcastMessage(PacketCreator.rollSnowBall(false, 0, map.getSnowball(0), map.getSnowball(1)));
@@ -148,10 +122,13 @@ public class Snowball {
     }
 
     public void message(int message) {
+        broadcast(PacketCreator.snowballMessage(team, message));
+    }
+
+    // FIX IS HERE: Changed parameter from byte[] to Packet
+    private void broadcast(Packet packet) {
         for (Character chr : characters) {
-            if (chr != null) {
-                chr.sendPacket(PacketCreator.snowballMessage(team, message));
-            }
+            if (chr != null) chr.sendPacket(packet);
         }
     }
 
@@ -162,7 +139,6 @@ public class Snowball {
             } else {
                 map.warpOutByTeam(team, MapId.EVENT_EXIT);
             }
-
             map.setSnowball(team, null);
         }, 10000);
     }

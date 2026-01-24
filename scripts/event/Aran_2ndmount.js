@@ -1,26 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Event - Scadur's Mount Quest (Refactored)
 */
-/**
- * @Author Ronan
- * Event - Scadur's Mount Quest
- **/
 
 var entryMap = 921110000;
 var exitMap = 211050000;
@@ -28,8 +8,7 @@ var exitMap = 211050000;
 var minMapId = 921110000;
 var maxMapId = 921110000;
 
-var eventTime = 3; //3 minutes
-
+var eventTime = 3; // 3 minutes
 const maxLobbies = 7;
 
 function getMaxLobbies() {
@@ -44,11 +23,8 @@ function setup(level, lobbyid) {
     var eim = em.newInstance("Aran_2ndmount_" + lobbyid);
     eim.setProperty("level", level);
     eim.setProperty("boss", "0");
-
     return eim;
 }
-
-function respawnStages(eim) {}
 
 function playerEntry(eim, player) {
     var mapObj = eim.getInstanceMap(entryMap);
@@ -60,12 +36,10 @@ function playerEntry(eim, player) {
     player.changeMap(entryMap, 2);
     em.setProperty("noEntry", "true");
 
-    const PacketCreator = Java.type('tools.PacketCreator');
+    // PacketCreator is now injected
     player.sendPacket(PacketCreator.getClock(eventTime * 60));
     eim.startEventTimer(eventTime * 60000);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -101,12 +75,6 @@ function clearPQ(eim) {
     em.setProperty("noEntry", "false");
 }
 
-function monsterKilled(mob, eim) {}
-
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function friendlyKilled(mob, eim) {
     if (em.getProperty("noEntry") != "false") {
         var player = eim.getPlayers().get(0);
@@ -115,20 +83,18 @@ function friendlyKilled(mob, eim) {
     }
 }
 
-function allMonstersDead(eim) {}
-
-function cancelSchedule() {}
-
-function dispose() {}
-
+function monsterValue(eim, mobId) {
+    return 1;
+}
 
 // ---------- FILLER FUNCTIONS ----------
-
+function respawnStages(eim) {}
+function playerUnregistered(eim, player) {}
+function monsterKilled(mob, eim) {}
+function allMonstersDead(eim) {}
+function cancelSchedule() {}
+function dispose() {}
 function disbandParty(eim, player) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function leftParty(eim, player) {}
-

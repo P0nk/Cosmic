@@ -47,7 +47,7 @@ import net.server.channel.handlers.CharInfoRequestHandler;
 import net.server.channel.handlers.ClickGuideHandler;
 import net.server.channel.handlers.CloseChalkboardHandler;
 import net.server.channel.handlers.CloseRangeDamageHandler;
-import net.server.channel.handlers.CoconutHandler;
+import server.events.gm.CoconutHandler;
 import net.server.channel.handlers.CouponCodeHandler;
 import net.server.channel.handlers.DamageSummonHandler;
 import net.server.channel.handlers.DenyAllianceRequestHandler;

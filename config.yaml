@@ -250,13 +250,13 @@ server:
   USE_AUTOHIDE_GM: false              #When enabled, GMs are automatically hidden when joining. Thanks to Steven Deblois (steven1152).
   USE_FIXED_RATIO_HPMP_UPDATE: true   #Enables the HeavenMS-builtin HPMP update based on the current pool to max pool ratio.
   USE_FAMILY_SYSTEM: true
-  USE_DUEY: false
+  USE_DUEY: true
   USE_RANDOMIZE_HPMP_GAIN: true       #Enables randomizing on MaxHP/MaxMP gains and INT accounting for the MaxMP gain on level up.
   USE_STORAGE_ITEM_SORT: true         #Enables storage "Arrange Items" feature.
   USE_ITEM_SORT: true                 #Enables inventory "Item Sort/Merge" feature.
   USE_ITEM_SORT_BY_NAME: false        #Item sorting based on name rather than id.
   USE_PARTY_FOR_STARTERS: true        #Players level 10 or below can create/invite other players on the given level range.
-  USE_AUTOASSIGN_STARTERS_AP: false    #Beginners level 10 or below have their AP autoassigned (they can't choose to levelup a stat). Set true ONLY if the localhost doesn't support AP assigning for beginners level 10 or below.
+  USE_AUTOASSIGN_STARTERS_AP: true    #Beginners level 10 or below have their AP autoassigned (they can't choose to levelup a stat). Set true ONLY if the localhost doesn't support AP assigning for beginners level 10 or below.
   USE_AUTOASSIGN_SECONDARY_CAP: true  #Prevents AP autoassign from spending on secondary stats after the player class' cap (defined on the autoassign handler) has been reached.
   USE_STARTING_AP_4: true             #Use early-GMS 4/4/4/4 starting stats. To overcome AP shortage, this gives 4AP/5AP at 1st/2nd job advancements.
   USE_AUTOBAN: false                  #Commands the server to detect infractors automatically.

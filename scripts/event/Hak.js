@@ -1,3 +1,7 @@
+/*
+    Hak Event (Refactored)
+*/
+
 var returnTo = [200000141, 250000100];
 var rideTo = [250000100, 200000141];
 var birdRide = [200090300, 200090310];
@@ -7,7 +11,7 @@ var exitMap;
 var map;
 var onRide;
 
-//Time Setting is in millisecond
+// Time Setting is in millisecond
 var rideTime = 60 * 1000;
 
 function init() {
@@ -18,8 +22,6 @@ function setup(level, lobbyid) {
     var eim = em.newInstance("Hak_" + lobbyid);
     return eim;
 }
-
-function afterSetup(eim) {}
 
 function playerEntry(eim, player) {
     if (player.getMapId() == returnTo[0]) {
@@ -32,7 +34,6 @@ function playerEntry(eim, player) {
     onRide = eim.getMapFactory().getMap(birdRide[myRide]);
     player.changeMap(onRide, onRide.getPortal(0));
 
-    const PacketCreator = Java.type('tools.PacketCreator');
     player.sendPacket(PacketCreator.getClock(rideTime / 1000));
     eim.schedule("timeOut", rideTime);
 }
@@ -40,8 +41,6 @@ function playerEntry(eim, player) {
 function timeOut(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player, success) {
     eim.unregisterPlayer(player);
@@ -60,26 +59,16 @@ function playerDisconnected(eim, player) {
     playerExit(eim, player, false);
 }
 
-function cancelSchedule() {}
-
-function dispose(eim) {}
-
-
 // ---------- FILLER FUNCTIONS ----------
-
-function monsterValue(eim, mobid) {return 0;}
-
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function cancelSchedule() {}
+function dispose(eim) {}
+function monsterValue(eim, mobId) {return 0;}
 function disbandParty(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-

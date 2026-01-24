@@ -1,19 +1,13 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package server.events;
 
 import client.Character;
 import client.SkillFactory;
-
-import static java.util.concurrent.TimeUnit.DAYS;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author kevintjuh93
  */
-public class RescueGaga extends Events {
+public class RescueGaga extends MapleEventEntry {
 
     private int completed;
 
@@ -38,15 +32,19 @@ public class RescueGaga extends Events {
     public void giveSkill(Character chr) {
         int skillid = 0;
         switch (chr.getJobType()) {
-            case 0:
+            case 0: // Beginner
                 skillid = 1013;
                 break;
-            case 1:
-            case 2:
+            case 1: // Legend
+            case 2: // Evan
                 skillid = 10001014;
+                break;
         }
 
-        long expiration = (System.currentTimeMillis() + DAYS.toMillis(20));
+        if (skillid == 0) return; // Safety check
+
+        long expiration = (System.currentTimeMillis() + TimeUnit.DAYS.toMillis(20));
+
         if (completed < 20) {
             chr.changeSkillLevel(SkillFactory.getSkill(skillid), (byte) 1, 1, expiration);
             chr.changeSkillLevel(SkillFactory.getSkill(skillid + 1), (byte) 1, 1, expiration);
@@ -55,5 +53,4 @@ public class RescueGaga extends Events {
             chr.changeSkillLevel(SkillFactory.getSkill(skillid), (byte) 2, 2, chr.getSkillExpiration(skillid));
         }
     }
-
 }

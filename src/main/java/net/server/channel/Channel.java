@@ -36,7 +36,7 @@ import net.server.world.PartyCharacter;
 import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scripting.event.EventScriptManager;
+import server.events.EventScriptManager;
 import server.TimerManager;
 import server.events.gm.Event;
 import server.expeditions.Expedition;
@@ -545,20 +545,22 @@ public final class Channel {
         getWorldServer().resetDisabledServerMessages();
     }
 
+// In net.server.channel.Channel.java
+
     private static String[] getEvents() {
         List<String> events = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of("scripts/event"))) {
+        // FIX: Added "*.js" filter to ignore non-script files (backups, text files)
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of("scripts/event"), "*.js")) {
             for (Path path : stream) {
                 String fileName = path.getFileName().toString();
+                // Safe to substring now because we know it ends in .js
                 events.add(fileName.substring(0, fileName.length() - 3));
             }
         } catch (IOException e) {
-            log.warn("Unable to load events !");
-            e.printStackTrace();
+            log.warn("Unable to load events!", e); // Added exception logging
         }
         return events.toArray(new String[0]);
     }
-
     public int getStoredVar(int key) {
         if (storedVars.containsKey(key)) {
             return storedVars.get(key);

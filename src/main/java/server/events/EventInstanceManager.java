@@ -19,7 +19,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package scripting.event;
+package server.events;
 
 import client.Character;
 import client.Skill;
@@ -27,13 +27,13 @@ import client.SkillFactory;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
 import constants.game.ExpTable; // Slimy adds
-import net.server.coordinator.world.EventRecallCoordinator;
+import server.events.tasks.EventRecallCoordinator;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractPlayerInteraction;
-import scripting.event.scheduler.EventScriptScheduler;
+import server.events.scheduler.EventScriptScheduler;
 import server.ItemInformationProvider;
 import server.StatEffect;
 import server.ThreadManager;
@@ -231,49 +231,30 @@ public class EventInstanceManager {
         giveEventPlayersExp(gain, -1);
     }
 
+    // Replaces the long 'giveEventPlayersExp' method
     public void giveEventPlayersExp(int gain, int mapId) {
-        if (gain == 0) {
-            return;
-        }
+        if (gain == 0) return;
 
-        List<Character> players = getPlayerList();
-
-        if (mapId == -1) {
-            for (Character mc : players) {
-                mc.gainExp((int) (gain * mc.getExpRate()), true, true);
-            }
-        } else {
-            for (Character mc : players) {
-                if (mc.getMapId() == mapId) {
-                    mc.gainExp((int) (gain * mc.getExpRate()), true, true);
-                }
-            }
-        }
+        getPlayers().stream()
+                .filter(chr -> mapId == -1 || chr.getMapId() == mapId)
+                .forEach(chr -> {
+                    chr.gainExp((int) (gain * chr.getExpRate()), true, true);
+                });
     }
 
     public void giveEventPlayersMeso(int gain) {
         giveEventPlayersMeso(gain, -1);
     }
 
+    // Replaces the long 'giveEventPlayersMeso' method
     public void giveEventPlayersMeso(int gain, int mapId) {
-        if (gain == 0) {
-            return;
-        }
+        if (gain == 0) return;
 
-        List<Character> players = getPlayerList();
-
-        if (mapId == -1) {
-            for (Character mc : players) {
-                mc.gainMeso(gain * mc.getMesoRate());
-            }
-        } else {
-            for (Character mc : players) {
-                if (mc.getMapId() == mapId) {
-                    mc.gainMeso(gain * mc.getMesoRate());
-                }
-            }
-        }
-
+        getPlayers().stream()
+                .filter(chr -> mapId == -1 || chr.getMapId() == mapId)
+                .forEach(chr -> {
+                    chr.gainMeso(gain * chr.getMesoRate());
+                });
     }
 
     public Object invokeScriptFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {

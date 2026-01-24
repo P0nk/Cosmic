@@ -26,7 +26,7 @@ import client.Client;
 import config.YamlConfig;
 import net.server.coordinator.matchchecker.MatchCheckerCoordinator;
 import net.server.coordinator.matchchecker.MatchCheckerListenerFactory.MatchCheckerType;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import server.maps.Door;
 import server.maps.MapleMap;
 import server.partyquest.MonsterCarnival;

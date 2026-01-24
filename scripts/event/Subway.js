@@ -1,3 +1,7 @@
+/*
+    Kerning Subway (Refactored)
+*/
+
 var KC_Waiting;
 var Subway_to_KC;
 var KC_docked;
@@ -5,10 +9,10 @@ var NLC_Waiting;
 var Subway_to_NLC;
 var NLC_docked;
 
-//Time Setting is in millisecond
-var closeTime = 50 * 1000; //The time to close the gate
-var beginTime = 1 * 60 * 1000; //The time to begin the ride
-var rideTime = 4 * 60 * 1000; //The time that require move to destination
+// Time Setting is in millisecond
+var closeTime = 50 * 1000;
+var beginTime = 1 * 60 * 1000;
+var rideTime = 4 * 60 * 1000;
 
 function init() {
     closeTime = em.getTransportationTime(closeTime);
@@ -21,6 +25,7 @@ function init() {
     Subway_to_NLC = em.getChannelServer().getMapFactory().getMap(600010005);
     KC_docked = em.getChannelServer().getMapFactory().getMap(103000100);
     NLC_docked = em.getChannelServer().getMapFactory().getMap(600010001);
+
     scheduleNew();
 }
 
@@ -48,38 +53,20 @@ function arrived() {
     scheduleNew();
 }
 
-function cancelSchedule() {}
-
-
 // ---------- FILLER FUNCTIONS ----------
-
+function cancelSchedule() {}
 function dispose() {}
-
 function setup(eim, leaderid) {}
-
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function playerDisconnected(eim, player) {}
-
 function playerEntry(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function playerExit(eim, player) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-
 function playerUnregistered(eim, player) {}
-

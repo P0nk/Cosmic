@@ -36,7 +36,7 @@ import net.server.channel.Channel;
 import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import server.ItemInformationProvider;
 import service.NoteService;
 import tools.DatabaseConnection;

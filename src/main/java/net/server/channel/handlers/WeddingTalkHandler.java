@@ -23,7 +23,7 @@ package net.server.channel.handlers;
 import client.Client;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import tools.PacketCreator;
 import tools.packets.WeddingPackets;
 

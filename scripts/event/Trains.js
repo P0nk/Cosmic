@@ -1,3 +1,7 @@
+/*
+    Trains (Refactored)
+*/
+
 var Orbis_btf;
 var Train_to_Orbis;
 var Orbis_docked;
@@ -7,10 +11,10 @@ var Ludibrium_docked;
 var Orbis_Station;
 var Ludibrium_Station;
 
-//Time Setting is in millisecond
-var closeTime = 4 * 60 * 1000; //The time to close the gate
-var beginTime = 5 * 60 * 1000; //The time to begin the ride
-var rideTime = 5 * 60 * 1000; //The time that require move to destination
+// Time Setting is in millisecond
+var closeTime = 4 * 60 * 1000;
+var beginTime = 5 * 60 * 1000;
+var rideTime = 5 * 60 * 1000;
 
 function init() {
     closeTime = em.getTransportationTime(closeTime);
@@ -35,8 +39,8 @@ function scheduleNew() {
     Ludibrium_docked.setDocked(true);
 
     em.setProperty("entry", "true");
-    em.schedule("stopEntry", closeTime); //The time to close the gate
-    em.schedule("takeoff", beginTime); //The time to begin the ride
+    em.schedule("stopEntry", closeTime);
+    em.schedule("takeoff", beginTime);
 }
 
 function stopEntry() {
@@ -53,7 +57,7 @@ function takeoff() {
     Orbis_docked.setDocked(false);
     Ludibrium_docked.setDocked(false);
 
-    em.schedule("arrived", rideTime); //The time that require move to destination
+    em.schedule("arrived", rideTime);
 }
 
 function arrived() {
@@ -64,38 +68,20 @@ function arrived() {
     scheduleNew();
 }
 
-function cancelSchedule() {}
-
-
 // ---------- FILLER FUNCTIONS ----------
-
+function cancelSchedule() {}
 function dispose() {}
-
 function setup(eim, leaderid) {}
-
 function monsterValue(eim, mobid) {return 0;}
-
 function disbandParty(eim, player) {}
-
 function playerDisconnected(eim, player) {}
-
 function playerEntry(eim, player) {}
-
 function monsterKilled(mob, eim) {}
-
 function scheduledTimeout(eim) {}
-
 function afterSetup(eim) {}
-
 function changedLeader(eim, leader) {}
-
 function playerExit(eim, player) {}
-
 function leftParty(eim, player) {}
-
 function clearPQ(eim) {}
-
 function allMonstersDead(eim) {}
-
 function playerUnregistered(eim, player) {}
-

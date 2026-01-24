@@ -27,7 +27,7 @@ import provider.DataProvider;
 import provider.DataProviderFactory;
 import provider.DataTool;
 import provider.wz.WZFiles;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import server.life.AbstractLoadedLife;
 import server.life.LifeFactory;
 import server.life.Monster;

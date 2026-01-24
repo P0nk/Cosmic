@@ -1,26 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/**
- * @Author Ronan
- * Event - Kyrin's Test Quest
- **/
+    Event - Kyrin's Test Quest (Refactored)
+**/
 
 var entryMap = 912010000;
 var exitMap = 120000101;
@@ -28,8 +8,7 @@ var exitMap = 120000101;
 var minMapId = 912010000;
 var maxMapId = 912010200;
 
-var eventTime = 4; //4 minutes
-
+var eventTime = 4; // 4 minutes
 const maxLobbies = 7;
 
 function getMaxLobbies() {
@@ -55,10 +34,6 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
-function respawnStages(eim) {}
-
 function playerCanLeave(eim) {
     eim.setIntProperty("canLeave", 1);
 }
@@ -77,15 +52,11 @@ function playerEntry(eim, player) {
     player.changeMap(map, map.getPortal(0));
 }
 
-function playerUnregistered(eim, player) {}
-
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
     eim.dispose();
     em.setProperty("noEntry", "false");
 }
-
-function playerLeft(eim, player) {}
 
 function scheduledTimeout(eim) {
     var player = eim.getPlayers().get(0);
@@ -115,16 +86,6 @@ function clearPQ(eim) {
     em.setProperty("noEntry", "false");
 }
 
-function monsterKilled(mob, eim) {}
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function friendlyKilled(mob, eim) {
     if (em.getProperty("noEntry") != "false") {
         var player = eim.getPlayers().get(0);
@@ -133,14 +94,19 @@ function friendlyKilled(mob, eim) {
     }
 }
 
-function allMonstersDead(eim) {}
-
-function cancelSchedule() {}
-
-function dispose() {}
-
+function monsterValue(eim, mobId) {
+    return 1;
+}
 
 // ---------- FILLER FUNCTIONS ----------
-
+function afterSetup(eim) {}
+function respawnStages(eim) {}
+function playerUnregistered(eim, player) {}
+function playerLeft(eim, player) {}
+function monsterKilled(mob, eim) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function allMonstersDead(eim) {}
+function cancelSchedule() {}
+function dispose() {}
 function changedLeader(eim, leader) {}
-

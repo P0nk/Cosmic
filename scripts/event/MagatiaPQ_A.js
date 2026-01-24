@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Magatia PQ (Alcadno) (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Magatia PQ (Alcadno)
- */
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 4;
@@ -34,8 +13,7 @@ var clearMap = 926110700;
 var minMapId = 926110000;
 var maxMapId = 926110600;
 
-var eventTime = 45;     // 45 minutes
-
+var eventTime = 45; // 45 minutes
 const maxLobbies = 1;
 
 function init() {
@@ -48,58 +26,35 @@ function getMaxLobbies() {
 
 function setEventRequirements() {
     var reqStr = "";
-
-    reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
-    reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
-
+    reqStr += "\r\n    Number of players: " + (maxPlayers - minPlayers >= 1 ? minPlayers + " ~ " + maxPlayers : minPlayers);
+    reqStr += "\r\n    Level range: " + (maxLevel - minLevel >= 1 ? minLevel + " ~ " + maxLevel : minLevel);
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
     em.setProperty("party", reqStr);
 }
 
 function setEventExclusives(eim) {
-    var itemSet = [4001130, 4001131, 4001132, 4001133, 4001134, 4001135];
-    eim.setExclusiveItems(itemSet);
+    eim.setExclusiveItems([4001130, 4001131, 4001132, 4001133, 4001134, 4001135]);
 }
 
 function setEventRewards(eim) {
-    var itemSet, itemQty, evLevel, expStages;
+    eim.setEventRewards(1,
+        [2000003, 2000002, 2000004, 2000005, 2022003, 1032016, 1032015, 1032014, 2041212, 2041020, 2040502, 2041016, 2044701, 2040301, 2043201, 2040501, 2040704, 2044001, 2043701, 2040803, 1102026, 1102028, 1102029],
+        [100, 100, 20, 10, 50, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    );
 
-    evLevel = 1;    //Rewards at clear PQ
-    itemSet = [2000003, 2000002, 2000004, 2000005, 2022003, 1032016, 1032015, 1032014, 2041212, 2041020, 2040502, 2041016, 2044701, 2040301, 2043201, 2040501, 2040704, 2044001, 2043701, 2040803, 1102026, 1102028, 1102029];
-    itemQty = [100, 100, 20, 10, 50, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    expStages = [0, 10000, 20000, 0, 20000, 20000, 0, 0];    //bonus exp given on CLEAR stage signal
-    eim.setEventClearStageExp(expStages);
+    eim.setEventClearStageExp([0, 10000, 20000, 0, 20000, 20000, 0, 0]);
 }
 
-function getEligibleParty(party) {      //selects, from the given party, the team that is allowed to attempt this event
+function getEligibleParty(party) {
     var eligible = [];
     var hasLeader = false;
 
     if (party.size() > 0) {
         var partyList = party.toArray();
-
         for (var i = 0; i < party.size(); i++) {
             var ch = partyList[i];
-
             if (ch.getMapId() == recruitMap && ch.getLevel() >= minLevel && ch.getLevel() <= maxLevel) {
-                if (ch.isLeader()) {
-                    hasLeader = true;
-                }
+                if (ch.isLeader()) hasLeader = true;
                 eligible.push(ch);
             }
         }
@@ -114,50 +69,26 @@ function getEligibleParty(party) {      //selects, from the given party, the tea
 function setup(level, lobbyid) {
     var eim = em.newInstance("MagatiaA" + lobbyid);
     eim.setProperty("level", level);
-
     eim.setIntProperty("isAlcadno", 1);
 
-    eim.setIntProperty("escortFail", 0);
-    eim.setIntProperty("yuleteTimeout", 0);
-    eim.setIntProperty("yuleteTalked", 0);
-    eim.setIntProperty("yuletePassed", 0);
-    eim.setIntProperty("npcShocked", 0);
-    eim.setIntProperty("normalClear", 0);
+    // Properties initialized in Java by default or set explicitly here
+    var props = ["escortFail", "yuleteTimeout", "yuleteTalked", "yuletePassed", "npcShocked", "normalClear",
+                 "statusStg1", "statusStg2", "statusStg3", "statusStg4", "statusStg5", "statusStg6", "statusStg7"];
+    for (var p of props) eim.setIntProperty(p, 0);
 
-    eim.setIntProperty("statusStg1", 0);
-    eim.setIntProperty("statusStg2", 0);
-    eim.setIntProperty("statusStg3", 0);
-    eim.setIntProperty("statusStg4", 0);
-    eim.setIntProperty("statusStg5", 0);
-    eim.setIntProperty("statusStg6", 0);
-    eim.setIntProperty("statusStg7", 0);
-
-    eim.getInstanceMap(926110000).resetPQ(level);
-    eim.getInstanceMap(926110001).resetPQ(level);
-    eim.getInstanceMap(926110100).resetPQ(level);
-    eim.getInstanceMap(926110200).resetPQ(level);
-    eim.getInstanceMap(926110201).resetPQ(level);
-    eim.getInstanceMap(926110202).resetPQ(level);
-    eim.getInstanceMap(926110203).resetPQ(level);
-    eim.getInstanceMap(926110300).resetPQ(level);
-    eim.getInstanceMap(926110301).resetPQ(level);
-    eim.getInstanceMap(926110302).resetPQ(level);
-    eim.getInstanceMap(926110303).resetPQ(level);
-    eim.getInstanceMap(926110304).resetPQ(level);
-    eim.getInstanceMap(926110400).resetPQ(level);
-    eim.getInstanceMap(926110401).resetPQ(level);
-    eim.getInstanceMap(926110500).resetPQ(level);
-    eim.getInstanceMap(926110600).resetPQ(level);
-    eim.getInstanceMap(926110700).resetPQ(level);
+    // Reset maps
+    var maps = [926110000, 926110001, 926110100, 926110200, 926110201, 926110202, 926110203,
+                926110300, 926110301, 926110302, 926110303, 926110304, 926110400, 926110401,
+                926110500, 926110600, 926110700];
+    for (var m of maps) eim.getInstanceMap(m).resetPQ(level);
 
     eim.getInstanceMap(926110201).shuffleReactors(2518000, 2612004);
     eim.getInstanceMap(926110202).shuffleReactors(2518000, 2612004);
 
-    const Point = Java.type('java.awt.Point');
-    eim.spawnNpc(2112010, new Point(252, 243), eim.getInstanceMap(926110203));
-    eim.spawnNpc(2112010, new Point(200, 100), eim.getInstanceMap(926110401));
-    eim.spawnNpc(2112011, new Point(200, 100), eim.getInstanceMap(926110500));
-    eim.spawnNpc(2112018, new Point(200, 100), eim.getInstanceMap(926110600));
+    eim.spawnNpc(2112010, new java.awt.Point(252, 243), eim.getInstanceMap(926110203));
+    eim.spawnNpc(2112010, new java.awt.Point(200, 100), eim.getInstanceMap(926110401));
+    eim.spawnNpc(2112011, new java.awt.Point(200, 100), eim.getInstanceMap(926110500));
+    eim.spawnNpc(2112018, new java.awt.Point(200, 100), eim.getInstanceMap(926110600));
 
     respawnStages(eim);
     eim.startEventTimer(eventTime * 60000);
@@ -168,82 +99,40 @@ function setup(level, lobbyid) {
 
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
-
-    // While there remain elements to shuffle...
     while (0 !== currentIndex) {
-
-        // Pick a remaining element...
         randomIndex = Math.floor(Math.random() * currentIndex);
         currentIndex -= 1;
-
-        // And swap it with the current element.
         temporaryValue = array[currentIndex];
         array[currentIndex] = array[randomIndex];
         array[randomIndex] = temporaryValue;
     }
-
     return array;
 }
 
-function generateStg6Combo(eim) {  // thanks Chloek3, seth1 for stating generated sequences are supposed to be linked
+function generateStg6Combo(eim) {
     var matrix = [];
-
-    for (var i = 0; i < 4; i++) {
-        matrix.push([]);
-    }
+    for (var i = 0; i < 4; i++) matrix.push([]);
 
     for (var j = 0; j < 10; j++) {
         var array = [0, 1, 2, 3];
         array = shuffle(array);
-
-        for (var i = 0; i < 4; i++) {
-            matrix[i].push(array[i]);
-        }
+        for (var i = 0; i < 4; i++) matrix[i].push(array[i]);
     }
 
     for (var i = 0; i < 4; i++) {
         var comb = "";
-        for (var j = 0; j < 10; j++) {
-            var r = matrix[i][j];
-            comb += r.toString();
-        }
-
+        for (var j = 0; j < 10; j++) comb += matrix[i][j].toString();
         eim.setProperty("stage6_comb" + (i + 1), comb);
     }
 }
 
 function afterSetup(eim) {
-    eim.setIntProperty("escortFail", 0);    // refresh friendly status
-
+    eim.setIntProperty("escortFail", 0);
     var books = [-1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 2, 3];
     shuffle(books);
-
-    eim.setIntProperty("stg1_b0", books[0]);
-    eim.setIntProperty("stg1_b1", books[1]);
-    eim.setIntProperty("stg1_b2", books[2]);
-    eim.setIntProperty("stg1_b3", books[3]);
-    eim.setIntProperty("stg1_b4", books[4]);
-    eim.setIntProperty("stg1_b5", books[5]);
-    eim.setIntProperty("stg1_b6", books[6]);
-    eim.setIntProperty("stg1_b7", books[7]);
-    eim.setIntProperty("stg1_b8", books[8]);
-    eim.setIntProperty("stg1_b9", books[9]);
-    eim.setIntProperty("stg1_b10", books[10]);
-    eim.setIntProperty("stg1_b11", books[11]);
-    eim.setIntProperty("stg1_b12", books[12]);
-    eim.setIntProperty("stg1_b13", books[13]);
-    eim.setIntProperty("stg1_b14", books[14]);
-    eim.setIntProperty("stg1_b15", books[15]);
-    eim.setIntProperty("stg1_b16", books[16]);
-    eim.setIntProperty("stg1_b17", books[17]);
-    eim.setIntProperty("stg1_b18", books[18]);
-    eim.setIntProperty("stg1_b19", books[19]);
-    eim.setIntProperty("stg1_b20", books[20]);
-    eim.setIntProperty("stg1_b21", books[21]);
-    eim.setIntProperty("stg1_b22", books[22]);
-    eim.setIntProperty("stg1_b23", books[23]);
-    eim.setIntProperty("stg1_b24", books[24]);
-    eim.setIntProperty("stg1_b25", books[25]);
+    for (var i = 0; i < books.length; i++) {
+        eim.setIntProperty("stg1_b" + i, books[i]);
+    }
 }
 
 function respawnStages(eim) {
@@ -254,20 +143,18 @@ function respawnStages(eim) {
         var mapobj = eim.getMapInstance(926110401);
         var mobcount = mapobj.countMonster(9300150);
         var mobobj;
-        const LifeFactory = Java.type('server.life.LifeFactory');
-        const Point = Java.type('java.awt.Point');
+
         if (mobcount == 0) {
             mobobj = LifeFactory.getMonster(9300150);
-            mapobj.spawnMonsterOnGroundBelow(mobobj, new Point(-278, -126));
+            mapobj.spawnMonsterOnGroundBelow(mobobj, new java.awt.Point(-278, -126));
 
             mobobj = LifeFactory.getMonster(9300150);
-            mapobj.spawnMonsterOnGroundBelow(mobobj, new Point(-542, -126));
+            mapobj.spawnMonsterOnGroundBelow(mobobj, new java.awt.Point(-542, -126));
         } else if (mobcount == 1) {
             mobobj = LifeFactory.getMonster(9300150);
-            mapobj.spawnMonsterOnGroundBelow(mobobj, new Point(-542, -126));
+            mapobj.spawnMonsterOnGroundBelow(mobobj, new java.awt.Point(-542, -126));
         }
     }
-
     eim.schedule("respawnStages", 15 * 1000);
 }
 
@@ -279,8 +166,6 @@ function playerEntry(eim, player) {
 function scheduledTimeout(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -301,7 +186,6 @@ function changedMap(eim, player, mapid) {
         } else {
             eim.unregisterPlayer(player);
         }
-
     } else if (mapid == 926110203 && eim.getIntProperty("yuleteTimeout") == 0) {
         eim.setIntProperty("yuleteTimeout", 1);
         eim.schedule("yuleteAction", 10 * 1000);
@@ -311,7 +195,6 @@ function changedMap(eim, player, mapid) {
 function yuleteAction(eim) {
     if (eim.getIntProperty("yuleteTalked") == 1) {
         eim.setIntProperty("yuletePassed", 1);
-
         eim.dropMessage(5, "Yulete: Ugh, you guys disgust me. All I desired was to make this nation the greatest alchemy powerhouse of the entire world. If they won't accept this, I will make it true by myself, at any costs!!!");
     } else {
         eim.dropMessage(5, "Yulete: Hahaha... Did you really think I was going to be so disprepared knowing that the Magatia societies' dogs would be coming in my pursuit after my actions? Fools!");
@@ -323,33 +206,15 @@ function yuleteAction(eim) {
 
     mapobj.destroyNPC(2112010);
 
-    const LifeFactory = Java.type('server.life.LifeFactory');
-    const Point = Java.type('java.awt.Point');
     var mobobj1, mobobj2;
-    for (var i = 0; i < 5; i++) {
-        mobobj1 = LifeFactory.getMonster(mob1);
-        mobobj2 = LifeFactory.getMonster(mob2);
-
-        mapobj.spawnMonsterOnGroundBelow(mobobj1, new Point(-455, 135));
-        mapobj.spawnMonsterOnGroundBelow(mobobj2, new Point(-455, 135));
-    }
-
-
-    for (var i = 0; i < 5; i++) {
-        mobobj1 = LifeFactory.getMonster(mob1);
-        mobobj2 = LifeFactory.getMonster(mob2);
-
-        mapobj.spawnMonsterOnGroundBelow(mobobj1, new Point(0, 135));
-        mapobj.spawnMonsterOnGroundBelow(mobobj2, new Point(0, 135));
-    }
-
-
-    for (var i = 0; i < 5; i++) {
-        mobobj1 = LifeFactory.getMonster(mob1);
-        mobobj2 = LifeFactory.getMonster(mob2);
-
-        mapobj.spawnMonsterOnGroundBelow(mobobj1, new Point(360, 135));
-        mapobj.spawnMonsterOnGroundBelow(mobobj2, new Point(360, 135));
+    var xPoints = [-455, 0, 360];
+    for (var x of xPoints) {
+        for (var i = 0; i < 5; i++) {
+            mobobj1 = LifeFactory.getMonster(mob1);
+            mobobj2 = LifeFactory.getMonster(mob2);
+            mapobj.spawnMonsterOnGroundBelow(mobobj1, new java.awt.Point(x, 135));
+            mapobj.spawnMonsterOnGroundBelow(mobobj2, new java.awt.Point(x, 135));
+        }
     }
 }
 
@@ -360,9 +225,7 @@ function changedLeader(eim, leader) {
     }
 }
 
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
+function playerRevive(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
         end(eim);
@@ -392,10 +255,6 @@ function disbandParty(eim) {
     if (!eim.isEventCleared()) {
         end(eim);
     }
-}
-
-function monsterValue(eim, mobId) {
-    return 1;
 }
 
 function end(eim) {
@@ -428,14 +287,12 @@ function monsterKilled(mob, eim) {
         if (map.countMonsters() == 0) {
             eim.showClearEffect();
             eim.giveEventPlayersStageReward(5);
-
             generateStg6Combo(eim);
             map.getReactorByName("jnr6_out").forceHitReactor(1);
         }
     } else if (mob.getId() == 9300151 || mob.getId() == 9300152) {
         eim.showClearEffect();
         eim.giveEventPlayersStageReward(7);
-
         eim.spawnNpc(2112005, new java.awt.Point(-370, -150), map);
 
         var gain = (eim.getIntProperty("escortFail") == 1) ? 90000 : ((mob.getId() == 9300139) ? 105000 : 140000);
@@ -443,10 +300,7 @@ function monsterKilled(mob, eim) {
 
         map.killAllMonstersNotFriendly();
 
-        if (mob.getId() == 9300139) {
-            eim.setIntProperty("normalClear", 1);
-        }
-
+        if (mob.getId() == 9300139) eim.setIntProperty("normalClear", 1);
         eim.clearPQ();
     }
 }
@@ -455,8 +309,10 @@ function friendlyKilled(mob, eim) {
     eim.setIntProperty("escortFail", 1);
 }
 
+// ---------- FILLER FUNCTIONS ----------
+function playerUnregistered(eim, player) {}
+function playerDead(eim, player) {}
+function monsterValue(eim, mobId) { return 1; }
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}

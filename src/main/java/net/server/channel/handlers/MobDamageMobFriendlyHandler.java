@@ -25,7 +25,7 @@ import client.Client;
 import constants.id.MobId;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import server.life.Monster;
 import server.maps.MapleMap;
 import tools.PacketCreator;

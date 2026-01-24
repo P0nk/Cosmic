@@ -97,10 +97,8 @@ import net.server.world.PartyOperation;
 import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import provider.Data;
-import provider.DataTool;
 import scripting.AbstractPlayerInteraction;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 import scripting.item.ItemScriptManager;
 import scripting.npc.NPCScriptManager;
 import server.CashShop;
@@ -115,7 +113,7 @@ import server.Storage;
 import server.ThreadManager;
 import server.TimerManager;
 import server.Trade;
-import server.events.Events;
+import server.events.MapleEventEntry;
 import server.events.RescueGaga;
 import server.events.gm.Fitness;
 import server.events.gm.Ola;
@@ -125,7 +123,6 @@ import server.life.MobSkillFactory;
 import server.life.MobSkillId;
 import server.life.MobSkillType;
 import server.life.Monster;
-import server.life.PlayerNPC;
 import server.maps.AbstractAnimatedMapObject;
 import server.maps.Door;
 import server.maps.DoorObject;
@@ -345,7 +342,7 @@ public class Character extends AbstractCharacterObject {
     private byte pendantExp = 0, lastmobcount = 0, doorSlot = -1;
     private final List<Integer> trockmaps = new ArrayList<>();
     private final List<Integer> viptrockmaps = new ArrayList<>();
-    private Map<String, Events> events = new LinkedHashMap<>();
+    private Map<String, MapleEventEntry> events = new LinkedHashMap<>();
     private PartyQuest partyQuest = null;
     private final List<Pair<DelayedQuestUpdate, Object[]>> npcUpdateQuests = new LinkedList<>();
     private Dragon dragon = null;
@@ -464,6 +461,22 @@ public class Character extends AbstractCharacterObject {
     public long getLastBotCheckTime() {
         return lastBotCheckTime;
     }
+
+    // [ANTI-HACK] Kami / Distance Suspicion Counter
+    private int kamiViolations = 0;
+
+    public int getKamiViolations() {
+        return kamiViolations;
+    }
+
+    public void addKamiViolation() {
+        this.kamiViolations++;
+    }
+
+    public void resetKamiViolations() {
+        this.kamiViolations = 0;
+    }
+
 
     private Character() {
         super.setListener(new AbstractCharacterListener() {
@@ -8248,54 +8261,69 @@ public class Character extends AbstractCharacterObject {
         effLock.lock();
         statWlock.lock();
         try {
-            int tap = remainingAp + str + dex + int_ + luk, tsp = 1;
+            // Initialize tsp (Total SP) to 1 (the free SP from Job Advancement)
+            int tsp = 1;
+            int tap = remainingAp + str + dex + int_ + luk;
             int tstr = 4, tdex = 4, tint = 4, tluk = 4;
 
+            // Determine the Job Advancement requirement level
+            // Standard is Level 10, but Magicians (200/1200) are Level 8
+            int jobReqLevel = 10;
+
+            if (job.getId() == 200 || job.getId() == 1200) {
+                // Note: You can also use explicit case checking if GameConstants isn't available
+                jobReqLevel = 8;
+            }
+
+            // Calculate Attributes and adjust SP based on how 'late' the job change is
             switch (job.getId()) {
-                case 100:
-                case 1100:
-                case 2100:
+                case 100:  // Warrior
+                case 1100: // Dawn Warrior
+                case 2100: // Aran
                     tstr = 35;
-                    tsp += ((getLevel() - 10) * 3);
                     break;
-                case 200:
-                case 1200:
+                case 200:  // Magician
+                case 1200: // Blaze Wizard
                     tint = 20;
-                    tsp += ((getLevel() - 8) * 3);
+                    jobReqLevel = 8; // Explicitly setting here to match your switch logic
                     break;
-                case 300:
-                case 1300:
+                case 300:  // Bowman
+                case 1300: // Wind Archer
                     tdex = 25;
-                    tsp += ((getLevel() - 10) * 3);
                     break;
-                case 400:
-                case 1400:
+                case 400:  // Thief (Rogue)
+                case 1400: // Night Walker
                     tluk = 25;
-                    tsp += ((getLevel() - 10) * 3);
                     break;
-                case 500:
-                case 1500:
+                case 500:  // Pirate
+                case 1500: // Thunder Breaker
                     tdex = 25;
-                    tsp += ((getLevel() - 10) * 3);
                     break;
             }
 
+            // RETROACTIVE SP CALCULATION
+            // If player is above the requirement, add 3 SP for every extra level
+            if (getLevel() > jobReqLevel) {
+                tsp += (getLevel() - jobReqLevel) * 3;
+            }
+
+            // Subtract the auto-assigned stats from Total AP
             tap -= tstr;
             tap -= tdex;
             tap -= tint;
             tap -= tluk;
 
             if (tap >= 0) {
+                // Apply the changes
                 updateStrDexIntLukSp(tstr, tdex, tint, tluk, tap, tsp, GameConstants.getSkillBook(job.getId()));
             } else {
-                log.warn("Chr {} tried to have its stats reset without enough AP available");
+                log.warn("Chr {} tried to have its stats reset without enough AP available", getName());
             }
         } finally {
             statWlock.unlock();
             effLock.unlock();
         }
     }
-
     public void resetBattleshipHp() {
         int bshipLevel = Math.max(getLevel() - 120, 0);  // thanks alex12 for noticing battleship HP issues for low-level players
         this.battleshipHp = 400 * getSkillLevel(SkillFactory.getSkill(Corsair.BATTLE_SHIP)) + (bshipLevel * 200);
@@ -8970,7 +8998,7 @@ public class Character extends AbstractCharacterObject {
         try (PreparedStatement psEvent = con.prepareStatement("INSERT INTO eventstats (characterid, name, info) VALUES (?, ?, ?)")) {
             psEvent.setInt(1, id);
 
-            for (Map.Entry<String, Events> entry : events.entrySet()) {
+            for (Map.Entry<String, MapleEventEntry> entry : events.entrySet()) {
                 psEvent.setString(2, entry.getKey());
                 psEvent.setInt(3, entry.getValue().getInfo());
                 psEvent.addBatch();
@@ -10944,7 +10972,7 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
-    public Map<String, Events> getEvents() {
+    public Map<String, MapleEventEntry> getEvents() {
         return events;
     }
 

@@ -1,27 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Chapel Wedding (Refactored)
 */
-
-/**
- * @author: Ronan
- * @event: Chapel Wedding
- */
 
 var entryMap = 680000100;
 var exitMap = 680000500;
@@ -33,55 +12,37 @@ var maxMapId = 680000401;
 
 var startMsgTime = 4;
 var blessMsgTime = 5;
-
-var eventTime = 10;    // 10 minutes gathering
-var ceremonyTime = 20; // 20 minutes ceremony
-var blessingsTime = 15;// blessings are held until the 15th minute from the ceremony start
-var partyTime = 45;    // 45 minutes party
-
-var forceHideMsgTime = 10;  // unfortunately, EIM weddings don't send wedding talk packets to the server... this will need to suffice
-
-var eventBoss = true;   // spawns a Cake boss at the hunting ground
+var eventTime = 10;
+var ceremonyTime = 20;
+var blessingsTime = 15;
+var partyTime = 45;
+var forceHideMsgTime = 10;
+var eventBoss = true;
 var isCathedral = false;
-
 const maxLobbies = 1;
 
 function init() {}
-
-function getMaxLobbies() {
-    return maxLobbies;
-}
+function getMaxLobbies() { return maxLobbies; }
 
 function setEventExclusives(eim) {
-    var itemSet = [4031217, 4000313];    // golden key, golden maple leaf
-    eim.setExclusiveItems(itemSet);
+    eim.setExclusiveItems([4031217, 4000313]);
 }
 
 function setEventRewards(eim) {
-    var itemSet, itemQty, evLevel, expStages;
-
-    evLevel = 1;    //Rewards at clear PQ
-    itemSet = [];
-    itemQty = [];
-    eim.setEventRewards(evLevel, itemSet, itemQty);
-
-    expStages = [];    //bonus exp given on CLEAR stage signal
-    eim.setEventClearStageExp(expStages);
+    eim.setEventRewards(1, [], []);
+    eim.setEventClearStageExp([]);
 }
 
 function spawnCakeBoss(eim) {
     var mapObj = eim.getMapInstance(680000400);
-
-    const LifeFactory = Java.type('server.life.LifeFactory');
-    const Point = Java.type('java.awt.Point');
     var mobObj = LifeFactory.getMonster(9400606);
-    mapObj.spawnMonsterOnGroundBelow(mobObj, new Point(777, -177));
+    mapObj.spawnMonsterOnGroundBelow(mobObj, new java.awt.Point(777, -177));
 }
 
 function setup(level, lobbyid) {
     var eim = em.newMarriage("Wedding" + lobbyid);
     eim.setProperty("weddingId", "0");
-    eim.setProperty("weddingStage", "0");   // 0: gathering time, 1: wedding time, 2: ready to fulfill the wedding, 3: just married
+    eim.setProperty("weddingStage", "0");
     eim.setProperty("guestBlessings", "0");
     eim.setProperty("isPremium", "1");
     eim.setProperty("canJoin", "1");
@@ -93,9 +54,7 @@ function setup(level, lobbyid) {
     eim.initializeGiftItems();
 
     eim.getInstanceMap(680000400).resetPQ(level);
-    if (eventBoss) {
-        spawnCakeBoss(eim);
-    }
+    if (eventBoss) spawnCakeBoss(eim);
 
     respawnStages(eim);
     eim.startEventTimer(eventTime * 60000);
@@ -103,8 +62,6 @@ function setup(level, lobbyid) {
     setEventExclusives(eim);
     return eim;
 }
-
-function afterSetup(eim) {}
 
 function respawnStages(eim) {
     eim.getMapInstance(680000400).instanceMapRespawn();
@@ -115,7 +72,6 @@ function playerEntry(eim, player) {
     eim.setProperty("giftedItemG" + player.getId(), "0");
     eim.setProperty("giftedItemB" + player.getId(), "0");
     player.getAbstractPlayerInteraction().gainItem(4000313, 1);
-
     var map = eim.getMapInstance(entryMap);
     player.changeMap(map, map.getPortal(0));
 }
@@ -123,14 +79,13 @@ function playerEntry(eim, player) {
 function stopBlessings(eim) {
     var mapobj = eim.getMapInstance(entryMap + 10);
     mapobj.dropMessage(6, "Wedding Assistant: Alright people, our couple are preparing their vows to each other right now.");
-
     eim.setIntProperty("weddingStage", 2);
 }
 
 function sendWeddingAction(eim, type) {
     var chr = eim.getLeader();
+    var Wedding = Packages.tools.packets.WeddingPackets;
 
-    const Wedding = Java.type('tools.packets.Wedding');
     if (chr.getGender() == 0) {
         chr.getMap().broadcastMessage(Wedding.OnWeddingProgress(type == 2, eim.getIntProperty("groomId"), eim.getIntProperty("brideId"), type + 1));
     } else {
@@ -143,13 +98,13 @@ function hidePriestMsg(eim) {
 }
 
 function showStartMsg(eim) {
-    const Wedding = Java.type('tools.packets.Wedding');
+    var Wedding = Packages.tools.packets.WeddingPackets;
     eim.getMapInstance(entryMap + 10).broadcastMessage(Wedding.OnWeddingProgress(false, 0, 0, 0));
     eim.schedule("hidePriestMsg", forceHideMsgTime * 1000);
 }
 
 function showBlessMsg(eim) {
-    const Wedding = Java.type('tools.packets.Wedding');
+    var Wedding = Packages.tools.packets.WeddingPackets;
     eim.getMapInstance(entryMap + 10).broadcastMessage(Wedding.OnWeddingProgress(false, 0, 0, 1));
     eim.setIntProperty("guestBlessings", 1);
     eim.schedule("hidePriestMsg", forceHideMsgTime * 1000);
@@ -158,7 +113,6 @@ function showBlessMsg(eim) {
 function showMarriedMsg(eim) {
     sendWeddingAction(eim, 1);
     eim.schedule("hidePriestMsg", 10 * 1000);
-
     eim.restartEventTimer(partyTime * 60000);
 }
 
@@ -169,14 +123,10 @@ function scheduledTimeout(eim) {
 
         var mapobj = eim.getMapInstance(entryMap);
         var chr = mapobj.getCharacterById(eim.getIntProperty("groomId"));
-        if (chr != null) {
-            chr.changeMap(entryMap + 10, "we00");
-        }
+        if (chr != null) chr.changeMap(entryMap + 10, "we00");
 
         chr = mapobj.getCharacterById(eim.getIntProperty("brideId"));
-        if (chr != null) {
-            chr.changeMap(entryMap + 10, "we00");
-        }
+        if (chr != null) chr.changeMap(entryMap + 10, "we00");
 
         mapobj.dropMessage(6, "Wedding Assistant: The couple are heading to the altar, hurry hurry talk to me to arrange your seat.");
 
@@ -190,17 +140,9 @@ function scheduledTimeout(eim) {
     }
 }
 
-function playerUnregistered(eim, player) {}
-
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
     player.changeMap(exitMap, 0);
-}
-
-function playerLeft(eim, player) {
-    if (!eim.isEventCleared()) {
-        playerExit(eim, player);
-    }
 }
 
 function isMarrying(eim, player) {
@@ -219,47 +161,12 @@ function changedMap(eim, player, mapid) {
     }
 }
 
-function changedLeader(eim, leader) {}
-
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
-    if (isMarrying(eim, player)) {
-        eim.unregisterPlayer(player);
-        end(eim);
-    } else {
-        eim.unregisterPlayer(player);
-    }
-}
-
-function playerDisconnected(eim, player) {
-    if (isMarrying(eim, player)) {
-        eim.unregisterPlayer(player);
-        end(eim);
-    } else {
-        eim.unregisterPlayer(player);
-    }
-}
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function end(eim) {
     var party = eim.getPlayers();
-
     for (var i = 0; i < party.size(); i++) {
         playerExit(eim, party.get(i));
     }
     eim.dispose();
-}
-
-function giveRandomEventReward(eim, player) {
-    eim.giveEventReward(player);
 }
 
 function clearPQ(eim) {
@@ -267,20 +174,25 @@ function clearPQ(eim) {
     eim.setEventCleared();
 }
 
-function isCakeBoss(mob) {
-    return mob.getId() == 9400606;
-}
-
 function monsterKilled(mob, eim) {
-    if (isCakeBoss(mob)) {
+    if (mob.getId() == 9400606) {
         eim.showClearEffect();
         eim.clearPQ();
     }
 }
 
+// ---------- FILLER FUNCTIONS ----------
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function playerLeft(eim, player) { if (!eim.isEventCleared()) playerExit(eim, player); }
+function changedLeader(eim, leader) {}
+function playerDead(eim, player) {}
+function playerRevive(eim, player) { if (isMarrying(eim, player)) { eim.unregisterPlayer(player); end(eim); } else { eim.unregisterPlayer(player); } }
+function playerDisconnected(eim, player) { if (isMarrying(eim, player)) { eim.unregisterPlayer(player); end(eim); } else { eim.unregisterPlayer(player); } }
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function monsterValue(eim, mobId) { return 1; }
+function giveRandomEventReward(eim, player) { eim.giveEventReward(player); }
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}
-

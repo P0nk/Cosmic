@@ -17,10 +17,10 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package net.server.coordinator.world;
+package server.events.tasks;
 
 import config.YamlConfig;
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -19,7 +19,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package scripting.event;
+package server.events;
 
 import client.Character;
 import config.YamlConfig;
@@ -32,7 +32,8 @@ import net.server.world.PartyCharacter;
 import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scripting.event.scheduler.EventScriptScheduler;
+import server.events.scheduler.EventScheduledFuture;
+import server.events.scheduler.EventScriptScheduler;
 import server.Marriage;
 import server.ThreadManager;
 import server.expeditions.Expedition;
@@ -944,5 +945,18 @@ public class EventManager {
         public void run() {
             instantiateQueuedInstance();
         }
+    }
+
+    // Add this to server.events.EventManager.java
+
+    public void dispose() {
+        // 1. Cancel all schedules
+        cancel();
+
+        // 2. Clear instances
+        for (EventInstanceManager eim : instances.values()) {
+            eim.dispose();
+        }
+        instances.clear();
     }
 }

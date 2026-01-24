@@ -19,7 +19,7 @@
 */
 package net.server.task;
 
-import net.server.coordinator.world.EventRecallCoordinator;
+import server.events.tasks.EventRecallCoordinator;
 
 /**
  * @author Ronan

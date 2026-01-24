@@ -1,26 +1,6 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/**
- * @Author Ronan
- * Event - Jonathan's Test Quest
- **/
+    Event - Jonathan's Test Quest (Refactored)
+**/
 
 var entryMap = 912020000;
 var exitMap = 120000102;
@@ -28,8 +8,7 @@ var exitMap = 120000102;
 var minMapId = 912020000;
 var maxMapId = 912020000;
 
-var eventTime = 2; //2 minutes
-
+var eventTime = 2; // 2 minutes
 const maxLobbies = 7;
 
 function getMaxLobbies() {
@@ -54,24 +33,16 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
-function respawnStages(eim) {}
-
 function playerEntry(eim, player) {
     var map = eim.getMapInstance(entryMap);
     player.changeMap(map, map.getPortal(0));
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
     eim.dispose();
     em.setProperty("noEntry", "false");
 }
-
-function playerLeft(eim, player) {}
 
 function scheduledTimeout(eim) {
     var player = eim.getPlayers().get(0);
@@ -94,24 +65,19 @@ function clearPQ(eim) {
     eim.setEventCleared();
 }
 
-function monsterKilled(mob, eim) {}
-
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
 function monsterValue(eim, mobId) {
     return 1;
 }
 
-function allMonstersDead(eim) {}
-
-function cancelSchedule() {}
-
-function dispose() {}
-
-
 // ---------- FILLER FUNCTIONS ----------
-
+function respawnStages(eim) {}
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function playerLeft(eim, player) {}
+function monsterKilled(mob, eim) {}
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function allMonstersDead(eim) {}
+function cancelSchedule() {}
+function dispose() {}
 function changedLeader(eim, leader) {}
-

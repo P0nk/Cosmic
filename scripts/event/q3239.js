@@ -1,3 +1,7 @@
+/*
+    Quest 3239 Event (Refactored)
+*/
+
 var entryMap;
 var exitMap;
 var eventLength = 20;
@@ -17,15 +21,12 @@ function setup(level, lobbyid) {
 function playerEntry(eim, player) {
     var im = eim.getInstanceMap(entryMap.getId());
 
-    // Reset instance
     im.clearDrops();
     im.resetReactors();
     im.shuffleReactors();
 
-    // Start timer
     eim.startEventTimer(eventLength * 60 * 1000);
 
-    // Warp player and mark event as occupied
     player.changeMap(entryMap, 0);
     em.setProperty("noEntry", "true");
 }
@@ -48,7 +49,7 @@ function scheduledTimeout(eim) {
 }
 
 function end(eim) {
-    var party = eim.getPlayers(); // should only ever be one player
+    var party = eim.getPlayers();
     for (var i = 0; i < party.size(); i++) {
         var player = party.get(i);
         eim.unregisterPlayer(player);
@@ -59,8 +60,7 @@ function end(eim) {
     em.setProperty("noEntry", "false");
 }
 
-// Stub/filler functions
-
+// ---------- FILLER FUNCTIONS ----------
 function disbandParty(eim, player) {}
 function afterSetup(eim) {}
 function playerUnregistered(eim, player) {}

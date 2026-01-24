@@ -1,31 +1,9 @@
 /*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Pirate PQ (Refactored)
 */
 
-/**
- * @author: Ronan
- * @event: Pirate PQ
- */
-
 var isPq = true;
-var isGrindMode = false;     // stages done after breaking all boxes on maps
-
+var isGrindMode = false;
 var minPlayers = 1, maxPlayers = 6;
 var minLevel = 55, maxLevel = 255;
 var entryMap = 925100000;
@@ -35,9 +13,7 @@ var clearMap = 925100600;
 
 var minMapId = 925100000;
 var maxMapId = 925100500;
-
-var eventTime = 4;     // 4 minutes
-
+var eventTime = 4;
 const maxLobbies = 1;
 
 function init() {
@@ -50,48 +26,28 @@ function getMaxLobbies() {
 
 function setEventRequirements() {
     var reqStr = "";
-
-    reqStr += "\r\n    Number of players: ";
-    if (maxPlayers - minPlayers >= 1) {
-        reqStr += minPlayers + " ~ " + maxPlayers;
-    } else {
-        reqStr += minPlayers;
-    }
-
-    reqStr += "\r\n    Level range: ";
-    if (maxLevel - minLevel >= 1) {
-        reqStr += minLevel + " ~ " + maxLevel;
-    } else {
-        reqStr += minLevel;
-    }
-
-    reqStr += "\r\n    Time limit: ";
-    reqStr += eventTime + " minutes";
-
+    reqStr += "\r\n    Number of players: " + (maxPlayers - minPlayers >= 1 ? minPlayers + " ~ " + maxPlayers : minPlayers);
+    reqStr += "\r\n    Level range: " + (maxLevel - minLevel >= 1 ? minLevel + " ~ " + maxLevel : minLevel);
+    reqStr += "\r\n    Time limit: " + eventTime + " minutes";
     em.setProperty("party", reqStr);
 }
 
 function setEventExclusives(eim) {
-    var itemSet = [4001117, 4001120, 4001121, 4001122];
-    eim.setExclusiveItems(itemSet);
+    eim.setExclusiveItems([4001117, 4001120, 4001121, 4001122]);
 }
 
 function setEventRewards(eim) {}
 
-function getEligibleParty(party) {      //selects, from the given party, the team that is allowed to attempt this event
+function getEligibleParty(party) {
     var eligible = [];
     var hasLeader = false;
 
     if (party.size() > 0) {
         var partyList = party.toArray();
-
         for (var i = 0; i < party.size(); i++) {
             var ch = partyList[i];
-
             if (ch.getMapId() == recruitMap && ch.getLevel() >= minLevel && ch.getLevel() <= maxLevel) {
-                if (ch.isLeader()) {
-                    hasLeader = true;
-                }
+                if (ch.isLeader()) hasLeader = true;
                 eligible.push(ch);
             }
         }
@@ -107,44 +63,31 @@ function setup(level, lobbyid) {
     var eim = em.newInstance("Pirate" + lobbyid);
     eim.setProperty("level", level);
 
-    eim.setProperty("stage2", "0");
-    eim.setProperty("stage2a", "0");
-    eim.setProperty("stage3a", "0");
-    eim.setProperty("stage2b", "0");
-    eim.setProperty("stage3b", "0");
-    eim.setProperty("stage4", "0");
-    eim.setProperty("stage5", "0");
-
+    var props = ["stage2", "stage2a", "stage3a", "stage2b", "stage3b", "stage4", "stage5", "openedChests", "openedBoxes"];
+    for (var p of props) eim.setProperty(p, "0");
     eim.setProperty("curStage", "1");
     eim.setProperty("grindMode", isGrindMode ? "1" : "0");
 
-    eim.setProperty("openedChests", "0");
-    eim.setProperty("openedBoxes", "0");
     eim.getInstanceMap(925100000).resetPQ(level);
     eim.getInstanceMap(925100000).shuffleReactors();
-
     eim.getInstanceMap(925100100).resetPQ(level);
+
+    // Stage 200 Setup
     var map = eim.getInstanceMap(925100200);
     map.resetPQ(level);
     map.shuffleReactors();
     for (var i = 0; i < 5; i++) {
-        var mob = em.getMonster(9300124);
-        var mob2 = em.getMonster(9300125);
-        var mob3 = em.getMonster(9300124);
-        var mob4 = em.getMonster(9300125);
-        eim.registerMonster(mob);
-        eim.registerMonster(mob2);
-        eim.registerMonster(mob3);
-        eim.registerMonster(mob4);
-        mob.changeDifficulty(level, isPq);
-        mob2.changeDifficulty(level, isPq);
-        mob3.changeDifficulty(level, isPq);
-        mob4.changeDifficulty(level, isPq);
-        map.spawnMonsterOnGroundBelow(mob, new java.awt.Point(430, 75));
-        map.spawnMonsterOnGroundBelow(mob2, new java.awt.Point(1600, 75));
-        map.spawnMonsterOnGroundBelow(mob3, new java.awt.Point(430, 238));
-        map.spawnMonsterOnGroundBelow(mob4, new java.awt.Point(1600, 238));
+        var mobs = [9300124, 9300125, 9300124, 9300125];
+        var points = [new java.awt.Point(430, 75), new java.awt.Point(1600, 75), new java.awt.Point(430, 238), new java.awt.Point(1600, 238)];
+        for (var j=0; j<4; j++) {
+            var mob = em.getMonster(mobs[j]);
+            eim.registerMonster(mob);
+            mob.changeDifficulty(level, isPq);
+            map.spawnMonsterOnGroundBelow(mob, points[j]);
+        }
     }
+
+    // Stage 201 Setup
     map = eim.getInstanceMap(925100201);
     map.resetPQ(level);
     for (var i = 0; i < 10; i++) {
@@ -157,28 +100,25 @@ function setup(level, lobbyid) {
         map.spawnMonsterOnGroundBelow(mob, new java.awt.Point(0, 238));
         map.spawnMonsterOnGroundBelow(mob2, new java.awt.Point(1700, 238));
     }
+
     eim.getInstanceMap(925100202).resetPQ(level);
+
+    // Stage 300 Setup
     map = eim.getInstanceMap(925100300);
     map.resetPQ(level);
     map.shuffleReactors();
     for (var i = 0; i < 5; i++) {
-        var mob = em.getMonster(9300124);
-        var mob2 = em.getMonster(9300125);
-        var mob3 = em.getMonster(9300124);
-        var mob4 = em.getMonster(9300125);
-        eim.registerMonster(mob);
-        eim.registerMonster(mob2);
-        eim.registerMonster(mob3);
-        eim.registerMonster(mob4);
-        mob.changeDifficulty(level, isPq);
-        mob2.changeDifficulty(level, isPq);
-        mob3.changeDifficulty(level, isPq);
-        mob4.changeDifficulty(level, isPq);
-        map.spawnMonsterOnGroundBelow(mob, new java.awt.Point(430, 75));
-        map.spawnMonsterOnGroundBelow(mob2, new java.awt.Point(1600, 75));
-        map.spawnMonsterOnGroundBelow(mob3, new java.awt.Point(430, 238));
-        map.spawnMonsterOnGroundBelow(mob4, new java.awt.Point(1600, 238));
+        var mobs = [9300124, 9300125, 9300124, 9300125];
+        var points = [new java.awt.Point(430, 75), new java.awt.Point(1600, 75), new java.awt.Point(430, 238), new java.awt.Point(1600, 238)];
+        for (var j=0; j<4; j++) {
+            var mob = em.getMonster(mobs[j]);
+            eim.registerMonster(mob);
+            mob.changeDifficulty(level, isPq);
+            map.spawnMonsterOnGroundBelow(mob, points[j]);
+        }
     }
+
+    // Stage 301 Setup
     map = eim.getInstanceMap(925100301);
     map.resetPQ(level);
     for (var i = 0; i < 10; i++) {
@@ -191,26 +131,23 @@ function setup(level, lobbyid) {
         map.spawnMonsterOnGroundBelow(mob, new java.awt.Point(0, 238));
         map.spawnMonsterOnGroundBelow(mob2, new java.awt.Point(1700, 238));
     }
+
     eim.getInstanceMap(925100302).resetPQ(level);
     eim.getInstanceMap(925100400).resetPQ(level);
     eim.getInstanceMap(925100500).resetPQ(level);
 
     respawnStages(eim);
-
     eim.startEventTimer(eventTime * 60000);
     setEventRewards(eim);
     setEventExclusives(eim);
     return eim;
 }
 
-function afterSetup(eim) {}
-
 function respawnStages(eim) {
     var stg = eim.getIntProperty("stage2");
-    if (stg < 3) {  // thanks Chloek3, seth1, BHB for suggesting map respawn rather than waves on stg2
+    if (stg < 3) {
         eim.getMapInstance(925100100).spawnAllMonsterIdFromMapSpawnList(9300114 + stg, eim.getIntProperty("level"), true);
     }
-
     eim.getMapInstance(925100400).instanceMapRespawn();
     eim.schedule("respawnStages", 10 * 1000);
 }
@@ -223,8 +160,6 @@ function playerEntry(eim, player) {
 function scheduledTimeout(eim) {
     end(eim);
 }
-
-function playerUnregistered(eim, player) {}
 
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
@@ -239,33 +174,11 @@ function playerLeft(eim, player) {
 
 function changedMapInside(eim, mapid) {
     var stage = eim.getIntProperty("curStage");
-
-    if (stage == 1) {
-        if (mapid == 925100100) {
-            eim.restartEventTimer(6 * 60 * 1000);
-            eim.setIntProperty("curStage", 2);
-        }
-    } else if (stage == 2) {
-        if (mapid == 925100200) {
-            eim.restartEventTimer(6 * 60 * 1000);
-            eim.setIntProperty("curStage", 3);
-        }
-    } else if (stage == 3) {
-        if (mapid == 925100300) {
-            eim.restartEventTimer(6 * 60 * 1000);
-            eim.setIntProperty("curStage", 4);
-        }
-    } else if (stage == 4) {
-        if (mapid == 925100400) {
-            eim.restartEventTimer(6 * 60 * 1000);
-            eim.setIntProperty("curStage", 5);
-        }
-    } else if (stage == 5) {
-        if (mapid == 925100500) {
-            eim.restartEventTimer(8 * 60 * 1000);
-            eim.setIntProperty("curStage", 6);
-        }
-    }
+    if (stage == 1 && mapid == 925100100) { eim.restartEventTimer(6 * 60 * 1000); eim.setIntProperty("curStage", 2); }
+    else if (stage == 2 && mapid == 925100200) { eim.restartEventTimer(6 * 60 * 1000); eim.setIntProperty("curStage", 3); }
+    else if (stage == 3 && mapid == 925100300) { eim.restartEventTimer(6 * 60 * 1000); eim.setIntProperty("curStage", 4); }
+    else if (stage == 4 && mapid == 925100400) { eim.restartEventTimer(6 * 60 * 1000); eim.setIntProperty("curStage", 5); }
+    else if (stage == 5 && mapid == 925100500) { eim.restartEventTimer(8 * 60 * 1000); eim.setIntProperty("curStage", 6); }
 }
 
 function changedMap(eim, player, mapid) {
@@ -288,9 +201,7 @@ function changedLeader(eim, leader) {
     }
 }
 
-function playerDead(eim, player) {}
-
-function playerRevive(eim, player) { // player presses ok on the death pop up.
+function playerRevive(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
         eim.unregisterPlayer(player);
         end(eim);
@@ -298,7 +209,6 @@ function playerRevive(eim, player) { // player presses ok on the death pop up.
         eim.unregisterPlayer(player);
     }
 }
-
 
 function playerDisconnected(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
@@ -322,10 +232,6 @@ function disbandParty(eim) {
     }
 }
 
-function monsterValue(eim, mobId) {
-    return 1;
-}
-
 function end(eim) {
     var party = eim.getPlayers();
     for (var i = 0; i < party.size(); i++) {
@@ -337,40 +243,21 @@ function end(eim) {
 function clearPQ(eim) {
     eim.stopEventTimer();
     eim.setEventCleared();
-
-    var chests = parseInt(eim.getProperty("openedChests"));
-//    var expGain = (chests == 0 ? 28000 : (chests == 1 ? 35000 : 42000)); // Original
-//    eim.giveEventPlayersExp(expGain); // Original
-//    eim.giveEventPlayersExpTier(expGain); Original
     eim.giveEventPlayersExpTier([55,70,80,95,120], -1);
     eim.giveEventPlayersCash(2000);
-
     eim.warpEventTeam(925100600);
-}
-
-function isLordPirate(mob) {
-    var mobid = mob.getId();
-    return (mobid == 9300105) || (mobid == 9300106) || (mobid == 9300107) || (mobid == 9300119);
-}
-
-function passedGrindMode(map, eim) {
-    if (eim.getIntProperty("grindMode") == 0) {
-        return true;
-    }
-    return eim.activatedAllReactorsOnMap(map, 2511000, 2517999);
 }
 
 function monsterKilled(mob, eim) {
     var map = mob.getMap();
 
-    if (isLordPirate(mob)) {  // lord pirate defeated, spawn the little fella!
+    if (isLordPirate(mob)) {
         map.broadcastStringMessage(5, "As Lord Pirate dies, Wu Yang is released!");
         eim.spawnNpc(2094001, new java.awt.Point(777, 140), mob.getMap());
     }
 
     if (map.countMonsters() == 0) {
         var stage = ((map.getId() % 1000) / 100) + 1;
-
         if ((stage == 1 || stage == 3 || stage == 4) && passedGrindMode(map, eim)) {
             eim.showClearEffect(map.getId());
         } else if (stage == 5) {
@@ -381,8 +268,22 @@ function monsterKilled(mob, eim) {
     }
 }
 
+function isLordPirate(mob) {
+    var mobid = mob.getId();
+    return (mobid == 9300105) || (mobid == 9300106) || (mobid == 9300107) || (mobid == 9300119);
+}
+
+function passedGrindMode(map, eim) {
+    if (eim.getIntProperty("grindMode") == 0) return true;
+    return eim.activatedAllReactorsOnMap(map, 2511000, 2517999);
+}
+
+// ---------- FILLER FUNCTIONS ----------
+function afterSetup(eim) {}
+function playerUnregistered(eim, player) {}
+function playerDead(eim, player) {}
+function monsterValue(eim, mobId) { return 1; }
+function giveRandomEventReward(eim, player) { eim.giveEventReward(player); }
 function allMonstersDead(eim) {}
-
 function cancelSchedule() {}
-
 function dispose(eim) {}

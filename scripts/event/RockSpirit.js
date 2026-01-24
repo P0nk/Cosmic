@@ -1,23 +1,6 @@
-/* 
- * This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
-                       Matthias Butz <matze@odinms.de>
-                       Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation. You may not use, modify
-    or distribute this program under any other version of the
-    GNU Affero General Public License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*
+    Rock Spirit (Refactored)
+*/
 
 var entryMap;
 var exitMap;
@@ -46,8 +29,6 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {}
-
 function respawn(eim) {
     var map = eim.getMapInstance(entryMap.getId());
     var map2 = eim.getMapInstance(otherMap.getId());
@@ -57,7 +38,6 @@ function respawn(eim) {
     map2.instanceMapRespawn();
     eim.schedule("respawn", 10000);
 }
-
 
 function playerEntry(eim, player) {
     var amplifierMap = eim.getMapInstance(entryMap.getId());
@@ -69,8 +49,6 @@ function playerRevive(eim, player) {
     player.respawn(eim, exitMap);
     return false;
 }
-
-function playerDead(eim, player) {}
 
 function playerDisconnected(eim, player) {
     if (eim.isEventTeamLackingNow(true, minPlayers, player)) {
@@ -92,10 +70,6 @@ function changedMap(eim, player, mapid) {
     }
 }
 
-function monsterValue(eim, mobId) {
-    return -1;
-}
-
 function end(eim) {
     var party = eim.getPlayers();
     for (var i = 0; i < party.size(); i++) {
@@ -104,34 +78,26 @@ function end(eim) {
     eim.dispose();
 }
 
-function leftParty(eim, player) {}
-
-function disbandParty(eim) {}
-
-function playerUnregistered(eim, player) {}
-
 function playerExit(eim, player) {
     eim.unregisterPlayer(player);
     player.changeMap(exitMap, exitMap.getPortal(0));
 }
-
-function cancelSchedule() {}
-
-function dispose() {}
-
-function clearPQ(eim) {}
-
-function monsterKilled(mob, eim) {}
-
-function allMonstersDead(eim) {}
 
 function timeOut(eim) {
     end(eim);
 }
 
 // ---------- FILLER FUNCTIONS ----------
-
+function afterSetup(eim) {}
+function playerDead(eim, player) {}
+function monsterValue(eim, mobId) { return -1; }
+function leftParty(eim, player) {}
+function disbandParty(eim) {}
+function playerUnregistered(eim, player) {}
+function cancelSchedule() {}
+function dispose() {}
+function clearPQ(eim) {}
+function monsterKilled(mob, eim) {}
+function allMonstersDead(eim) {}
 function scheduledTimeout(eim) {}
-
 function changedLeader(eim, leader) {}
-

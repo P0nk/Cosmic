@@ -19,7 +19,7 @@
 */
 package server.maps;
 
-import scripting.event.EventInstanceManager;
+import server.events.EventInstanceManager;
 
 import java.util.HashMap;
 import java.util.Map;
