@@ -32,7 +32,7 @@ var oreNames = {
     4004004: "Dark Crystal Ore",
     4011000: "Bronze", 4011001: "Steel", 4011002: "Mithril",
     4011003: "Adamantium", 4011004: "Silver", 4011005: "Orihalcon",
-    4011006: "Gold", 4011007: "Lidium", 4021000: "Garnet",
+    4011006: "Gold", 4011007: "Moon Rock",4011008: "Lidium", 4021000: "Garnet",
     4021001: "Amethyst", 4021002: "Aquamarine", 4021003: "Emerald",
     4021004: "Opal", 4021005: "Sapphire", 4021006: "Topaz",
     4021007: "Diamond", 4021008: "Black Crystal", 4005000: "Power Crystal",
