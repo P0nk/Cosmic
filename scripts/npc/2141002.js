@@ -67,7 +67,7 @@ function action(mode, type, selection) {
             }
 
             // Reset stage and properties
-            eim.setIntProperty("stage", 1);
+            eim.setIntProperty("stage", 5);
             eim.setIntProperty("defeatedBoss", 0);
             eim.setIntProperty("fallenPlayers", 0);
 
