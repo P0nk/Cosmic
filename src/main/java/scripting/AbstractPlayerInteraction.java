@@ -190,7 +190,9 @@ public class AbstractPlayerInteraction {
     }
 
     public EventManager getEventManager(String event) {
-        return getClient().getEventManager(event);
+        // Direct Route: Client -> Channel -> EventScriptManager -> EventManager
+        // This bypasses the need for Client.java to have wrapper methods.
+        return getClient().getChannelServer().getEventSM().getEventManager(event);
     }
 
     public EventInstanceManager getEventInstance() {
