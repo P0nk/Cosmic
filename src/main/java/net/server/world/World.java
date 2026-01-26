@@ -487,6 +487,9 @@ public class World {
     }
 
     public int getTransportationTime(int travelTime) {
+        if (travelrate <= 0) {
+            return travelTime; // Safety fallback
+        }
         return (int) Math.ceil((double) travelTime / travelrate);
     }
 

@@ -54,7 +54,6 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-// [FIX] Added SQL Imports
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -132,7 +131,7 @@ public final class Channel {
         this.world = world;
         this.channel = channel;
 
-        this.ongoingStartTime = startTime + 10000;  // rude approach to a world's last channel boot time, placeholder for the 1st wedding reservation ever
+        this.ongoingStartTime = startTime + 10000;
         this.mapManager = new MapManager(null, world, channel);
         this.port = BASE_PORT + (this.channel - 1) + (world * 100);
         this.ip = YamlConfig.config.server.HOST + ":" + port;
@@ -145,12 +144,27 @@ public final class Channel {
             this.channelServer = initServer(port, world, channel);
             expedType.addAll(Arrays.asList(ExpeditionType.values()));
 
-            if (Server.getInstance().isOnline()) {  // postpone event loading to improve boot time... thanks Riizade, daronhudson for noticing slow startup times
-                eventSM = new EventScriptManager(this, getEvents());
+            // [FIX] Delayed Event Initialization
+            // We load the script names immediately, but we wait to run 'init()'
+            // until the World is fully registered in the Server.
+            log.info("[EventLoader] Loading Event Scripts for Channel {}...", channel);
+            String[] eventNames = getEvents();
+            eventSM = new EventScriptManager(this, eventNames);
+
+            if (Server.getInstance().isOnline()) {
+                // If this is a reload command, start immediately
                 eventSM.init();
             } else {
-                String[] ev = {"0_EXAMPLE"};
-                eventSM = new EventScriptManager(this, ev);
+                // If this is server boot, delay init by 5 seconds to ensure World is registered
+                TimerManager.getInstance().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (eventSM != null) {
+                            log.info("[EventLoader] Boot Sequence Complete. Starting Events for Channel {}...", channel);
+                            eventSM.init();
+                        }
+                    }
+                }, 5000); // 5 second delay
             }
 
             dojoStage = new int[20];
@@ -545,22 +559,35 @@ public final class Channel {
         getWorldServer().resetDisabledServerMessages();
     }
 
-// In net.server.channel.Channel.java
-
     private static String[] getEvents() {
         List<String> events = new ArrayList<>();
-        // FIX: Added "*.js" filter to ignore non-script files (backups, text files)
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Path.of("scripts/event"), "*.js")) {
+        Path eventDir = Path.of("scripts/event");
+
+//        log.info("[EventLoader] Scanning directory: {}", eventDir.toAbsolutePath());
+
+        if (!Files.exists(eventDir)) {
+            log.error("[EventLoader] CRITICAL: The directory '{}' does not exist! Check your working directory.", eventDir.toAbsolutePath());
+            return new String[0];
+        }
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(eventDir, "*.js")) {
             for (Path path : stream) {
                 String fileName = path.getFileName().toString();
-                // Safe to substring now because we know it ends in .js
-                events.add(fileName.substring(0, fileName.length() - 3));
+                String eventName = fileName.substring(0, fileName.length() - 3);
+                events.add(eventName);
+//                log.info("[EventLoader] Registered Event: {}", eventName);
             }
         } catch (IOException e) {
-            log.warn("Unable to load events!", e); // Added exception logging
+            log.warn("[EventLoader] Failed to load events!", e);
         }
+
+        if (events.isEmpty()) {
+            log.warn("[EventLoader] No event scripts found (empty list).");
+        }
+
         return events.toArray(new String[0]);
     }
+
     public int getStoredVar(int key) {
         if (storedVars.containsKey(key)) {
             return storedVars.get(key);
