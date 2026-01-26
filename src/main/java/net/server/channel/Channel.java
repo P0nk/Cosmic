@@ -300,6 +300,8 @@ public final class Channel {
         int restored = 0;
         int sentToFredrick = 0;
 
+        System.out.println("[RESTORE] Starting restore for Channel " + channel);
+
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM hiredmerchants WHERE world = ? AND channel = ? AND isopen = 1")) {
 
@@ -311,7 +313,6 @@ public final class Channel {
                     int ownerId = rs.getInt("ownerid");
 
                     // 1. Attempt Load
-                    // (Returns NULL if items are missing/corrupted or map is invalid)
                     HiredMerchant merch = HiredMerchant.loadFromPersistence(this, rs);
 
                     if (merch != null && merch.getItems().size() > 0) {
@@ -319,37 +320,46 @@ public final class Channel {
                         // [SUCCESS PATH]
                         merch.getMap().addMapObject(merch);
                         merch.getMap().broadcastMessage(PacketCreator.spawnHiredMerchantBox(merch));
+
+                        // A. Register with Local Channel
                         addHiredMerchant(merch.getOwnerId(), merch);
+
+                        // B. [FIX] Register with WORLD Server (Crucial for Fredrick Checks)
+                        try {
+                            Server.getInstance().getWorld(this.world).registerHiredMerchant(merch);
+                        } catch (Exception e) {
+                            System.err.println("[RESTORE] Failed to register merchant with World Server: " + e.getMessage());
+                        }
+
                         merch.setOpen(true);
 
-                        // [CRITICAL DUPE FIX]
-                        // If shop is open, we must CLEAR any Fredrick logs.
-                        // This prevents the user from claiming items from Fredrick while shop is live.
+                        // C. [FIX] Force DB Flag to 1 (In case it was wiped)
+                        try (PreparedStatement psUpd = con.prepareStatement("UPDATE characters SET HasMerchant = 1 WHERE id = ?")) {
+                            psUpd.setInt(1, ownerId);
+                            psUpd.executeUpdate();
+                        }
+
+                        // D. Clear Fredrick Log (Prevent Double Dipping)
                         client.processor.npc.FredrickProcessor.removeFredrickLog(ownerId);
 
                         restored++;
+                        System.out.println("[RESTORE] Restored merchant for OwnerID: " + ownerId);
 
                     } else {
                         // [FAIL/FALLBACK PATH]
-                        // Shop corrupted or had 0 items. Send to Fredrick.
-                        System.out.println("[HMERCH][RESTORE] Merchant " + ownerId + " failed validation (Empty/Error). Sending to Fredrick.");
+                        System.out.println("[RESTORE] Merchant " + ownerId + " failed validation (Empty/Error). Sending to Fredrick.");
 
-                        // Set DB Flag to 0
                         try (PreparedStatement psUpdate = con.prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
                             psUpdate.setInt(1, ownerId);
                             psUpdate.executeUpdate();
                         }
 
-                        // Clean up metadata so it doesn't try to load again
                         try (PreparedStatement psDel = con.prepareStatement("DELETE FROM hiredmerchants WHERE ownerid = ?")) {
                             psDel.setInt(1, ownerId);
                             psDel.executeUpdate();
                         }
 
-                        // Create Fredrick Log
-                        // (So they can pick up the items that are sitting in 'inventoryitems' table)
                         client.processor.npc.FredrickProcessor.insertFredrickLog(ownerId);
-
                         sentToFredrick++;
                     }
                 }

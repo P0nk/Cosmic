@@ -262,17 +262,14 @@ public class FredrickProcessor {
             try {
                 Character chr = c.getPlayer();
 
-                // [FIX] Anti-Dupe Gatekeeper
-                // Check 1: Character flag
+                // 1. Check DB Flag
                 if (chr.hasMerchant()) {
                     chr.dropMessage(1, "You cannot use Fredrick while your store is open.\r\nPlease close your Hired Merchant first.");
                     return;
                 }
 
-                // Check 2: World Server Registry
-                // We use 'getHiredMerchant' to see if the world has a registered shop for this ID.
-                World w = Server.getInstance().getWorld(chr.getWorld());
-                if (w != null && w.getHiredMerchant(chr.getId()) != null) {
+                // 2. Check World Server (Crucial if DB flag desyncs)
+                if (Server.getInstance().getWorld(chr.getWorld()).getHiredMerchant(chr.getId()) != null) {
                     chr.dropMessage(1, "Your store is currently open in the Free Market.\r\nPlease close it before retrieving items.");
                     return;
                 }
