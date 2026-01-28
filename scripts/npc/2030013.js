@@ -1,5 +1,5 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
                        Matthias Butz <matze@odinms.de>
                        Jan Christian Meyer <vimes@odinms.de>
@@ -47,6 +47,12 @@ function action(mode, type, selection) {
     player = cm.getPlayer();
     expedition = cm.getExpedition(exped);
     em = cm.getEventManager("ZakumBattle");
+
+    if (em == null) {
+        cm.sendOk("The event could not be found. Please report this to an administrator.");
+        cm.dispose();
+        return;
+    }
 
     if (mode == -1) {
         cm.dispose();

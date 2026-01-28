@@ -48,13 +48,11 @@ public enum ItemFactory {
     CASH_OVERALL(7, true),
     MARRIAGE_GIFTS(8, false),
     DUEY(9, false);
-
     private final int value;
     private final boolean account;
 
     private static final int lockCount = 400;
-    private static final Lock[] locks = new Lock[lockCount]; // thanks Masterrulax for pointing out a bottleneck issue
-                                                             // here
+    private static final Lock[] locks = new Lock[lockCount];  // thanks Masterrulax for pointing out a bottleneck issue here
 
     static {
         for (int i = 0; i < lockCount; i++) {
@@ -83,15 +81,13 @@ public enum ItemFactory {
         saveItems(items, null, id, con);
     }
 
-    public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, int id, Connection con)
-            throws SQLException {
+    public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, int id, Connection con) throws SQLException {
         // Redirect to main method with null prices
         saveItems(items, bundlesList, null, id, con);
     }
 
     // New Overload to support Price List for Merchants
-    public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, List<Integer> priceList,
-            int id, Connection con) throws SQLException {
+    public void saveItems(List<Pair<Item, InventoryType>> items, List<Short> bundlesList, List<Integer> priceList, int id, Connection con) throws SQLException {
         if (value != 6) {
             saveItemsCommon(items, id, con);
         } else {
@@ -133,19 +129,18 @@ public enum ItemFactory {
             equip.setReqLevelOverride(req);
         }
 
+
         return equip;
     }
 
-    public static List<Pair<Item, Integer>> loadEquippedItems(int id, boolean isAccount, boolean login)
-            throws SQLException {
+    public static List<Pair<Item, Integer>> loadEquippedItems(int id, boolean isAccount, boolean login) throws SQLException {
         List<Pair<Item, Integer>> items = new ArrayList<>();
 
         StringBuilder query = new StringBuilder();
         query.append("SELECT * FROM ");
         query.append("(SELECT id, accountid FROM characters) AS accountterm ");
         query.append("RIGHT JOIN ");
-        query.append(
-                "(SELECT * FROM (`inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`))) AS equipterm");
+        query.append("(SELECT * FROM (`inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`))) AS equipterm");
         query.append(" ON accountterm.id=equipterm.characterid ");
         query.append("WHERE accountterm.`");
         query.append(isAccount ? "accountid" : "characterid");
@@ -175,8 +170,7 @@ public enum ItemFactory {
 
         try (Connection con = DatabaseConnection.getConnection()) {
             StringBuilder query = new StringBuilder();
-            query.append(
-                    "SELECT * FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
+            query.append("SELECT * FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
             query.append(account ? "accountid" : "characterid").append("` = ?");
 
             if (login) {
@@ -201,8 +195,7 @@ public enum ItemFactory {
                                 petid = -1;
                             }
 
-                            Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"),
-                                    (short) rs.getInt("quantity"), petid);
+                            Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) rs.getInt("quantity"), petid);
                             item.setUniqueId(rs.getInt("inventoryitemid"));
                             item.setOwner(rs.getString("owner"));
                             item.setExpiration(rs.getLong("expiration"));
@@ -223,8 +216,7 @@ public enum ItemFactory {
         try {
             // 1. DELETE OLD ITEMS
             StringBuilder query = new StringBuilder();
-            query.append(
-                    "DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
+            query.append("DELETE `inventoryitems`, `inventoryequipment` FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
             query.append(account ? "accountid" : "characterid").append("` = ?");
 
             try (PreparedStatement ps = con.prepareStatement(query.toString())) {
@@ -248,7 +240,7 @@ public enum ItemFactory {
                     ")";
 
             try (PreparedStatement psItem = con.prepareStatement(itemSql, Statement.RETURN_GENERATED_KEYS);
-                    PreparedStatement psEquip = con.prepareStatement(equipSql)) {
+                 PreparedStatement psEquip = con.prepareStatement(equipSql)) {
 
                 // --- PASS 1: EQUIPS ---
                 for (Pair<Item, InventoryType> pair : items) {
@@ -352,8 +344,7 @@ public enum ItemFactory {
 
         try (Connection con = DatabaseConnection.getConnection()) {
             StringBuilder query = new StringBuilder();
-            query.append(
-                    "SELECT * FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
+            query.append("SELECT * FROM `inventoryitems` LEFT JOIN `inventoryequipment` USING(`inventoryitemid`) WHERE `type` = ? AND `");
             query.append(account ? "accountid" : "characterid").append("` = ?");
 
             if (login) {
@@ -368,8 +359,7 @@ public enum ItemFactory {
                     while (rs.next()) {
                         // We fetch bundles just to ensure validity
                         short bundles = 0;
-                        try (PreparedStatement psBundle = con.prepareStatement(
-                                "SELECT `bundles` FROM `inventorymerchant` WHERE `inventoryitemid` = ?")) {
+                        try (PreparedStatement psBundle = con.prepareStatement("SELECT `bundles` FROM `inventorymerchant` WHERE `inventoryitemid` = ?")) {
                             psBundle.setInt(1, rs.getInt("inventoryitemid"));
                             try (ResultSet rs2 = psBundle.executeQuery()) {
                                 if (rs2.next()) {
@@ -389,24 +379,21 @@ public enum ItemFactory {
                             items.add(new Pair<>(equip, mit));
                         } else {
                             if (bundles > 0) {
-                                for (int i = 0; i < bundles; i++) {
-                                    int petid = rs.getInt("petid");
-                                    if (rs.wasNull()) {
-                                        petid = -1;
-                                    }
-
-                                    Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"),
-                                            (short) rs.getInt("quantity"), petid);
-
-                                    // Set the Unique ID so HiredMerchant can match it to a price
-                                    item.setUniqueId(rs.getInt("inventoryitemid"));
-
-                                    item.setOwner(rs.getString("owner"));
-                                    item.setExpiration(rs.getLong("expiration"));
-                                    item.setGiftFrom(rs.getString("giftFrom"));
-                                    item.setFlag((short) rs.getInt("flag"));
-                                    items.add(new Pair<>(item, mit));
+                                int petid = rs.getInt("petid");
+                                if (rs.wasNull()) {
+                                    petid = -1;
                                 }
+
+                                Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"), (short) rs.getInt("quantity"), petid);
+
+                                // Set the Unique ID so HiredMerchant can match it to a price
+                                item.setUniqueId(rs.getInt("inventoryitemid"));
+
+                                item.setOwner(rs.getString("owner"));
+                                item.setExpiration(rs.getLong("expiration"));
+                                item.setGiftFrom(rs.getString("giftFrom"));
+                                item.setFlag((short) rs.getInt("flag"));
+                                items.add(new Pair<>(item, mit));
                             }
                         }
                     }
@@ -417,22 +404,21 @@ public enum ItemFactory {
     }
 
     // [FIX] Update-First Logic for Merchant Saving
-    // Prevents ID churning by updating existing records instead of
-    // deleting/re-inserting.
+    // Prevents ID churning by updating existing records instead of deleting/re-inserting.
     private void saveItemsMerchant(
             List<Pair<Item, InventoryType>> items,
             List<Short> bundlesList,
             List<Integer> priceList,
             int id,
-            Connection con) throws SQLException {
+            Connection con
+    ) throws SQLException {
 
         Lock lock = locks[id % lockCount];
         lock.lock();
         try {
             // 1. Get list of ALL current DB IDs for this merchant (to find deletions later)
             List<Integer> currentDbIds = new ArrayList<>();
-            try (PreparedStatement ps = con.prepareStatement(
-                    "SELECT inventoryitemid FROM inventoryitems WHERE type = 6 AND characterid = ?")) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT inventoryitemid FROM inventoryitems WHERE type = 6 AND characterid = ?")) {
                 ps.setInt(1, id);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -486,10 +472,8 @@ public enum ItemFactory {
                     // This item is new to the shop. Generate a NEW ID.
                     long newUniqueId = -1;
                     try (PreparedStatement ps = con.prepareStatement(
-                            "INSERT INTO inventoryitems (type, characterid, itemid, inventorytype, position, quantity, owner, petid, flag, expiration, giftFrom) "
-                                    +
-                                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            Statement.RETURN_GENERATED_KEYS)) {
+                            "INSERT INTO inventoryitems (type, characterid, itemid, inventorytype, position, quantity, owner, petid, flag, expiration, giftFrom) " +
+                                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
                         ps.setInt(1, 6);
                         ps.setInt(2, id);
                         ps.setInt(3, item.getItemId());
@@ -504,8 +488,7 @@ public enum ItemFactory {
                         ps.executeUpdate();
 
                         try (ResultSet rs = ps.getGeneratedKeys()) {
-                            if (rs.next())
-                                newUniqueId = rs.getLong(1);
+                            if (rs.next()) newUniqueId = rs.getLong(1);
                         }
                     }
 
@@ -529,22 +512,18 @@ public enum ItemFactory {
             }
 
             // [STEP 3] CLEANUP
-            // Any ID left in `currentDbIds` was in the DB but is NOT in the current shop
-            // list.
+            // Any ID left in `currentDbIds` was in the DB but is NOT in the current shop list.
             // This means it was sold or removed. We must delete it.
             for (Integer removedId : currentDbIds) {
-                try (PreparedStatement ps = con
-                        .prepareStatement("DELETE FROM inventorymerchant WHERE inventoryitemid = ?")) {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM inventorymerchant WHERE inventoryitemid = ?")) {
                     ps.setInt(1, removedId);
                     ps.executeUpdate();
                 }
-                try (PreparedStatement ps = con
-                        .prepareStatement("DELETE FROM inventoryitems WHERE inventoryitemid = ?")) {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM inventoryitems WHERE inventoryitemid = ?")) {
                     ps.setInt(1, removedId);
                     ps.executeUpdate();
                 }
-                try (PreparedStatement ps = con
-                        .prepareStatement("DELETE FROM inventoryequipment WHERE inventoryitemid = ?")) {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM inventoryequipment WHERE inventoryitemid = ?")) {
                     ps.setInt(1, removedId);
                     ps.executeUpdate();
                 }
