@@ -3,21 +3,6 @@
  Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
  Matthias Butz <matze@odinms.de>
  Jan Christian Meyer <vimes@odinms.de>
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as
- published by the Free Software Foundation version 3 as published by
- the Free Software Foundation. You may not use, modify or distribute
- this program under any other version of the GNU Affero General Public
- License.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package net.server.channel.handlers;
 
@@ -42,16 +27,22 @@ public class FredrickHandler extends AbstractPacketHandler {
         Character chr = c.getPlayer();
         byte operation = p.readByte();
 
+        System.out.println("[FredrickHandler-DEBUG] Received packet from: " + chr.getName() + " | Operation: 0x" + String.format("%02X", operation));
+
         switch (operation) {
-            case 0x19: //Will never come...
+            case 0x19: // Will never come...
+                System.out.println("[FredrickHandler-DEBUG] Operation 0x19 (Unused/Check) triggered.");
                 //c.sendPacket(PacketCreator.getFredrick((byte) 0x24));
                 break;
-            case 0x1A:
+            case 0x1A: // Retrieve Items
+                System.out.println("[FredrickHandler-DEBUG] Operation 0x1A (Retrieve) triggered. Calling processor...");
                 fredrickProcessor.fredrickRetrieveItems(c);
                 break;
-            case 0x1C: //Exit
+            case 0x1C: // Exit
+                System.out.println("[FredrickHandler-DEBUG] Operation 0x1C (Exit) triggered.");
                 break;
             default:
+                System.out.println("[FredrickHandler-DEBUG] Unknown Operation: 0x" + String.format("%02X", operation));
         }
     }
 }

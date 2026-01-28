@@ -3,22 +3,7 @@ This file is part of the OdinMS Maple Story Server
 Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
 Matthias Butz <matze@odinms.de>
 Jan Christian Meyer <vimes@odinms.de>
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation version 3 as published by
-the Free Software Foundation. You may not use, modify or distribute
-this program under any other version of the GNU Affero General Public
-License.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+*/
 package server.maps;
 
 import client.Character;
@@ -57,10 +42,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.awt.Point;
 
-/**
- * @author XoticStory
- * @author Ronan - concurrency protection
- */
 public class HiredMerchant extends AbstractMapObject {
     private static final int VISITOR_HISTORY_LIMIT = 10;
     private static final int BLACKLIST_LIMIT = 20;
@@ -68,8 +49,6 @@ public class HiredMerchant extends AbstractMapObject {
     private final int ownerId;
     private final int itemId;
 
-    // [FIX] Changed to long to hold accumulated revenue in memory
-    // This allows us to buffer sales without hitting the DB constantly
     private long mesos = 0;
 
     private final int channel;
@@ -92,6 +71,11 @@ public class HiredMerchant extends AbstractMapObject {
 
     public record PastVisitor(String chrName, Duration visitDuration) {}
 
+    // [DEBUG] Helper for consistent logging
+    private void printDebug(String msg) {
+        System.out.println("[HM-DEBUG][OwnerID:" + ownerId + "] " + msg);
+    }
+
     public HiredMerchant(int ownerId, String ownerName, int itemId, String desc, int world, int channel, MapleMap map, long startTime) {
         this.ownerId = ownerId;
         this.ownerName = ownerName;
@@ -102,6 +86,7 @@ public class HiredMerchant extends AbstractMapObject {
         this.map = map;
         this.start = startTime;
         this.setPosition(new Point(0, 0));
+        printDebug("Created HiredMerchant (Restore) - Map: " + map.getId());
     }
 
     public HiredMerchant(final Character owner, String desc, int itemId) {
@@ -114,13 +99,7 @@ public class HiredMerchant extends AbstractMapObject {
         this.ownerName = owner.getName();
         this.description = desc;
         this.map = owner.getMap();
-    }
-
-    // [DEBUG HELPER]
-    private void debug(String msg) {
-        // Since "console.log.println" is not standard Java, we use System.out.println
-        // This will print to your server console/bat window.
-        System.out.println("[HM-DEBUG][OwnerID:" + ownerId + "] " + msg);
+        printDebug("Created HiredMerchant (New) - Owner: " + ownerName);
     }
 
     public void broadcastToVisitorsThreadsafe(Packet packet) {
@@ -153,7 +132,6 @@ public class HiredMerchant extends AbstractMapObject {
             } else {
                 count = (byte) (visitors.length + 1);
             }
-
             return new byte[]{count, (byte) (visitors.length + 1)};
         } finally {
             visitorLock.unlock();
@@ -161,6 +139,7 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public boolean addVisitor(Character visitor) {
+        printDebug("Adding visitor: " + visitor.getName());
         visitorLock.lock();
         try {
             int i = this.getFreeSlot();
@@ -168,25 +147,23 @@ public class HiredMerchant extends AbstractMapObject {
                 visitors[i] = new Visitor(visitor, Instant.now());
                 broadcastToVisitors(PacketCreator.hiredMerchantVisitorAdd(visitor, i + 1));
                 this.getMap().broadcastMessage(PacketCreator.updateHiredMerchantBox(this));
-
+                printDebug("Visitor added at slot: " + i);
                 return true;
             }
-
+            printDebug("Visitor rejected: Shop full");
             return false;
         } finally {
             visitorLock.unlock();
         }
     }
 
-    // [FIXED] Revenue Saving Logic with Debugs
-    // Only called on close to prevent race conditions
     private void saveRevenueToDB() {
+        printDebug("saveRevenueToDB() invoked. Memory Mesos: " + this.mesos);
+
         if (this.mesos <= 0) {
-            debug("saveRevenueToDB: No buffered revenue to save (Memory Mesos: " + this.mesos + ")");
+            printDebug("Skipping saveRevenueToDB (No mesos accumulated)");
             return;
         }
-
-        debug("saveRevenueToDB: START. Accumulated in Memory: " + this.mesos);
 
         final int MESO_PER_BCOIN = 1_000_000_000;
         final int BCOIN_ITEM_ID = 3020002;
@@ -203,25 +180,27 @@ public class HiredMerchant extends AbstractMapObject {
                     }
                 }
             }
+            printDebug("DB State Check -> Current DB Mesos: " + currentDbMesos);
 
             long totalRevenue = currentDbMesos + this.mesos;
             int coinsToAdd = (int) (totalRevenue / MESO_PER_BCOIN);
             int remainder = (int) (totalRevenue % MESO_PER_BCOIN);
 
-            debug("saveRevenueToDB: Calc -> ExistingDB: " + currentDbMesos + " + NewMemory: " + this.mesos + " = Total: " + totalRevenue);
-            debug("saveRevenueToDB: Result -> BCoins to Insert: " + coinsToAdd + " | Remainder Mesos: " + remainder);
+            printDebug("Calculation -> Total: " + totalRevenue + " | Coins to Add: " + coinsToAdd + " | New Remainder: " + remainder);
 
             // 1. Update Remainder
             try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET MerchantMesos = ? WHERE id = ?")) {
                 ps.setInt(1, remainder);
                 ps.setInt(2, ownerId);
-                ps.executeUpdate();
+                int rows = ps.executeUpdate();
+                printDebug("Updated Characters table (Mesos): " + rows + " rows affected.");
             }
 
             // 2. Update Timestamp
             try (PreparedStatement ps = con.prepareStatement("INSERT INTO fredstorage (cid, daynotes, timestamp) VALUES (?, 0, NOW()) ON DUPLICATE KEY UPDATE timestamp = NOW()")) {
                 ps.setInt(1, ownerId);
                 ps.executeUpdate();
+                printDebug("Updated Fredrick Log timestamp.");
             }
 
             // 3. Insert BCoins
@@ -253,17 +232,17 @@ public class HiredMerchant extends AbstractMapObject {
                     ps.setInt(3, 1);
                     ps.executeUpdate();
                 }
-                debug("saveRevenueToDB: Inserted " + coinsToAdd + " BCoins successfully.");
+                printDebug("Inserted " + coinsToAdd + " B-Coins into DB storage.");
             }
 
             con.commit();
             con.setAutoCommit(true);
 
-            this.mesos = 0; // Reset memory accumulator
-            debug("saveRevenueToDB: END. Memory cleared.");
+            this.mesos = 0;
+            printDebug("Revenue save complete. Memory mesos reset to 0.");
 
         } catch (SQLException e) {
-            debug("saveRevenueToDB: ERROR - " + e.getMessage());
+            printDebug("CRITICAL ERROR in saveRevenueToDB: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -280,6 +259,7 @@ public class HiredMerchant extends AbstractMapObject {
                 addVisitorToHistory(visitor);
                 broadcastToVisitors(PacketCreator.hiredMerchantVisitorLeave(slot + 1));
                 this.getMap().broadcastMessage(PacketCreator.updateHiredMerchantBox(this));
+                printDebug("Removed visitor: " + chr.getName());
             }
         } finally {
             visitorLock.unlock();
@@ -313,6 +293,7 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     private void removeAllVisitors() {
+        printDebug("Removing all visitors...");
         visitorLock.lock();
         try {
             for (int i = 0; i < 3; i++) {
@@ -334,6 +315,7 @@ public class HiredMerchant extends AbstractMapObject {
 
     private void removeOwner(Character owner) {
         if (owner.getHiredMerchant() == this) {
+            printDebug("Owner " + owner.getName() + " left the shop.");
             owner.sendPacket(PacketCreator.hiredMerchantOwnerLeave());
             owner.sendPacket(PacketCreator.leaveHiredMerchant(0x00, 0x03));
             owner.setHiredMerchant(null);
@@ -342,13 +324,16 @@ public class HiredMerchant extends AbstractMapObject {
 
     public void withdrawMesos(Character chr) {
         if (isOwner(chr)) {
+            printDebug("Owner requested Withdraw Mesos. Current memory mesos: " + this.mesos);
             synchronized (items) {
+                // In standard Odin, this just updates client UI, but doesn't usually flush DB in this version
                 chr.withdrawMerchantMesos();
             }
         }
     }
 
     public void takeItemBack(int slot, Character chr) {
+        printDebug("Owner taking item back from slot: " + slot);
         synchronized (items) {
             PlayerShopItem shopItem = items.get(slot);
             if (shopItem.isExist()) {
@@ -359,12 +344,14 @@ public class HiredMerchant extends AbstractMapObject {
                     if (!Inventory.checkSpot(chr, iitem)) {
                         chr.sendPacket(PacketCreator.serverNotice(1, "Have a slot available on your inventory to claim back the item."));
                         chr.sendPacket(PacketCreator.enableActions());
+                        printDebug("Take item failed: Inventory full");
                         return;
                     }
                     InventoryManipulator.addFromDrop(chr.getClient(), iitem, true);
                 }
                 removeFromSlot(slot);
                 chr.sendPacket(PacketCreator.updateHiredMerchant(this, chr));
+                printDebug("Item retrieved successfully.");
             }
             if (YamlConfig.config.server.USE_ENFORCE_MERCHANT_SAVE) {
                 chr.saveCharToDB(false);
@@ -389,24 +376,30 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public void buy(Client c, int item, short quantity) {
+        printDebug("BUY ACTION | Buyer: " + c.getPlayer().getName() + " | Slot: " + item + " | Qty: " + quantity);
         synchronized (items) {
             PlayerShopItem pItem = items.get(item);
             Item newItem = pItem.getItem().copy();
 
             newItem.setQuantity((short) ((pItem.getItem().getQuantity() * quantity)));
+
+            // Validations
             if (quantity < 1 || !pItem.isExist() || pItem.getBundles() < quantity) {
                 c.getPlayer().dropMessage(1, "The item is not available.");
                 c.sendPacket(PacketCreator.enableActions());
+                printDebug("BUY FAIL: Item unavailable or invalid quantity.");
                 return;
             } else if (newItem.getInventoryType().equals(InventoryType.EQUIP) && newItem.getQuantity() > 1) {
                 c.getPlayer().dropMessage(1, "You can only buy one of this item at a time.");
                 c.sendPacket(PacketCreator.enableActions());
+                printDebug("BUY FAIL: Equip quantity > 1");
                 return;
             }
 
             if (!canBuy(c, newItem)) {
                 c.getPlayer().dropMessage(1, "Your inventory is full.");
                 c.sendPacket(PacketCreator.enableActions());
+                printDebug("BUY FAIL: Inventory full");
                 return;
             }
 
@@ -418,24 +411,22 @@ public class HiredMerchant extends AbstractMapObject {
             long playerMesos = c.getPlayer().getMeso();
             long deficit = price - playerMesos;
 
+            printDebug("BUY Calc -> Price: " + price + " | Buyer Mesos: " + playerMesos + " | Deficit: " + deficit);
+
             // [LOGIC START] Auto-Conversion & Payment
             if (deficit > 0) {
                 final int BCOIN_ID = 3020002;
                 final long BCOIN_RATE = 1_000_000_000L;
 
                 int bcoinsNeeded = (int) Math.ceil((double) deficit / (double) BCOIN_RATE);
-
-                // Debugging
                 int hasCoins = c.getPlayer().getItemQuantity(BCOIN_ID, false);
-                debug("[BUY-CONVERT] Check: User needs " + bcoinsNeeded + " coins. Has: " + hasCoins);
+
+                printDebug("BUY Auto-Convert -> Needed: " + bcoinsNeeded + " | Has: " + hasCoins);
 
                 if (hasCoins >= bcoinsNeeded) {
                     try {
-                        // [FIX] Dynamically find the correct inventory type
-                        // Check ETC first
                         InventoryType coinType = InventoryType.ETC;
                         if (c.getPlayer().getInventory(InventoryType.ETC).findById(BCOIN_ID) == null) {
-                            // If not in ETC, check SETUP (common for ID 3xxxxxx)
                             if (c.getPlayer().getInventory(InventoryType.SETUP).findById(BCOIN_ID) != null) {
                                 coinType = InventoryType.SETUP;
                             } else if (c.getPlayer().getInventory(InventoryType.CASH).findById(BCOIN_ID) != null) {
@@ -443,18 +434,14 @@ public class HiredMerchant extends AbstractMapObject {
                             }
                         }
 
-                        // Perform Removal using the DETECTED type
                         InventoryManipulator.removeById(c, coinType, BCOIN_ID, bcoinsNeeded, true, false);
 
-                        // Calculate Math virtually
                         long totalWealth = playerMesos + (bcoinsNeeded * BCOIN_RATE);
                         long newBalance = totalWealth - price;
 
-                        // Update Player Mesos
                         c.getPlayer().gainMeso((int) (newBalance - playerMesos), false);
-
                         c.getPlayer().dropMessage(5, "[Auto-Convert] Used " + bcoinsNeeded + " B-Coins to cover purchase.");
-                        debug("[BUY-CONVERT] Success. New Balance: " + newBalance);
+                        printDebug("BUY Auto-Convert Success. Coins used: " + bcoinsNeeded);
 
                     } catch (RuntimeException e) {
                         System.err.println("[HM-ERROR] Auto-Convert Failed for " + c.getPlayer().getName() + ": " + e.getMessage());
@@ -465,10 +452,10 @@ public class HiredMerchant extends AbstractMapObject {
                 } else {
                     c.getPlayer().dropMessage(1, "You need " + bcoinsNeeded + " B-Coins (or more mesos) to buy this.");
                     c.sendPacket(PacketCreator.enableActions());
+                    printDebug("BUY FAIL: Not enough B-Coins");
                     return;
                 }
             } else {
-                // Standard Payment
                 c.getPlayer().gainMeso(-price, false);
             }
             // [LOGIC END] Payment Complete
@@ -493,8 +480,7 @@ public class HiredMerchant extends AbstractMapObject {
 
             // Memory accumulator
             this.mesos += afterFee;
-
-            debug("[BUY] Buyer: " + c.getPlayer().getName() + " | ItemID: " + newItem.getItemId() + " | Qty: " + quantity + " | Price: " + price);
+            printDebug("BUY Success. Revenue: " + afterFee + " added to buffer. New Buffer: " + this.mesos);
 
             Character owner = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterByName(ownerName);
             if (owner != null) {
@@ -503,8 +489,9 @@ public class HiredMerchant extends AbstractMapObject {
 
             try {
                 this.saveItems(false);
+                printDebug("BUY triggered Item Save.");
             } catch (Exception e) {
-                debug("[BUY] Error saving items: " + e.getMessage());
+                printDebug("BUY Error saving items: " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -519,7 +506,7 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public void forceClose() {
-        debug("[CLOSE] Force close triggered.");
+        printDebug("FORCE CLOSE triggered.");
         map.broadcastMessage(PacketCreator.removeHiredMerchantBox(getOwnerId()));
         map.removeMapObject(this);
 
@@ -539,13 +526,13 @@ public class HiredMerchant extends AbstractMapObject {
         Server.getInstance().getWorld(world).unregisterHiredMerchant(this);
 
         try {
-            debug("[CLOSE] 1. Saving Items...");
+            printDebug("ForceClose: Saving Items...");
             saveItems(true);
 
-            debug("[CLOSE] 2. Saving Revenue...");
+            printDebug("ForceClose: Saving Revenue...");
             saveRevenueToDB();
 
-            debug("[CLOSE] 3. Triggering Fredrick Log...");
+            printDebug("ForceClose: Triggering Fredrick Log...");
             FredrickProcessor.insertFredrickLog(this.ownerId);
 
             synchronized (items) {
@@ -567,7 +554,7 @@ public class HiredMerchant extends AbstractMapObject {
             }
         }
         map = null;
-        debug("[CLOSE] Completed.");
+        printDebug("ForceClose Completed.");
     }
 
     public void closeOwnerMerchant(Character chr) {
@@ -578,7 +565,7 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     private void closeShop(Client c, boolean timeout) {
-        debug("[CLOSE] closeShop() triggered. Timeout=" + timeout);
+        printDebug("closeShop() triggered. Timeout=" + timeout);
         map.removeMapObject(this);
         map.broadcastMessage(PacketCreator.removeHiredMerchantBox(ownerId));
         c.getChannelServer().removeHiredMerchant(ownerId);
@@ -590,7 +577,7 @@ public class HiredMerchant extends AbstractMapObject {
             List<PlayerShopItem> copyItems = getItems();
 
             if (check(c.getPlayer(), copyItems) && !timeout) {
-                debug("[CLOSE] Returning items to inventory directly.");
+                printDebug("closeShop: Returning items to inventory directly.");
                 for (PlayerShopItem mpsi : copyItems) {
                     if (mpsi.isExist()) {
                         if (mpsi.getItem().getInventoryType().equals(InventoryType.EQUIP)) {
@@ -606,14 +593,15 @@ public class HiredMerchant extends AbstractMapObject {
             }
 
             try {
-                debug("[CLOSE] Saving items (Persistence)...");
+                printDebug("closeShop: Saving items...");
                 this.saveItems(timeout);
 
-                debug("[CLOSE] Saving Revenue...");
+                printDebug("closeShop: Saving Revenue...");
                 this.saveRevenueToDB();
 
                 synchronized (items) {
                     if (!items.isEmpty() || this.mesos > 0) {
+                        printDebug("closeShop: Inserting Fredrick Log due to leftover items/mesos.");
                         FredrickProcessor.insertFredrickLog(this.ownerId);
                     }
                 }
@@ -643,7 +631,7 @@ public class HiredMerchant extends AbstractMapObject {
         }
 
         Server.getInstance().getWorld(world).unregisterHiredMerchant(this);
-        debug("[CLOSE] closeShop() completed.");
+        printDebug("closeShop() completed.");
     }
 
     public synchronized void visitShop(Character chr) {
@@ -704,6 +692,7 @@ public class HiredMerchant extends AbstractMapObject {
         synchronized (items) {
             if (items.size() >= 16) return false;
             items.add(item);
+            printDebug("Added item: " + item.getItem().getItemId());
             return true;
         }
     }
@@ -754,6 +743,7 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public void saveItems(boolean shutdown) throws SQLException {
+        printDebug("saveItems() called. Shutdown: " + shutdown);
         List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
         List<Short> bundles = new ArrayList<>();
         List<Integer> prices = new ArrayList<>();
@@ -771,6 +761,7 @@ public class HiredMerchant extends AbstractMapObject {
                 }
             }
         }
+        printDebug("Saving " + itemsWithType.size() + " items to DB.");
 
         try (Connection con = DatabaseConnection.getConnection()) {
             boolean oldAutoCommit = con.getAutoCommit();
@@ -778,8 +769,10 @@ public class HiredMerchant extends AbstractMapObject {
             try {
                 ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
                 con.commit();
+                printDebug("Items saved successfully.");
             } catch (Exception e) {
                 try { con.rollback(); } catch (SQLException re) { re.printStackTrace(); }
+                printDebug("Error saving items: " + e.getMessage());
                 throw e;
             } finally {
                 try { con.setAutoCommit(oldAutoCommit); } catch (SQLException ignore) {}
@@ -858,6 +851,7 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     public void savePersistence(Connection con) throws SQLException {
+        printDebug("savePersistence called.");
         PreparedStatement ps = null;
         try {
             long minutesOpen = (System.currentTimeMillis() - this.start) / 60000;
@@ -896,6 +890,7 @@ public class HiredMerchant extends AbstractMapObject {
                 }
             }
             ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
+            printDebug("Persistence saved successfully.");
         } finally {
             if (ps != null && !ps.isClosed()) ps.close();
         }
