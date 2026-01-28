@@ -67,16 +67,19 @@ public class HiredMerchant extends AbstractMapObject {
     private final LinkedHashSet<String> blacklist = new LinkedHashSet<>();
     private final Lock visitorLock = new ReentrantLock(true);
 
-    private record Visitor(Character chr, Instant enteredAt) {}
+    private record Visitor(Character chr, Instant enteredAt) {
+    }
 
-    public record PastVisitor(String chrName, Duration visitDuration) {}
+    public record PastVisitor(String chrName, Duration visitDuration) {
+    }
 
     // [DEBUG] Helper for consistent logging
     private void printDebug(String msg) {
         System.out.println("[HM-DEBUG][OwnerID:" + ownerId + "] " + msg);
     }
 
-    public HiredMerchant(int ownerId, String ownerName, int itemId, String desc, int world, int channel, MapleMap map, long startTime) {
+    public HiredMerchant(int ownerId, String ownerName, int itemId, String desc, int world, int channel, MapleMap map,
+            long startTime) {
         this.ownerId = ownerId;
         this.ownerName = ownerName;
         this.itemId = itemId;
@@ -132,7 +135,7 @@ public class HiredMerchant extends AbstractMapObject {
             } else {
                 count = (byte) (visitors.length + 1);
             }
-            return new byte[]{count, (byte) (visitors.length + 1)};
+            return new byte[] { count, (byte) (visitors.length + 1) };
         } finally {
             visitorLock.unlock();
         }
@@ -158,92 +161,93 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     private void saveRevenueToDB() {
-        printDebug("saveRevenueToDB() invoked. Memory Mesos: " + this.mesos);
+        synchronized (items) {
+            printDebug("saveRevenueToDB() invoked. Memory Mesos: " + this.mesos);
 
-        if (this.mesos <= 0) {
-            printDebug("Skipping saveRevenueToDB (No mesos accumulated)");
-            return;
-        }
+            if (this.mesos <= 0) {
+                printDebug("Skipping saveRevenueToDB (No mesos accumulated)");
+                return;
+            }
 
-        final int MESO_PER_BCOIN = 1_000_000_000;
-        final int BCOIN_ITEM_ID = 3020002;
+            final long MESO_PER_BCOIN = 1_000_000_000L;
 
-        try (Connection con = DatabaseConnection.getConnection()) {
-            con.setAutoCommit(false);
+            try (Connection con = DatabaseConnection.getConnection()) {
+                con.setAutoCommit(false);
 
-            long currentDbMesos = 0;
-            try (PreparedStatement ps = con.prepareStatement("SELECT MerchantMesos FROM characters WHERE id = ?")) {
-                ps.setInt(1, ownerId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        currentDbMesos = rs.getLong("MerchantMesos");
+                long currentDbMesos = 0;
+                long currentDbBcoins = 0;
+
+                // 1. Get Current Mesos
+                try (PreparedStatement ps = con.prepareStatement("SELECT MerchantMesos FROM characters WHERE id = ?")) {
+                    ps.setInt(1, ownerId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            currentDbMesos = rs.getLong("MerchantMesos");
+                        }
                     }
                 }
-            }
-            printDebug("DB State Check -> Current DB Mesos: " + currentDbMesos);
 
-            long totalRevenue = currentDbMesos + this.mesos;
-            int coinsToAdd = (int) (totalRevenue / MESO_PER_BCOIN);
-            int remainder = (int) (totalRevenue % MESO_PER_BCOIN);
+                // 2. Get Current B-Coins
+                try (PreparedStatement ps = con
+                        .prepareStatement("SELECT bcoin FROM merchantBcoin WHERE characterid = ?")) {
+                    ps.setInt(1, ownerId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            currentDbBcoins = rs.getLong("bcoin");
+                        }
+                    }
+                }
 
-            printDebug("Calculation -> Total: " + totalRevenue + " | Coins to Add: " + coinsToAdd + " | New Remainder: " + remainder);
+                printDebug("DB State -> Mesos: " + currentDbMesos + " | B-Coins: " + currentDbBcoins);
 
-            // 1. Update Remainder
-            try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET MerchantMesos = ? WHERE id = ?")) {
-                ps.setInt(1, remainder);
-                ps.setInt(2, ownerId);
-                int rows = ps.executeUpdate();
-                printDebug("Updated Characters table (Mesos): " + rows + " rows affected.");
-            }
+                // 3. Calculate Total Wealth
+                long totalWealth = currentDbMesos + (currentDbBcoins * MESO_PER_BCOIN) + this.mesos;
 
-            // 2. Update Timestamp
-            try (PreparedStatement ps = con.prepareStatement("INSERT INTO fredstorage (cid, daynotes, timestamp) VALUES (?, 0, NOW()) ON DUPLICATE KEY UPDATE timestamp = NOW()")) {
-                ps.setInt(1, ownerId);
-                ps.executeUpdate();
-                printDebug("Updated Fredrick Log timestamp.");
-            }
+                long newBcoins = totalWealth / MESO_PER_BCOIN;
+                int newRemainderMesos = (int) (totalWealth % MESO_PER_BCOIN);
 
-            // 3. Insert BCoins
-            if (coinsToAdd > 0) {
-                int inventoryItemId;
+                printDebug("New State -> Total: " + totalWealth + " | New B-Coins: " + newBcoins + " | New Remainder: "
+                        + newRemainderMesos);
+
+                // 4. Update Mesos
+                try (PreparedStatement ps = con
+                        .prepareStatement("UPDATE characters SET MerchantMesos = ? WHERE id = ?")) {
+                    ps.setInt(1, newRemainderMesos);
+                    ps.setInt(2, ownerId);
+                    ps.executeUpdate();
+                }
+
+                Character owner = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterById(ownerId);
+                if (owner != null) {
+                    owner.setMerchantMesoMemory(newRemainderMesos);
+                }
+
+                // 5. Update B-Coins
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO inventoryitems (type, characterid, itemid, inventorytype, position, quantity, owner, flag, expiration, giftFrom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS)) {
-                    ps.setInt(1, 6); // Merchant Type
-                    ps.setInt(2, ownerId);
-                    ps.setInt(3, BCOIN_ITEM_ID);
-                    ps.setInt(4, InventoryType.ETC.getType());
-                    ps.setInt(5, 0);
-                    ps.setInt(6, coinsToAdd);
-                    ps.setString(7, "");
-                    ps.setInt(8, 0);
-                    ps.setLong(9, -1L);
-                    ps.setString(10, "Fredrick");
-                    ps.executeUpdate();
-
-                    try (ResultSet rs = ps.getGeneratedKeys()) {
-                        if (rs.next()) inventoryItemId = rs.getInt(1);
-                        else throw new SQLException("Failed to get ID");
-                    }
-                }
-
-                try (PreparedStatement ps = con.prepareStatement("INSERT INTO inventorymerchant (inventoryitemid, characterid, bundles) VALUES (?, ?, ?)")) {
-                    ps.setInt(1, inventoryItemId);
-                    ps.setInt(2, ownerId);
-                    ps.setInt(3, 1);
+                        "INSERT INTO merchantBcoin (characterid, bcoin) VALUES (?, ?) ON DUPLICATE KEY UPDATE bcoin = ?")) {
+                    ps.setInt(1, ownerId);
+                    ps.setLong(2, newBcoins);
+                    ps.setLong(3, newBcoins);
                     ps.executeUpdate();
                 }
-                printDebug("Inserted " + coinsToAdd + " B-Coins into DB storage.");
+
+                // 6. Fredrick Log (Timestamp)
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO fredstorage (cid, daynotes, timestamp) VALUES (?, 0, NOW()) ON DUPLICATE KEY UPDATE timestamp = NOW()")) {
+                    ps.setInt(1, ownerId);
+                    ps.executeUpdate();
+                }
+
+                con.commit();
+                con.setAutoCommit(true);
+
+                this.mesos = 0;
+                printDebug("Revenue save complete. DB Updated.");
+
+            } catch (SQLException e) {
+                printDebug("CRITICAL ERROR in saveRevenueToDB: " + e.getMessage());
+                e.printStackTrace();
             }
-
-            con.commit();
-            con.setAutoCommit(true);
-
-            this.mesos = 0;
-            printDebug("Revenue save complete. Memory mesos reset to 0.");
-
-        } catch (SQLException e) {
-            printDebug("CRITICAL ERROR in saveRevenueToDB: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -251,7 +255,8 @@ public class HiredMerchant extends AbstractMapObject {
         visitorLock.lock();
         try {
             int slot = getVisitorSlot(chr);
-            if (slot < 0) return;
+            if (slot < 0)
+                return;
 
             Visitor visitor = visitors[slot];
             if (visitor != null && visitor.chr.getId() == chr.getId()) {
@@ -326,7 +331,11 @@ public class HiredMerchant extends AbstractMapObject {
         if (isOwner(chr)) {
             printDebug("Owner requested Withdraw Mesos. Current memory mesos: " + this.mesos);
             synchronized (items) {
-                // In standard Odin, this just updates client UI, but doesn't usually flush DB in this version
+                // [FIX] Flush memory buffer to DB before withdrawing
+                this.saveRevenueToDB();
+                chr.refreshMerchantMesos();
+
+                // Now withdraw from the (updated) persistent storage
                 chr.withdrawMerchantMesos();
             }
         }
@@ -342,7 +351,8 @@ public class HiredMerchant extends AbstractMapObject {
                     iitem.setQuantity((short) (shopItem.getItem().getQuantity() * shopItem.getBundles()));
 
                     if (!Inventory.checkSpot(chr, iitem)) {
-                        chr.sendPacket(PacketCreator.serverNotice(1, "Have a slot available on your inventory to claim back the item."));
+                        chr.sendPacket(PacketCreator.serverNotice(1,
+                                "Have a slot available on your inventory to claim back the item."));
                         chr.sendPacket(PacketCreator.enableActions());
                         printDebug("Take item failed: Inventory full");
                         return;
@@ -360,7 +370,8 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     private static boolean canBuy(Client c, Item newItem) {
-        return InventoryManipulator.checkSpace(c, newItem.getItemId(), newItem.getQuantity(), newItem.getOwner()) && InventoryManipulator.addFromDrop(c, newItem, false);
+        return InventoryManipulator.checkSpace(c, newItem.getItemId(), newItem.getQuantity(), newItem.getOwner())
+                && InventoryManipulator.addFromDrop(c, newItem, false);
     }
 
     private int getQuantityLeft(int itemid) {
@@ -440,11 +451,13 @@ public class HiredMerchant extends AbstractMapObject {
                         long newBalance = totalWealth - price;
 
                         c.getPlayer().gainMeso((int) (newBalance - playerMesos), false);
-                        c.getPlayer().dropMessage(5, "[Auto-Convert] Used " + bcoinsNeeded + " B-Coins to cover purchase.");
+                        c.getPlayer().dropMessage(5,
+                                "[Auto-Convert] Used " + bcoinsNeeded + " B-Coins to cover purchase.");
                         printDebug("BUY Auto-Convert Success. Coins used: " + bcoinsNeeded);
 
                     } catch (RuntimeException e) {
-                        System.err.println("[HM-ERROR] Auto-Convert Failed for " + c.getPlayer().getName() + ": " + e.getMessage());
+                        System.err.println("[HM-ERROR] Auto-Convert Failed for " + c.getPlayer().getName() + ": "
+                                + e.getMessage());
                         c.getPlayer().dropMessage(1, "Error: Could not process B-Coins. Please convert them manually.");
                         c.sendPacket(PacketCreator.enableActions());
                         return;
@@ -463,10 +476,12 @@ public class HiredMerchant extends AbstractMapObject {
             // Calculate Seller Fee
             int fee = Trade.getFee(price);
             int afterFee = price - fee;
-            if (afterFee < 0) afterFee = 0;
+            if (afterFee < 0)
+                afterFee = 0;
 
             synchronized (sold) {
-                sold.add(new SoldItem(c.getPlayer().getName(), pItem.getItem().getItemId(), newItem.getQuantity(), afterFee));
+                sold.add(new SoldItem(c.getPlayer().getName(), pItem.getItem().getItemId(), newItem.getQuantity(),
+                        afterFee));
             }
 
             pItem.setBundles((short) (pItem.getBundles() - quantity));
@@ -481,6 +496,7 @@ public class HiredMerchant extends AbstractMapObject {
             // Memory accumulator
             this.mesos += afterFee;
             printDebug("BUY Success. Revenue: " + afterFee + " added to buffer. New Buffer: " + this.mesos);
+            this.saveRevenueToDB(); // STRICTLY FLUSH TO DB
 
             Character owner = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterByName(ownerName);
             if (owner != null) {
@@ -501,7 +517,9 @@ public class HiredMerchant extends AbstractMapObject {
         String qtyStr = (item.getQuantity() > 1) ? " x " + item.getQuantity() : "";
         Character player = Server.getInstance().getWorld(world).getPlayerStorage().getCharacterById(ownerId);
         if (player != null && player.isLoggedinWorld()) {
-            player.dropMessage(6, "[Hired Merchant] Item '" + ItemInformationProvider.getInstance().getName(item.getItemId()) + "'" + qtyStr + " has been sold for " + mesos + " mesos. (" + inStore + " left)");
+            player.dropMessage(6,
+                    "[Hired Merchant] Item '" + ItemInformationProvider.getInstance().getName(item.getItemId()) + "'"
+                            + qtyStr + " has been sold for " + mesos + " mesos. (" + inStore + " left)");
         }
     }
 
@@ -545,10 +563,17 @@ public class HiredMerchant extends AbstractMapObject {
         if (owner != null) {
             owner.setHasMerchant(false);
         } else {
-            try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
-                ps.setInt(1, ownerId);
-                ps.executeUpdate();
+            try (Connection con = DatabaseConnection.getConnection()) {
+                try (PreparedStatement ps = con
+                        .prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
+                    ps.setInt(1, ownerId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con
+                        .prepareStatement("UPDATE hiredmerchants SET isopen = 0 WHERE ownerid = ?")) {
+                    ps.setInt(1, ownerId);
+                    ps.executeUpdate();
+                }
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
@@ -583,7 +608,10 @@ public class HiredMerchant extends AbstractMapObject {
                         if (mpsi.getItem().getInventoryType().equals(InventoryType.EQUIP)) {
                             InventoryManipulator.addFromDrop(c, mpsi.getItem(), false);
                         } else {
-                            InventoryManipulator.addById(c, mpsi.getItem().getItemId(), (short) (mpsi.getBundles() * mpsi.getItem().getQuantity()), mpsi.getItem().getOwner(), -1, mpsi.getItem().getFlag(), mpsi.getItem().getExpiration());
+                            InventoryManipulator.addById(c, mpsi.getItem().getItemId(),
+                                    (short) (mpsi.getBundles() * mpsi.getItem().getQuantity()),
+                                    mpsi.getItem().getOwner(), -1, mpsi.getItem().getFlag(),
+                                    mpsi.getItem().getExpiration());
                         }
                     }
                 }
@@ -613,10 +641,17 @@ public class HiredMerchant extends AbstractMapObject {
             if (player != null) {
                 player.setHasMerchant(false);
             } else {
-                try (Connection con = DatabaseConnection.getConnection();
-                     PreparedStatement ps = con.prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
-                    ps.setInt(1, ownerId);
-                    ps.executeUpdate();
+                try (Connection con = DatabaseConnection.getConnection()) {
+                    try (PreparedStatement ps = con
+                            .prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
+                        ps.setInt(1, ownerId);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = con
+                            .prepareStatement("UPDATE hiredmerchants SET isopen = 0 WHERE ownerid = ?")) {
+                        ps.setInt(1, ownerId);
+                        ps.executeUpdate();
+                    }
                 }
             }
 
@@ -660,10 +695,24 @@ public class HiredMerchant extends AbstractMapObject {
         }
     }
 
-    public String getOwner() { return ownerName; }
-    public void clearItems() { synchronized (items) { items.clear(); } }
-    public int getOwnerId() { return ownerId; }
-    public String getDescription() { return description; }
+    public String getOwner() {
+        return ownerName;
+    }
+
+    public void clearItems() {
+        synchronized (items) {
+            items.clear();
+        }
+    }
+
+    public int getOwnerId() {
+        return ownerId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
     public Character[] getVisitorCharacters() {
         visitorLock.lock();
         try {
@@ -679,7 +728,13 @@ public class HiredMerchant extends AbstractMapObject {
             visitorLock.unlock();
         }
     }
-    public List<PlayerShopItem> getItems() { synchronized (items) { return Collections.unmodifiableList(items); } }
+
+    public List<PlayerShopItem> getItems() {
+        synchronized (items) {
+            return Collections.unmodifiableList(items);
+        }
+    }
+
     public boolean hasItem(int itemid) {
         for (PlayerShopItem mpsi : getItems()) {
             if (mpsi.getItem().getItemId() == itemid && mpsi.isExist() && mpsi.getBundles() > 0) {
@@ -688,14 +743,17 @@ public class HiredMerchant extends AbstractMapObject {
         }
         return false;
     }
+
     public boolean addItem(PlayerShopItem item) {
         synchronized (items) {
-            if (items.size() >= 16) return false;
+            if (items.size() >= 16)
+                return false;
             items.add(item);
             printDebug("Added item: " + item.getItem().getItemId());
             return true;
         }
     }
+
     public void clearInexistentItems() {
         synchronized (items) {
             for (int i = items.size() - 1; i >= 0; i--) {
@@ -703,37 +761,73 @@ public class HiredMerchant extends AbstractMapObject {
                     items.remove(i);
                 }
             }
-            try { this.saveItems(false); } catch (SQLException ex) { ex.printStackTrace(); }
+            try {
+                this.saveItems(false);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
+
     private void removeFromSlot(int slot) {
         items.remove(slot);
-        try { this.saveItems(false); } catch (SQLException ex) { ex.printStackTrace(); }
+        try {
+            this.saveItems(false);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
+
     private int getFreeSlot() {
         for (int i = 0; i < 3; i++) {
-            if (visitors[i] == null) return i;
+            if (visitors[i] == null)
+                return i;
         }
         return -1;
     }
 
-    public void setDescription(String description) { this.description = description; }
-    public boolean isPublished() { return published; }
-    public boolean isOpen() { return open.get(); }
-    public void setOpen(boolean set) { open.getAndSet(set); published = true; }
-    public int getItemId() { return itemId; }
-    public boolean isOwner(Character chr) { return chr.getId() == ownerId; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public boolean isOpen() {
+        return open.get();
+    }
+
+    public void setOpen(boolean set) {
+        open.getAndSet(set);
+        published = true;
+    }
+
+    public int getItemId() {
+        return itemId;
+    }
+
+    public boolean isOwner(Character chr) {
+        return chr.getId() == ownerId;
+    }
+
     public void sendMessage(Character chr, String msg) {
         String message = chr.getName() + " : " + msg;
         byte slot = (byte) (getVisitorSlot(chr) + 1);
-        synchronized (messages) { messages.add(new Pair<>(message, slot)); }
+        synchronized (messages) {
+            messages.add(new Pair<>(message, slot));
+        }
         broadcastToVisitorsThreadsafe(PacketCreator.hiredMerchantChat(message, slot));
     }
+
     public List<PlayerShopItem> sendAvailableBundles(int itemid) {
         List<PlayerShopItem> list = new LinkedList<>();
         List<PlayerShopItem> all = new ArrayList<>();
-        if (!open.get()) return list;
-        synchronized (items) { all.addAll(items); }
+        if (!open.get())
+            return list;
+        synchronized (items) {
+            all.addAll(items);
+        }
         for (PlayerShopItem mpsi : all) {
             if (mpsi.getItem().getItemId() == itemid && mpsi.getBundles() > 0 && mpsi.isExist()) {
                 list.add(mpsi);
@@ -771,11 +865,18 @@ public class HiredMerchant extends AbstractMapObject {
                 con.commit();
                 printDebug("Items saved successfully.");
             } catch (Exception e) {
-                try { con.rollback(); } catch (SQLException re) { re.printStackTrace(); }
+                try {
+                    con.rollback();
+                } catch (SQLException re) {
+                    re.printStackTrace();
+                }
                 printDebug("Error saving items: " + e.getMessage());
                 throw e;
             } finally {
-                try { con.setAutoCommit(oldAutoCommit); } catch (SQLException ignore) {}
+                try {
+                    con.setAutoCommit(oldAutoCommit);
+                } catch (SQLException ignore) {
+                }
             }
         }
     }
@@ -790,14 +891,23 @@ public class HiredMerchant extends AbstractMapObject {
         return Inventory.checkSpotsAndOwnership(chr, li);
     }
 
-    public int getChannel() { return channel; }
+    public int getChannel() {
+        return channel;
+    }
+
     public int getTimeOpen() {
         double openTime = (System.currentTimeMillis() - start) / 60000;
         openTime /= 1440;
         openTime *= 1318;
         return (int) Math.ceil(openTime);
     }
-    public void clearMessages() { synchronized (messages) { messages.clear(); } }
+
+    public void clearMessages() {
+        synchronized (messages) {
+            messages.clear();
+        }
+    }
+
     public List<Pair<String, Byte>> getMessages() {
         synchronized (messages) {
             List<Pair<String, Byte>> msgList = new LinkedList<>();
@@ -805,49 +915,103 @@ public class HiredMerchant extends AbstractMapObject {
             return msgList;
         }
     }
-    public List<PastVisitor> getVisitorHistory() { return Collections.unmodifiableList(visitorHistory); }
+
+    public List<PastVisitor> getVisitorHistory() {
+        return Collections.unmodifiableList(visitorHistory);
+    }
+
     public void addToBlacklist(String chrName) {
         visitorLock.lock();
         try {
-            if (blacklist.size() >= BLACKLIST_LIMIT) return;
+            if (blacklist.size() >= BLACKLIST_LIMIT)
+                return;
             blacklist.add(chrName);
-        } finally { visitorLock.unlock(); }
+        } finally {
+            visitorLock.unlock();
+        }
     }
+
     public void removeFromBlacklist(String chrName) {
         visitorLock.lock();
-        try { blacklist.remove(chrName); } finally { visitorLock.unlock(); }
+        try {
+            blacklist.remove(chrName);
+        } finally {
+            visitorLock.unlock();
+        }
     }
-    public Set<String> getBlacklist() { return Collections.unmodifiableSet(blacklist); }
+
+    public Set<String> getBlacklist() {
+        return Collections.unmodifiableSet(blacklist);
+    }
+
     private boolean isBlacklisted(String chrName) {
         visitorLock.lock();
-        try { return blacklist.contains(chrName); } finally { visitorLock.unlock(); }
+        try {
+            return blacklist.contains(chrName);
+        } finally {
+            visitorLock.unlock();
+        }
     }
-    public int getMapId() { return map.getId(); }
-    public MapleMap getMap() { return map; }
-    public List<SoldItem> getSold() { synchronized (sold) { return Collections.unmodifiableList(sold); } }
-    public long getMesos() { return mesos; }
+
+    public int getMapId() {
+        return map.getId();
+    }
+
+    public MapleMap getMap() {
+        return map;
+    }
+
+    public List<SoldItem> getSold() {
+        synchronized (sold) {
+            return Collections.unmodifiableList(sold);
+        }
+    }
+
+    public long getMesos() {
+        return mesos;
+    }
 
     @Override
-    public MapObjectType getType() { return MapObjectType.HIRED_MERCHANT; }
+    public MapObjectType getType() {
+        return MapObjectType.HIRED_MERCHANT;
+    }
+
     @Override
-    public void sendDestroyData(Client client) {}
+    public void sendDestroyData(Client client) {
+    }
+
     @Override
-    public void sendSpawnData(Client client) { client.sendPacket(PacketCreator.spawnHiredMerchantBox(this)); }
+    public void sendSpawnData(Client client) {
+        client.sendPacket(PacketCreator.spawnHiredMerchantBox(this));
+    }
 
     public class SoldItem {
         int itemid, mesos;
         short quantity;
         String buyer;
+
         public SoldItem(String buyer, int itemid, short quantity, int mesos) {
             this.buyer = buyer;
             this.itemid = itemid;
             this.quantity = quantity;
             this.mesos = mesos;
         }
-        public String getBuyer() { return buyer; }
-        public int getItemId() { return itemid; }
-        public short getQuantity() { return quantity; }
-        public int getMesos() { return mesos; }
+
+        public String getBuyer() {
+            return buyer;
+        }
+
+        public int getItemId() {
+            return itemid;
+        }
+
+        public short getQuantity() {
+            return quantity;
+        }
+
+        public int getMesos() {
+            return mesos;
+        }
     }
 
     public void savePersistence(Connection con) throws SQLException {
@@ -855,7 +1019,8 @@ public class HiredMerchant extends AbstractMapObject {
         PreparedStatement ps = null;
         try {
             long minutesOpen = (System.currentTimeMillis() - this.start) / 60000;
-            ps = con.prepareStatement("REPLACE INTO hiredmerchants (ownerid, ownername, itemid, description, world, channel, mapid, x, y, minutesopen, isopen, blacklist) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
+            ps = con.prepareStatement(
+                    "REPLACE INTO hiredmerchants (ownerid, ownername, itemid, description, world, channel, mapid, x, y, minutesopen, isopen, blacklist) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
             ps.setInt(1, ownerId);
             ps.setString(2, ownerName);
             ps.setInt(3, itemId);
@@ -869,8 +1034,12 @@ public class HiredMerchant extends AbstractMapObject {
             StringBuilder bl = new StringBuilder();
             visitorLock.lock();
             try {
-                for (String banned : blacklist) { bl.append(banned).append(";"); }
-            } finally { visitorLock.unlock(); }
+                for (String banned : blacklist) {
+                    bl.append(banned).append(";");
+                }
+            } finally {
+                visitorLock.unlock();
+            }
             ps.setString(11, bl.toString());
             ps.executeUpdate();
             ps.close();
@@ -892,7 +1061,8 @@ public class HiredMerchant extends AbstractMapObject {
             ItemFactory.MERCHANT.saveItems(itemsWithType, bundles, prices, this.ownerId, con);
             printDebug("Persistence saved successfully.");
         } finally {
-            if (ps != null && !ps.isClosed()) ps.close();
+            if (ps != null && !ps.isClosed())
+                ps.close();
         }
     }
 
@@ -918,18 +1088,21 @@ public class HiredMerchant extends AbstractMapObject {
 
             long restoredStart = System.currentTimeMillis() - (minutesOpen * 60000L);
 
-            HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, description, cserv.getWorld(), cserv.getId(), map, restoredStart);
+            HiredMerchant merch = new HiredMerchant(ownerId, ownerName, itemId, description, cserv.getWorld(),
+                    cserv.getId(), map, restoredStart);
             merch.setPosition(new java.awt.Point(x, y));
 
             if (blString != null && !blString.isEmpty()) {
                 for (String s : blString.split(";")) {
-                    if (!s.isEmpty()) merch.addToBlacklist(s);
+                    if (!s.isEmpty())
+                        merch.addToBlacklist(s);
                 }
             }
 
             java.util.Map<Integer, Pair<Integer, Short>> priceInfo = new java.util.HashMap<>();
             try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("SELECT inventoryitemid, price, bundles FROM inventorymerchant WHERE characterid = ?")) {
+                    PreparedStatement ps = con.prepareStatement(
+                            "SELECT inventoryitemid, price, bundles FROM inventorymerchant WHERE characterid = ?")) {
                 ps.setInt(1, ownerId);
                 try (ResultSet rs2 = ps.executeQuery()) {
                     while (rs2.next()) {
@@ -947,7 +1120,8 @@ public class HiredMerchant extends AbstractMapObject {
             for (Pair<Item, InventoryType> p : loadedItems) {
                 Item item = p.getLeft();
                 int uniqueId = item.getUniqueId();
-                if (item.getItemId() == 3020002) continue;
+                if (item.getItemId() == 3020002)
+                    continue;
 
                 if (priceInfo.containsKey(uniqueId)) {
                     Pair<Integer, Short> info = priceInfo.get(uniqueId);
@@ -956,7 +1130,8 @@ public class HiredMerchant extends AbstractMapObject {
                     PlayerShopItem shopItem = new PlayerShopItem(item, bundles, price);
                     merch.addItem(shopItem);
                     addedCount++;
-                    System.out.println("[HM-DEBUG][RESTORE] Loaded Item: " + item.getItemId() + " | Price: " + price + " | Bundle: " + bundles);
+                    System.out.println("[HM-DEBUG][RESTORE] Loaded Item: " + item.getItemId() + " | Price: " + price
+                            + " | Bundle: " + bundles);
                 } else {
                     System.out.println("[HM-DEBUG][RESTORE] Skipping Item (No Price Info): " + item.getItemId());
                 }

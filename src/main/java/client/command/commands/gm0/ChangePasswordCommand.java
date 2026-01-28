@@ -64,7 +64,8 @@ public class ChangePasswordCommand extends Command {
                 verified = true;
             }
             // Check legacy hashes (Plaintext, SHA-1, SHA-512)
-            else if (dbHash.equals(oldPass) || checkHash(dbHash, "SHA-1", oldPass) || checkHash(dbHash, "SHA-512", oldPass)) {
+            else if (dbHash.equals(oldPass) || checkHash(dbHash, "SHA-1", oldPass)
+                    || checkHash(dbHash, "SHA-512", oldPass)) {
                 verified = true;
             }
 
@@ -96,7 +97,7 @@ public class ChangePasswordCommand extends Command {
         try {
             MessageDigest digester = MessageDigest.getInstance(type);
             digester.update(password.getBytes(StandardCharsets.UTF_8), 0, password.length());
-            return HexTool.toHexString(digester.digest()).replace(" ", "").toLowerCase().equals(hash);
+            return HexTool.toHexString(digester.digest()).replace(" ", "").equalsIgnoreCase(hash);
         } catch (Exception e) {
             return false;
         }

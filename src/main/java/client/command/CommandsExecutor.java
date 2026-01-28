@@ -79,7 +79,7 @@ public class CommandsExecutor {
         final String splitRegex = "[ ]";
         String[] splitedMessage = message.substring(1).split(splitRegex, 2);
         if (splitedMessage.length < 2) {
-            splitedMessage = new String[]{splitedMessage[0], ""};
+            splitedMessage = new String[] { splitedMessage[0], "" };
         }
 
         client.getPlayer().setLastCommandMessage(splitedMessage[1]);
@@ -88,7 +88,8 @@ public class CommandsExecutor {
 
         final Command command = registeredCommands.get(commandName);
         if (command == null) {
-            client.getPlayer().yellowMessage("Command '" + commandName + "' is not available. See @commands for a list of available commands.");
+            client.getPlayer().yellowMessage(
+                    "Command '" + commandName + "' is not available. See @commands for a list of available commands.");
             return;
         }
         if (client.getPlayer().gmLevel() < command.getRank()) {
@@ -99,7 +100,7 @@ public class CommandsExecutor {
         if (lowercaseParams.length > 0 && !lowercaseParams[0].isEmpty()) {
             params = Arrays.copyOfRange(lowercaseParams, 0, lowercaseParams.length);
         } else {
-            params = new String[]{};
+            params = new String[] {};
         }
 
         command.execute(client, params);
@@ -150,13 +151,13 @@ public class CommandsExecutor {
     }
 
     // ==========================================
-    //           LEVEL 0: PLAYER COMMANDS
+    // LEVEL 0: PLAYER COMMANDS
     // ==========================================
     private void registerLv0Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
 
         // --- Common / General ---
-        addCommand(new String[]{"help", "commands"}, HelpCommand.class);
+        addCommand(new String[] { "help", "commands" }, HelpCommand.class);
         addCommand("time", TimeCommand.class);
         addCommand("online", OnlineCommand.class);
         addCommand("uptime", UptimeCommand.class);
@@ -167,6 +168,8 @@ public class CommandsExecutor {
         addCommand("enableauth", EnableAuthCommand.class);
         addCommand("credits", StaffCommand.class);
         addCommand("changepassword", ChangePasswordCommand.class);
+        addCommand("withdrawmeso", WithdrawMesoCommand.class);
+        addCommand("closeshop", CloseShopCommand.class);
 
         // --- Economy & Shops ---
         addCommand("voteshop", 0, VoteShopCommand.class);
@@ -201,7 +204,7 @@ public class CommandsExecutor {
         addCommand("whatdropsfrom", 0, WhatDropsFromCommand.class);
 
         // --- Chat ---
-        addCommand(new String[]{"w", "world"}, 0, WorldChatCommand.class);
+        addCommand(new String[] { "w", "world" }, 0, WorldChatCommand.class);
         // addCommand(new String[]{"u", "uni"}, 0, UniverseChatCommand.class);
 
         // --- Game Mechanics ---
@@ -210,7 +213,7 @@ public class CommandsExecutor {
         addCommand("loot", LootCommand.class);
         addCommand("mylawn", MapOwnerClaimCommand.class);
         addCommand("tp", TPCommand.class);
-        addCommand("reborn",RebornCommand.class);
+        addCommand("reborn", RebornCommand.class);
 
         // --- Events & Community ---
         addCommand("joinevent", JoinEventCommand.class);
@@ -224,7 +227,7 @@ public class CommandsExecutor {
     }
 
     // ==========================================
-    //           LEVEL 1: DONATOR / JR.GM
+    // LEVEL 1: DONATOR / JR.GM
     // ==========================================
     private void registerLv1Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
@@ -233,13 +236,14 @@ public class CommandsExecutor {
         // addCommand("buffme", 1, BuffMeCommand.class);
         // addCommand("goto", 1, GotoCommand.class);
 
-        // Note: ToggleExpCommand moved to Lv0 per your list, but kept here if GM specific logic applies
+        // Note: ToggleExpCommand moved to Lv0 per your list, but kept here if GM
+        // specific logic applies
 
         commandsNameDesc.add(levelCommandsCursor);
     }
 
     // ==========================================
-    //           LEVEL 2: GAME MASTER (Intern)
+    // LEVEL 2: GAME MASTER (Intern)
     // ==========================================
     private void registerLv2Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
@@ -264,8 +268,8 @@ public class CommandsExecutor {
         addCommand("clearslot", 2, ClearSlotCommand.class);
         addCommand("clearsavelocs", 2, ClearSavedLocationsCommand.class);
         addCommand("warp", 2, WarpCommand.class);
-        addCommand(new String[]{"warphere", "summon"}, 2, SummonCommand.class);
-        addCommand(new String[]{"warpto", "reach", "follow"}, 2, ReachCommand.class);
+        addCommand(new String[] { "warphere", "summon" }, 2, SummonCommand.class);
+        addCommand(new String[] { "warpto", "reach", "follow" }, 2, ReachCommand.class);
         addCommand("gmshop", 2, GmShopCommand.class);
         addCommand("testshop", 2, TestShopCommand.class);
         addCommand("heal", 2, HealCommand.class);
@@ -293,7 +297,7 @@ public class CommandsExecutor {
     }
 
     // ==========================================
-    //           LEVEL 3: GAME MASTER
+    // LEVEL 3: GAME MASTER
     // ==========================================
     private void registerLv3Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
@@ -366,7 +370,7 @@ public class CommandsExecutor {
     }
 
     // ==========================================
-    //           LEVEL 4: SUPER GM
+    // LEVEL 4: SUPER GM
     // ==========================================
     private void registerLv4Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
@@ -405,7 +409,7 @@ public class CommandsExecutor {
     }
 
     // ==========================================
-    //           LEVEL 5: DEVELOPER
+    // LEVEL 5: DEVELOPER
     // ==========================================
     private void registerLv5Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
@@ -422,7 +426,7 @@ public class CommandsExecutor {
     }
 
     // ==========================================
-    //           LEVEL 6: ADMIN
+    // LEVEL 6: ADMIN
     // ==========================================
     private void registerLv6Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());

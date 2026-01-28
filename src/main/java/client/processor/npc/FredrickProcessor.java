@@ -41,7 +41,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
  */
 public class FredrickProcessor {
     private static final Logger log = LoggerFactory.getLogger(FredrickProcessor.class);
-    private static final int[] dailyReminders = new int[]{2, 5, 10, 15, 30, 60, 90, Integer.MAX_VALUE};
+    private static final int[] dailyReminders = new int[] { 2, 5, 10, 15, 30, 60, 90, Integer.MAX_VALUE };
 
     private final NoteService noteService;
 
@@ -90,7 +90,8 @@ public class FredrickProcessor {
     }
 
     public static int timestampElapsedDays(Timestamp then, long timeNow) {
-        // System.out.println("[FredrickDebug] Calculating elapsed days. Then: " + then + ", Now: " + timeNow);
+        // System.out.println("[FredrickDebug] Calculating elapsed days. Then: " + then
+        // + ", Now: " + timeNow);
         return (int) ((timeNow - then.getTime()) / DAYS.toMillis(1));
     }
 
@@ -99,9 +100,12 @@ public class FredrickProcessor {
         String msg;
 
         if (daynotes < 4) {
-            msg = "Hi customer! I am Fredrick, the Union Chief of the Hired Merchant Union. A reminder that " + dailyReminders[daynotes] + " days have passed since you used our service. Please reclaim your stored goods at FM Entrance.";
+            msg = "Hi customer! I am Fredrick, the Union Chief of the Hired Merchant Union. A reminder that "
+                    + dailyReminders[daynotes]
+                    + " days have passed since you used our service. Please reclaim your stored goods at FM Entrance.";
         } else {
-            msg = "Hi customer! I am Fredrick, the Union Chief of the Hired Merchant Union. " + dailyReminders[daynotes] + " days have passed since you used our service. Consider claiming back the items before we move them away for refund.";
+            msg = "Hi customer! I am Fredrick, the Union Chief of the Hired Merchant Union. " + dailyReminders[daynotes]
+                    + " days have passed since you used our service. Consider claiming back the items before we move them away for refund.";
         }
 
         return msg;
@@ -131,7 +135,8 @@ public class FredrickProcessor {
         try (Connection con = DatabaseConnection.getConnection()) {
 
             removeFredrickLog(con, cid);
-            try (PreparedStatement ps = con.prepareStatement("INSERT INTO `fredstorage` (`cid`, `daynotes`, `timestamp`) VALUES (?, 0, ?)")) {
+            try (PreparedStatement ps = con
+                    .prepareStatement("INSERT INTO `fredstorage` (`cid`, `daynotes`, `timestamp`) VALUES (?, 0, ?)")) {
                 ps.setInt(1, cid);
                 ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
                 int rows = ps.executeUpdate();
@@ -155,7 +160,8 @@ public class FredrickProcessor {
         }
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("DELETE FROM `notes` WHERE `from` LIKE ? AND `to` LIKE ?")) {
+                PreparedStatement ps = con
+                        .prepareStatement("DELETE FROM `notes` WHERE `from` LIKE ? AND `to` LIKE ?")) {
             ps.setString(1, "FREDRICK");
 
             for (String cname : expiredCnames) {
@@ -178,8 +184,9 @@ public class FredrickProcessor {
             List<Pair<Pair<Integer, String>, Integer>> notifCids = new LinkedList<>();
 
             System.out.println("[FredrickDebug] Querying fredstorage table...");
-            try (PreparedStatement ps = con.prepareStatement("SELECT * FROM fredstorage f LEFT JOIN (SELECT id, name, world, lastLogoutTime FROM characters) AS c ON c.id = f.cid");
-                 ResultSet rs = ps.executeQuery()) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT * FROM fredstorage f LEFT JOIN (SELECT id, name, world, lastLogoutTime FROM characters) AS c ON c.id = f.cid");
+                    ResultSet rs = ps.executeQuery()) {
                 long curTime = System.currentTimeMillis();
 
                 while (rs.next()) {
@@ -189,10 +196,12 @@ public class FredrickProcessor {
                     int daynotes = Math.min(dailyReminders.length - 1, rs.getInt("daynotes"));
 
                     int elapsedDays = timestampElapsedDays(ts, curTime);
-                    // System.out.println("[FredrickDebug] Checking CID: " + cid + ", Elapsed Days: " + elapsedDays);
+                    // System.out.println("[FredrickDebug] Checking CID: " + cid + ", Elapsed Days:
+                    // " + elapsedDays);
 
                     if (elapsedDays > 100) {
-                        System.out.println("[FredrickDebug] CID " + cid + " EXPIRED (>100 days). Adding to cleanup list.");
+                        System.out.println(
+                                "[FredrickDebug] CID " + cid + " EXPIRED (>100 days). Adding to cleanup list.");
                         expiredCids.add(new Pair<>(cid, world));
                     } else {
                         int notifDay = dailyReminders[daynotes];
@@ -208,7 +217,8 @@ public class FredrickProcessor {
 
                             if (inactivityDays < 7 || daynotes >= dailyReminders.length - 1) {
                                 String name = rs.getString("name");
-                                System.out.println("[FredrickDebug] CID " + cid + " (" + name + ") due for notification. Daynotes: " + daynotes);
+                                System.out.println("[FredrickDebug] CID " + cid + " (" + name
+                                        + ") due for notification. Daynotes: " + daynotes);
                                 notifCids.add(new Pair<>(new Pair<>(cid, name), daynotes));
                             }
                         }
@@ -218,7 +228,8 @@ public class FredrickProcessor {
 
             if (!expiredCids.isEmpty()) {
                 System.out.println("[FredrickDebug] Processing expired items cleanup...");
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM `inventoryitems` WHERE `type` = ? AND `characterid` = ?")) {
+                try (PreparedStatement ps = con
+                        .prepareStatement("DELETE FROM `inventoryitems` WHERE `type` = ? AND `characterid` = ?")) {
                     ps.setInt(1, ItemFactory.MERCHANT.getValue());
 
                     for (Pair<Integer, Integer> cid : expiredCids) {
@@ -229,7 +240,8 @@ public class FredrickProcessor {
                     System.out.println("[FredrickDebug] Deleted expired items from inventoryitems.");
                 }
 
-                try (PreparedStatement ps = con.prepareStatement("UPDATE `characters` SET `MerchantMesos` = 0 WHERE `id` = ?")) {
+                try (PreparedStatement ps = con
+                        .prepareStatement("UPDATE `characters` SET `MerchantMesos` = 0 WHERE `id` = ?")) {
                     for (Pair<Integer, Integer> cid : expiredCids) {
                         ps.setInt(1, cid.getLeft());
                         ps.addBatch();
@@ -239,7 +251,8 @@ public class FredrickProcessor {
                             Character chr = wserv.getPlayerStorage().getCharacterById(cid.getLeft());
                             if (chr != null) {
                                 chr.setMerchantMeso(0);
-                                System.out.println("[FredrickDebug] Reset online memory MerchantMeso for CID: " + cid.getLeft());
+                                System.out.println(
+                                        "[FredrickDebug] Reset online memory MerchantMeso for CID: " + cid.getLeft());
                             }
                         }
                     }
@@ -261,7 +274,8 @@ public class FredrickProcessor {
 
             if (!notifCids.isEmpty()) {
                 System.out.println("[FredrickDebug] Processing notifications...");
-                try (PreparedStatement ps = con.prepareStatement("UPDATE `fredstorage` SET `daynotes` = ? WHERE `cid` = ?")) {
+                try (PreparedStatement ps = con
+                        .prepareStatement("UPDATE `fredstorage` SET `daynotes` = ? WHERE `cid` = ?")) {
                     for (Pair<Pair<Integer, String>, Integer> cid : notifCids) {
                         ps.setInt(1, cid.getRight());
                         ps.setInt(2, cid.getLeft().getLeft());
@@ -285,7 +299,8 @@ public class FredrickProcessor {
     private static boolean deleteFredrickItems(int cid) {
         System.out.println("[FredrickDebug] deleteFredrickItems called for CID: " + cid);
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("DELETE FROM `inventoryitems` WHERE `type` = ? AND `characterid` = ?")) {
+                PreparedStatement ps = con
+                        .prepareStatement("DELETE FROM `inventoryitems` WHERE `type` = ? AND `characterid` = ?")) {
             ps.setInt(1, ItemFactory.MERCHANT.getValue()); // Type 6
             ps.setInt(2, cid);
             int rows = ps.executeUpdate();
@@ -304,18 +319,37 @@ public class FredrickProcessor {
             try {
                 Character chr = c.getPlayer();
 
-                // 1. Check DB Flag
+                // 1. Check DB Flag (Memory)
                 if (chr.hasMerchant()) {
                     System.out.println("[FredrickDebug] Fail: chr.hasMerchant() is true.");
-                    chr.dropMessage(1, "You cannot use Fredrick while your store is open.\r\nPlease close your Hired Merchant first.");
+                    chr.dropMessage(1,
+                            "You cannot use Fredrick while your store is open.\r\nPlease close your Hired Merchant first.");
                     return;
                 }
 
-                // 2. Check World Server (Crucial if DB flag desyncs)
+                // 2. Check World Server (Memory - Cross Channel)
                 if (Server.getInstance().getWorld(chr.getWorld()).getHiredMerchant(chr.getId()) != null) {
                     System.out.println("[FredrickDebug] Fail: World server reports active HiredMerchant object.");
-                    chr.dropMessage(1, "Your store is currently open in the Free Market.\r\nPlease close it before retrieving items.");
+                    chr.dropMessage(1,
+                            "Your store is currently open in the Free Market.\r\nPlease close it before retrieving items.");
                     return;
+                }
+
+                // 3. Check DB Table (Persistence - Critical for Server Restarts)
+                try (Connection con = DatabaseConnection.getConnection();
+                        PreparedStatement ps = con
+                                .prepareStatement("SELECT isopen FROM hiredmerchants WHERE ownerid = ?")) {
+                    ps.setInt(1, chr.getId());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next() && rs.getInt("isopen") == 1) {
+                            System.out.println("[FredrickDebug] Fail: DB HiringMerchants table reports isopen=1.");
+                            chr.dropMessage(1,
+                                    "Your store is currently open (DB).\r\nPlease close it correctly before retrieving items.");
+                            return;
+                        }
+                    }
+                } catch (SQLException e) {
+                    System.err.println("[FredrickDebug] Error checking hiredmerchants table: " + e.getMessage());
                 }
 
                 List<Pair<Item, InventoryType>> items;
@@ -332,12 +366,16 @@ public class FredrickProcessor {
                     }
 
                     System.out.println("[FredrickDebug] Withdrawing Merchant Mesos...");
+                    chr.refreshMerchantMesos();
                     chr.withdrawMerchantMesos();
 
                     System.out.println("[FredrickDebug] Attempting to delete items from DB...");
                     if (deleteFredrickItems(chr.getId())) {
                         System.out.println("[FredrickDebug] DB Deletion successful. Processing memory objects...");
-                        HiredMerchant merchant = chr.getHiredMerchant();
+
+                        // [FIX] Correctly retrieve the OWNED merchant, not the VISITED merchant
+                        server.maps.HiredMerchant merchant = Server.getInstance().getWorld(chr.getWorld())
+                                .getHiredMerchant(chr.getId());
 
                         if (merchant != null) {
                             System.out.println("[FredrickDebug] Clearing active HiredMerchant object items");
@@ -349,12 +387,14 @@ public class FredrickProcessor {
                         System.out.println("[FredrickDebug] Adding items to player inventory...");
                         for (Pair<Item, InventoryType> it : items) {
                             Item item = it.getLeft();
-                            System.out.println("[FredrickDebug] Adding Item ID: " + item.getItemId() + ", Qty: " + item.getQuantity() + ", Owner: " + item.getOwner());
+                            System.out.println("[FredrickDebug] Adding Item ID: " + item.getItemId() + ", Qty: "
+                                    + item.getQuantity() + ", Owner: " + item.getOwner());
 
                             InventoryManipulator.addFromDrop(chr.getClient(), item, false);
 
                             String itemName = ItemInformationProvider.getInstance().getName(item.getItemId());
-                            log.debug("Chr {} gained {}x {} ({})", chr.getName(), item.getQuantity(), itemName, item.getItemId());
+                            log.debug("Chr {} gained {}x {} ({})", chr.getName(), item.getQuantity(), itemName,
+                                    item.getItemId());
                         }
 
                         System.out.println("[FredrickDebug] Sending success packet (0x1E)");
