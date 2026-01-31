@@ -8,35 +8,70 @@ var rarityRates = {
     "ULTRA_RARE": 5.0
 };
 
-////// AUGUST NX GACHA LIST ////
+//// JANUARY NX GACHA LIST ////
 //var lootTable = {
 //    "COMMON": [
-//        [1052948, "COMMON"], // Evening Orchid
-//        [1052594, "COMMON"], // Green Dinosaur Overall
-//        [1004540, "COMMON"], // Evening Orchid Hat
-//        [1003802, "COMMON"], // Green Dinosaur Hat
-//        [1082511, "COMMON"], // Green Dinosaur Gloves
-//        [1072791, "COMMON"] // Green Dinosaur Shoes
+//        [2070019, "COMMON"], // Magic Throwing Knife
+//        [2070020, "COMMON"], // Infinite Throwing Stars
+//        [5013097, "COMMON"], // Effusive Exclamations
+//        [5013094, "COMMON"], // Field of Flowers
+//        [1006390, "COMMON"], // Qinglong Horns
+//        [1103658, "COMMON"], // Qinglong Courage
+//        [1073814, "COMMON"], // Qinglong Shoes
+//        [1082588, "COMMON"], // Rainbow Marbles
+//        [1004969, "COMMON"], // Pink Elephant Hat
+//        [1082721, "COMMON"], // Pink Elephant Gloves
+//        [1053186, "COMMON"], // Pink Elephant Outfit
+//        [1072529, "COMMON"]  // Pink Elephant Slippers
 //    ],
 //    "RARE": [
-//        [1050381, "RARE"], // Kinesis Uniform
-//        [1051544, "RARE"], // Soft Blushed
-//        [1051539, "RARE"], // Crimson Fate Topcoat
-//        [1053352, "RARE"], // Veritas Attire
-//        [1053351, "RARE"], // Cutie Pie Coat
-//        [1004003, "RARE"], // Pink Nero Hoodie
-//        [1004004, "RARE"], // Grey Nero Hoodie
-//        [1004167, "RARE"], // Dinosaur Snapback
-//        [1004589, "RARE"], // Jay's Sterilized Kitty Eye Patch
-//        [1102801, "RARE"], // Silver Wolf Coat
-//        [1102820, "RARE"]  // Hazy Night Tassel
+//        [2070021, "RARE"], // Templar Throwing Stars
+//        [5013095, "RARE"], // Shadow Self
+//        [1703423, "RARE"], // Sweet Croffle
+//        [1703421, "RARE"], // Orangey Rabbit
+//        [1054082, "RARE"], // Qinglong Dress
+//        [1054083, "RARE"], // Qinglong Jacket
+//        [1054046, "RARE"] // The Curse of the red ghost
+////        [1036330, "RARE"] // Rosy Dreams
 //    ],
 //    "ULTRA_RARE": [
-//        [1702588, "ULTRA_RARE"], // black cat plush
-//        [1702718, "ULTRA_RARE"], // shadow warrior sword
-//        [1702557, "ULTRA_RARE"]  // duster
+//        [5000061, "ULTRA_RARE"], // Blue Bean
+//        [2070022, "ULTRA_RARE"], // Dharma Throwing Stars
+//        [5013206, "ULTRA_RARE"], // Dark Furry Tail Guardian Cat
+//        [1702786, "ULTRA_RARE"]  // Blood Oath
 //    ]
 //};
+
+
+//// FEBUARY NX GACHA LIST ////
+var lootTable = {
+    "COMMON": [
+        [1052948, "COMMON"], // Evening Orchid
+        [1052594, "COMMON"], // Green Dinosaur Overall
+        [1004540, "COMMON"], // Evening Orchid Hat
+        [1003802, "COMMON"], // Green Dinosaur Hat
+        [1082511, "COMMON"], // Green Dinosaur Gloves
+        [1072791, "COMMON"] // Green Dinosaur Shoes
+    ],
+    "RARE": [
+        [1050381, "RARE"], // Kinesis Uniform
+        [1051544, "RARE"], // Soft Blushed
+        [1051539, "RARE"], // Crimson Fate Topcoat
+        [1053352, "RARE"], // Veritas Attire
+        [1053351, "RARE"], // Cutie Pie Coat
+        [1004003, "RARE"], // Pink Nero Hoodie
+        [1004004, "RARE"], // Grey Nero Hoodie
+        [1004167, "RARE"], // Dinosaur Snapback
+        [1004589, "RARE"], // Jay's Sterilized Kitty Eye Patch
+        [1102801, "RARE"], // Silver Wolf Coat
+        [1102820, "RARE"]  // Hazy Night Tassel
+    ],
+    "ULTRA_RARE": [
+        [1702588, "ULTRA_RARE"], // black cat plush
+        [1702718, "ULTRA_RARE"], // shadow warrior sword
+        [1702557, "ULTRA_RARE"]  // duster
+    ]
+};
 
 //// SEPTEMBER NX GACHA LIST ////
 //var lootTable = {
@@ -110,39 +145,7 @@ var rarityRates = {
 //    ]
 //};
 
-//// NOVEMBER NX GACHA LIST ////
-var lootTable = {
-    "COMMON": [
-        [2070019, "COMMON"], // Magic Throwing Knife
-        [2070020, "COMMON"], // Infinite Throwing Stars
-        [5013097, "COMMON"], // Effusive Exclamations
-        [5013094, "COMMON"], // Field of Flowers
-        [1006390, "COMMON"], // Qinglong Horns
-        [1103658, "COMMON"], // Qinglong Courage
-        [1073814, "COMMON"], // Qinglong Shoes
-        [1082588, "COMMON"], // Rainbow Marbles
-        [1004969, "COMMON"], // Pink Elephant Hat
-        [1082721, "COMMON"], // Pink Elephant Gloves
-        [1053186, "COMMON"], // Pink Elephant Outfit
-        [1072529, "COMMON"]  // Pink Elephant Slippers
-    ],
-    "RARE": [
-        [2070021, "RARE"], // Templar Throwing Stars
-        [5013095, "RARE"], // Shadow Self
-        [1703423, "RARE"], // Sweet Croffle
-        [1703421, "RARE"], // Orangey Rabbit
-        [1054082, "RARE"], // Qinglong Dress
-        [1054083, "RARE"], // Qinglong Jacket
-        [1054046, "RARE"] // The Curse of the red ghost
-//        [1036330, "RARE"] // Rosy Dreams
-    ],
-    "ULTRA_RARE": [
-        [5000061, "ULTRA_RARE"], // Blue Bean
-        [2070022, "ULTRA_RARE"], // Dharma Throwing Stars
-        [5013206, "ULTRA_RARE"], // Dark Furry Tail Guardian Cat
-        [1702786, "ULTRA_RARE"]  // Blood Oath
-    ]
-};
+
 
 
 function start() {
