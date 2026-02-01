@@ -1535,6 +1535,11 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         Pair<Integer, Integer> result = client.command.commands.gm0.SellAllCommand.sellAllItems(getClient(),
                 getPlayer(), type, includeUntradables, includeRebirths);
+
+        if (result.getLeft() > 0) {
+            getPlayer().gainMeso(result.getLeft(), true);
+        }
+
         return "Sold " + result.getRight() + " items for " + result.getLeft() + " mesos.";
     }
 
