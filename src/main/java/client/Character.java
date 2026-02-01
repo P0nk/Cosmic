@@ -480,6 +480,52 @@ public class Character extends AbstractCharacterObject {
     // [ANTI-HACK] Kami / Distance Suspicion Counter
     private int kamiViolations = 0;
 
+    // [FEATURE] Auto-Sell
+    private boolean autoSell = false;
+    private boolean sellUntradables = false;
+    private boolean sellRebirths = false;
+    private final Set<Integer> excludedSellItems = new LinkedHashSet<>();
+
+    public boolean isAutoSellEnabled() {
+        return autoSell;
+    }
+
+    public void setAutoSell(boolean autoSell) {
+        this.autoSell = autoSell;
+    }
+
+    public boolean isSellUntradables() {
+        return sellUntradables;
+    }
+
+    public void setSellUntradables(boolean sellUntradables) {
+        this.sellUntradables = sellUntradables;
+    }
+
+    public boolean isSellRebirths() {
+        return sellRebirths;
+    }
+
+    public void setSellRebirths(boolean sellRebirths) {
+        this.sellRebirths = sellRebirths;
+    }
+
+    public Set<Integer> getExcludedSellItems() {
+        return excludedSellItems;
+    }
+
+    public boolean isExcludedFromSell(int itemId) {
+        return excludedSellItems.contains(itemId);
+    }
+
+    public void toggleSellExclusion(int itemId) {
+        if (excludedSellItems.contains(itemId)) {
+            excludedSellItems.remove(itemId);
+        } else {
+            excludedSellItems.add(itemId);
+        }
+    }
+
     public int getKamiViolations() {
         return kamiViolations;
     }
@@ -7384,6 +7430,19 @@ public class Character extends AbstractCharacterObject {
                 ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
                 ret.setAutopotEnabled(rs.getBoolean("autopotEnabled"));
 
+                try {
+                    ret.sellUntradables = rs.getInt("sell_untradables") == 1;
+                    ret.sellRebirths = rs.getInt("sell_rebirths") == 1;
+                    String excl = rs.getString("sell_exclusions");
+                    if (excl != null && !excl.isEmpty()) {
+                        for (String s : excl.split(",")) {
+                            ret.excludedSellItems.add(Integer.parseInt(s));
+                        }
+                    }
+                } catch (SQLException ignore) {
+                    // Columns might not exist yet
+                }
+
                 // New / Custom Stats
                 ret.passiveWatk = rs.getInt("passive_watk");
                 ret.passiveMatk = rs.getInt("passive_matk");
@@ -8851,7 +8910,7 @@ public class Character extends AbstractCharacterObject {
                 " matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?," +
                 " jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?," +
                 " partySearch = ?, autopotEnabled = ?, passive_watk = ?, passive_matk = ?, passive_wdef = ?," +
-                " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?, reborns = ? WHERE id = ?",
+                " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?, reborns = ?, sell_untradables = ?, sell_rebirths = ?, sell_exclusions = ? WHERE id = ?",
                 Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, level);
@@ -8976,7 +9035,18 @@ public class Character extends AbstractCharacterObject {
             ps.setInt(62, passiveEva);
             ps.setInt(63, dailyPlaytime);
             ps.setInt(64, reborns);
-            ps.setInt(65, id);
+            ps.setInt(64, reborns);
+            ps.setInt(65, sellUntradables ? 1 : 0);
+            ps.setInt(66, sellRebirths ? 1 : 0);
+            StringBuilder sb = new StringBuilder();
+            for (Integer i : excludedSellItems) {
+                sb.append(i).append(",");
+            }
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 1);
+            }
+            ps.setString(67, sb.toString());
+            ps.setInt(68, id);
 
             int updateRows = ps.executeUpdate();
             if (updateRows < 1) {

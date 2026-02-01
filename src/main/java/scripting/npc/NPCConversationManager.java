@@ -38,6 +38,7 @@ import constants.id.NpcId;
 import constants.inventory.ItemConstants;
 import constants.string.LanguageConstants;
 import net.packet.Packet;
+import tools.Pair;
 import net.server.Server;
 import net.server.channel.Channel;
 import net.server.coordinator.matchchecker.MatchCheckerListenerFactory.MatchCheckerType;
@@ -220,7 +221,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public void sendStyle(String text, int[] styles) {
         if (styles.length > 0) {
             getClient().sendPacket(PacketCreator.getNPCTalkStyle(npc, text, styles));
-        } else {    // thanks Conrad for noticing empty styles crashing players
+        } else { // thanks Conrad for noticing empty styles crashing players
             sendOk("Sorry, there are no options of cosmetics available for you here at the moment.");
             dispose();
         }
@@ -348,11 +349,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public boolean canSpawnPlayerNpc(int mapid) {
         Character chr = getPlayer();
-        return !YamlConfig.config.server.PLAYERNPC_AUTODEPLOY && chr.getLevel() >= chr.getMaxClassLevel() && !chr.isGM() && PlayerNPC.canSpawnPlayerNpc(chr.getName(), mapid);
+        return !YamlConfig.config.server.PLAYERNPC_AUTODEPLOY && chr.getLevel() >= chr.getMaxClassLevel() && !chr.isGM()
+                && PlayerNPC.canSpawnPlayerNpc(chr.getName(), mapid);
     }
 
     public PlayerNPC getPlayerNPCByScriptid(int scriptId) {
-        for (MapObject pnpcObj : getPlayer().getMap().getMapObjectsInRange(new Point(0, 0), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.PLAYER_NPC))) {
+        for (MapObject pnpcObj : getPlayer().getMap().getMapObjectsInRange(new Point(0, 0), Double.POSITIVE_INFINITY,
+                Arrays.asList(MapObjectType.PLAYER_NPC))) {
             PlayerNPC pn = (PlayerNPC) pnpcObj;
 
             if (pn.getScriptId() == scriptId) {
@@ -414,7 +417,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         if (shop != null) {
             shop.sendShop(c);
-        } else {    // check for missing shopids thanks to resinate
+        } else { // check for missing shopids thanks to resinate
             log.warn("Shop ID: {} is missing from database.", id);
             ShopFactory.getInstance().getShop(11000).sendShop(c);
         }
@@ -441,25 +444,35 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void doGachapon(boolean isSilent) {
         GachaponItem item = Gachapon.getInstance().process(npc);
-        Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true); // For normal potions, make it give 100.
+        Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true); // For
+                                                                                                               // normal
+                                                                                                               // potions,
+                                                                                                               // make
+                                                                                                               // it
+                                                                                                               // give
+                                                                                                               // 100.
 
         sendNext("You have obtained a #b#t" + item.getId() + "##k.");
 
-        int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
-                MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.NEW_LEAF_CITY, MapId.EL_NATH, MapId.NAUTILUS_HARBOR};
-        final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ?
-                (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
+        int[] maps = { MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD,
+                MapId.MUSHROOM_SHRINE,
+                MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.NEW_LEAF_CITY, MapId.EL_NATH,
+                MapId.NAUTILUS_HARBOR };
+        final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ? (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
         String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
 
         Gachapon.log(getPlayer(), item.getId(), map);
 
-        if (item.getTier() > 2) { //Uncommon and Rare
-        //    Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.gachaponMessage(itemGained, map, getPlayer())); Merogie -- Muted Gachapon
+        if (item.getTier() > 2) { // Uncommon and Rare
+            // Server.getInstance().broadcastMessage(c.getWorld(),
+            // PacketCreator.gachaponMessage(itemGained, map, getPlayer())); Merogie --
+            // Muted Gachapon
         }
     }
 
     /**
      * Custom code by Liquid
+     * 
      * @param amount
      */
     public void doGachaponWithDelay(int amount) {
@@ -472,42 +485,47 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 return;
             }
 
-            //Remove it ticket from inventory
+            // Remove it ticket from inventory
             this.gainItem(5220000, (short) -1);
 
             GachaponItem item = Gachapon.getInstance().process(npc);
             Item itemGained = gainItem(item.getId(), (short) (item.getId() / 10000 == 200 ? 100 : 1), true, true);
 
-            int[] maps = {MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD, MapId.MUSHROOM_SHRINE,
-                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.NEW_LEAF_CITY, MapId.EL_NATH, MapId.NAUTILUS_HARBOR};
-            final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ?
-                                   (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
+            int[] maps = { MapId.HENESYS, MapId.ELLINIA, MapId.PERION, MapId.KERNING_CITY, MapId.SLEEPYWOOD,
+                    MapId.MUSHROOM_SHRINE,
+                    MapId.SHOWA_SPA_M, MapId.SHOWA_SPA_F, MapId.LUDIBRIUM, MapId.NEW_LEAF_CITY, MapId.EL_NATH,
+                    MapId.NAUTILUS_HARBOR };
+            final int mapId = maps[(getNpc() != NpcId.GACHAPON_NAUTILUS) ? (getNpc() - NpcId.GACHAPON_HENESYS) : 11];
             String map = c.getChannelServer().getMapFactory().getMap(mapId).getMapName();
 
             Gachapon.log(getPlayer(), item.getId(), map);
 
             if (item.getTier() > 2) {
-          //      Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.gachaponMessage(itemGained, map, getPlayer()));
+                // Server.getInstance().broadcastMessage(c.getWorld(),
+                // PacketCreator.gachaponMessage(itemGained, map, getPlayer()));
             }
 
         }, 0, 200, TimeUnit.MILLISECONDS);
     }
 
     public boolean hasEnoughSlotsForGachapon(int count) {
-        return c.getPlayer().getInventory(InventoryType.EQUIP).getNumFreeSlot() >= count &&  // EQUIP
-                c.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() >= count &&  // USE
-                c.getPlayer().getInventory(InventoryType.SETUP).getNumFreeSlot() >= count &&  // SETUP
-                c.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() >= count;    // ETC
+        return c.getPlayer().getInventory(InventoryType.EQUIP).getNumFreeSlot() >= count && // EQUIP
+                c.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() >= count && // USE
+                c.getPlayer().getInventory(InventoryType.SETUP).getNumFreeSlot() >= count && // SETUP
+                c.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() >= count; // ETC
     }
 
     public void upgradeAlliance() {
         Alliance alliance = Server.getInstance().getAlliance(c.getPlayer().getGuild().getAllianceId());
         alliance.increaseCapacity(1);
 
-        Server.getInstance().allianceMessage(alliance.getId(), GuildPackets.getGuildAlliances(alliance, c.getWorld()), -1, -1);
-        Server.getInstance().allianceMessage(alliance.getId(), GuildPackets.allianceNotice(alliance.getId(), alliance.getNotice()), -1, -1);
+        Server.getInstance().allianceMessage(alliance.getId(), GuildPackets.getGuildAlliances(alliance, c.getWorld()),
+                -1, -1);
+        Server.getInstance().allianceMessage(alliance.getId(),
+                GuildPackets.allianceNotice(alliance.getId(), alliance.getNotice()), -1, -1);
 
-        c.sendPacket(GuildPackets.updateAllianceInfo(alliance, c.getWorld()));  // thanks Vcoc for finding an alliance update to leader issue
+        c.sendPacket(GuildPackets.updateAllianceInfo(alliance, c.getWorld())); // thanks Vcoc for finding an alliance
+                                                                               // update to leader issue
     }
 
     public void disbandAlliance(Client c, int allianceId) {
@@ -562,12 +580,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void divideTeams() {
         if (getEvent() != null) {
-            getPlayer().setTeam(getEvent().getLimit() % 2); //muhaha :D
+            getPlayer().setTeam(getEvent().getLimit() % 2); // muhaha :D
         }
     }
 
     public Character getMapleCharacter(String player) {
-        Character target = Server.getInstance().getWorld(c.getWorld()).getChannel(c.getChannel()).getPlayerStorage().getCharacterByName(player);
+        Character target = Server.getInstance().getWorld(c.getWorld()).getChannel(c.getChannel()).getPlayerStorage()
+                .getCharacterByName(player);
         return target;
     }
 
@@ -575,7 +594,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         MapleLeafLogger.log(getPlayer(), true, prize);
     }
 
-    public boolean createPyramid(String mode, boolean party) {//lol
+    public boolean createPyramid(String mode, boolean party) {// lol
         PyramidMode mod = PyramidMode.valueOf(mode);
 
         Party partyz = getPlayer().getParty();
@@ -588,7 +607,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         }
         mapid += (mod.getMode() * 1000);
 
-        for (byte b = 0; b < 5; b++) {//They cannot warp to the next map before the timer ends (:
+        for (byte b = 0; b < 5; b++) {// They cannot warp to the next map before the timer ends (:
             map = mapManager.getMap(mapid + b);
             if (map.getCharacters().size() > 0) {
                 continue;
@@ -626,7 +645,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         } else {
             baseid = (itemid / 10) * 10;
         }
-//        System.out.println(itemid + "|" + baseid + "|" + itemExists(baseid));
+        // System.out.println(itemid + "|" + baseid + "|" + itemExists(baseid));
         return itemid != baseid && itemExists(baseid) ? baseid : -1;
     }
 
@@ -702,7 +721,9 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         for (int i = 0; i < 6; i++) {
             if (fieldTaken(i)) {
                 if (fieldLobbied(i)) {
-                    msg += "#b#L" + i + "#Carnival Field " + (i + 1) + " (Level: "  // "Carnival field" GMS-like improvement thanks to Jayd (jaydenseah)
+                    msg += "#b#L" + i + "#Carnival Field " + (i + 1) + " (Level: " // "Carnival field" GMS-like
+                                                                                   // improvement thanks to Jayd
+                                                                                   // (jaydenseah)
                             + cpqCalcAvgLvl(980000100 + i * 100) + " / "
                             + getPlayerCount(980000100 + i * 100) + "x"
                             + getPlayerCount(980000100 + i * 100) + ")  #l\r\n";
@@ -753,11 +774,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 if (mc != null) {
                     mc.setChallenged(false);
                     mc.changeMap(map, map.getPortal(0));
-                    mc.sendPacket(PacketCreator.serverNotice(6, LanguageConstants.getMessage(mc, LanguageConstants.CPQEntryLobby)));
+                    mc.sendPacket(PacketCreator.serverNotice(6,
+                            LanguageConstants.getMessage(mc, LanguageConstants.CPQEntryLobby)));
                     TimerManager tMan = TimerManager.getInstance();
                     tMan.schedule(() -> mapClock((int) MINUTES.toSeconds(3)), 1500);
 
-                    mc.setCpqTimer(TimerManager.getInstance().schedule(() -> mc.changeMap(mapExit, mapExit.getPortal(0)), MINUTES.toMillis(3)));
+                    mc.setCpqTimer(TimerManager.getInstance()
+                            .schedule(() -> mc.changeMap(mapExit, mapExit.getPortal(0)), MINUTES.toMillis(3)));
                 }
             }
         } catch (Exception ex) {
@@ -779,7 +802,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     private void warpoutCPQLobby(MapleMap lobbyMap) {
-        MapleMap out = lobbyMap.getChannelServer().getMapFactory().getMap((lobbyMap.getId() < 980030000) ? 980000000 : 980030000);
+        MapleMap out = lobbyMap.getChannelServer().getMapFactory()
+                .getMap((lobbyMap.getId() < 980030000) ? 980000000 : 980030000);
         for (Character mc : lobbyMap.getAllPlayers()) {
             mc.resetCP();
             mc.setTeam(-1);
@@ -803,11 +827,11 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         for (PartyCharacter pchr : partyMembers) {
             if (pchr.getLevel() >= cpqMinLvl && pchr.getLevel() <= cpqMaxLvl) {
                 if (lobby.getCharacterById(pchr.getId()) == null) {
-                    return 1;  // party member detected out of area
+                    return 1; // party member detected out of area
                 }
             } else {
-//                System.out.println("Party Members dont fit requirements");
-                return 2;  // party member doesn't fit requirements
+                // System.out.println("Party Members dont fit requirements");
+                return 2; // party member doesn't fit requirements
             }
         }
 
@@ -947,7 +971,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         for (int i = 0; i < 3; i++) {
             if (fieldTaken2(i)) {
                 if (fieldLobbied2(i)) {
-                    msg += "#b#L" + i + "#Carnival Field " + (i + 1) + " (Level: "  // "Carnival field" GMS-like improvement thanks to Jayd
+                    msg += "#b#L" + i + "#Carnival Field " + (i + 1) + " (Level: " // "Carnival field" GMS-like
+                                                                                   // improvement thanks to Jayd
                             + cpqCalcAvgLvl(980031000 + i * 1000) + " / "
                             + getPlayerCount(980031000 + i * 1000) + "x"
                             + getPlayerCount(980031000 + i * 1000) + ")  #l\r\n";
@@ -998,11 +1023,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 if (mc != null) {
                     mc.setChallenged(false);
                     mc.changeMap(map, map.getPortal(0));
-                    mc.sendPacket(PacketCreator.serverNotice(6, LanguageConstants.getMessage(mc, LanguageConstants.CPQEntryLobby)));
+                    mc.sendPacket(PacketCreator.serverNotice(6,
+                            LanguageConstants.getMessage(mc, LanguageConstants.CPQEntryLobby)));
                     TimerManager tMan = TimerManager.getInstance();
                     tMan.schedule(() -> mapClock((int) MINUTES.toSeconds(3)), 1500);
 
-                    mc.setCpqTimer(TimerManager.getInstance().schedule(() -> mc.changeMap(mapExit, mapExit.getPortal(0)), MINUTES.toMillis(3)));
+                    mc.setCpqTimer(TimerManager.getInstance()
+                            .schedule(() -> mc.changeMap(mapExit, mapExit.getPortal(0)), MINUTES.toMillis(3)));
                 }
             }
         } catch (Exception ex) {
@@ -1019,7 +1046,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         cpqLeaders.add(leaderid);
         cpqLeaders.add(getPlayer().getId());
 
-        return c.getWorldServer().getMatchCheckerCoordinator().createMatchConfirmation(MatchCheckerType.CPQ_CHALLENGE, c.getWorld(), getPlayer().getId(), cpqLeaders, cpqType);
+        return c.getWorldServer().getMatchCheckerCoordinator().createMatchConfirmation(MatchCheckerType.CPQ_CHALLENGE,
+                c.getWorld(), getPlayer().getId(), cpqLeaders, cpqType);
     }
 
     public void answerCPQChallenge(boolean accept) {
@@ -1108,7 +1136,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         int playersSize = players.size();
         if (!(playersSize >= exped.getMinSize() && playersSize <= exped.getMaxSize())) {
-            return "Make sure there are between #r" + exped.getMinSize() + " ~ " + exped.getMaxSize() + " players#k in this room to start the battle.";
+            return "Make sure there are between #r" + exped.getMinSize() + " ~ " + exped.getMaxSize()
+                    + " players#k in this room to start the battle.";
         }
 
         MapleMap leaderMap = this.getMap();
@@ -1142,17 +1171,20 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             Character chr = marriage.getPlayerById(cid);
             if (chr != null) {
                 if (chr.getId() == player.getId()) {
-                    player.sendPacket(WeddingPackets.onWeddingGiftResult((byte) 0xA, marriage.getWishlistItems(groom), marriage.getGiftItems(player.getClient(), groom)));
+                    player.sendPacket(WeddingPackets.onWeddingGiftResult((byte) 0xA, marriage.getWishlistItems(groom),
+                            marriage.getGiftItems(player.getClient(), groom)));
                 } else {
                     marriage.setIntProperty("wishlistSelection", groom ? 0 : 1);
-                    player.sendPacket(WeddingPackets.onWeddingGiftResult((byte) 0x09, marriage.getWishlistItems(groom), marriage.getGiftItems(player.getClient(), groom)));
+                    player.sendPacket(WeddingPackets.onWeddingGiftResult((byte) 0x09, marriage.getWishlistItems(groom),
+                            marriage.getGiftItems(player.getClient(), groom)));
                 }
             }
         }
     }
 
     public void sendMarriageGifts(List<Item> gifts) {
-        this.getPlayer().sendPacket(WeddingPackets.onWeddingGiftResult((byte) 0xA, Collections.singletonList(""), gifts));
+        this.getPlayer()
+                .sendPacket(WeddingPackets.onWeddingGiftResult((byte) 0xA, Collections.singletonList(""), gifts));
     }
 
     public boolean createMarriageWishlist() {
@@ -1176,21 +1208,27 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         return false;
     }
-//  ============================================================== Subordinate Helper Functions ==============================================================
+
+    // ============================================================== Subordinate
+    // Helper Functions
+    // ==============================================================
     public void removeItemNPC(short itemSlot) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
-        InventoryManipulator.removeFromSlot(this.getClient(), InventoryType.EQUIP, itemSlot, (short) 1, false); //remove the item
+        InventoryManipulator.removeFromSlot(this.getClient(), InventoryType.EQUIP, itemSlot, (short) 1, false); // remove
+                                                                                                                // the
+                                                                                                                // item
     }
+
     public boolean checkBlacklistedItem(short slot) {
         return getItemName(slot).contains("Reverse") || getItemName(slot).contains("Timeless") ||
-               getItemName(slot).contains("Fearless") || getItemName(slot).contains("Balrog's Fur Shoes");
+                getItemName(slot).contains("Fearless") || getItemName(slot).contains("Balrog's Fur Shoes");
     }
 
     public short replaceItem(short slot) {
         Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(slot).getItemId();
-        //remove the item
+        // remove the item
         removeItemNPC(slot);
         // get next empty slot
         short newItemSlot = eqpInv.getNextFreeSlot();
@@ -1204,16 +1242,17 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         // get a clean item from the selected item ID
         int newItemId = eqpInv.getItem(boomedItemSlot).getItemId();
 
-        eqpInv.removeSlot(boomedItemSlot); //remove the item
+        eqpInv.removeSlot(boomedItemSlot); // remove the item
 
-        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        // get the next free slot so we know where it's going to be placed by gainItem,
+        // for later modification
         short newItemSlot = eqpInv.getNextFreeSlot();
         this.gainItem(newItemId, (short) 1, true);
 
-        //get the new item so we can change it
+        // get the new item so we can change it
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
 
-        //change the stats and force update the item
+        // change the stats and force update the item
         newItem.setStr((short) ((newItem.getStr() != 0) ? newItem.getStr() + 5 : 0));
         newItem.setDex((short) ((newItem.getDex() != 0) ? newItem.getDex() + 5 : 0));
         newItem.setInt((short) ((newItem.getInt() != 0) ? newItem.getInt() + 5 : 0));
@@ -1226,20 +1265,20 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     }
 
     public static double curvedScale(int hands) {
-//        Used for scaling rebirth cost
-//        0 → 100,000
-//        1 → 197,128
-//        2 → 531,813
-//        3 → 1,696,096
-//        4 → 6,123,898
-//        5 → 24,459,082
-//        6 → 106,478,473
-//        7 → 500,000,000
+        // Used for scaling rebirth cost
+        // 0 → 100,000
+        // 1 → 197,128
+        // 2 → 531,813
+        // 3 → 1,696,096
+        // 4 → 6,123,898
+        // 5 → 24,459,082
+        // 6 → 106,478,473
+        // 7 → 500,000,000
         double start = 100_000.0;
-        double end   = 500_000_000.0;
-        double p     = 1.3;                // tweak this for more/less curve
-        double t     = hands / 7.0;
-        double r     = end / start;        // 5000
+        double end = 500_000_000.0;
+        double p = 1.3; // tweak this for more/less curve
+        double t = hands / 7.0;
+        double r = end / start; // 5000
         return start * Math.pow(r, Math.pow(t, p));
     }
 
@@ -1252,13 +1291,14 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         int newItemType = newItemId / 10000;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-        removeItemNPC(ItemSlot); //remove the item
+        removeItemNPC(ItemSlot); // remove the item
 
-        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        // get the next free slot so we know where it's going to be placed by gainItem,
+        // for later modification
         short newItemSlot = eqpInv.getNextFreeSlot();
         this.gainItem(newItemId, (short) 1, true);
 
-        //get the new item so we can change it
+        // get the new item so we can change it
         Equip newItem = (Equip) eqpInv.getItem(newItemSlot);
         int itemReqLevel = ii.getEquipLevelReq(newItemId);
 
@@ -1271,10 +1311,13 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         if (newItemType >= 130) { // check if item is a weapon
             if (hands < 3) { // if item has not reached 3rb
-                itemReqLevel = Math.min(itemReqLevel, 150); // locks the itemReqLevel to max 150 for watk/matk calculation
+                itemReqLevel = Math.min(itemReqLevel, 150); // locks the itemReqLevel to max 150 for watk/matk
+                                                            // calculation
                 // checks if is mage weapon or attack weapon
-                if (Objects.equals(getWeaponType(newItemId), "Staff") || Objects.equals(getWeaponType(newItemId), "Wand")) {
-                    addMatk = (short) Math.min(550, ((((itemReqLevel + 100) * 3) - newItem.getMatk()) / 3 * (hands + 1)));
+                if (Objects.equals(getWeaponType(newItemId), "Staff")
+                        || Objects.equals(getWeaponType(newItemId), "Wand")) {
+                    addMatk = (short) Math.min(550,
+                            ((((itemReqLevel + 100) * 3) - newItem.getMatk()) / 3 * (hands + 1)));
                 } else {
                     addWatk = (short) Math.min(450, (((itemReqLevel * 3) - newItem.getWatk()) / 3 * (hands + 1)));
                 }
@@ -1297,17 +1340,19 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             }
         } else { // if item is not weapon (armours and accessories)
 
-            double carryOver = (hands >= 3) ? 0.18: 0.25; //Increment -- 25% of total stats
+            double carryOver = (hands >= 3) ? 0.18 : 0.25; // Increment -- 25% of total stats
 
             addStr = (short) (selectedItem.getStr() * carryOver);
             addDex = (short) (selectedItem.getDex() * carryOver);
             addInt = (short) (selectedItem.getInt() * carryOver);
             addLuk = (short) (selectedItem.getLuk() * carryOver);
-            addWatk = (short) (selectedItem.getWatk() * carryOver); // hard cap the gain such that the new Watk does not exceed 300
-            addMatk = (short) (selectedItem.getMatk() * carryOver); // hard cap the gain such that the new Matk does not exceed 300
+            addWatk = (short) (selectedItem.getWatk() * carryOver); // hard cap the gain such that the new Watk does not
+                                                                    // exceed 300
+            addMatk = (short) (selectedItem.getMatk() * carryOver); // hard cap the gain such that the new Matk does not
+                                                                    // exceed 300
         }
 
-        //change the stats and force update the item
+        // change the stats and force update the item
         newItem.setStr((short) (newItem.getStr() + addStr));
         newItem.setDex((short) (newItem.getDex() + addDex));
         newItem.setInt((short) (newItem.getInt() + addInt));
@@ -1319,17 +1364,24 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
 
-
-        //change the stats and force update the item
-//        newItem.setStr((newItem.getStr() != 0) ? (short) (newItem.getStr() + addStr) : 0);
-//        newItem.setDex((newItem.getDex() != 0) ? (short) (newItem.getDex() + addDex) : 0);
-//        newItem.setInt((newItem.getInt() != 0) ? (short) (newItem.getInt() + addInt) : 0);
-//        newItem.setLuk((newItem.getLuk() != 0) ? (short) (newItem.getLuk() + addLuk) : 0);
-//        newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() + addWatk: 0));
-//        newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() + addMatk : 0));
-//        newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 60 * (hands + 1)) : 0));
-//        newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 60 * (hands + 1)) : 0));
-//        newItem.setHands((short) (hands + 1));
+        // change the stats and force update the item
+        // newItem.setStr((newItem.getStr() != 0) ? (short) (newItem.getStr() + addStr)
+        // : 0);
+        // newItem.setDex((newItem.getDex() != 0) ? (short) (newItem.getDex() + addDex)
+        // : 0);
+        // newItem.setInt((newItem.getInt() != 0) ? (short) (newItem.getInt() + addInt)
+        // : 0);
+        // newItem.setLuk((newItem.getLuk() != 0) ? (short) (newItem.getLuk() + addLuk)
+        // : 0);
+        // newItem.setWatk((short) ((newItem.getWatk() != 0) ? newItem.getWatk() +
+        // addWatk: 0));
+        // newItem.setMatk((short) ((newItem.getMatk() != 0) ? newItem.getMatk() +
+        // addMatk : 0));
+        // newItem.setWdef((short) ((newItem.getWdef() != 0) ? newItem.getWdef() + ( 60
+        // * (hands + 1)) : 0));
+        // newItem.setMdef((short) ((newItem.getMdef() != 0) ? newItem.getMdef() + ( 60
+        // * (hands + 1)) : 0));
+        // newItem.setHands((short) (hands + 1));
         this.getPlayer().forceUpdateItem(newItem);
 
     }
@@ -1344,9 +1396,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         int hands = selectedItem.getHands();
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
-        removeItemNPC(ItemSlot); //remove the item
+        removeItemNPC(ItemSlot); // remove the item
 
-        //get the next free slot so we know where it's going to be placed by gainItem, for later modification
+        // get the next free slot so we know where it's going to be placed by gainItem,
+        // for later modification
         short newItemSlot = eqpInv.getNextFreeSlot();
         this.gainItem(newItemId, (short) 1, true);
 
@@ -1368,12 +1421,22 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
             addWatk = (short) (Math.min(550, (((itemReqLevel * 3)) - newItem.getWatk()) / 3 * (hands)));
             addMatk = (short) (Math.min(550, ((((itemReqLevel + 100) * 3) - newItem.getMatk()) / 3 * (hands))));
         } else {
-            newStr = (short) (selectedItem.getStr() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
-            newDex = (short) (selectedItem.getDex() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
-            newInt = (short) (selectedItem.getInt() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
-            newLuk = (short) (selectedItem.getLuk() * Math.pow(1.5, selectedItem.getItemLevel() - 1) * Math.pow(0.15, selectedItem.getHands()));
-            addWatk = (short) Math.min(2000 - newItem.getWatk(), (selectedItem.getWatk() * Math.pow(0.15, selectedItem.getHands()))); // hard cap the gain such that the new Watk does not exceed 2000
-            addMatk = (short) Math.min(2000 - newItem.getMatk(), (selectedItem.getMatk() * Math.pow(0.15, selectedItem.getHands()))); // hard cap the gain such that the new Matk does not exceed 2000
+            newStr = (short) (selectedItem.getStr() * Math.pow(1.5, selectedItem.getItemLevel() - 1)
+                    * Math.pow(0.15, selectedItem.getHands()));
+            newDex = (short) (selectedItem.getDex() * Math.pow(1.5, selectedItem.getItemLevel() - 1)
+                    * Math.pow(0.15, selectedItem.getHands()));
+            newInt = (short) (selectedItem.getInt() * Math.pow(1.5, selectedItem.getItemLevel() - 1)
+                    * Math.pow(0.15, selectedItem.getHands()));
+            newLuk = (short) (selectedItem.getLuk() * Math.pow(1.5, selectedItem.getItemLevel() - 1)
+                    * Math.pow(0.15, selectedItem.getHands()));
+            addWatk = (short) Math.min(2000 - newItem.getWatk(),
+                    (selectedItem.getWatk() * Math.pow(0.15, selectedItem.getHands()))); // hard cap the gain such that
+                                                                                         // the new Watk does not exceed
+                                                                                         // 2000
+            addMatk = (short) Math.min(2000 - newItem.getMatk(),
+                    (selectedItem.getMatk() * Math.pow(0.15, selectedItem.getHands()))); // hard cap the gain such that
+                                                                                         // the new Matk does not exceed
+                                                                                         // 2000
         }
 
         addWatk = (short) Math.min(addWatk, 2000);
@@ -1451,12 +1514,52 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     // For sell command, to sell 1 item at a time
     public int SellItemSlot(short slot) {
-//        Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
+        // Inventory eqpInv = this.getPlayer().getInventory(InventoryType.EQUIP);
         var mesosgain = 0;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         int mesos = getPlayer().standaloneSell(getClient(), ii, InventoryType.EQUIP, slot, (short) 1);
-//        System.out.println("Sold Item at: " + slot + " for " + mesos);
+        // System.out.println("Sold Item at: " + slot + " for " + mesos);
         return mesos;
+    }
+
+    public String sellAll(String typeStr, boolean includeUntradables, boolean includeRebirths) {
+        InventoryType type;
+        if (typeStr.equalsIgnoreCase("equip"))
+            type = InventoryType.EQUIP;
+        else if (typeStr.equalsIgnoreCase("use"))
+            type = InventoryType.USE;
+        else if (typeStr.equalsIgnoreCase("etc"))
+            type = InventoryType.ETC;
+        else
+            return "Invalid inventory type.";
+
+        Pair<Integer, Integer> result = client.command.commands.gm0.SellAllCommand.sellAllItems(getClient(),
+                getPlayer(), type, includeUntradables, includeRebirths);
+        return "Sold " + result.getRight() + " items for " + result.getLeft() + " mesos.";
+    }
+
+    public boolean isAutoSellEnabled() {
+        return getPlayer().isAutoSellEnabled();
+    }
+
+    public void toggleAutoSell() {
+        getPlayer().setAutoSell(!getPlayer().isAutoSellEnabled());
+    }
+
+    public boolean isSellUntradables() {
+        return getPlayer().isSellUntradables();
+    }
+
+    public void toggleSellUntradables() {
+        getPlayer().setSellUntradables(!getPlayer().isSellUntradables());
+    }
+
+    public boolean isSellRebirths() {
+        return getPlayer().isSellRebirths();
+    }
+
+    public void toggleSellRebirths() {
+        getPlayer().setSellRebirths(!getPlayer().isSellRebirths());
     }
 
     public void openShop(Client c, String[] params) {
@@ -1466,7 +1569,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public int getBuffProgress(String buffId) {
         int progress = 0;
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT progress FROM buff_donations WHERE buff_type_id = ?")) {
+                PreparedStatement ps = con
+                        .prepareStatement("SELECT progress FROM buff_donations WHERE buff_type_id = ?")) {
             ps.setString(1, buffId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -1519,7 +1623,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void resetBuffProgress(String buffId) {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("UPDATE buff_donations SET progress = 0 WHERE buff_type_id = ?")) {
+                PreparedStatement ps = con
+                        .prepareStatement("UPDATE buff_donations SET progress = 0 WHERE buff_type_id = ?")) {
             ps.setString(1, buffId);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -1544,7 +1649,6 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         Server.getInstance().broadcastMessage(getPlayer().getWorld(),
                 PacketCreator.serverNotice(type, message));
     }
-
 
     public void sendCashNoti(String text) {
         getPlayer().sendPacket(PacketCreator.earnTitleMessage(text));

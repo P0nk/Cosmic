@@ -66,8 +66,9 @@ public class Shop {
         rechargeableItems.remove(ItemId.BEGINNER_THROWING_STAR_2); // doesn't exist merogie -required else crash.
         rechargeableItems.add(ItemId.BALANCED_FURY);
         rechargeableItems.add(ItemId.BALANCED_FURY_2);
-//        rechargeableItems.add(ItemId.DONOR_STEELY_THROWING_STAR); // merogie -- added to allow recharge
-        //rechargeableItems.add(ItemId.Bugged2_THROWING_STAR); // doesn't exist
+        // rechargeableItems.add(ItemId.DONOR_STEELY_THROWING_STAR); // merogie -- added
+        // to allow recharge
+        // rechargeableItems.add(ItemId.Bugged2_THROWING_STAR); // doesn't exist
         for (int bulletId : ItemId.allBulletIds()) {
             rechargeableItems.add(bulletId);
         }
@@ -103,7 +104,7 @@ public class Shop {
             int amount = (int) Math.min((float) item.getPrice() * quantity, Integer.MAX_VALUE);
             if (c.getPlayer().getMeso() >= amount) {
                 if (InventoryManipulator.checkSpace(c, itemId, quantity, "")) {
-                    if (!ItemConstants.isRechargeable(itemId)) { //Pets can't be bought from shops
+                    if (!ItemConstants.isRechargeable(itemId)) { // Pets can't be bought from shops
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
                         c.getPlayer().gainMeso(-amount, false);
                     } else {
@@ -128,12 +129,14 @@ public class Shop {
                 if (InventoryManipulator.checkSpace(c, itemId, quantity, "")) {
                     if (!ItemConstants.isRechargeable(itemId)) {
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
-                        InventoryManipulator.removeById(c, InventoryType.ETC, ItemId.PERFECT_PITCH, amount, false, false);
+                        InventoryManipulator.removeById(c, InventoryType.ETC, ItemId.PERFECT_PITCH, amount, false,
+                                false);
                     } else {
                         short slotMax = ii.getSlotMax(c, item.getItemId());
                         quantity = slotMax;
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
-                        InventoryManipulator.removeById(c, InventoryType.ETC, ItemId.PERFECT_PITCH, amount, false, false);
+                        InventoryManipulator.removeById(c, InventoryType.ETC, ItemId.PERFECT_PITCH, amount, false,
+                                false);
                     }
                     c.sendPacket(PacketCreator.shopTransaction((byte) 0));
                 } else {
@@ -167,7 +170,7 @@ public class Shop {
     }
 
     private static boolean canSell(Item item, short quantity) {
-        if (item == null) { //Basic check
+        if (item == null) { // Basic check
             return false;
         }
 
@@ -205,19 +208,18 @@ public class Shop {
             return;
         }
 
-
         if (canSell(item, quantity)) {
             quantity = getSellingQuantity(item, quantity);
             InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
 
             ItemInformationProvider ii = ItemInformationProvider.getInstance();
-            int recvMesos = ii.getPrice(item.getItemId(), quantity);
+            int recvMesos = ii.getPrice(item, quantity);
             if (recvMesos > 0) {
                 c.getPlayer().gainMeso(recvMesos, false);
             }
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x8));
         } else {
-//            System.out.println("Can't sell item: " + itemId + "; Quantity: " + quantity);
+            // System.out.println("Can't sell item: " + itemId + "; Quantity: " + quantity);
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x5));
         }
     }
@@ -273,20 +275,23 @@ public class Shop {
                 }
             }
 
-            try (PreparedStatement ps = con.prepareStatement("SELECT itemid, price, pitch FROM shopitems WHERE shopid = ? ORDER BY position DESC")) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT itemid, price, pitch FROM shopitems WHERE shopid = ? ORDER BY position DESC")) {
                 ps.setInt(1, shopId);
 
                 try (ResultSet rs = ps.executeQuery()) {
                     List<Integer> recharges = new ArrayList<>(rechargeableItems);
                     while (rs.next()) {
                         if (ItemConstants.isRechargeable(rs.getInt("itemid"))) {
-                            ShopItem starItem = new ShopItem((short) 1, rs.getInt("itemid"), rs.getInt("price"), rs.getInt("pitch"));
+                            ShopItem starItem = new ShopItem((short) 1, rs.getInt("itemid"), rs.getInt("price"),
+                                    rs.getInt("pitch"));
                             ret.addItem(starItem);
                             if (rechargeableItems.contains(starItem.getItemId())) {
                                 recharges.remove(Integer.valueOf(starItem.getItemId()));
                             }
                         } else {
-                            ret.addItem(new ShopItem((short) 32000, rs.getInt("itemid"), rs.getInt("price"), rs.getInt("pitch")));
+                            ret.addItem(new ShopItem((short) 32000, rs.getInt("itemid"), rs.getInt("price"),
+                                    rs.getInt("pitch")));
                         }
                     }
                     for (Integer recharge : recharges) {

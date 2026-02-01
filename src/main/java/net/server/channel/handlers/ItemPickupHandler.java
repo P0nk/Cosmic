@@ -40,9 +40,9 @@ public final class ItemPickupHandler extends AbstractPacketHandler {
 
     @Override
     public void handlePacket(final InPacket p, final Client c) {
-        p.readInt(); //Timestamp
+        p.readInt(); // Timestamp
         p.readByte();
-        p.readPos(); //cpos
+        p.readPos(); // cpos
         int oid = p.readInt();
         Character chr = c.getPlayer();
         MapObject ob = chr.getMap().getMapObject(oid);
@@ -56,6 +56,32 @@ public final class ItemPickupHandler extends AbstractPacketHandler {
             log.warn("Chr {} tried to pick up an item too far away. Mapid: {}, player pos: {}, object pos: {}",
                     c.getPlayer().getName(), chr.getMapId(), charPos, obPos);
             return;
+        }
+
+        if (chr.isAutoSellEnabled() && ob instanceof server.maps.MapItem) {
+            server.maps.MapItem mapItem = (server.maps.MapItem) ob;
+            client.inventory.Item item = mapItem.getItem();
+
+            // [GLOBAL EXCLUSION] Pink Bean Summon Item
+            if (item.getItemId() == 4001193) {
+                return;
+            }
+
+            // Try to sell
+            int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, item, null);
+
+            if (gain > 0) {
+                chr.gainMeso(gain, true);
+                if (chr.getMapKillCount() % 5 == 0) { // Limit spam, or just show concise message
+                    chr.dropMessage(5, "Auto-sold item for " + gain + " mesos.");
+                }
+
+                // Remove from map visually and logically
+                chr.getMap().removeMapObject(ob);
+                chr.getMap().broadcastMessage(tools.PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
+                        ob.getPosition());
+                return;
+            }
         }
 
         chr.pickupItem(ob);

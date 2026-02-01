@@ -84,7 +84,7 @@ public class CommandsExecutor {
 
         client.getPlayer().setLastCommandMessage(splitedMessage[1]);
         final String commandName = splitedMessage[0].toLowerCase();
-        final String[] lowercaseParams = splitedMessage[1].toLowerCase().split(splitRegex);
+        final String[] inputParams = splitedMessage[1].split(splitRegex);
 
         final Command command = registeredCommands.get(commandName);
         if (command == null) {
@@ -97,8 +97,8 @@ public class CommandsExecutor {
             return;
         }
         String[] params;
-        if (lowercaseParams.length > 0 && !lowercaseParams[0].isEmpty()) {
-            params = Arrays.copyOfRange(lowercaseParams, 0, lowercaseParams.length);
+        if (inputParams.length > 0 && !inputParams[0].isEmpty()) {
+            params = Arrays.copyOfRange(inputParams, 0, inputParams.length);
         } else {
             params = new String[] {};
         }

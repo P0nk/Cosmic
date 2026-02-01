@@ -48,6 +48,29 @@ public final class PetLootHandler extends AbstractPacketHandler {
         if (ob instanceof MapItem) {
             MapItem mapitem = (MapItem) ob;
 
+            // [GLOBAL EXCLUSION] Pink Bean Summon Item
+            if (mapitem.getItemId() == 4001193) {
+                c.sendPacket(PacketCreator.enableActions());
+                return;
+            }
+
+            // [FEATURE] Auto-Sell (Single Item Click)
+            if (chr.isAutoSellEnabled()) {
+                int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapitem.getItem(), null);
+                if (gain > 0) {
+                    chr.gainMeso(gain, true);
+                    if (chr.getMapKillCount() % 5 == 0) {
+                        chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
+                    }
+                    // Remove from map
+                    chr.getMap().removeMapObject(ob);
+                    chr.getMap().broadcastMessage(PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
+                            ob.getPosition());
+                    c.sendPacket(PacketCreator.enableActions());
+                    return;
+                }
+            }
+
             // Meso Magnet Check
             if (mapitem.getMeso() > 0) {
                 if (!chr.isEquippedMesoMagnet()) {
@@ -89,16 +112,22 @@ public final class PetLootHandler extends AbstractPacketHandler {
         // ---------------------------------------------------------
 
         // 1. Fail-fast Inventory Checks (Optimization)
+        // Note: Auto-Sell bypasses inventory checks, hence we might need to check full
+        // inventory ONLY if auto-sell didn't handle it.
+        // But for performance, if inventories are full AND auto-sell is OFF, we stop.
+        // If Auto-Sell is ON, we should probably continue even if inventory is full,
+        // because we might sell stuff.
         boolean fullEtc = c.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() < 1;
         boolean fullEquip = c.getPlayer().getInventory(InventoryType.EQUIP).getNumFreeSlot() < 1;
         boolean fullUse = c.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() < 1;
 
-        if (fullEtc && fullEquip && fullUse) {
+        if (!chr.isAutoSellEnabled() && fullEtc && fullEquip && fullUse) {
             chr.showHint("Pet vac stopped: All inventories are full.", 300);
             return;
         }
 
-        List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
+        List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(),
+                Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
         final Set<Integer> petIgnore = chr.getExcludedItems();
 
         for (MapObject item : items) {
@@ -108,9 +137,36 @@ public final class PetLootHandler extends AbstractPacketHandler {
 
             MapItem mapItem = (MapItem) item;
 
+            // [GLOBAL EXCLUSION] Pink Bean Summon Item
+            if (mapItem.getItemId() == 4001193) {
+                continue;
+            }
+
             // We wrap individual pickup attempts in try-catch.
             // If one specific item is bugged/null, we ignore it and continue looping.
             try {
+                // [FEATURE] Auto-Sell (Vac Loop)
+                if (chr.isAutoSellEnabled()) {
+                    // Check if we can sell it
+                    // NOTE: Auto-Sell function checks for valid price. If 0 (untradable/no price),
+                    // it returns 0.
+                    int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapItem.getItem(), null);
+                    if (gain > 0) {
+                        chr.gainMeso(gain, true);
+                        // Limit spam
+                        if (chr.getMapKillCount() % 5 == 0) {
+                            chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
+                        }
+                        // Remove from map
+                        chr.getMap().removeMapObject(item);
+                        chr.getMap().broadcastMessage(
+                                PacketCreator.removeItemFromMap(item.getObjectId(), 2, chr.getId()),
+                                item.getPosition());
+                        continue; // Successfully sold and removed, next item
+                    }
+                    // If not sold (e.g. untradable), fall through to normal pickup logic
+                }
+
                 // 2. Smart Inventory Filter
                 if (mapItem.getMeso() > 0) {
                     // Mesos always looted
@@ -119,11 +175,15 @@ public final class PetLootHandler extends AbstractPacketHandler {
                     int typePrefix = itemId / 1000000;
 
                     // Skip specific item types if that inventory is full
-                    if (typePrefix == 1 && fullEquip) continue;
-                    else if (typePrefix == 2 && fullUse) continue;
-                    else if (typePrefix >= 4 && fullEtc) continue;
+                    if (typePrefix == 1 && fullEquip)
+                        continue;
+                    else if (typePrefix == 2 && fullUse)
+                        continue;
+                    else if (typePrefix >= 4 && fullEtc)
+                        continue;
 
-                    if (petIgnore.contains(itemId)) continue;
+                    if (petIgnore.contains(itemId))
+                        continue;
                 }
 
                 // 3. Ownership & Quest Checks
