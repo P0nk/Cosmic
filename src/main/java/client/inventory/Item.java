@@ -32,7 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Item implements Comparable<Item> {
 
-    private static final AtomicInteger runningCashId = new AtomicInteger(777000000);  // pets & rings shares cashid values
+    private static final AtomicInteger runningCashId = new AtomicInteger(777000000); // pets & rings shares cashid
+                                                                                     // values
 
     private final int id;
     private int cashId;
@@ -61,7 +62,7 @@ public class Item implements Comparable<Item> {
         this.id = id;
         this.position = position;
         this.quantity = quantity;
-        if (petid > -1) {   // issue with null "pet" having petid > -1 found thanks to MedicOP
+        if (petid > -1) { // issue with null "pet" having petid > -1 found thanks to MedicOP
             this.pet = Pet.loadFromDb(id, position, petid);
             if (this.pet == null) {
                 petid = -1;
@@ -78,6 +79,7 @@ public class Item implements Comparable<Item> {
         ret.owner = owner;
         ret.expiration = expiration;
         ret.itemLog = new LinkedList<>(itemLog);
+        ret.uniqueId = uniqueId;
         return ret;
     }
 
@@ -160,7 +162,8 @@ public class Item implements Comparable<Item> {
     public void setFlag(short b) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         if (ii.isAccountRestricted(id)) {
-            b |= ItemConstants.ACCOUNT_SHARING; // thanks Shinigami15 for noticing ACCOUNT_SHARING flag not being applied properly to items server-side
+            b |= ItemConstants.ACCOUNT_SHARING; // thanks Shinigami15 for noticing ACCOUNT_SHARING flag not being
+                                                // applied properly to items server-side
         }
 
         this.flag = b;
@@ -195,7 +198,9 @@ public class Item implements Comparable<Item> {
     }
 
     public boolean isUntradeable() {
-        return ((this.getFlag() & ItemConstants.UNTRADEABLE) == ItemConstants.UNTRADEABLE) || (ItemInformationProvider.getInstance().isDropRestricted(this.getItemId()) && !KarmaManipulator.hasKarmaFlag(this));
+        return ((this.getFlag() & ItemConstants.UNTRADEABLE) == ItemConstants.UNTRADEABLE)
+                || (ItemInformationProvider.getInstance().isDropRestricted(this.getItemId())
+                        && !KarmaManipulator.hasKarmaFlag(this));
     }
 
     // [ADD THESE METHODS]

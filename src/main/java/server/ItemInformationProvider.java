@@ -538,13 +538,15 @@ public class ItemInformationProvider {
         if (ItemConstants.getInventoryType(itemId) == InventoryType.EQUIP) {
             if (item instanceof Equip) {
                 int calculatedPrice = calculateEquipPrice((Equip) item);
-                // Apply quantity (though equips usually quant=1)
                 calculatedPrice *= quantity;
 
-                // Return the higher of the two
-                if (calculatedPrice > hardcodedPrice) {
+                // If hardcoded is -1 (unsellable by WZ), use calculated.
+                if (hardcodedPrice <= 0) {
                     return calculatedPrice;
                 }
+
+                // Otherwise use the higher value
+                return Math.max(calculatedPrice, hardcodedPrice);
             }
         }
 

@@ -56,18 +56,20 @@ public final class PetLootHandler extends AbstractPacketHandler {
 
             // [FEATURE] Auto-Sell (Single Item Click)
             if (chr.isAutoSellEnabled()) {
-                int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapitem.getItem(), null);
-                if (gain > 0) {
-                    chr.gainMeso(gain, true);
-                    if (chr.getMapKillCount() % 5 == 0) {
-                        chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
+                if (mapitem.getItem().getInventoryType() == InventoryType.EQUIP) {
+                    int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapitem.getItem(), null);
+                    if (gain > 0) {
+                        chr.gainMeso(gain, true);
+                        if (chr.getMapKillCount() % 5 == 0) {
+                            chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
+                        }
+                        // Remove from map
+                        chr.getMap().removeMapObject(ob);
+                        chr.getMap().broadcastMessage(PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
+                                ob.getPosition());
+                        c.sendPacket(PacketCreator.enableActions());
+                        // return; // Removed to allow Vac Loop
                     }
-                    // Remove from map
-                    chr.getMap().removeMapObject(ob);
-                    chr.getMap().broadcastMessage(PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
-                            ob.getPosition());
-                    c.sendPacket(PacketCreator.enableActions());
-                    return;
                 }
             }
 
@@ -147,24 +149,28 @@ public final class PetLootHandler extends AbstractPacketHandler {
             try {
                 // [FEATURE] Auto-Sell (Vac Loop)
                 if (chr.isAutoSellEnabled()) {
-                    // Check if we can sell it
-                    // NOTE: Auto-Sell function checks for valid price. If 0 (untradable/no price),
-                    // it returns 0.
-                    int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapItem.getItem(), null);
-                    if (gain > 0) {
-                        chr.gainMeso(gain, true);
-                        // Limit spam
-                        if (chr.getMapKillCount() % 5 == 0) {
-                            chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
+                    // [RESTRICTION] Auto-Sell only applies to Equips
+                    if (mapItem.getItem().getInventoryType() == InventoryType.EQUIP) {
+                        // Check if we can sell it
+                        // NOTE: Auto-Sell function checks for valid price. If 0 (untradable/no price),
+                        // it returns 0.
+                        int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapItem.getItem(), null);
+                        if (gain > 0) {
+                            chr.gainMeso(gain, true);
+                            // Limit spam
+                            if (chr.getMapKillCount() % 5 == 0) {
+                                chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
+                            }
+                            // Remove from map
+                            chr.getMap().removeMapObject(item);
+                            chr.getMap().broadcastMessage(
+                                    PacketCreator.removeItemFromMap(item.getObjectId(), 2, chr.getId()),
+                                    item.getPosition());
+                            continue; // Successfully sold and removed, next item
                         }
-                        // Remove from map
-                        chr.getMap().removeMapObject(item);
-                        chr.getMap().broadcastMessage(
-                                PacketCreator.removeItemFromMap(item.getObjectId(), 2, chr.getId()),
-                                item.getPosition());
-                        continue; // Successfully sold and removed, next item
                     }
-                    // If not sold (e.g. untradable), fall through to normal pickup logic
+                    // If not sold (e.g. untradable OR not equip), fall through to normal pickup
+                    // logic
                 }
 
                 // 2. Smart Inventory Filter

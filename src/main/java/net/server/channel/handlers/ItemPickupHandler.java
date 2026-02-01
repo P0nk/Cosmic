@@ -62,6 +62,12 @@ public final class ItemPickupHandler extends AbstractPacketHandler {
             server.maps.MapItem mapItem = (server.maps.MapItem) ob;
             client.inventory.Item item = mapItem.getItem();
 
+            // [RESTRICTION] Auto-Sell only applies to Equips
+            if (item.getInventoryType() != client.inventory.InventoryType.EQUIP) {
+                chr.pickupItem(ob);
+                return;
+            }
+
             // [GLOBAL EXCLUSION] Pink Bean Summon Item
             if (item.getItemId() == 4001193) {
                 return;
