@@ -388,25 +388,23 @@ public enum ItemFactory {
 
                             items.add(new Pair<>(equip, mit));
                         } else {
-                            if (bundles > 0) {
-                                for (int i = 0; i < bundles; i++) {
-                                    int petid = rs.getInt("petid");
-                                    if (rs.wasNull()) {
-                                        petid = -1;
-                                    }
-
-                                    Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"),
-                                            (short) rs.getInt("quantity"), petid);
-
-                                    // Set the Unique ID so HiredMerchant can match it to a price
-                                    item.setUniqueId(rs.getInt("inventoryitemid"));
-
-                                    item.setOwner(rs.getString("owner"));
-                                    item.setExpiration(rs.getLong("expiration"));
-                                    item.setGiftFrom(rs.getString("giftFrom"));
-                                    item.setFlag((short) rs.getInt("flag"));
-                                    items.add(new Pair<>(item, mit));
+                            if (bundles > 0) { // Keep the logic inside to execute once if bundles > 0
+                                int petid = rs.getInt("petid");
+                                if (rs.wasNull()) {
+                                    petid = -1;
                                 }
+
+                                Item item = new Item(rs.getInt("itemid"), (byte) rs.getInt("position"),
+                                        (short) rs.getInt("quantity"), petid);
+
+                                // Set the Unique ID so HiredMerchant can match it to a price
+                                item.setUniqueId(rs.getInt("inventoryitemid"));
+
+                                item.setOwner(rs.getString("owner"));
+                                item.setExpiration(rs.getLong("expiration"));
+                                item.setGiftFrom(rs.getString("giftFrom"));
+                                item.setFlag((short) rs.getInt("flag"));
+                                items.add(new Pair<>(item, mit));
                             }
                         }
                     }
