@@ -67,7 +67,13 @@ public class SpawnPoint {
     }
 
     public boolean shouldSpawn() {
-        if (denySpawn || mobTime < 0 || spawnedMonsters.get() > 0) {
+        return shouldSpawn(1);
+    }
+
+    public boolean shouldSpawn(int maxSpawnedMonsters) {
+        Monster mob = LifeFactory.getMonster(monster);
+        int max = mob != null && mob.isBoss() ? 1 : maxSpawnedMonsters;
+        if (denySpawn || mobTime < 0 || spawnedMonsters.get() >= max) {
             return false;
         }
         return nextPossibleSpawn <= Server.getInstance().getCurrentTime();

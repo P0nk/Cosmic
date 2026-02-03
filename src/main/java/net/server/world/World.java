@@ -126,6 +126,8 @@ public class World {
     private int questrate;
     private int travelrate;
     private int fishingrate;
+    private float mobrate;
+    private int mobperspawnpoint;
     private final String eventmsg;
     private final List<Channel> channels = new ArrayList<>();
     private final Map<Integer, Byte> pnpcStep = new HashMap<>();
@@ -200,7 +202,8 @@ public class World {
     private ScheduledFuture<?> timeoutSchedule;
     private ScheduledFuture<?> hpDecSchedule;
 
-    public World(int world, int flag, String eventmsg, int exprate, int droprate, int bossdroprate, int mesorate, int questrate, int travelrate, int fishingrate) {
+    public World(int world, int flag, String eventmsg, int exprate, int droprate, int bossdroprate, int mesorate,
+                 int questrate, int travelrate, int fishingrate, float mobrate, int mobperspawnpoint) {
         this.id = world;
         this.flag = flag;
         this.eventmsg = eventmsg;
@@ -211,6 +214,8 @@ public class World {
         this.questrate = questrate;
         this.travelrate = travelrate;
         this.fishingrate = fishingrate;
+        this.mobrate = mobrate;
+        this.mobperspawnpoint = mobperspawnpoint;
         runningPartyId.set(1000000001); // partyid must not clash with charid to solve update item looting issues, found thanks to Vcoc
         runningMessengerId.set(1);
 
@@ -456,6 +461,22 @@ public class World {
 
     public void setFishingRate(int quest) {
         this.fishingrate = quest;
+    }
+
+    public float getMobrate() {
+        return mobrate;
+    }
+
+    public void setMobrate(float mobrate) {
+        this.mobrate = mobrate;
+    }
+
+    public int getMobperspawnpoint() {
+        return mobperspawnpoint;
+    }
+
+    public void setMobperspawnpoint(int mobperspawnpoint) {
+        this.mobperspawnpoint = mobperspawnpoint;
     }
 
     public void loadAccountCharactersView(Integer accountId, List<Character> chars) {
