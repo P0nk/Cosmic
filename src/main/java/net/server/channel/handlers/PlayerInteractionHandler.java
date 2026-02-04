@@ -265,10 +265,13 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                         //c.sendPacket(PacketCreator.getPlayerShopRemoveVisitor(1));
                     } else if (ItemConstants.isHiredMerchant(itemId)) {
                         HiredMerchant merchant = new HiredMerchant(chr, desc, itemId);
-                        chr.setHiredMerchant(merchant);
-                        c.getWorldServer().registerHiredMerchant(merchant);
-                        chr.getClient().getChannelServer().addHiredMerchant(chr.getId(), merchant);
-                        chr.sendPacket(PacketCreator.getHiredMerchant(chr, merchant, true));
+                        boolean merchantAdded = chr.getClient().getChannelServer().addHiredMerchant(chr.getId(), merchant);
+                        if (merchantAdded) {
+                            chr.setHiredMerchant(merchant);
+                            c.getWorldServer().registerHiredMerchant(merchant);
+                            chr.sendPacket(PacketCreator.getHiredMerchant(chr, merchant, true));
+                            System.out.println("new shop creation.");
+                        }
                     }
                 }
             } else if (mode == Action.INVITE.getCode()) {
