@@ -469,7 +469,10 @@ public class Server {
         }
 
         if (canDeploy) {
-            world.setServerMessage(YamlConfig.config.worlds.get(i).server_message);
+            String serverMessage = YamlConfig.config.worlds.get(i).server_message;
+            if (serverMessage != null) {
+                world.setServerMessage(serverMessage);
+            }
 
             log.info("Finished loading world {}", i);
             return i;

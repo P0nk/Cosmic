@@ -1217,7 +1217,7 @@ public class PacketCreator {
      * @return The server message packet.
      */
     public static Packet serverMessage(String message) {
-        return serverMessage(4, (byte) 0, message, true, false, 0);
+        return serverMessage(4, (byte) 0, message != null ? message : "", true, false, 0);
     }
 
     /**
