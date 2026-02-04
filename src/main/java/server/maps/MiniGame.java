@@ -28,6 +28,7 @@ import net.server.Server;
 import tools.PacketCreator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -195,7 +196,7 @@ public class MiniGame extends AbstractMapObject {
 
     private void minigameMatchFinished() {
         updateMiniGameBox();
-
+        Arrays.fill(piece, 0);
         if (ownerquit) {
             owner.closeMiniGame(true);
         } else if (visitorquit) {
@@ -433,86 +434,51 @@ public class MiniGame extends AbstractMapObject {
         if (piece[slot] == 0) {
             piece[slot] = type;
             this.broadcast(PacketCreator.getMiniGameMoveOmok(this, move1, move2, type));
-            for (int y = 0; y < 15; y++) {
-                for (int x = 0; x < 11; x++) {
-                    if (searchCombo(x, y, type)) {
-                        if (this.isOwner(chr)) {
-                            this.minigameMatchOwnerWins(false);
-                            this.setLoser(0);
-                        } else {
-                            this.minigameMatchVisitorWins(false);
-                            this.setLoser(1);
-                        }
-                        for (int y2 = 0; y2 < 15; y2++) {
-                            for (int x2 = 0; x2 < 15; x2++) {
-                                int slot2 = (y2 * 15 + x2 + 1);
-                                piece[slot2] = 0;
-                            }
+            boolean gameWon = false;
+            for (int y = 0; y < 15 && !gameWon; y++) {
+                for (int x = 0; x < 15 && !gameWon; x++) {
+                    for (int d = 0; d < 4; d++) {
+                        if (searchCombo(x, y, type, d)) {
+                            gameWon = true;
+                            break;
                         }
                     }
                 }
             }
-            for (int y = 0; y < 15; y++) {
-                for (int x = 4; x < 15; x++) {
-                    if (searchCombo2(x, y, type)) {
-                        if (this.isOwner(chr)) {
-                            this.minigameMatchOwnerWins(false);
-                            this.setLoser(0);
-                        } else {
-                            this.minigameMatchVisitorWins(false);
-                            this.setLoser(1);
-                        }
-                        for (int y2 = 0; y2 < 15; y2++) {
-                            for (int x2 = 0; x2 < 15; x2++) {
-                                int slot2 = (y2 * 15 + x2 + 1);
-                                piece[slot2] = 0;
-                            }
-                        }
-                    }
+            if (gameWon) {
+                if (this.isOwner(chr)) {
+                    this.minigameMatchOwnerWins(false);
+                    this.setLoser(0);
+                } else {
+                    this.minigameMatchVisitorWins(false);
+                    this.setLoser(1);
                 }
             }
         }
     }
 
-    private boolean searchCombo(int x, int y, int type) {
+    private boolean searchCombo(int x, int y, int type, int direction) {
         int slot = y * 15 + x + 1;
+        int dx, dy;
+        switch (direction) {
+            case 0: dx = 1; dy = 0; break;
+            case 1: dx = 0; dy = 1; break;
+            case 2: dx = 1; dy = 1; break;
+            case 3: dx = -1; dy = 1; break;
+            default: return false;
+        }
+        int nx = x + (4 * dx);
+        int ny = y + (4 * dy);
+        if (nx < 0 || nx >= 15 || ny < 0 || ny >= 15) {
+            return false;
+        }
         for (int i = 0; i < 5; i++) {
-            if (piece[slot + i] == type) {
-                if (i == 4) {
-                    return true;
-                }
-            } else {
-                break;
+            int checkSlot = slot + (i * dx) + (i * dy * 15);
+            if (piece[checkSlot] != type) {
+                return false;
             }
         }
-        for (int j = 15; j < 17; j++) {
-            for (int i = 0; i < 5; i++) {
-                if (piece[slot + i * j] == type) {
-                    if (i == 4) {
-                        return true;
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean searchCombo2(int x, int y, int type) {
-        int slot = y * 15 + x + 1;
-        for (int j = 14; j < 15; j++) {
-            for (int i = 0; i < 5; i++) {
-                if (piece[slot + i * j] == type) {
-                    if (i == 4) {
-                        return true;
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-        return false;
+        return true;
     }
 
     public String getDescription() {
