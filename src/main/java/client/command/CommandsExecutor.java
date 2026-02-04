@@ -239,6 +239,8 @@ public class CommandsExecutor {
         // Note: ToggleExpCommand moved to Lv0 per your list, but kept here if GM
         // specific logic applies
 
+        addCommand("bossraid", BossRaidCommand.class);
+
         commandsNameDesc.add(levelCommandsCursor);
     }
 

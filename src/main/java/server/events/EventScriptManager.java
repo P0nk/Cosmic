@@ -39,46 +39,52 @@ public class EventScriptManager extends AbstractScriptManager {
         log.info("[EventScriptManager] Initialization complete. Active events: {}", events.size());
     }
 
+    private static final Object initLock = new Object();
+
     private void initializeEventEntry(String script) {
-        try {
-            ScriptEngine engine = getInvocableScriptEngine("event/" + script + ".js");
+        synchronized (initLock) {
+            try {
+                ScriptEngine engine = getInvocableScriptEngine("event/" + script + ".js");
 
-            if (engine == null) {
-                log.error("[EventScriptManager] CRITICAL: Engine is NULL for script '{}'. Check file existence or syntax.", script);
-                return;
+                if (engine == null) { // ERROR LOGGING
+                    log.error(
+                            "[EventScriptManager] FATAL: Engine is NULL for script '{}'. File might be missing or corrupted.",
+                            script);
+                    return;
+                }
+
+                Invocable iv = (Invocable) engine;
+
+                // Create the EventManager Java Object
+                EventManager em = new EventManager(channelServer, iv, script);
+
+                // --- [FIX] GLOBAL INJECTION BLOCK ---
+
+                // 1. Inject INSTANCES (Objects) using .put()
+                engine.put("em", em);
+
+                // 2. Inject STATIC CLASSES (Types) using .eval()
+                // This allows the script to call static methods like LifeFactory.getMonster()
+                String imports = "var LifeFactory = Java.type('server.life.LifeFactory');" +
+                        "var PacketCreator = Java.type('tools.PacketCreator');" +
+                        "var ExpeditionType = Java.type('server.expeditions.ExpeditionType');" +
+                        "var MapleMap = Java.type('server.maps.MapleMap');";
+
+                engine.eval(imports);
+                // ------------------------------------
+
+                // Invoke the 'init' function in the JS file
+                iv.invokeFunction("init", (Object) null);
+
+                // Save to map
+                events.put(script, new EventEntry(script, iv, em));
+                // log.info("[EventScriptManager] Successfully started '{}'.", script);
+
+            } catch (ScriptException | NoSuchMethodException e) {
+                log.error("[EventScriptManager] Error executing init() in script '{}': {}", script, e.getMessage());
+            } catch (Exception e) {
+                log.error("[EventScriptManager] Unexpected error loading '{}': ", script, e);
             }
-
-            Invocable iv = (Invocable) engine;
-
-            // Create the EventManager Java Object
-            EventManager em = new EventManager(channelServer, iv, script);
-
-            // --- [FIX] GLOBAL INJECTION BLOCK ---
-
-            // 1. Inject INSTANCES (Objects) using .put()
-            engine.put("em", em);
-
-            // 2. Inject STATIC CLASSES (Types) using .eval()
-            // This allows the script to call static methods like LifeFactory.getMonster()
-            String imports = "var LifeFactory = Java.type('server.life.LifeFactory');" +
-                    "var PacketCreator = Java.type('tools.PacketCreator');" +
-                    "var ExpeditionType = Java.type('server.expeditions.ExpeditionType');" +
-                    "var MapleMap = Java.type('server.maps.MapleMap');";
-
-            engine.eval(imports);
-            // ------------------------------------
-
-            // Invoke the 'init' function in the JS file
-            iv.invokeFunction("init", (Object) null);
-
-            // Save to map
-            events.put(script, new EventEntry(script, iv, em));
-//            log.info("[EventScriptManager] Successfully started '{}'.", script);
-
-        } catch (ScriptException | NoSuchMethodException e) {
-            log.error("[EventScriptManager] Error executing init() in script '{}': {}", script, e.getMessage());
-        } catch (Exception e) {
-            log.error("[EventScriptManager] Unexpected error loading '{}': ", script, e);
         }
     }
 

@@ -154,17 +154,6 @@ public final class Channel {
             if (Server.getInstance().isOnline()) {
                 // If this is a reload command, start immediately
                 eventSM.init();
-            } else {
-                // If this is server boot, delay init by 5 seconds to ensure World is registered
-                TimerManager.getInstance().schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (eventSM != null) {
-                            log.info("[EventLoader] Boot Sequence Complete. Starting Events for Channel {}...", channel);
-                            eventSM.init();
-                        }
-                    }
-                }, 5000); // 5 second delay
             }
 
             dojoStage = new int[20];
@@ -198,6 +187,7 @@ public final class Channel {
         eventSM.cancel();
         eventSM = null;
         eventSM = new EventScriptManager(this, getEvents());
+        eventSM.init();
     }
 
     public synchronized void shutdown() {
@@ -288,10 +278,19 @@ public final class Channel {
             log.info("Persisted {} hired merchants in {}ms.", saved, (System.currentTimeMillis() - start));
 
         } catch (SQLException e) {
-            if (con != null) try { con.rollback(); } catch (SQLException ex) {}
+            if (con != null)
+                try {
+                    con.rollback();
+                } catch (SQLException ex) {
+                }
             log.error("Critical error persisting merchants", e);
         } finally {
-            if (con != null) try { con.setAutoCommit(true); con.close(); } catch (SQLException ex) {}
+            if (con != null)
+                try {
+                    con.setAutoCommit(true);
+                    con.close();
+                } catch (SQLException ex) {
+                }
             merchWlock.unlock();
         }
     }
@@ -303,7 +302,8 @@ public final class Channel {
         System.out.println("[RESTORE] Starting restore for Channel " + channel);
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM hiredmerchants WHERE world = ? AND channel = ? AND isopen = 1")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT * FROM hiredmerchants WHERE world = ? AND channel = ? AND isopen = 1")) {
 
             ps.setInt(1, this.world);
             ps.setInt(2, this.channel);
@@ -328,13 +328,15 @@ public final class Channel {
                         try {
                             Server.getInstance().getWorld(this.world).registerHiredMerchant(merch);
                         } catch (Exception e) {
-                            System.err.println("[RESTORE] Failed to register merchant with World Server: " + e.getMessage());
+                            System.err.println(
+                                    "[RESTORE] Failed to register merchant with World Server: " + e.getMessage());
                         }
 
                         merch.setOpen(true);
 
                         // C. [FIX] Force DB Flag to 1 (In case it was wiped)
-                        try (PreparedStatement psUpd = con.prepareStatement("UPDATE characters SET HasMerchant = 1 WHERE id = ?")) {
+                        try (PreparedStatement psUpd = con
+                                .prepareStatement("UPDATE characters SET HasMerchant = 1 WHERE id = ?")) {
                             psUpd.setInt(1, ownerId);
                             psUpd.executeUpdate();
                         }
@@ -347,14 +349,17 @@ public final class Channel {
 
                     } else {
                         // [FAIL/FALLBACK PATH]
-                        System.out.println("[RESTORE] Merchant " + ownerId + " failed validation (Empty/Error). Sending to Fredrick.");
+                        System.out.println("[RESTORE] Merchant " + ownerId
+                                + " failed validation (Empty/Error). Sending to Fredrick.");
 
-                        try (PreparedStatement psUpdate = con.prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
+                        try (PreparedStatement psUpdate = con
+                                .prepareStatement("UPDATE characters SET HasMerchant = 0 WHERE id = ?")) {
                             psUpdate.setInt(1, ownerId);
                             psUpdate.executeUpdate();
                         }
 
-                        try (PreparedStatement psDel = con.prepareStatement("DELETE FROM hiredmerchants WHERE ownerid = ?")) {
+                        try (PreparedStatement psDel = con
+                                .prepareStatement("DELETE FROM hiredmerchants WHERE ownerid = ?")) {
                             psDel.setInt(1, ownerId);
                             psDel.executeUpdate();
                         }
@@ -367,7 +372,8 @@ public final class Channel {
         } catch (SQLException e) {
             log.error("Failed to restore merchants for Ch" + channel, e);
         }
-        log.info("Restored {} merchants. Failed/Fredrick'd {} merchants on Channel {}.", restored, sentToFredrick, channel);
+        log.info("Restored {} merchants. Failed/Fredrick'd {} merchants on Channel {}.", restored, sentToFredrick,
+                channel);
     }
 
     public MapManager getMapFactory() {
@@ -404,7 +410,8 @@ public final class Channel {
     }
 
     public int getChannelCapacity() {
-        return (int) (Math.ceil(((float) players.getAllCharacters().size() / YamlConfig.config.server.CHANNEL_LOAD) * 800));
+        return (int) (Math
+                .ceil(((float) players.getAllCharacters().size() / YamlConfig.config.server.CHANNEL_LOAD) * 800));
     }
 
     public void broadcastPacket(Packet packet) {
@@ -454,7 +461,7 @@ public final class Channel {
         return partym;
     }
 
-    public void insertPlayerAway(int chrId) {   // either they in CS or MTS
+    public void insertPlayerAway(int chrId) { // either they in CS or MTS
         playersAway.add(chrId);
     }
 
@@ -529,7 +536,8 @@ public final class Channel {
             }
 
             expeditions.put(exped.getType(), exped);
-            exped.beginRegistration();  // thanks Conrad for noticing leader still receiving packets on failure-to-register cases
+            exped.beginRegistration(); // thanks Conrad for noticing leader still receiving packets on
+                                       // failure-to-register cases
             return true;
         }
     }
@@ -573,10 +581,11 @@ public final class Channel {
         List<String> events = new ArrayList<>();
         Path eventDir = Path.of("scripts/event");
 
-//        log.info("[EventLoader] Scanning directory: {}", eventDir.toAbsolutePath());
+        // log.info("[EventLoader] Scanning directory: {}", eventDir.toAbsolutePath());
 
         if (!Files.exists(eventDir)) {
-            log.error("[EventLoader] CRITICAL: The directory '{}' does not exist! Check your working directory.", eventDir.toAbsolutePath());
+            log.error("[EventLoader] CRITICAL: The directory '{}' does not exist! Check your working directory.",
+                    eventDir.toAbsolutePath());
             return new String[0];
         }
 
@@ -585,7 +594,7 @@ public final class Channel {
                 String fileName = path.getFileName().toString();
                 String eventName = fileName.substring(0, fileName.length() - 3);
                 events.add(eventName);
-//                log.info("[EventLoader] Registered Event: {}", eventName);
+                // log.info("[EventLoader] Registered Event: {}", eventName);
             }
         } catch (IOException e) {
             log.warn("[EventLoader] Failed to load events!", e);
@@ -642,7 +651,8 @@ public final class Channel {
             }
 
             if (slot < range) {
-                int slotMapid = (isPartyDojo ? MapId.DOJO_PARTY_BASE : MapId.DOJO_SOLO_BASE) + (100 * (fromStage + 1)) + slot;
+                int slotMapid = (isPartyDojo ? MapId.DOJO_PARTY_BASE : MapId.DOJO_SOLO_BASE) + (100 * (fromStage + 1))
+                        + slot;
                 int dojoSlot = getDojoSlot(slotMapid);
 
                 if (party != null) {
@@ -682,7 +692,7 @@ public final class Channel {
             }
         }
 
-        if (dojoParty.containsValue(slot)) {    // strange case, no party there!
+        if (dojoParty.containsValue(slot)) { // strange case, no party there!
             Set<Entry<Integer, Integer>> es = new HashSet<>(dojoParty.entrySet());
 
             for (Entry<Integer, Integer> e : es) {
@@ -719,7 +729,7 @@ public final class Channel {
         final int stage = (dojoMapId / 100) % 100;
         final int dojoBaseMap = (dojoMapId >= MapId.DOJO_PARTY_BASE) ? MapId.DOJO_PARTY_BASE : MapId.DOJO_SOLO_BASE;
 
-        for (int i = 0; i < 5; i++) { //only 32 stages, but 38 maps
+        for (int i = 0; i < 5; i++) { // only 32 stages, but 38 maps
             if (stage + i > 38) {
                 break;
             }
@@ -751,13 +761,14 @@ public final class Channel {
                 final int dojoBaseMap = (slot < 5) ? MapId.DOJO_PARTY_BASE : MapId.DOJO_SOLO_BASE;
                 Party party = null;
 
-                for (int i = 0; i < 5; i++) { //only 32 stages, but 38 maps
+                for (int i = 0; i < 5; i++) { // only 32 stages, but 38 maps
                     if (stage + i > 38) {
                         break;
                     }
 
                     MapleMap dojoExit = getMapFactory().getMap(MapId.DOJO_EXIT);
-                    for (Character chr : getMapFactory().getMap(dojoBaseMap + (100 * (stage + i)) + delta).getAllPlayers()) {
+                    for (Character chr : getMapFactory().getMap(dojoBaseMap + (100 * (stage + i)) + delta)
+                            .getAllPlayers()) {
                         if (MapId.isDojo(chr.getMap().getId())) {
                             chr.changeMap(dojoExit);
                         }
@@ -766,7 +777,7 @@ public final class Channel {
                 }
 
                 freeDojoSlot(slot, party);
-            }, clockTime + 3000);   // let the TIMES UP display for 3 seconds, then warp
+            }, clockTime + 3000); // let the TIMES UP display for 3 seconds, then warp
         } finally {
             lock.unlock();
         }
@@ -818,7 +829,10 @@ public final class Channel {
             }
 
             MiniDungeonInfo mmdi = MiniDungeonInfo.getDungeon(dungeonid);
-            MiniDungeon mmd = new MiniDungeon(mmdi.getBase(), this.getMapFactory().getMap(mmdi.getDungeonId()).getTimeLimit());   // thanks Conrad for noticing hardcoded time limit for minidungeons
+            MiniDungeon mmd = new MiniDungeon(mmdi.getBase(),
+                    this.getMapFactory().getMap(mmdi.getDungeonId()).getTimeLimit()); // thanks Conrad for noticing
+                                                                                      // hardcoded time limit for
+                                                                                      // minidungeons
 
             dungeons.put(dungeonid, mmd);
             return true;
@@ -868,8 +882,10 @@ public final class Channel {
         Pair<Integer, Integer> coupleId = wserv.getMarriageQueuedCouple(ret);
         Pair<Boolean, Set<Integer>> typeGuests = wserv.removeMarriageQueued(ret);
 
-        Pair<String, String> couple = new Pair<>(Character.getNameById(coupleId.getLeft()), Character.getNameById(coupleId.getRight()));
-        wserv.dropMessage(6, couple.getLeft() + " and " + couple.getRight() + "'s wedding is going to be started at " + (cathedral ? "Cathedral" : "Chapel") + " on Channel " + channel + ".");
+        Pair<String, String> couple = new Pair<>(Character.getNameById(coupleId.getLeft()),
+                Character.getNameById(coupleId.getRight()));
+        wserv.dropMessage(6, couple.getLeft() + " and " + couple.getRight() + "'s wedding is going to be started at "
+                + (cathedral ? "Cathedral" : "Chapel") + " on Channel " + channel + ".");
 
         return new Pair<>(typeGuests.getLeft(), new Pair<>(ret, typeGuests.getRight()));
     }
@@ -879,7 +895,8 @@ public final class Channel {
 
         lock.lock();
         try {
-            return wserv.isMarriageQueued(weddingId) || weddingId.equals(ongoingCathedral) || weddingId.equals(ongoingChapel);
+            return wserv.isMarriageQueued(weddingId) || weddingId.equals(ongoingCathedral)
+                    || weddingId.equals(ongoingChapel);
         } finally {
             lock.unlock();
         }
@@ -920,7 +937,8 @@ public final class Channel {
         }
     }
 
-    public int pushWeddingReservation(Integer weddingId, boolean cathedral, boolean premium, Integer groomId, Integer brideId) {
+    public int pushWeddingReservation(Integer weddingId, boolean cathedral, boolean premium, Integer groomId,
+            Integer brideId) {
         if (weddingId == null || isWeddingReserved(weddingId)) {
             return -1;
         }
@@ -934,7 +952,7 @@ public final class Channel {
 
             int delay = YamlConfig.config.server.WEDDING_RESERVATION_DELAY - 1 - weddingReservationQueue.size();
             for (int i = 0; i < delay; i++) {
-                weddingReservationQueue.add(null);  // push empty slots to fill the waiting time
+                weddingReservationQueue.add(null); // push empty slots to fill the waiting time
             }
 
             weddingReservationQueue.add(weddingId);
@@ -1010,7 +1028,8 @@ public final class Channel {
 
         ongoingStartTime = System.currentTimeMillis();
         if (weddingId != null) {
-            ScheduledFuture<?> weddingTask = TimerManager.getInstance().schedule(() -> closeOngoingWedding(cathedral), MINUTES.toMillis(YamlConfig.config.server.WEDDING_RESERVATION_TIMEOUT));
+            ScheduledFuture<?> weddingTask = TimerManager.getInstance().schedule(() -> closeOngoingWedding(cathedral),
+                    MINUTES.toMillis(YamlConfig.config.server.WEDDING_RESERVATION_TIMEOUT));
 
             if (cathedral) {
                 cathedralReservationTask = weddingTask;
@@ -1020,7 +1039,8 @@ public final class Channel {
         }
     }
 
-    public synchronized boolean acceptOngoingWedding(final boolean cathedral) {     // couple succeeded to show up and started the ceremony
+    public synchronized boolean acceptOngoingWedding(final boolean cathedral) { // couple succeeded to show up and
+                                                                                // started the ceremony
         if (cathedral) {
             if (cathedralReservationTask == null) {
                 return false;
@@ -1050,10 +1070,10 @@ public final class Channel {
 
         byte mode = 0;
         if (leftTime / (MINUTES.toMillis(1)) > 0) {
-            mode++;     //counts minutes
+            mode++; // counts minutes
 
             if (leftTime / (HOURS.toMillis(1)) > 0) {
-                mode++;     //counts hours
+                mode++; // counts hours
             }
         }
 
@@ -1107,7 +1127,10 @@ public final class Channel {
                 return venue + " - RIGHT NOW";
             }
 
-            return venue + " - " + getTimeLeft(ongoingStartTime + MINUTES.toMillis((long) resStatus * YamlConfig.config.server.WEDDING_RESERVATION_INTERVAL)) + " from now";
+            return venue + " - "
+                    + getTimeLeft(ongoingStartTime + MINUTES
+                            .toMillis((long) resStatus * YamlConfig.config.server.WEDDING_RESERVATION_INTERVAL))
+                    + " from now";
         } finally {
             lock.unlock();
         }
@@ -1116,7 +1139,9 @@ public final class Channel {
     public Pair<Integer, Integer> getWeddingCoupleForGuest(int guestId, boolean cathedral) {
         lock.lock();
         try {
-            return (isOngoingWeddingGuest(cathedral, guestId)) ? getWorldServer().getRelationshipCouple(getOngoingWedding(cathedral)) : null;
+            return (isOngoingWeddingGuest(cathedral, guestId))
+                    ? getWorldServer().getRelationshipCouple(getOngoingWedding(cathedral))
+                    : null;
         } finally {
             lock.unlock();
         }

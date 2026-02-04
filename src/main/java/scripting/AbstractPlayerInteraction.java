@@ -110,7 +110,8 @@ public class AbstractPlayerInteraction {
     }
 
     private int getMarketPortalId(MapleMap map) {
-        return (map.findMarketPortal() != null) ? map.findMarketPortal().getId() : map.getRandomPlayerSpawnpoint().getId();
+        return (map.findMarketPortal() != null) ? map.findMarketPortal().getId()
+                : map.getRandomPlayerSpawnpoint().getId();
     }
 
     public void warp(int mapid) {
@@ -244,7 +245,8 @@ public class AbstractPlayerInteraction {
     }
 
     public boolean canHold(int itemid, int quantity, int removeItemid, int removeQuantity) {
-        return canHoldAllAfterRemoving(Collections.singletonList(itemid), Collections.singletonList(quantity), Collections.singletonList(removeItemid), Collections.singletonList(removeQuantity));
+        return canHoldAllAfterRemoving(Collections.singletonList(itemid), Collections.singletonList(quantity),
+                Collections.singletonList(removeItemid), Collections.singletonList(removeQuantity));
     }
 
     private List<Integer> convertToIntegerList(List<Object> objects) {
@@ -310,9 +312,11 @@ public class AbstractPlayerInteraction {
         return invList;
     }
 
-    public boolean canHoldAllAfterRemoving(List<Integer> toAddItemids, List<Integer> toAddQuantity, List<Integer> toRemoveItemids, List<Integer> toRemoveQuantity) {
+    public boolean canHoldAllAfterRemoving(List<Integer> toAddItemids, List<Integer> toAddQuantity,
+            List<Integer> toRemoveItemids, List<Integer> toRemoveQuantity) {
         List<List<Pair<Integer, Integer>>> toAddItemList = prepareInventoryItemList(toAddItemids, toAddQuantity);
-        List<List<Pair<Integer, Integer>>> toRemoveItemList = prepareInventoryItemList(toRemoveItemids, toRemoveQuantity);
+        List<List<Pair<Integer, Integer>>> toRemoveItemList = prepareInventoryItemList(toRemoveItemids,
+                toRemoveQuantity);
 
         InventoryProof prfInv = (InventoryProof) this.getInventory(InventoryType.CANHOLD);
         prfInv.lockInventory();
@@ -327,7 +331,8 @@ public class AbstractPlayerInteraction {
                     prfInv.cloneContents(inv);
 
                     for (Pair<Integer, Integer> p : toRemove) {
-                        InventoryManipulator.removeById(c, InventoryType.CANHOLD, p.getLeft(), p.getRight(), false, false);
+                        InventoryManipulator.removeById(c, InventoryType.CANHOLD, p.getLeft(), p.getRight(), false,
+                                false);
                     }
 
                     List<Pair<Item, InventoryType>> addItems = prepareProofInventoryItems(toAdd);
@@ -346,7 +351,7 @@ public class AbstractPlayerInteraction {
         return true;
     }
 
-    //---- \/ \/ \/ \/ \/ \/ \/  NOT TESTED  \/ \/ \/ \/ \/ \/ \/ \/ \/ ----
+    // ---- \/ \/ \/ \/ \/ \/ \/ NOT TESTED \/ \/ \/ \/ \/ \/ \/ \/ \/ ----
 
     public final QuestStatus getQuestRecord(final int id) {
         return c.getPlayer().getQuestNAdd(Quest.getInstance(id));
@@ -356,7 +361,7 @@ public class AbstractPlayerInteraction {
         return c.getPlayer().getQuestNoAdd(Quest.getInstance(id));
     }
 
-    //---- /\ /\ /\ /\ /\ /\ /\  NOT TESTED  /\ /\ /\ /\ /\ /\ /\ /\ /\ ----
+    // ---- /\ /\ /\ /\ /\ /\ /\ NOT TESTED /\ /\ /\ /\ /\ /\ /\ /\ /\ ----
 
     public void openNpc(int npcid) {
         openNpc(npcid, null);
@@ -531,8 +536,7 @@ public class AbstractPlayerInteraction {
         Pet evolved = null;
         Pet target;
 
-        long period = DAYS.toMillis(90);    //refreshes expiration date: 90 days
-
+        long period = DAYS.toMillis(90); // refreshes expiration date: 90 days
 
         target = getPlayer().getPet(slot);
         if (target == null) {
@@ -541,35 +545,38 @@ public class AbstractPlayerInteraction {
         }
 
         Item tmp = gainItem(afterId, (short) 1, false, true, period, target);
-            
-            /*
-            evolved = Pet.loadFromDb(tmp.getItemId(), tmp.getPosition(), tmp.getPetId());
-            
-            evolved = tmp.getPet();
-            if(evolved == null) {
-                getPlayer().message("Pet structure non-existent for " + tmp.getItemId() + "...");
-                return(null);
-            }
-            else if(tmp.getPetId() == -1) {
-                getPlayer().message("Pet id -1");
-                return(null);
-            }
-            
-            getPlayer().addPet(evolved);
-            
-            getPlayer().getMap().broadcastMessage(c.getPlayer(), PacketCreator.showPet(c.getPlayer(), evolved, false, false), true);
-            c.sendPacket(PacketCreator.petStatUpdate(c.getPlayer()));
-            c.sendPacket(PacketCreator.enableActions());
-            chr.getClient().getWorldServer().registerPetHunger(chr, chr.getPetIndex(evolved));
-            */
+
+        /*
+         * evolved = Pet.loadFromDb(tmp.getItemId(), tmp.getPosition(), tmp.getPetId());
+         * 
+         * evolved = tmp.getPet();
+         * if(evolved == null) {
+         * getPlayer().message("Pet structure non-existent for " + tmp.getItemId() +
+         * "...");
+         * return(null);
+         * }
+         * else if(tmp.getPetId() == -1) {
+         * getPlayer().message("Pet id -1");
+         * return(null);
+         * }
+         * 
+         * getPlayer().addPet(evolved);
+         * 
+         * getPlayer().getMap().broadcastMessage(c.getPlayer(),
+         * PacketCreator.showPet(c.getPlayer(), evolved, false, false), true);
+         * c.sendPacket(PacketCreator.petStatUpdate(c.getPlayer()));
+         * c.sendPacket(PacketCreator.enableActions());
+         * chr.getClient().getWorldServer().registerPetHunger(chr,
+         * chr.getPetIndex(evolved));
+         */
 
         InventoryManipulator.removeFromSlot(c, InventoryType.CASH, target.getPosition(), (short) 1, false);
 
         return evolved;
     }
 
-// =========================================================================================
-    //                            STATIC OVERLOADS (For Java Source)
+    // =========================================================================================
+    // STATIC OVERLOADS (For Java Source)
     // =========================================================================================
     // Use these when calling from SubordinateManager or other Java classes.
 
@@ -583,9 +590,11 @@ public class AbstractPlayerInteraction {
 
     /**
      * The Master Static Method. All other gainItem calls eventually route here.
-     * Use this if you need full control (random stats, expiration, pet source, etc.) from a static context.
+     * Use this if you need full control (random stats, expiration, pet source,
+     * etc.) from a static context.
      */
-    public static Item gainItem(Client c, int id, short quantity, boolean randomStats, boolean showMessage, long expires, Pet from) {
+    public static Item gainItem(Client c, int id, short quantity, boolean randomStats, boolean showMessage,
+            long expires, Pet from) {
         Item item = null;
         Pet evolved;
         int petId = -1;
@@ -605,7 +614,10 @@ public class AbstractPlayerInteraction {
                     evolved.setStance(0);
                     evolved.setSummoned(true);
 
-                    evolved.setName(from.getName().compareTo(ItemInformationProvider.getInstance().getName(from.getItemId())) != 0 ? from.getName() : ItemInformationProvider.getInstance().getName(id));
+                    evolved.setName(from.getName()
+                            .compareTo(ItemInformationProvider.getInstance().getName(from.getItemId())) != 0
+                                    ? from.getName()
+                                    : ItemInformationProvider.getInstance().getName(id));
                     evolved.setTameness(from.getTameness());
                     evolved.setFullness(from.getFullness());
                     evolved.setLevel(from.getLevel());
@@ -633,7 +645,8 @@ public class AbstractPlayerInteraction {
                         if (!(c.getPlayer().isGM() && YamlConfig.config.server.USE_PERFECT_GM_SCROLL)) {
                             eqp.setUpgradeSlots((byte) (eqp.getUpgradeSlots() + 1));
                         }
-                        item = ItemInformationProvider.getInstance().scrollEquipWithId(item, ItemId.CHAOS_SCROll_60, true, ItemId.CHAOS_SCROll_60, c.getPlayer().isGM());
+                        item = ItemInformationProvider.getInstance().scrollEquipWithId(item, ItemId.CHAOS_SCROll_60,
+                                true, ItemId.CHAOS_SCROll_60, c.getPlayer().isGM());
                     }
                 }
             } else {
@@ -651,7 +664,8 @@ public class AbstractPlayerInteraction {
 
             // --- Inventory Space Check ---
             if (!InventoryManipulator.checkSpace(c, id, quantity, "")) {
-                c.getPlayer().dropMessage(1, "Your inventory is full. Please remove an item from your " + ItemConstants.getInventoryType(id).name() + " inventory.");
+                c.getPlayer().dropMessage(1, "Your inventory is full. Please remove an item from your "
+                        + ItemConstants.getInventoryType(id).name() + " inventory.");
                 return null;
             }
 
@@ -679,7 +693,7 @@ public class AbstractPlayerInteraction {
     }
 
     // =========================================================================================
-    //                            INSTANCE OVERLOADS (For Scripts)
+    // INSTANCE OVERLOADS (For Scripts)
     // =========================================================================================
     // These are used by NPC scripts (cm.gainItem) and implicitly use 'this.c'.
 
@@ -732,6 +746,7 @@ public class AbstractPlayerInteraction {
     public Item gainItem(int id, short quantity, boolean randomStats, boolean showMessage, long expires, Pet from) {
         return gainItem(this.c, id, quantity, randomStats, showMessage, expires, from);
     }
+
     public void gainFame(int delta) {
         getPlayer().gainFame(delta);
     }
@@ -768,12 +783,12 @@ public class AbstractPlayerInteraction {
         String intro = switch (c.getPlayer().getMapId()) {
             case MapId.ARAN_TUTO_1 -> "Effect/Direction1.img/aranTutorial/Scene0";
             case MapId.ARAN_TUTO_2 ->
-                    "Effect/Direction1.img/aranTutorial/Scene1" + (c.getPlayer().getGender() == 0 ? "0" : "1");
+                "Effect/Direction1.img/aranTutorial/Scene1" + (c.getPlayer().getGender() == 0 ? "0" : "1");
             case MapId.ARAN_TUTO_3 ->
-                    "Effect/Direction1.img/aranTutorial/Scene2" + (c.getPlayer().getGender() == 0 ? "0" : "1");
+                "Effect/Direction1.img/aranTutorial/Scene2" + (c.getPlayer().getGender() == 0 ? "0" : "1");
             case MapId.ARAN_TUTO_4 -> "Effect/Direction1.img/aranTutorial/Scene3";
             case MapId.ARAN_POLEARM ->
-                    "Effect/Direction1.img/aranTutorial/HandedPoleArm" + (c.getPlayer().getGender() == 0 ? "0" : "1");
+                "Effect/Direction1.img/aranTutorial/HandedPoleArm" + (c.getPlayer().getGender() == 0 ? "0" : "1");
             case MapId.ARAN_MAHA -> "Effect/Direction1.img/aranTutorial/Maha";
             default -> "";
         };
@@ -841,8 +856,9 @@ public class AbstractPlayerInteraction {
     }
 
     public void removeHPQItems() {
-        int[] items = {ItemId.GREEN_PRIMROSE_SEED, ItemId.PURPLE_PRIMROSE_SEED, ItemId.PINK_PRIMROSE_SEED,
-                ItemId.BROWN_PRIMROSE_SEED, ItemId.YELLOW_PRIMROSE_SEED, ItemId.BLUE_PRIMROSE_SEED, ItemId.MOON_BUNNYS_RICE_CAKE};
+        int[] items = { ItemId.GREEN_PRIMROSE_SEED, ItemId.PURPLE_PRIMROSE_SEED, ItemId.PINK_PRIMROSE_SEED,
+                ItemId.BROWN_PRIMROSE_SEED, ItemId.YELLOW_PRIMROSE_SEED, ItemId.BLUE_PRIMROSE_SEED,
+                ItemId.MOON_BUNNYS_RICE_CAKE };
         for (int item : items) {
             removePartyItems(item);
         }
@@ -880,12 +896,12 @@ public class AbstractPlayerInteraction {
     }
 
     public void givePartyExp(String PQ, boolean instance) {
-        //1 player  =  +0% bonus (100)
-        //2 players =  +0% bonus (100)
-        //3 players =  +0% bonus (100)
-        //4 players = +10% bonus (110)
-        //5 players = +20% bonus (120)
-        //6 players = +30% bonus (130)
+        // 1 player = +0% bonus (100)
+        // 2 players = +0% bonus (100)
+        // 3 players = +0% bonus (100)
+        // 4 players = +10% bonus (110)
+        // 5 players = +20% bonus (120)
+        // 6 players = +30% bonus (130)
         Party party = getPlayer().getParty();
         int size = party.getMembers().size();
 
@@ -917,7 +933,8 @@ public class AbstractPlayerInteraction {
             int base = PartyQuest.getExp(PQ, player.getLevel());
             int exp = base * bonus / 100;
             player.gainExp(exp, true, true);
-            if (YamlConfig.config.server.PQ_BONUS_EXP_RATE > 0 && System.currentTimeMillis() <= YamlConfig.config.server.EVENT_END_TIMESTAMP) {
+            if (YamlConfig.config.server.PQ_BONUS_EXP_RATE > 0
+                    && System.currentTimeMillis() <= YamlConfig.config.server.EVENT_END_TIMESTAMP) {
                 player.gainExp((int) (exp * YamlConfig.config.server.PQ_BONUS_EXP_RATE), true, true);
             }
         }
@@ -938,7 +955,6 @@ public class AbstractPlayerInteraction {
     public void removeAll(int id) {
         removeAll(id, c);
     }
-
 
     public void removeAll(int id, Client cl) {
         InventoryType invType = ItemConstants.getInventoryType(id);
@@ -1005,7 +1021,8 @@ public class AbstractPlayerInteraction {
     public void resetMap(int mapid) {
         getMap(mapid).resetReactors();
         getMap(mapid).killAllMonsters();
-        for (MapObject i : getMap(mapid).getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM))) {
+        for (MapObject i : getMap(mapid).getMapObjectsInRange(c.getPlayer().getPosition(), Double.POSITIVE_INFINITY,
+                Arrays.asList(MapObjectType.ITEM))) {
             getMap(mapid).removeMapObject(i);
             getMap(mapid).broadcastMessage(PacketCreator.removeItemFromMap(i.getObjectId(), 0, c.getPlayer().getId()));
         }
@@ -1013,7 +1030,7 @@ public class AbstractPlayerInteraction {
 
     public void useItem(int id) {
         ItemInformationProvider.getInstance().getItemEffect(id).applyTo(c.getPlayer());
-        c.sendPacket(PacketCreator.getItemMessage(id));//Useful shet :3
+        c.sendPacket(PacketCreator.getItemMessage(id));// Useful shet :3
     }
 
     public void cancelItem(final int id) {
@@ -1029,7 +1046,9 @@ public class AbstractPlayerInteraction {
         Character.SkillEntry skillEntry = getPlayer().getSkills().get(skill);
         if (skillEntry != null) {
             if (!force && level > -1) {
-                getPlayer().changeSkillLevel(skill, (byte) Math.max(skillEntry.skillevel, level), Math.max(skillEntry.masterlevel, masterLevel), expiration == -1 ? -1 : Math.max(skillEntry.expiration, expiration));
+                getPlayer().changeSkillLevel(skill, (byte) Math.max(skillEntry.skillevel, level),
+                        Math.max(skillEntry.masterlevel, masterLevel),
+                        expiration == -1 ? -1 : Math.max(skillEntry.expiration, expiration));
                 return;
             }
         } else if (GameConstants.isAranSkills(skillid)) {
@@ -1052,8 +1071,9 @@ public class AbstractPlayerInteraction {
         final Item newItem = ItemInformationProvider.getInstance().getEquipById(itemid);
         newItem.setPosition(slot);
         c.getPlayer().getInventory(InventoryType.EQUIPPED).addItemFromDB(newItem);
-// [FIXED] Added 'c.getPlayer()' as the third argument
-        c.sendPacket(PacketCreator.modifyInventory(false, Collections.singletonList(new ModifyInventory(0, newItem)), c.getPlayer()));
+        // [FIXED] Added 'c.getPlayer()' as the third argument
+        c.sendPacket(PacketCreator.modifyInventory(false, Collections.singletonList(new ModifyInventory(0, newItem)),
+                c.getPlayer()));
     }
 
     public void spawnNpc(int npcId, Point pos, MapleMap map) {
@@ -1127,7 +1147,7 @@ public class AbstractPlayerInteraction {
 
     public void updateAreaInfo(Short area, String info) {
         c.getPlayer().updateAreaInfo(area, info);
-        c.sendPacket(PacketCreator.enableActions());//idk, nexon does the same :P
+        c.sendPacket(PacketCreator.enableActions());// idk, nexon does the same :P
     }
 
     public boolean containsAreaInfo(short area, String info) {
@@ -1181,13 +1201,16 @@ public class AbstractPlayerInteraction {
         Expedition exped = new Expedition(player, type, silent, minPlayers, maxPlayers);
 
         int channel = player.getMap().getChannelServer().getId();
-        if (!ExpeditionBossLog.attemptBoss(player.getId(), channel, exped, false)) {    // thanks Conrad for noticing missing expeditions entry limit
+        if (!ExpeditionBossLog.attemptBoss(player.getId(), channel, exped, false)) { // thanks Conrad for noticing
+                                                                                     // missing expeditions entry limit
+            player.dropMessage(5, "[DEBUG] Expedition creation failed at attemptBoss.");
             return 1;
         }
 
         if (exped.addChannelExpedition(player.getClient().getChannelServer())) {
             return 0;
         } else {
+            player.dropMessage(5, "[DEBUG] Expedition creation failed at addChannelExpedition.");
             return -1;
         }
     }

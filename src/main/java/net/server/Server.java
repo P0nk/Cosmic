@@ -176,7 +176,7 @@ public class Server {
         return (int) (Server.getInstance().getCurrentTime() - Server.uptime);
     }
 
-    public long getCurrentTime() {  // returns a slightly delayed time value, under frequency of UPDATE_INTERVAL
+    public long getCurrentTime() { // returns a slightly delayed time value, under frequency of UPDATE_INTERVAL
         return serverCurrentTime;
     }
 
@@ -224,8 +224,8 @@ public class Server {
         final List<World> wlist = this.getWorlds();
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM playernpcs_field");
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement("SELECT * FROM playernpcs_field");
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 int world = rs.getInt("world");
@@ -336,7 +336,6 @@ public class Server {
             return null;
         }
     }
-
 
     private void dumpData() {
         wldRLock.lock();
@@ -455,12 +454,10 @@ public class Server {
                 questrate,
                 travelrate,
                 fishingrate,
-                mobrate,                      //Added by merogie
-                mobperspawnpoint,             //Added by merogie
-                mobperspawntick,              // added by merogie
-                progexptoggle
-        );
-
+                mobrate, // Added by merogie
+                mobperspawnpoint, // Added by merogie
+                mobperspawntick, // added by merogie
+                progexptoggle);
 
         Map<Integer, String> channelInfo = new HashMap<>();
         long bootTime = getCurrentTime();
@@ -474,7 +471,7 @@ public class Server {
 
         boolean canDeploy;
 
-        wldWLock.lock();    // thanks Ashen for noticing a deadlock issue when trying to deploy a channel
+        wldWLock.lock(); // thanks Ashen for noticing a deadlock issue when trying to deploy a channel
         try {
             canDeploy = world.getId() == worlds.size();
             if (canDeploy) {
@@ -498,7 +495,7 @@ public class Server {
         }
     }
 
-    public boolean removeChannel(int worldid) {   //lol don't!
+    public boolean removeChannel(int worldid) { // lol don't!
         World world;
 
         wldRLock.lock();
@@ -529,7 +526,7 @@ public class Server {
         return false;
     }
 
-    public boolean removeWorld() {   //lol don't!
+    public boolean removeWorld() { // lol don't!
         World w;
         int worldid;
 
@@ -566,7 +563,7 @@ public class Server {
         return true;
     }
 
-    private void resetServerWorlds() {  // thanks maple006 for noticing proprietary lists assigned to null
+    private void resetServerWorlds() { // thanks maple006 for noticing proprietary lists assigned to null
         wldWLock.lock();
         try {
             worlds.clear();
@@ -631,7 +628,7 @@ public class Server {
 
     private void loadCouponRates(Connection c) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("SELECT couponid, rate FROM nxcoupons");
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 int cid = rs.getInt("couponid");
@@ -683,7 +680,8 @@ public class Server {
             int hourDay = c.get(Calendar.HOUR_OF_DAY);
 
             int weekdayMask = (1 << weekDay);
-            PreparedStatement ps = con.prepareStatement("SELECT couponid FROM nxcoupons WHERE (activeday & ?) = ? AND starthour <= ? AND endhour > ?");
+            PreparedStatement ps = con.prepareStatement(
+                    "SELECT couponid FROM nxcoupons WHERE (activeday & ?) = ? AND starthour <= ? AND endhour > ?");
             ps.setInt(1, weekdayMask);
             ps.setInt(2, weekdayMask);
             ps.setInt(3, hourDay);
@@ -719,7 +717,8 @@ public class Server {
 
         disLock.lock();
         try {
-            // this is to force the system to wait for at least one complete tick before releasing disease info for the registered clients
+            // this is to force the system to wait for at least one complete tick before
+            // releasing disease info for the registered clients
             while (!registeredDiseaseAnnouncePlayers.isEmpty()) {
                 Client c = registeredDiseaseAnnouncePlayers.remove(0);
                 processDiseaseAnnouncePlayers.add(c);
@@ -738,19 +737,21 @@ public class Server {
         }
     }
 
-//    public List<Pair<String, Integer>> getWorldPlayerRanking(int worldid) {
-//        wldRLock.lock();
-//        try {
-//            return new ArrayList<>(playerRanking.get(!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? worldid : 0));
-//        } finally {
-//            wldRLock.unlock();
-//        }
-//    }
+    // public List<Pair<String, Integer>> getWorldPlayerRanking(int worldid) {
+    // wldRLock.lock();
+    // try {
+    // return new
+    // ArrayList<>(playerRanking.get(!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING
+    // ? worldid : 0));
+    // } finally {
+    // wldRLock.unlock();
+    // }
+    // }
 
     public List<Pair<String, Integer>> getWorldPlayerRanking(int worldid) {
         wldRLock.lock();
         try {
-            int key = YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ?  0 : worldid;
+            int key = YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? 0 : worldid;
 
             // Debugging output
             System.out.println("Fetching ranking for world ID: " + key);
@@ -766,14 +767,11 @@ public class Server {
 
             System.out.println("Ranking list found for world ID: " + key + ", Size: " + rankingList.size());
 
-
-
             return new ArrayList<>(rankingList);
         } finally {
             wldRLock.unlock();
         }
     }
-
 
     private void installWorldPlayerRanking(int worldid) {
         List<Pair<Integer, List<Pair<String, Integer>>>> ranking = loadPlayerRankingFromDB(worldid);
@@ -808,7 +806,8 @@ public class Server {
                 wldWLock.unlock();
             }
         } else {
-            List<Pair<Integer, List<Pair<String, Integer>>>> ranking = loadPlayerRankingFromDB(-1 * (this.getWorldsSize() - 2));  // update ranking list
+            List<Pair<Integer, List<Pair<String, Integer>>>> ranking = loadPlayerRankingFromDB(
+                    -1 * (this.getWorldsSize() - 2)); // update ranking list
 
             wldWLock.lock();
             try {
@@ -820,7 +819,8 @@ public class Server {
     }
 
     public void updateWorldPlayerRanking() {
-        List<Pair<Integer, List<Pair<String, Integer>>>> rankUpdates = loadPlayerRankingFromDB(-1 * (this.getWorldsSize() - 1));
+        List<Pair<Integer, List<Pair<String, Integer>>>> rankUpdates = loadPlayerRankingFromDB(
+                -1 * (this.getWorldsSize() - 1));
         if (rankUpdates.isEmpty()) {
             return;
         }
@@ -873,8 +873,12 @@ public class Server {
             }
 
             List<Pair<String, Integer>> rankUpdate = new ArrayList<>(0);
-            try (PreparedStatement ps = con.prepareStatement("SELECT `characters`.`name`, `characters`.`level`, `characters`.`world` FROM `characters` LEFT JOIN accounts ON accounts.id = characters.accountid WHERE `characters`.`gm` < 2 AND `accounts`.`banned` = '0'" + worldQuery + " ORDER BY " + (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? "world, " : "") + "level DESC, exp DESC, lastExpGainTime ASC LIMIT 50");
-                 ResultSet rs = ps.executeQuery()) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT `characters`.`name`, `characters`.`level`, `characters`.`world` FROM `characters` LEFT JOIN accounts ON accounts.id = characters.accountid WHERE `characters`.`gm` < 2 AND `accounts`.`banned` = '0'"
+                            + worldQuery + " ORDER BY "
+                            + (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? "world, " : "")
+                            + "level DESC, exp DESC, lastExpGainTime ASC LIMIT 50");
+                    ResultSet rs = ps.executeQuery()) {
 
                 if (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING) {
                     int currentWorld = -1;
@@ -951,7 +955,7 @@ public class Server {
         }
 
         ThreadManager.getInstance().start();
-        initializeTimelyTasks(channelDependencies);    // aggregated method for timely tasks thanks to lxconan
+        initializeTimelyTasks(channelDependencies); // aggregated method for timely tasks thanks to lxconan
         // --- ADD THIS LINE HERE ---
         RankingScheduler.start();
         log.info("Daily Ranking Announcer scheduled.");
@@ -974,7 +978,7 @@ public class Server {
                 }
             }
         } catch (Exception e) {
-            log.error("[SEVERE] Syntax error in 'world.ini'.", e); //For those who get errors
+            log.error("[SEVERE] Syntax error in 'world.ini'.", e); // For those who get errors
             System.exit(0);
         }
 
@@ -992,16 +996,11 @@ public class Server {
 
         log.info("Listening on port 8484");
 
-
         // Restore Merchants
         System.out.println("Restoring Persisted Merchants...");
         for (Channel ch : getAllChannels()) {
             ch.restoreMerchants();
         }
-
-        online = true;
-        Duration initDuration = Duration.between(beforeInit, Instant.now());
-        log.info("Cosmic is now online after {} ms.", initDuration.toMillis());
 
         OpcodeConstants.generateOpcodeNames();
         CommandsExecutor.getInstance();
@@ -1009,6 +1008,10 @@ public class Server {
         for (Channel ch : this.getAllChannels()) {
             ch.reloadEventScriptManager();
         }
+
+        online = true;
+        Duration initDuration = Duration.between(beforeInit, Instant.now());
+        log.info("Cosmic is now online after {} ms.", initDuration.toMillis());
     }
 
     private ChannelDependencies registerChannelDependencies() {
@@ -1041,12 +1044,13 @@ public class Server {
 
     private void initializeTimelyTasks(ChannelDependencies channelDependencies) {
         TimerManager tMan = TimerManager.getInstance();
-//        tMan.start();
-        tMan.register(tMan.purge(), YamlConfig.config.server.PURGING_INTERVAL);//Purging ftw...
+        // tMan.start();
+        tMan.register(tMan.purge(), YamlConfig.config.server.PURGING_INTERVAL);// Purging ftw...
         disconnectIdlesOnLoginTask();
 
         long timeLeft = getTimeLeftForNextHour();
-        tMan.register(new CharacterDiseaseTask(), YamlConfig.config.server.UPDATE_INTERVAL, YamlConfig.config.server.UPDATE_INTERVAL);
+        tMan.register(new CharacterDiseaseTask(), YamlConfig.config.server.UPDATE_INTERVAL,
+                YamlConfig.config.server.UPDATE_INTERVAL);
         tMan.register(new CouponTask(), YamlConfig.config.server.COUPON_INTERVAL, timeLeft);
         tMan.register(new RankingCommandTask(), MINUTES.toMillis(5), MINUTES.toMillis(5));
         tMan.register(new RankingLoginTask(), YamlConfig.config.server.RANKING_INTERVAL, timeLeft);
@@ -1055,11 +1059,11 @@ public class Server {
         tMan.register(new LoginStorageTask(), MINUTES.toMillis(2), MINUTES.toMillis(2));
         tMan.register(new DueyFredrickTask(channelDependencies.fredrickProcessor()), HOURS.toMillis(1), timeLeft);
         tMan.register(new InvitationTask(), SECONDS.toMillis(30), SECONDS.toMillis(30));
-        tMan.register(new RespawnTask(), YamlConfig.config.server.RESPAWN_INTERVAL, YamlConfig.config.server.RESPAWN_INTERVAL);
+        tMan.register(new RespawnTask(), YamlConfig.config.server.RESPAWN_INTERVAL,
+                YamlConfig.config.server.RESPAWN_INTERVAL);
 
         // 💡 ADD THIS to initialize the 4D draw system (draws at 12AM)
         tMan.register(new FourDDrawScheduler(), DAYS.toMillis(1), Server.getTimeLeftForNextDay());
-
 
         timeLeft = getTimeLeftForNextDay();
         ExpeditionBossLog.resetBossLogTable();
@@ -1067,7 +1071,9 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        System.setProperty("polyglot.engine.WarnInterpreterOnly", "false"); // Mute GraalVM warning: "The polyglot context is using an implementation that does not support runtime compilation."
+        System.setProperty("polyglot.engine.WarnInterpreterOnly", "false"); // Mute GraalVM warning: "The polyglot
+                                                                            // context is using an implementation that
+                                                                            // does not support runtime compilation."
         Server.getInstance().init();
     }
 
@@ -1523,7 +1529,8 @@ public class Server {
         }
     }
 
-    public void transferWorldCharacterEntry(Character chr, Integer toWorld) { // used before setting the new worldid on the character object
+    public void transferWorldCharacterEntry(Character chr, Integer toWorld) { // used before setting the new worldid on
+                                                                              // the character object
         lgnWLock.lock();
         try {
             Integer chrid = chr.getId(), accountid = chr.getAccountID(), world = worldChars.get(chr.getId());
@@ -1546,23 +1553,23 @@ public class Server {
             lgnWLock.unlock();
         }
     }
-    
+
     /*
-    public void deleteAccountEntry(Integer accountid) { is this even a thing?
-        lgnWLock.lock();
-        try {
-            accountCharacterCount.remove(accountid);
-            accountChars.remove(accountid);
-        } finally {
-            lgnWLock.unlock();
-        }
-    
-        for (World wserv : this.getWorlds()) {
-            wserv.clearAccountCharacterView(accountid);
-            wserv.unregisterAccountStorage(accountid);
-        }
-    }
-    */
+     * public void deleteAccountEntry(Integer accountid) { is this even a thing?
+     * lgnWLock.lock();
+     * try {
+     * accountCharacterCount.remove(accountid);
+     * accountChars.remove(accountid);
+     * } finally {
+     * lgnWLock.unlock();
+     * }
+     * 
+     * for (World wserv : this.getWorlds()) {
+     * wserv.clearAccountCharacterView(accountid);
+     * wserv.unregisterAccountStorage(accountid);
+     * }
+     * }
+     */
 
     public SortedMap<Integer, List<Character>> loadAccountCharlist(int accountId, int visibleWorlds) {
         List<World> worlds = this.getWorlds();
@@ -1580,9 +1587,10 @@ public class Server {
                 if (chrs == null) {
                     if (!accountChars.containsKey(accountId)) {
                         accountCharacterCount.put(accountId, (short) 0);
-                        accountChars.put(accountId, new HashSet<>());    // not advisable at all to write on the map on a read-protected environment
-                    }                                                           // yet it's known there's no problem since no other point in the source does
-                } else if (!chrs.isEmpty()) {                                  // this action.
+                        accountChars.put(accountId, new HashSet<>()); // not advisable at all to write on the map on a
+                                                                      // read-protected environment
+                    } // yet it's known there's no problem since no other point in the source does
+                } else if (!chrs.isEmpty()) { // this action.
                     worldChrs.put(world.getId(), chrs);
                 }
             }
@@ -1616,9 +1624,9 @@ public class Server {
                 playerEquips.add(ae.getLeft());
             }
 
-
             try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("SELECT * FROM characters WHERE accountid = ? ORDER BY world, id")) {
+                    PreparedStatement ps = con
+                            .prepareStatement("SELECT * FROM characters WHERE accountid = ? ORDER BY world, id")) {
                 ps.setInt(1, accId);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -1652,8 +1660,8 @@ public class Server {
 
     public void loadAllAccountsCharactersView() {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT id FROM accounts");
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement("SELECT id FROM accounts");
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 int accountId = rs.getInt("id");
@@ -1677,8 +1685,8 @@ public class Server {
 
     private static void applyAllNameChanges(Connection con) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement("SELECT * FROM namechanges WHERE completionTime IS NULL");
-             ResultSet rs = ps.executeQuery()) {
-            List<Pair<String, String>> changedNames = new LinkedList<>(); //logging only
+                ResultSet rs = ps.executeQuery()) {
+            List<Pair<String, String>> changedNames = new LinkedList<>(); // logging only
 
             con.setAutoCommit(false);
             try {
@@ -1689,7 +1697,7 @@ public class Server {
                     String newName = rs.getString("new");
                     boolean success = Character.doNameChange(con, characterId, oldName, newName, nameChangeId);
                     if (!success) {
-                        con.rollback(); //discard changes
+                        con.rollback(); // discard changes
                     } else {
                         con.commit();
                         changedNames.add(new Pair<>(oldName, newName));
@@ -1698,7 +1706,7 @@ public class Server {
             } finally {
                 con.setAutoCommit(true);
             }
-            //log
+            // log
             for (Pair<String, String> namePair : changedNames) {
                 log.info("Name change applied - from: \"{}\" to \"{}\"", namePair.getLeft(), namePair.getRight());
             }
@@ -1711,14 +1719,19 @@ public class Server {
     private static void applyAllWorldTransfers(Connection con) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement("SELECT * FROM worldtransfers WHERE completionTime IS NULL",
                 ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-             ResultSet rs = ps.executeQuery()) {
+                ResultSet rs = ps.executeQuery()) {
             List<Integer> removedTransfers = new LinkedList<>();
             while (rs.next()) {
                 int nameChangeId = rs.getInt("id");
                 int characterId = rs.getInt("characterId");
                 int oldWorld = rs.getInt("from");
                 int newWorld = rs.getInt("to");
-                String reason = Character.checkWorldTransferEligibility(con, characterId, oldWorld, newWorld); //check if character is still eligible
+                String reason = Character.checkWorldTransferEligibility(con, characterId, oldWorld, newWorld); // check
+                                                                                                               // if
+                                                                                                               // character
+                                                                                                               // is
+                                                                                                               // still
+                                                                                                               // eligible
                 if (reason != null) {
                     removedTransfers.add(nameChangeId);
                     log.info("World transfer canceled: chrId {}, reason {}", characterId, reason);
@@ -1731,7 +1744,8 @@ public class Server {
                 }
             }
             rs.beforeFirst();
-            List<Pair<Integer, Pair<Integer, Integer>>> worldTransfers = new LinkedList<>(); //logging only <charid, <oldWorld, newWorld>>
+            List<Pair<Integer, Pair<Integer, Integer>>> worldTransfers = new LinkedList<>(); // logging only <charid,
+                                                                                             // <oldWorld, newWorld>>
 
             con.setAutoCommit(false);
             try {
@@ -1755,12 +1769,13 @@ public class Server {
                 con.setAutoCommit(true);
             }
 
-            //log
+            // log
             for (Pair<Integer, Pair<Integer, Integer>> worldTransferPair : worldTransfers) {
                 int charId = worldTransferPair.getLeft();
                 int oldWorld = worldTransferPair.getRight().getLeft();
                 int newWorld = worldTransferPair.getRight().getRight();
-                log.info("World transfer applied - character id {} from world {} to world {}", charId, oldWorld, newWorld);
+                log.info("World transfer applied - character id {} from world {} to world {}", charId, oldWorld,
+                        newWorld);
             }
         } catch (SQLException e) {
             log.warn("Failed to retrieve list of pending world transfers", e);
@@ -1803,7 +1818,8 @@ public class Server {
         c.setGMLevel(gmLevel);
     }
 
-    private int loadAccountCharactersView(Integer accId, int gmLevel, int fromWorldid) {    // returns the maximum gmLevel found
+    private int loadAccountCharactersView(Integer accId, int gmLevel, int fromWorldid) { // returns the maximum gmLevel
+                                                                                         // found
         List<World> wlist = this.getWorlds();
         Pair<Short, List<List<Character>>> accCharacters = loadAccountCharactersViewFromDb(accId, wlist.size());
 
@@ -1966,7 +1982,7 @@ public class Server {
             srvLock.unlock();
         }
 
-        for (Client c : toDisconnect) {    // thanks Lei for pointing a deadlock issue with srvLock
+        for (Client c : toDisconnect) { // thanks Lei for pointing a deadlock issue with srvLock
             if (c.isLoggedIn()) {
                 c.disconnect(false, false);
             } else {
@@ -1979,37 +1995,39 @@ public class Server {
         TimerManager.getInstance().register(() -> disconnectIdlesOnLoginState(), 300000);
     }
 
-    public final Runnable shutdown(final boolean restart) {//no player should be online when trying to shutdown!
+    public final Runnable shutdown(final boolean restart) {// no player should be online when trying to shutdown!
         return () -> shutdownInternal(restart);
     }
 
     private synchronized void shutdownInternal(boolean restart) {
         log.info("{} the server!", restart ? "Restarting" : "Shutting down");
         if (getWorlds() == null) {
-            return;//already shutdown
+            return;// already shutdown
         }
         for (World w : getWorlds()) {
             w.shutdown();
         }
 
-        /*for (World w : getWorlds()) {
-            while (w.getPlayerStorage().getAllCharacters().size() > 0) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                    System.err.println("FUCK MY LIFE");
-                }
-            }
-        }
-        for (Channel ch : getAllChannels()) {
-            while (ch.getConnectedClients() > 0) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                    System.err.println("FUCK MY LIFE");
-                }
-            }
-        }*/
+        /*
+         * for (World w : getWorlds()) {
+         * while (w.getPlayerStorage().getAllCharacters().size() > 0) {
+         * try {
+         * Thread.sleep(1000);
+         * } catch (InterruptedException ie) {
+         * System.err.println("FUCK MY LIFE");
+         * }
+         * }
+         * }
+         * for (Channel ch : getAllChannels()) {
+         * while (ch.getConnectedClients() > 0) {
+         * try {
+         * Thread.sleep(1000);
+         * } catch (InterruptedException ie) {
+         * System.err.println("FUCK MY LIFE");
+         * }
+         * }
+         * }
+         */
 
         List<Channel> allChannels = getAllChannels();
 
@@ -2031,8 +2049,10 @@ public class Server {
 
         log.info("Worlds and channels are offline.");
         loginServer.stop();
-        if (!restart) {  // shutdown hook deadlocks if System.exit() method is used within its body chores, thanks MIKE for pointing that out
-            // We disabled log4j's shutdown hook in the config file, so we have to manually shut it down here,
+        if (!restart) { // shutdown hook deadlocks if System.exit() method is used within its body
+                        // chores, thanks MIKE for pointing that out
+            // We disabled log4j's shutdown hook in the config file, so we have to manually
+            // shut it down here,
             // after our last log statement.
             LogManager.shutdown();
 
@@ -2040,7 +2060,7 @@ public class Server {
         } else {
             log.info("Restarting the server...");
             instance = null;
-            getInstance().init();//DID I DO EVERYTHING?! D:
+            getInstance().init();// DID I DO EVERYTHING?! D:
         }
     }
 }

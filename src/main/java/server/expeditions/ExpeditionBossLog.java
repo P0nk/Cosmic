@@ -69,7 +69,8 @@ public class ExpeditionBossLog {
         private static List<Pair<Timestamp, BossLogEntry>> getBossLogResetTimestamps(Calendar timeNow, boolean week) {
             List<Pair<Timestamp, BossLogEntry>> resetTimestamps = new LinkedList<>();
 
-            Timestamp ts = new Timestamp(timeNow.getTime().getTime());  // reset all table entries actually, thanks Conrad
+            Timestamp ts = new Timestamp(timeNow.getTime().getTime()); // reset all table entries actually, thanks
+                                                                       // Conrad
             for (BossLogEntry b : BossLogEntry.values()) {
                 if (b.week == week) {
                     resetTimestamps.add(new Pair<>(ts, b));
@@ -93,8 +94,10 @@ public class ExpeditionBossLog {
 
     public static void resetBossLogTable() {
         /*
-        Boss logs resets 12am, weekly thursday 12AM - thanks Smitty Werbenjagermanjensen (superadlez) - https://www.reddit.com/r/Maplestory/comments/61tiup/about_reset_time/
-        */
+         * Boss logs resets 12am, weekly thursday 12AM - thanks Smitty
+         * Werbenjagermanjensen (superadlez) -
+         * https://www.reddit.com/r/Maplestory/comments/61tiup/about_reset_time/
+         */
 
         Calendar thursday = Calendar.getInstance();
         thursday.set(Calendar.DAY_OF_WEEK, Calendar.THURSDAY);
@@ -107,7 +110,7 @@ public class ExpeditionBossLog {
         long weekLength = DAYS.toMillis(7);
         long halfDayLength = HOURS.toMillis(12);
 
-        long deltaTime = now.getTime().getTime() - thursday.getTime().getTime();    // 2x time: get Date into millis
+        long deltaTime = now.getTime().getTime() - thursday.getTime().getTime(); // 2x time: get Date into millis
         deltaTime += halfDayLength;
         deltaTime %= weekLength;
         deltaTime -= halfDayLength;
@@ -128,7 +131,8 @@ public class ExpeditionBossLog {
 
         try (Connection con = DatabaseConnection.getConnection()) {
             for (Pair<Timestamp, BossLogEntry> p : resetTimestamps) {
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM " + getBossLogTable(week) + " WHERE attempttime <= ? AND bosstype LIKE ?")) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM " + getBossLogTable(week) + " WHERE attempttime <= ? AND bosstype LIKE ?")) {
                     ps.setTimestamp(1, p.getLeft());
                     ps.setString(2, p.getRight().name());
                     ps.executeUpdate();
@@ -146,7 +150,8 @@ public class ExpeditionBossLog {
     private static int countPlayerEntries(int cid, BossLogEntry boss) {
         int ret_count = 0;
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM " + getBossLogTable(boss.week) + " WHERE characterid = ? AND bosstype LIKE ?")) {
+                PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM " + getBossLogTable(boss.week)
+                        + " WHERE characterid = ? AND bosstype LIKE ?")) {
             ps.setInt(1, cid);
             ps.setString(2, boss.name());
 
@@ -166,7 +171,8 @@ public class ExpeditionBossLog {
 
     private static void insertPlayerEntry(int cid, BossLogEntry boss) {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO " + getBossLogTable(boss.week) + " (characterid, bosstype) VALUES (?,?)")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO " + getBossLogTable(boss.week) + " (characterid, bosstype) VALUES (?,?)")) {
             ps.setInt(1, cid);
             ps.setString(2, boss.name());
             ps.executeUpdate();
@@ -186,6 +192,8 @@ public class ExpeditionBossLog {
         }
 
         if (channel < boss.minChannel || channel > boss.maxChannel) {
+            System.out.println("[DEBUG] attemptBoss failed for " + exped.getType().name() + " on channel " + channel
+                    + ". Allowed: " + boss.minChannel + "-" + boss.maxChannel);
             return false;
         }
 

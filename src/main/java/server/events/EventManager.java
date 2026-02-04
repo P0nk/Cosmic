@@ -81,7 +81,7 @@ public class EventManager {
     private final Set<Integer> playerPermit = new HashSet<>();
     private final Semaphore startSemaphore = new Semaphore(7);
 
-    private static final int maxLobbys = 8;     // an event manager holds up to this amount of concurrent lobbys
+    private static final int maxLobbys = 8; // an event manager holds up to this amount of concurrent lobbys
 
     public EventManager(Channel cserv, Invocable iv, String name) {
         this.server = Server.getInstance();
@@ -100,7 +100,8 @@ public class EventManager {
         return onLoadInstances <= -1000;
     }
 
-    public void cancel() {  // make sure to only call this when there are NO PLAYERS ONLINE to mess around with the event manager!
+    public void cancel() { // make sure to only call this when there are NO PLAYERS ONLINE to mess around
+                           // with the event manager!
         ess.dispose();
 
         try {
@@ -177,7 +178,8 @@ public class EventManager {
 
         ess.registerEntry(r, delay);
 
-        // hate to do that, but those schedules can still be cancelled, so well... Let GC do it's job
+        // hate to do that, but those schedules can still be cancelled, so well... Let
+        // GC do it's job
         return new EventScheduledFuture(r, ess);
     }
 
@@ -196,6 +198,14 @@ public class EventManager {
 
     public World getWorldServer() {
         return wserv;
+    }
+
+    public void invokeFunction(String methodName, Object... args) {
+        try {
+            iv.invokeFunction(methodName, args);
+        } catch (ScriptException | NoSuchMethodException ex) {
+            log.error("Event script invokeFunction", ex);
+        }
     }
 
     public Channel getChannelServer() {
@@ -352,7 +362,8 @@ public class EventManager {
         }
     }
 
-    private EventInstanceManager createInstance(String name, Object... args) throws ScriptException, NoSuchMethodException {
+    private EventInstanceManager createInstance(String name, Object... args)
+            throws ScriptException, NoSuchMethodException {
         return (EventInstanceManager) iv.invokeFunction(name, args);
     }
 
@@ -373,7 +384,7 @@ public class EventManager {
         return startInstance(lobbyId, exped, exped.getLeader());
     }
 
-    //Expedition method: starts an expedition
+    // Expedition method: starts an expedition
     public boolean startInstance(int lobbyId, Expedition exped, Character leader) {
         if (this.isDisposed()) {
             return false;
@@ -437,7 +448,7 @@ public class EventManager {
         return false;
     }
 
-    //Regular method: player 
+    // Regular method: player
     public boolean startInstance(Character chr) {
         return startInstance(-1, chr);
     }
@@ -509,7 +520,7 @@ public class EventManager {
         return false;
     }
 
-    //PQ method: starts a PQ
+    // PQ method: starts a PQ
     public boolean startInstance(Party party, MapleMap map) {
         return startInstance(-1, party, map);
     }
@@ -581,7 +592,8 @@ public class EventManager {
         return false;
     }
 
-    //PQ method: starts a PQ with a difficulty level, requires function setup(difficulty, leaderid) instead of setup()
+    // PQ method: starts a PQ with a difficulty level, requires function
+    // setup(difficulty, leaderid) instead of setup()
     public boolean startInstance(Party party, MapleMap map, int difficulty) {
         return startInstance(-1, party, map, difficulty);
     }
@@ -653,7 +665,7 @@ public class EventManager {
         return false;
     }
 
-    //non-PQ method for starting instance
+    // non-PQ method for starting instance
     public boolean startInstance(EventInstanceManager eim, String ldr) {
         return startInstance(-1, eim, ldr);
     }
@@ -663,7 +675,11 @@ public class EventManager {
     }
 
     public boolean startInstance(int lobbyId, EventInstanceManager eim, String ldr) {
-        return startInstance(-1, eim, ldr, eim.getEm().getChannelServer().getPlayerStorage().getCharacterByName(ldr));  // things they make me do...
+        return startInstance(-1, eim, ldr, eim.getEm().getChannelServer().getPlayerStorage().getCharacterByName(ldr)); // things
+                                                                                                                       // they
+                                                                                                                       // make
+                                                                                                                       // me
+                                                                                                                       // do...
     }
 
     public boolean startInstance(int lobbyId, EventInstanceManager eim, String ldr, Character leader) {
@@ -761,7 +777,8 @@ public class EventManager {
 
     private void exportReadyGuild(Integer guildId) {
         Guild mg = server.getGuild(guildId);
-        String callout = "[Guild Quest] Your guild has been registered to attend to the Sharenian Guild Quest at channel " + this.getChannelServer().getId()
+        String callout = "[Guild Quest] Your guild has been registered to attend to the Sharenian Guild Quest at channel "
+                + this.getChannelServer().getId()
                 + " and HAS JUST STARTED THE STRATEGY PHASE. After 3 minutes, no more guild members will be allowed to join the effort."
                 + " Check out Shuang at the excavation site in Perion for more info.";
 
@@ -770,7 +787,8 @@ public class EventManager {
 
     private void exportMovedQueueToGuild(Integer guildId, int place) {
         Guild mg = server.getGuild(guildId);
-        String callout = "[Guild Quest] Your guild has been registered to attend to the Sharenian Guild Quest at channel " + this.getChannelServer().getId()
+        String callout = "[Guild Quest] Your guild has been registered to attend to the Sharenian Guild Quest at channel "
+                + this.getChannelServer().getId()
                 + " and is currently on the " + GameConstants.ordinal(place) + " place on the waiting queue.";
 
         mg.dropMessage(6, callout);
@@ -888,7 +906,8 @@ public class EventManager {
     }
 
     private void fillEimQueue() {
-        ThreadManager.getInstance().newTask(new EventManagerTask());  //call new thread to fill up readied instances queue
+        ThreadManager.getInstance().newTask(new EventManagerTask()); // call new thread to fill up readied instances
+                                                                     // queue
     }
 
     private EventInstanceManager getReadyInstance() {
@@ -926,7 +945,7 @@ public class EventManager {
         EventInstanceManager eim = new EventInstanceManager(this, "sampleName" + nextEventId);
         queueLock.lock();
         try {
-            if (this.isDisposed()) {  // EM already disposed
+            if (this.isDisposed()) { // EM already disposed
                 return;
             }
 
@@ -936,7 +955,7 @@ public class EventManager {
             queueLock.unlock();
         }
 
-        instantiateQueuedInstance();    // keep filling the queue until reach threshold.
+        instantiateQueuedInstance(); // keep filling the queue until reach threshold.
     }
 
     private class EventManagerTask implements Runnable {
