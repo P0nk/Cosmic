@@ -50,14 +50,13 @@ function startRaid() {
     // 2. Announce
     var mapFactory = em.getChannelServer().getMapFactory();
     if (mapFactory) {
-        // Broadcast to world (using a hacky way via channel 1 or just loop channels if possible, 
-        // but 'em' is bound to a channel usually. We'll broadcast to this channel.)
+        // Broadcast to channel only
         em.getChannelServer().broadcastPacket(
-            net.sf.odinms.tools.MaplePacketCreator.serverNotice(6, "[Boss Raid] A swarm of " + currentBoss.name + "s has been sighted in " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
+            PacketCreator.serverNotice(6, "[Boss Raid] " + currentBoss.name + "s are spawning rapidly in this channel at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
         );
         // Also show scrolling header if possible
         em.getChannelServer().broadcastPacket(
-            net.sf.odinms.tools.MaplePacketCreator.serverNotice(5, "[Boss Raid] " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
+            PacketCreator.serverNotice(5, "[Boss Raid] " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
         );
     }
 
@@ -86,15 +85,14 @@ function spawnWave() {
         // Spawn until cap
         var toSpawn = cap - currentCount;
         for (var i = 0; i < toSpawn; i++) {
-            var mob = net.sf.odinms.server.life.MapleLifeFactory.getMonster(currentBoss.mobId);
-            // Random spawn within reasonable range of map or use a specific function to spawn generic
-            // For now, spawn at random spawnpoint in the map
-            var randomSpawn = map.getRandomPlayerSpawnpoint();
-            // Better: spawnMonsterOnGroundBelow random point
-            // We'll use a simple range for X, assuming these maps aren't vertical towers.
-            // Or just use the map's existing mob spawnpoints? 
-            // Let's safe-spawn at the map (which places them at valid footholds)
-            map.spawnMonsterOnGroundBelow(mob, map.getRandomPlayerSpawnpoint().getPosition());
+            var mob = LifeFactory.getMonster(currentBoss.mobId);
+            if (mob != null) {
+                // Spawn at random spawnpoint in the map
+                var randomSpawn = map.getRandomPlayerSpawnpoint();
+                if (randomSpawn != null) {
+                    map.spawnMonsterOnGroundBelow(mob, randomSpawn.getPosition());
+                }
+            }
         }
     }
 
@@ -107,7 +105,7 @@ function endRaid() {
     em.setProperty("state", "inactive");
     if (currentBoss != null) {
         em.getChannelServer().broadcastPacket(
-            net.sf.odinms.tools.MaplePacketCreator.serverNotice(6, "[Boss Raid] The invasion of " + currentBoss.name + "s has ended.")
+            PacketCreator.serverNotice(6, "[Boss Raid] The invasion of " + currentBoss.name + "s has ended.")
         );
     }
     currentBoss = null;
@@ -150,10 +148,10 @@ function forceStart(specificBossName) {
         var mapFactory = em.getChannelServer().getMapFactory();
         if (mapFactory) {
             em.getChannelServer().broadcastPacket(
-                net.sf.odinms.tools.MaplePacketCreator.serverNotice(6, "[Boss Raid] A swarm of " + currentBoss.name + "s has been sighted in " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
+                PacketCreator.serverNotice(6, "[Boss Raid] " + currentBoss.name + "s are spawning rapidly in this channel at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
             );
             em.getChannelServer().broadcastPacket(
-                net.sf.odinms.tools.MaplePacketCreator.serverNotice(5, "[Boss Raid] " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
+                PacketCreator.serverNotice(5, "[Boss Raid] " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
             );
         }
         em.schedule("spawnWave", 1000);
