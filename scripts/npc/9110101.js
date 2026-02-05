@@ -27,7 +27,7 @@ function action(mode, type, selection) {
         if (status == 0) {
             cm.sendNext("I sell the finest armor in Zipangu. Take a look!");
         } else if (status == 1) {
-            cm.openShop(1000); // Shop ID updated to 1000
+            cm.openShopNPC(1000); // Correct method: openShopNPC
             cm.dispose();
         }
     }
