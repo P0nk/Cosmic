@@ -37,7 +37,42 @@ var expedBoss = "mighty Horntail";
 var list = "What would you like to do?#b\r\n\r\n#L1#View current Expedition members#l\r\n#L2#Start the fight!#l\r\n#L3#Stop the expedition.#l";
 
 function start() {
+    if (checkRebirthFix()) {
+        return;
+    }
     action(1, 0, 0);
+}
+
+function checkRebirthFix() {
+    var player = cm.getPlayer();
+    if (player.getReborns() > 0 && player.getLevel() >= 120) {
+        var job = player.getJob().getId();
+        var skillId = 0;
+
+        // Determine Hero's Will Skill ID based on Job/Class
+        if (job >= 110 && job <= 112) skillId = 1121011; // Hero
+        else if (job >= 120 && job <= 122) skillId = 1221012; // Paladin
+        else if (job >= 130 && job <= 132) skillId = 1321010; // Dark Knight
+        else if (job >= 210 && job <= 212) skillId = 2121008; // F/P Arch Mage
+        else if (job >= 220 && job <= 222) skillId = 2221008; // I/L Arch Mage
+        else if (job >= 230 && job <= 232) skillId = 2321009; // Bishop
+        else if (job >= 310 && job <= 312) skillId = 3121009; // Bowmaster
+        else if (job >= 320 && job <= 322) skillId = 3221008; // Marksman
+        else if (job >= 410 && job <= 412) skillId = 4121009; // Night Lord
+        else if (job >= 420 && job <= 422) skillId = 4221008; // Shadower
+        else if (job >= 510 && job <= 512) skillId = 5121009; // Buccaneer
+        else if (job >= 520 && job <= 522) skillId = 5221009; // Corsair (Confirmed ID)
+        else if (job >= 2100 && job <= 2112) skillId = 21121008; // Aran
+        else if (job >= 2200 && job <= 2218) skillId = 22171004; // Evan
+
+        if (skillId > 0 && player.getSkillLevel(skillId) == 0) {
+            cm.teachSkill(skillId, 1, 0); // Grant skill
+            cm.sendOk("You have been reborned, but you had forgotten that you have already learnt this skill.\r\n\r\n#e(You have regained the Hero's Will skill!)#n");
+            cm.dispose();
+            return true;
+        }
+    }
+    return false;
 }
 
 function action(mode, type, selection) {
