@@ -1,6 +1,6 @@
 /*
-    Hamadaya - 9110112
-    Function: Old Law Abiding Man (Lore)
+    Sai - 9110109
+    Function: Ninja Interaction
 */
 
 var status = -1;
@@ -25,11 +25,11 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendNext("Mushroom Shrine is a sanctuary of peace in these troubled times.");
+            cm.sendNext("Shh... I'm on a covert mission.");
         } else if (status == 1) {
-            cm.sendNextPrev("Beyond the gates lies Ninja Castle... a place of shadows and secrets. The Shogun has changed.");
+            cm.sendNextPrev("The Kunoichis have overrun the lower levels. If you're heading that way, thin their numbers for me, will you?");
         } else if (status == 2) {
-            cm.sendPrev("Stay safe, traveler. Do not let the darkness consume you.");
+            cm.sendPrev("I'll be watching from the shadows.");
         } else if (status == 3) {
             cm.dispose();
         }

@@ -1,6 +1,6 @@
 /*
-    Hamadaya - 9110112
-    Function: Old Law Abiding Man (Lore)
+    Hyottoko - 9110104
+    Function: Lore (Old Man in Mask)
 */
 
 var status = -1;
@@ -25,12 +25,10 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendNext("Mushroom Shrine is a sanctuary of peace in these troubled times.");
+            cm.sendNext("Hehehe... the Shogun is watching.");
         } else if (status == 1) {
-            cm.sendNextPrev("Beyond the gates lies Ninja Castle... a place of shadows and secrets. The Shogun has changed.");
+            cm.sendPrev("This castle is filled with traps. One wrong step, and... BAM! Hehehe!");
         } else if (status == 2) {
-            cm.sendPrev("Stay safe, traveler. Do not let the darkness consume you.");
-        } else if (status == 3) {
             cm.dispose();
         }
     }

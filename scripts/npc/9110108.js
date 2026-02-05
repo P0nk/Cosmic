@@ -1,6 +1,6 @@
 /*
-    Hamadaya - 9110112
-    Function: Old Law Abiding Man (Lore)
+    Fuji - 9110108
+    Function: Lore (Falconer)
 */
 
 var status = -1;
@@ -25,12 +25,10 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendNext("Mushroom Shrine is a sanctuary of peace in these troubled times.");
+            cm.sendNext("Fujihawk sees everything.");
         } else if (status == 1) {
-            cm.sendNextPrev("Beyond the gates lies Ninja Castle... a place of shadows and secrets. The Shogun has changed.");
+            cm.sendPrev("The path ahead is treacherous. The Master of this castle waits at the very top.");
         } else if (status == 2) {
-            cm.sendPrev("Stay safe, traveler. Do not let the darkness consume you.");
-        } else if (status == 3) {
             cm.dispose();
         }
     }

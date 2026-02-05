@@ -1,6 +1,6 @@
 /*
-    Hamadaya - 9110112
-    Function: Old Law Abiding Man (Lore)
+    Akai - 9110103
+    Function: Lore (Lady on Bench)
 */
 
 var status = -1;
@@ -25,11 +25,11 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendNext("Mushroom Shrine is a sanctuary of peace in these troubled times.");
+            cm.sendNext("The cherry blossoms are beautiful this time of year, aren't they?");
         } else if (status == 1) {
-            cm.sendNextPrev("Beyond the gates lies Ninja Castle... a place of shadows and secrets. The Shogun has changed.");
+            cm.sendNextPrev("But... have you noticed those strange men in black running around? They seem to be coming from the castle.");
         } else if (status == 2) {
-            cm.sendPrev("Stay safe, traveler. Do not let the darkness consume you.");
+            cm.sendPrev("I worry for the safety of our shrine. Please be careful if you head that way.");
         } else if (status == 3) {
             cm.dispose();
         }

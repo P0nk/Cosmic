@@ -1,6 +1,6 @@
 /*
-    Hamadaya - 9110112
-    Function: Old Law Abiding Man (Lore)
+    Nobuo - 9110114
+    Function: Lore (Lost Dog)
 */
 
 var status = -1;
@@ -25,11 +25,11 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendNext("Mushroom Shrine is a sanctuary of peace in these troubled times.");
+            cm.sendNext("Have you seen a small dog running around?");
         } else if (status == 1) {
-            cm.sendNextPrev("Beyond the gates lies Ninja Castle... a place of shadows and secrets. The Shogun has changed.");
+            cm.sendNextPrev("He ran through the castle gates! It's too dangerous for me to go in there.");
         } else if (status == 2) {
-            cm.sendPrev("Stay safe, traveler. Do not let the darkness consume you.");
+            cm.sendPrev("If you see him, please... scare him back out to safety!");
         } else if (status == 3) {
             cm.dispose();
         }
