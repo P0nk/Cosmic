@@ -64,9 +64,10 @@ public final class PetLootHandler extends AbstractPacketHandler {
                             chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
                         }
                         // Remove from map
-                        chr.getMap().removeMapObject(ob);
-                        chr.getMap().broadcastMessage(PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
-                                ob.getPosition());
+                        // Remove from map using proper method
+                        chr.getMap().pickItemDrop(
+                                PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
+                                mapitem);
                         c.sendPacket(PacketCreator.enableActions());
                         // return; // Removed to allow Vac Loop
                     }
@@ -162,10 +163,10 @@ public final class PetLootHandler extends AbstractPacketHandler {
                                 chr.dropMessage(5, "Pet Auto-sold item for " + gain + " mesos.");
                             }
                             // Remove from map
-                            chr.getMap().removeMapObject(item);
-                            chr.getMap().broadcastMessage(
+                            // Use pickItemDrop to ensure correct cleanup of counters and registry
+                            chr.getMap().pickItemDrop(
                                     PacketCreator.removeItemFromMap(item.getObjectId(), 2, chr.getId()),
-                                    item.getPosition());
+                                    mapItem);
                             continue; // Successfully sold and removed, next item
                         }
                     }

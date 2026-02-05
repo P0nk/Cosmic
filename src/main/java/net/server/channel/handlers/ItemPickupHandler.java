@@ -83,9 +83,10 @@ public final class ItemPickupHandler extends AbstractPacketHandler {
                 }
 
                 // Remove from map visually and logically
-                chr.getMap().removeMapObject(ob);
-                chr.getMap().broadcastMessage(tools.PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
-                        ob.getPosition());
+                // Remove from map visually and logically using proper cleanup
+                chr.getMap().pickItemDrop(
+                        tools.PacketCreator.removeItemFromMap(ob.getObjectId(), 2, chr.getId()),
+                        (server.maps.MapItem) ob);
                 return;
             }
         }
