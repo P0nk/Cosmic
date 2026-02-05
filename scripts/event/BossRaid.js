@@ -25,7 +25,7 @@ function scheduleNextRaid() {
     // Simpler approach for "Randomly a few times a day":
     // Schedule next run in 4-8 hours.
 
-    var randomHours = 4 + Math.floor(Math.random() * 5); // 4 to 8 hours
+    var randomHours = 1 + Math.floor(Math.random() * 3); // 1 to 3 hours (Avg 2h = ~12x/day)
     var nextTime = randomHours * 60 * 60 * 1000;
 
     em.schedule("startRaid", nextTime);
