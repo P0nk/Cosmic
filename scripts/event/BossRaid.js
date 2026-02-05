@@ -50,14 +50,20 @@ function startRaid() {
     // 2. Announce
     var mapFactory = em.getChannelServer().getMapFactory();
     if (mapFactory) {
-        // Broadcast to channel only
-        em.getChannelServer().broadcastPacket(
-            PacketCreator.serverNotice(6, "[Boss Raid] " + currentBoss.name + "s are spawning rapidly in this channel at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
+        // Broadcast to World (Global Announce)
+        var chId = em.getChannel();
+        em.getWorldServer().broadcastPacket(
+            PacketCreator.serverNotice(6, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + "s are spawning rapidly at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
         );
-        // Also show scrolling header if possible
-        em.getChannelServer().broadcastPacket(
-            PacketCreator.serverNotice(5, "[Boss Raid] " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
+        em.getWorldServer().broadcastPacket(
+            PacketCreator.serverNotice(5, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
         );
+
+        // Add Map Timer
+        var map = em.getChannelServer().getMapFactory().getMap(currentBoss.mapId);
+        if (map) {
+            map.broadcastMessage(PacketCreator.getClock(300));
+        }
     }
 
     // 3. Start Wave Loop
@@ -104,8 +110,8 @@ function endRaid() {
     raidActive = false;
     em.setProperty("state", "inactive");
     if (currentBoss != null) {
-        em.getChannelServer().broadcastPacket(
-            PacketCreator.serverNotice(6, "[Boss Raid] The invasion of " + currentBoss.name + "s has ended.")
+        em.getWorldServer().broadcastPacket(
+            PacketCreator.serverNotice(6, "[Boss Raid] Channel " + em.getChannel() + ": The invasion of " + currentBoss.name + "s has ended.")
         );
     }
     currentBoss = null;
@@ -147,12 +153,19 @@ function forceStart(specificBossName) {
 
         var mapFactory = em.getChannelServer().getMapFactory();
         if (mapFactory) {
-            em.getChannelServer().broadcastPacket(
-                PacketCreator.serverNotice(6, "[Boss Raid] " + currentBoss.name + "s are spawning rapidly in this channel at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
+            var chId = em.getChannel();
+            em.getWorldServer().broadcastPacket(
+                PacketCreator.serverNotice(6, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + "s are spawning rapidly at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
             );
-            em.getChannelServer().broadcastPacket(
-                PacketCreator.serverNotice(5, "[Boss Raid] " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
+            em.getWorldServer().broadcastPacket(
+                PacketCreator.serverNotice(5, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
             );
+
+            // Add Map Timer
+            var map = mapFactory.getMap(currentBoss.mapId);
+            if (map) {
+                map.broadcastMessage(PacketCreator.getClock(300));
+            }
         }
         em.schedule("spawnWave", 1000);
         em.schedule("endRaid", 5 * 60 * 1000);
