@@ -140,7 +140,27 @@ public class StatEffect {
     private int cp, nuffSkill;
     private List<Disease> cureDebuffs;
     private boolean skill;
+
     private List<Pair<BuffStat, Integer>> statups;
+
+    public static boolean isStackableBuffStat(BuffStat stat) {
+        switch (stat) {
+            case WATK:
+            case MATK:
+            case WDEF:
+            case MDEF:
+            case ACC:
+            case AVOID:
+            case SPEED:
+            case JUMP:
+            case MAGIC_GUARD:
+            case PICKPOCKET:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private Map<MonsterStatus, Integer> monsterStatus;
     private int x, y, mobCount, moneyCon, cooldown, morphId = 0, ghost, fatigue, berserk, booster;
     private double prop;
@@ -220,7 +240,8 @@ public class StatEffect {
         return loadFromData(source, itemid, false, false);
     }
 
-    private static void addBuffStatPairToListIfNotZero(List<Pair<BuffStat, Integer>> list, BuffStat buffstat, Integer val) {
+    private static void addBuffStatPairToListIfNotZero(List<Pair<BuffStat, Integer>> list, BuffStat buffstat,
+            Integer val) {
         if (val != 0) {
             list.add(new Pair<>(buffstat, val));
         }
@@ -228,9 +249,9 @@ public class StatEffect {
 
     private static byte mapProtection(int sourceid) {
         if (sourceid == ItemId.RED_BEAN_PORRIDGE || sourceid == ItemId.SOFT_WHITE_BUN) {
-            return 1;   //elnath cold
+            return 1; // elnath cold
         } else if (sourceid == ItemId.AIR_BUBBLE) {
-            return 2;   //aqua road underwater
+            return 2; // aqua road underwater
         } else {
             return 0;
         }
@@ -412,7 +433,7 @@ public class StatEffect {
                                 break;
 
                             case 3:
-                                itemupCode = DataTool.getInt("itemRange", source, 1);    // 3 digits
+                                itemupCode = DataTool.getInt("itemRange", source, 1); // 3 digits
                                 break;
                         }
                     }
@@ -440,12 +461,15 @@ public class StatEffect {
 
                     ret.cardStats = new CardItemupStats(itemupCode, prob, areas, inParty);
                 } else if (ItemId.isExpIncrease(sourceid)) {
-                    addBuffStatPairToListIfNotZero(statups, BuffStat.EXP_INCREASE, DataTool.getInt("expinc", source, 0));
+                    addBuffStatPairToListIfNotZero(statups, BuffStat.EXP_INCREASE,
+                            DataTool.getInt("expinc", source, 0));
                 }
             } else {
                 if (isMapChair(sourceid)) {
                     addBuffStatPairToListIfNotZero(statups, BuffStat.MAP_CHAIR, 1);
-                } else if ((sourceid == Beginner.NIMBLE_FEET || sourceid == Noblesse.NIMBLE_FEET || sourceid == Evan.NIMBLE_FEET || sourceid == Legend.AGILE_BODY) && YamlConfig.config.server.USE_ULTRA_NIMBLE_FEET == true) {
+                } else if ((sourceid == Beginner.NIMBLE_FEET || sourceid == Noblesse.NIMBLE_FEET
+                        || sourceid == Evan.NIMBLE_FEET || sourceid == Legend.AGILE_BODY)
+                        && YamlConfig.config.server.USE_ULTRA_NIMBLE_FEET == true) {
                     ret.jump = (short) (ret.speed * 4);
                     ret.speed *= 15;
                 }
@@ -466,7 +490,9 @@ public class StatEffect {
             ret.lt = (Point) ltd.getData();
             ret.rb = (Point) source.getChildByPath("rb").getData();
 
-            if (YamlConfig.config.server.USE_MAXRANGE_ECHO_OF_HERO && (sourceid == Beginner.ECHO_OF_HERO || sourceid == Noblesse.ECHO_OF_HERO || sourceid == Legend.ECHO_OF_HERO || sourceid == Evan.ECHO_OF_HERO)) {
+            if (YamlConfig.config.server.USE_MAXRANGE_ECHO_OF_HERO
+                    && (sourceid == Beginner.ECHO_OF_HERO || sourceid == Noblesse.ECHO_OF_HERO
+                            || sourceid == Legend.ECHO_OF_HERO || sourceid == Evan.ECHO_OF_HERO)) {
                 ret.lt = new Point(Integer.MIN_VALUE, Integer.MIN_VALUE);
                 ret.rb = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
             }
@@ -474,7 +500,8 @@ public class StatEffect {
 
         int x = DataTool.getInt("x", source, 0);
 
-        if ((sourceid == Beginner.RECOVERY || sourceid == Noblesse.RECOVERY || sourceid == Evan.RECOVERY || sourceid == Legend.RECOVERY) && YamlConfig.config.server.USE_ULTRA_RECOVERY == true) {
+        if ((sourceid == Beginner.RECOVERY || sourceid == Noblesse.RECOVERY || sourceid == Evan.RECOVERY
+                || sourceid == Legend.RECOVERY) && YamlConfig.config.server.USE_ULTRA_RECOVERY == true) {
             x *= 10;
         }
         ret.x = x;
@@ -639,7 +666,8 @@ public class StatEffect {
                     break;
                 case WindArcher.WIND_WALK:
                     statups.add(new Pair<>(BuffStat.WIND_WALK, x));
-                    //break;    thanks Vcoc for noticing WW not showing for other players when changing maps
+                    // break; thanks Vcoc for noticing WW not showing for other players when
+                    // changing maps
                 case Rogue.DARK_SIGHT:
                 case NightWalker.DARK_SIGHT:
                     statups.add(new Pair<>(BuffStat.DARKSIGHT, x));
@@ -668,7 +696,7 @@ public class StatEffect {
                     statups.add(new Pair<>(BuffStat.DASH2, ret.x));
                     statups.add(new Pair<>(BuffStat.DASH, ret.y));
                     break;
-//                case Corsair.SPEED_INFUSION:
+                // case Corsair.SPEED_INFUSION:
                 case Buccaneer.SPEED_INFUSION:
                 case ThunderBreaker.SPEED_INFUSION:
                     statups.add(new Pair<>(BuffStat.SPEED_INFUSION, x));
@@ -748,7 +776,8 @@ public class StatEffect {
                 case BlazeWizard.IFRIT:
                     statups.add(new Pair<>(BuffStat.SUMMON, 1));
                     break;
-                // ----------------------------- MONSTER STATUS ---------------------------------- //
+                // ----------------------------- MONSTER STATUS
+                // ---------------------------------- //
                 case Crusader.ARMOR_CRASH:
                 case DragonKnight.POWER_CRASH:
                 case WhiteKnight.MAGIC_CRASH:
@@ -770,7 +799,7 @@ public class StatEffect {
                     monsterStatus.put(MonsterStatus.WDEF, ret.y);
                     break;
                 case DragonKnight.DRAGON_ROAR:
-//                    ret.hpR = -x / 100.0;
+                    // ret.hpR = -x / 100.0;
                     monsterStatus.put(MonsterStatus.STUN, 1);
                     break;
                 case Crusader.AXE_COMA:
@@ -839,7 +868,7 @@ public class StatEffect {
                     break;
                 case Evan.PHANTOM_IMPRINT:
                     monsterStatus.put(MonsterStatus.PHANTOM_IMPRINT, x);
-                    //ARAN
+                    // ARAN
                 case Aran.COMBO_ABILITY:
                     statups.add(new Pair<>(BuffStat.ARAN_COMBO, 100));
                     break;
@@ -895,7 +924,8 @@ public class StatEffect {
                             mob.setMp(mob.getMp() - absorbMp);
                             applyto.addMP(absorbMp);
                             applyto.sendPacket(PacketCreator.showOwnBuffEffect(sourceid, 1));
-                            applyto.getMap().broadcastMessage(applyto, PacketCreator.showBuffEffect(applyto.getId(), sourceid, 1), false);
+                            applyto.getMap().broadcastMessage(applyto,
+                                    PacketCreator.showBuffEffect(applyto.getId(), sourceid, 1), false);
                         }
                     }
                     break;
@@ -908,7 +938,8 @@ public class StatEffect {
         mapPlayers.remove(applyfrom.getId());
 
         boolean hwResult = applyTo(applyfrom);
-        for (Character chr : mapPlayers.values()) {    // Echo of Hero not buffing players in the map detected thanks to Masterrulax
+        for (Character chr : mapPlayers.values()) { // Echo of Hero not buffing players in the map detected thanks to
+                                                    // Masterrulax
             applyTo(applyfrom, chr, false, null, false, 1);
         }
 
@@ -928,7 +959,8 @@ public class StatEffect {
     }
 
     // primary: the player caster of the buff
-    private boolean applyTo(Character applyfrom, Character applyto, boolean primary, Point pos, boolean useMaxRange, int affectedPlayers) {
+    private boolean applyTo(Character applyfrom, Character applyto, boolean primary, Point pos, boolean useMaxRange,
+            int affectedPlayers) {
         if (skill && (sourceid == GM.HIDE || sourceid == SuperGM.HIDE)) {
             applyto.toggleHide(false);
             return true;
@@ -946,7 +978,8 @@ public class StatEffect {
                     applyto.sendPacket(PacketCreator.enableActions());
                     return false;
                 }
-                InventoryManipulator.removeById(applyto.getClient(), ItemConstants.getInventoryType(itemCon), itemCon, itemConNo, false, true);
+                InventoryManipulator.removeById(applyto.getClient(), ItemConstants.getInventoryType(itemCon), itemCon,
+                        itemConNo, false, true);
             }
         } else {
             if (isResurrection()) {
@@ -962,9 +995,13 @@ public class StatEffect {
         } else if (isComboReset()) {
             applyto.setCombo((short) 0);
         }
-        /*if (applyfrom.getMp() < getMpCon()) {
-         AutobanFactory.MPCON.addPoint(applyfrom.getAutobanManager(), "mpCon hack for skill:" + sourceid + "; Player MP: " + applyto.getMp() + " MP Needed: " + getMpCon());
-         } */
+        /*
+         * if (applyfrom.getMp() < getMpCon()) {
+         * AutobanFactory.MPCON.addPoint(applyfrom.getAutobanManager(),
+         * "mpCon hack for skill:" + sourceid + "; Player MP: " + applyto.getMp() +
+         * " MP Needed: " + getMpCon());
+         * }
+         */
 
         if (!applyto.applyHpMpChange(hpCon, hpchange, mpchange)) {
             applyto.sendPacket(PacketCreator.enableActions());
@@ -980,9 +1017,13 @@ public class StatEffect {
                     target = applyto.getMap().getReturnMap();
                     pt = target.getRandomPlayerSpawnpoint();
                 } else {
-                    target = applyto.getClient().getWorldServer().getChannel(applyto.getClient().getChannel()).getMapFactory().getMap(moveTo);
+                    target = applyto.getClient().getWorldServer().getChannel(applyto.getClient().getChannel())
+                            .getMapFactory().getMap(moveTo);
                     int targetid = target.getId() / 10000000;
-                    if (targetid != 60 && applyto.getMapId() / 10000000 != 61 && targetid != applyto.getMapId() / 10000000 && targetid != 21 && targetid != 20 && targetid != 12 && (applyto.getMapId() / 10000000 != 10 && applyto.getMapId() / 10000000 != 12)) {
+                    if (targetid != 60 && applyto.getMapId() / 10000000 != 61
+                            && targetid != applyto.getMapId() / 10000000 && targetid != 21 && targetid != 20
+                            && targetid != 12
+                            && (applyto.getMapId() / 10000000 != 10 && applyto.getMapId() / 10000000 != 12)) {
                         return false;
                     }
 
@@ -995,7 +1036,7 @@ public class StatEffect {
             }
         }
         if (isShadowClaw()) {
-            short projectileConsume = this.getBulletConsume();  // noticed by shavit
+            short projectileConsume = this.getBulletConsume(); // noticed by shavit
 
             Inventory use = applyto.getInventory(InventoryType.USE);
             use.lockInventory();
@@ -1013,7 +1054,8 @@ public class StatEffect {
                 if (projectile == null) {
                     return false;
                 } else {
-                    InventoryManipulator.removeFromSlot(applyto.getClient(), InventoryType.USE, projectile.getPosition(), projectileConsume, false, true);
+                    InventoryManipulator.removeFromSlot(applyto.getClient(), InventoryType.USE,
+                            projectile.getPosition(), projectileConsume, false, true);
                 }
             } finally {
                 use.unlockInventory();
@@ -1060,7 +1102,9 @@ public class StatEffect {
         if (isMagicDoor() && !FieldLimit.DOOR.check(applyto.getMap().getFieldLimit())) { // Magic Door
             int y = applyto.getFh();
             if (y == 0) {
-                y = applyto.getMap().getGroundBelow(applyto.getPosition()).y;    // thanks Lame for pointing out unusual cases of doors sending players on ground below
+                y = applyto.getMap().getGroundBelow(applyto.getPosition()).y; // thanks Lame for pointing out unusual
+                                                                              // cases of doors sending players on
+                                                                              // ground below
             }
             Point doorPosition = new Point(applyto.getPosition().x, y);
             Door door = new Door(applyto, doorPosition);
@@ -1071,27 +1115,32 @@ public class StatEffect {
                 door.getTarget().spawnDoor(door.getAreaDoor());
                 door.getTown().spawnDoor(door.getTownDoor());
             } else {
-                InventoryManipulator.addFromDrop(applyto.getClient(), new Item(ItemId.MAGIC_ROCK, (short) 0, (short) 1), false);
+                InventoryManipulator.addFromDrop(applyto.getClient(), new Item(ItemId.MAGIC_ROCK, (short) 0, (short) 1),
+                        false);
 
                 if (door.getOwnerId() == -3) {
-                    applyto.dropMessage(5, "Mystic Door cannot be cast far from a spawn point. Nearest one is at " + door.getDoorStatus().getRight() + "pts " + door.getDoorStatus().getLeft());
+                    applyto.dropMessage(5, "Mystic Door cannot be cast far from a spawn point. Nearest one is at "
+                            + door.getDoorStatus().getRight() + "pts " + door.getDoorStatus().getLeft());
                 } else if (door.getOwnerId() == -2) {
                     applyto.dropMessage(5, "Mystic Door cannot be cast on a slope, try elsewhere.");
                 } else {
-                    applyto.dropMessage(5, "There are no door portals available for the town at this moment. Try again later.");
+                    applyto.dropMessage(5,
+                            "There are no door portals available for the town at this moment. Try again later.");
                 }
 
-                applyto.cancelBuffStats(BuffStat.SOULARROW);  // cancel door buff
+                applyto.cancelBuffStats(BuffStat.SOULARROW); // cancel door buff
             }
         } else if (isMist()) {
-            Rectangle bounds = calculateBoundingBox(sourceid == NightWalker.POISON_BOMB ? pos : applyfrom.getPosition(), applyfrom.isFacingLeft());
+            Rectangle bounds = calculateBoundingBox(sourceid == NightWalker.POISON_BOMB ? pos : applyfrom.getPosition(),
+                    applyfrom.isFacingLeft());
             Mist mist = new Mist(bounds, applyfrom, this);
             applyfrom.getMap().spawnMist(mist, getDuration(), mist.isPoisonMist(), false, mist.isRecoveryMist());
         } else if (isTimeLeap()) {
             applyto.removeAllCooldownsExcept(Buccaneer.TIME_LEAP, true);
         } else if (cp != 0 && applyto.getMonsterCarnival() != null) {
             applyto.gainCP(cp);
-        } else if (nuffSkill != 0 && applyto.getParty() != null && applyto.getMap().isCPQMap()) { // added by Drago (Dragohe4rt)
+        } else if (nuffSkill != 0 && applyto.getParty() != null && applyto.getMap().isCPQMap()) { // added by Drago
+                                                                                                  // (Dragohe4rt)
             final MCSkill skill = CarnivalFactory.getInstance().getSkill(nuffSkill);
             if (skill != null) {
                 final Disease dis = skill.getDisease();
@@ -1103,7 +1152,8 @@ public class StatEffect {
                             if (dis == null) {
                                 chrApp.dispel();
                             } else {
-                                MobSkill mobSkill = MobSkillFactory.getMobSkillOrThrow(dis.getMobSkillType(), skill.level());
+                                MobSkill mobSkill = MobSkillFactory.getMobSkillOrThrow(dis.getMobSkillType(),
+                                        skill.level());
                                 chrApp.giveDebuff(dis, mobSkill);
                             }
                         }
@@ -1116,7 +1166,8 @@ public class StatEffect {
                         if (dis == null) {
                             chrApp.dispel();
                         } else {
-                            MobSkill mobSkill = MobSkillFactory.getMobSkillOrThrow(dis.getMobSkillType(), skill.level());
+                            MobSkill mobSkill = MobSkillFactory.getMobSkillOrThrow(dis.getMobSkillType(),
+                                    skill.level());
                             chrApp.giveDebuff(dis, mobSkill);
                         }
                     }
@@ -1148,8 +1199,10 @@ public class StatEffect {
         int affectedc = 1;
 
         if (isPartyBuff() && (applyfrom.getParty() != null || isGmBuff())) {
-            Rectangle bounds = (!useMaxRange) ? calculateBoundingBox(applyfrom.getPosition(), applyfrom.isFacingLeft()) : new Rectangle(Integer.MIN_VALUE / 2, Integer.MIN_VALUE / 2, Integer.MAX_VALUE, Integer.MAX_VALUE);
-            List<MapObject> affecteds = applyfrom.getMap().getMapObjectsInRect(bounds, Arrays.asList(MapObjectType.PLAYER));
+            Rectangle bounds = (!useMaxRange) ? calculateBoundingBox(applyfrom.getPosition(), applyfrom.isFacingLeft())
+                    : new Rectangle(Integer.MIN_VALUE / 2, Integer.MIN_VALUE / 2, Integer.MAX_VALUE, Integer.MAX_VALUE);
+            List<MapObject> affecteds = applyfrom.getMap().getMapObjectsInRect(bounds,
+                    Arrays.asList(MapObjectType.PLAYER));
             List<Character> affectedp = new ArrayList<>(affecteds.size());
             for (MapObject affectedmo : affecteds) {
                 Character affected = (Character) affectedmo;
@@ -1166,11 +1219,12 @@ public class StatEffect {
                 }
             }
 
-            affectedc += affectedp.size();   // used for heal
+            affectedc += affectedp.size(); // used for heal
             for (Character affected : affectedp) {
                 applyTo(applyfrom, affected, false, null, useMaxRange, affectedc);
                 affected.sendPacket(PacketCreator.showOwnBuffEffect(sourceid, 2));
-                affected.getMap().broadcastMessage(affected, PacketCreator.showBuffEffect(affected.getId(), sourceid, 2), false);
+                affected.getMap().broadcastMessage(affected,
+                        PacketCreator.showBuffEffect(affected.getId(), sourceid, 2), false);
             }
         }
 
@@ -1186,11 +1240,12 @@ public class StatEffect {
             Monster monster = (Monster) mo;
             if (isDispel()) {
                 monster.debuffMob(skill_.getId());
-            } else if (isSeal() && monster.isBoss()) {  // thanks IxianMace for noticing seal working on bosses
+            } else if (isSeal() && monster.isBoss()) { // thanks IxianMace for noticing seal working on bosses
                 // do nothing
             } else {
                 if (makeChanceResult()) {
-                    monster.applyStatus(applyfrom, new MonsterStatusEffect(getMonsterStati(), skill_, null, false), isPoison(), getDuration());
+                    monster.applyStatus(applyfrom, new MonsterStatusEffect(getMonsterStati(), skill_, null, false),
+                            isPoison(), getDuration());
                     if (isCrash()) {
                         monster.debuffMob(skill_.getId());
                     }
@@ -1210,7 +1265,8 @@ public class StatEffect {
             mylt = new Point(lt.x + posFrom.x, lt.y + posFrom.y);
             myrb = new Point(rb.x + posFrom.x, rb.y + posFrom.y);
         } else {
-            myrb = new Point(-lt.x + posFrom.x, rb.y + posFrom.y);  // thanks Conrad, April for noticing a disturbance in AoE skill behavior after a hitched refactor here
+            myrb = new Point(-lt.x + posFrom.x, rb.y + posFrom.y); // thanks Conrad, April for noticing a disturbance in
+                                                                   // AoE skill behavior after a hitched refactor here
             mylt = new Point(-rb.x + posFrom.x, lt.y + posFrom.y);
         }
         Rectangle bounds = new Rectangle(mylt.x, mylt.y, myrb.x - mylt.x, myrb.y - mylt.y);
@@ -1224,8 +1280,11 @@ public class StatEffect {
     public void silentApplyBuff(Character chr, long localStartTime) {
         int localDuration = getBuffLocalDuration();
         localDuration = alchemistModifyVal(chr, localDuration, false);
-        //CancelEffectAction cancelAction = new CancelEffectAction(chr, this, starttime);
-        //ScheduledFuture<?> schedule = TimerManager.getInstance().schedule(cancelAction, ((starttime + localDuration) - Server.getInstance().getCurrentTime()));
+        // CancelEffectAction cancelAction = new CancelEffectAction(chr, this,
+        // starttime);
+        // ScheduledFuture<?> schedule =
+        // TimerManager.getInstance().schedule(cancelAction, ((starttime +
+        // localDuration) - Server.getInstance().getCurrentTime()));
 
         chr.registerEffect(this, localStartTime, localStartTime + localDuration, true);
         SummonMovementType summonMovementType = getSummonMovementType();
@@ -1246,13 +1305,19 @@ public class StatEffect {
         applyto.sendPacket(PacketCreator.giveBuff(sourceid, 99999, stat));
 
         final long starttime = Server.getInstance().getCurrentTime();
-//	final CancelEffectAction cancelAction = new CancelEffectAction(applyto, this, starttime);
-//	final ScheduledFuture<?> schedule = TimerManager.getInstance().schedule(cancelAction, ((starttime + 99999) - Server.getInstance().getCurrentTime()));
+        // final CancelEffectAction cancelAction = new CancelEffectAction(applyto, this,
+        // starttime);
+        // final ScheduledFuture<?> schedule =
+        // TimerManager.getInstance().schedule(cancelAction, ((starttime + 99999) -
+        // Server.getInstance().getCurrentTime()));
         applyto.registerEffect(this, starttime, Long.MAX_VALUE, false);
     }
 
-    public final void applyBeaconBuff(final Character applyto, int objectid) { // thanks Thora & Hyun for reporting an issue with homing beacon autoflagging mobs when changing maps
-        final List<Pair<BuffStat, Integer>> stat = Collections.singletonList(new Pair<>(BuffStat.HOMING_BEACON, objectid));
+    public final void applyBeaconBuff(final Character applyto, int objectid) { // thanks Thora & Hyun for reporting an
+                                                                               // issue with homing beacon autoflagging
+                                                                               // mobs when changing maps
+        final List<Pair<BuffStat, Integer>> stat = Collections
+                .singletonList(new Pair<>(BuffStat.HOMING_BEACON, objectid));
         applyto.sendPacket(PacketCreator.giveBuff(1, sourceid, stat));
 
         final long starttime = Server.getInstance().getCurrentTime();
@@ -1266,15 +1331,35 @@ public class StatEffect {
         long leftDuration = (starttime + localDuration) - Server.getInstance().getCurrentTime();
         if (leftDuration > 0) {
             if (isDash() || isInfusion()) {
-                target.sendPacket(PacketCreator.givePirateBuff(activeStats, (skill ? sourceid : -sourceid), (int) leftDuration));
+                target.sendPacket(
+                        PacketCreator.givePirateBuff(activeStats, (skill ? sourceid : -sourceid), (int) leftDuration));
             } else {
-                target.sendPacket(PacketCreator.giveBuff((skill ? sourceid : -sourceid), (int) leftDuration, activeStats));
+                target.sendPacket(
+                        PacketCreator.giveBuff((skill ? sourceid : -sourceid), (int) leftDuration, activeStats));
             }
         }
     }
 
     private void applyBuffEffect(Character applyfrom, Character applyto, boolean primary) {
-        if (!isMonsterRiding() && !isCouponBuff() && !isMysticDoor() && !isHyperBody() && !isCombo()) {     // last mystic door already dispelled if it has been used before.
+        boolean isStackable = false;
+        for (Pair<BuffStat, Integer> stat : statups) {
+            if (isStackableBuffStat(stat.getLeft())) {
+                isStackable = true;
+                break;
+            }
+        }
+
+        if (!isMonsterRiding() && !isCouponBuff() && !isMysticDoor() && !isHyperBody() && !isCombo() && !isStackable) { // last
+                                                                                                                        // mystic
+                                                                                                                        // door
+                                                                                                                        // already
+                                                                                                                        // dispelled
+                                                                                                                        // if
+                                                                                                                        // it
+                                                                                                                        // has
+                                                                                                                        // been
+                                                                                                                        // used
+                                                                                                                        // before.
             applyto.cancelEffect(this, true, -1);
         }
 
@@ -1294,17 +1379,22 @@ public class StatEffect {
                 ridingMountId = ItemId.BATTLESHIP;
             } else if (sourceid == Beginner.SPACESHIP || sourceid == Noblesse.SPACESHIP) {
                 ridingMountId = 1932000 + applyto.getSkillLevel(sourceid);
-            } else if (sourceid == Beginner.YETI_MOUNT1 || sourceid == Noblesse.YETI_MOUNT1 || sourceid == Legend.YETI_MOUNT1) {
+            } else if (sourceid == Beginner.YETI_MOUNT1 || sourceid == Noblesse.YETI_MOUNT1
+                    || sourceid == Legend.YETI_MOUNT1) {
                 ridingMountId = 1932003;
-            } else if (sourceid == Beginner.YETI_MOUNT2 || sourceid == Noblesse.YETI_MOUNT2 || sourceid == Legend.YETI_MOUNT2) {
+            } else if (sourceid == Beginner.YETI_MOUNT2 || sourceid == Noblesse.YETI_MOUNT2
+                    || sourceid == Legend.YETI_MOUNT2) {
                 ridingMountId = 1932004;
-            } else if (sourceid == Beginner.WITCH_BROOMSTICK || sourceid == Noblesse.WITCH_BROOMSTICK || sourceid == Legend.WITCH_BROOMSTICK) {
+            } else if (sourceid == Beginner.WITCH_BROOMSTICK || sourceid == Noblesse.WITCH_BROOMSTICK
+                    || sourceid == Legend.WITCH_BROOMSTICK) {
                 ridingMountId = 1932005;
-            } else if (sourceid == Beginner.BALROG_MOUNT || sourceid == Noblesse.BALROG_MOUNT || sourceid == Legend.BALROG_MOUNT) {
+            } else if (sourceid == Beginner.BALROG_MOUNT || sourceid == Noblesse.BALROG_MOUNT
+                    || sourceid == Legend.BALROG_MOUNT) {
                 ridingMountId = 1932010;
             }
 
-            // thanks inhyuk for noticing some skill mounts not acting properly for other players when changing maps
+            // thanks inhyuk for noticing some skill mounts not acting properly for other
+            // players when changing maps
             givemount = applyto.mount(ridingMountId, sourceid);
             applyto.getClient().getWorldServer().registerMountHunger(applyto);
 
@@ -1321,7 +1411,8 @@ public class StatEffect {
         }
         if (primary) {
             localDuration = alchemistModifyVal(applyfrom, localDuration, false);
-            applyto.getMap().broadcastMessage(applyto, PacketCreator.showBuffEffect(applyto.getId(), sourceid, 1, (byte) 3), false);
+            applyto.getMap().broadcastMessage(applyto,
+                    PacketCreator.showBuffEffect(applyto.getId(), sourceid, 1, (byte) 3), false);
         }
         if (localstatups.size() > 0) {
             Packet buff = null;
@@ -1349,11 +1440,12 @@ public class StatEffect {
                     comboCount = 0;
                 }
 
-                List<Pair<BuffStat, Integer>> cbstat = Collections.singletonList(new Pair<>(BuffStat.COMBO, comboCount));
+                List<Pair<BuffStat, Integer>> cbstat = Collections
+                        .singletonList(new Pair<>(BuffStat.COMBO, comboCount));
                 buff = PacketCreator.giveBuff((skill ? sourceid : -sourceid), localDuration, cbstat);
                 mbuff = PacketCreator.giveForeignBuff(applyto.getId(), cbstat);
             } else if (isMonsterRiding()) {
-                if (sourceid == Corsair.BATTLE_SHIP) {//hp
+                if (sourceid == Corsair.BATTLE_SHIP) {// hp
                     if (applyto.getBattleshipHp() <= 0) {
                         applyto.resetBattleshipHp();
                     }
@@ -1372,7 +1464,8 @@ public class StatEffect {
             } else if (isEnrage()) {
                 applyto.handleOrbconsume();
             } else if (isMorph()) {
-                List<Pair<BuffStat, Integer>> stat = Collections.singletonList(new Pair<>(BuffStat.MORPH, getMorph(applyto)));
+                List<Pair<BuffStat, Integer>> stat = Collections
+                        .singletonList(new Pair<>(BuffStat.MORPH, getMorph(applyto)));
                 mbuff = PacketCreator.giveForeignBuff(applyto.getId(), stat);
             } else if (isAriantShield()) {
                 List<Pair<BuffStat, Integer>> stat = Collections.singletonList(new Pair<>(BuffStat.AURA, 1));
@@ -1380,15 +1473,17 @@ public class StatEffect {
             }
 
             if (buff != null) {
-                //Thanks flav for such a simple release! :)
-                //Thanks Conrad, Atoot for noticing summons not using buff icon
+                // Thanks flav for such a simple release! :)
+                // Thanks Conrad, Atoot for noticing summons not using buff icon
 
                 applyto.sendPacket(buff);
             }
 
             long starttime = Server.getInstance().getCurrentTime();
-            //CancelEffectAction cancelAction = new CancelEffectAction(applyto, this, starttime);
-            //ScheduledFuture<?> schedule = TimerManager.getInstance().schedule(cancelAction, localDuration);
+            // CancelEffectAction cancelAction = new CancelEffectAction(applyto, this,
+            // starttime);
+            // ScheduledFuture<?> schedule =
+            // TimerManager.getInstance().schedule(cancelAction, localDuration);
             applyto.registerEffect(this, starttime, starttime + localDuration, false);
             if (mbuff != null) {
                 applyto.getMap().broadcastMessage(applyto, mbuff, false);
@@ -1438,7 +1533,8 @@ public class StatEffect {
     }
 
     private int makeHealHP(double rate, double stat, double lowerfactor, double upperfactor) {
-        return (int) ((Math.random() * ((int) (stat * upperfactor * rate) - (int) (stat * lowerfactor * rate) + 1)) + (int) (stat * lowerfactor * rate));
+        return (int) ((Math.random() * ((int) (stat * upperfactor * rate) - (int) (stat * lowerfactor * rate) + 1))
+                + (int) (stat * lowerfactor * rate));
     }
 
     private int calcMPChange(Character applyfrom, boolean primary) {
@@ -1460,7 +1556,10 @@ public class StatEffect {
                 boolean isCygnus = applyfrom.getJob().isA(Job.BLAZEWIZARD2);
                 boolean isEvan = applyfrom.getJob().isA(Job.EVAN7);
                 if (isAFpMage || isCygnus || isEvan || applyfrom.getJob().isA(Job.IL_MAGE)) {
-                    Skill amp = isAFpMage ? SkillFactory.getSkill(FPMage.ELEMENT_AMPLIFICATION) : (isCygnus ? SkillFactory.getSkill(BlazeWizard.ELEMENT_AMPLIFICATION) : (isEvan ? SkillFactory.getSkill(Evan.MAGIC_AMPLIFICATION) : SkillFactory.getSkill(ILMage.ELEMENT_AMPLIFICATION)));
+                    Skill amp = isAFpMage ? SkillFactory.getSkill(FPMage.ELEMENT_AMPLIFICATION)
+                            : (isCygnus ? SkillFactory.getSkill(BlazeWizard.ELEMENT_AMPLIFICATION)
+                                    : (isEvan ? SkillFactory.getSkill(Evan.MAGIC_AMPLIFICATION)
+                                            : SkillFactory.getSkill(ILMage.ELEMENT_AMPLIFICATION)));
                     int ampLevel = applyfrom.getSkillLevel(amp);
                     if (ampLevel > 0) {
                         mod = amp.getEffect(ampLevel).getX() / 100.0;
@@ -1550,7 +1649,8 @@ public class StatEffect {
             return false;
         }
         // wk charges have lt and rb set but are neither player nor monster buffs
-        return (sourceid < 1211003 || sourceid > 1211008) && sourceid != Paladin.SWORD_HOLY_CHARGE && sourceid != Paladin.BW_HOLY_CHARGE && sourceid != DawnWarrior.SOUL_CHARGE;
+        return (sourceid < 1211003 || sourceid > 1211008) && sourceid != Paladin.SWORD_HOLY_CHARGE
+                && sourceid != Paladin.BW_HOLY_CHARGE && sourceid != DawnWarrior.SOUL_CHARGE;
     }
 
     private boolean isHeal() {
@@ -1574,7 +1674,8 @@ public class StatEffect {
     }
 
     public boolean isRecovery() {
-        return sourceid == Beginner.RECOVERY || sourceid == Noblesse.RECOVERY || sourceid == Legend.RECOVERY || sourceid == Evan.RECOVERY;
+        return sourceid == Beginner.RECOVERY || sourceid == Noblesse.RECOVERY || sourceid == Legend.RECOVERY
+                || sourceid == Evan.RECOVERY;
     }
 
     public boolean isMapChair() {
@@ -1635,10 +1736,14 @@ public class StatEffect {
     }
 
     public boolean isMonsterRiding() {
-        return skill && (sourceid % 10000000 == 1004 || sourceid == Corsair.BATTLE_SHIP || sourceid == Beginner.SPACESHIP || sourceid == Noblesse.SPACESHIP
-                || sourceid == Beginner.YETI_MOUNT1 || sourceid == Beginner.YETI_MOUNT2 || sourceid == Beginner.WITCH_BROOMSTICK || sourceid == Beginner.BALROG_MOUNT
-                || sourceid == Noblesse.YETI_MOUNT1 || sourceid == Noblesse.YETI_MOUNT2 || sourceid == Noblesse.WITCH_BROOMSTICK || sourceid == Noblesse.BALROG_MOUNT
-                || sourceid == Legend.YETI_MOUNT1 || sourceid == Legend.YETI_MOUNT2 || sourceid == Legend.WITCH_BROOMSTICK || sourceid == Legend.BALROG_MOUNT);
+        return skill && (sourceid % 10000000 == 1004 || sourceid == Corsair.BATTLE_SHIP
+                || sourceid == Beginner.SPACESHIP || sourceid == Noblesse.SPACESHIP
+                || sourceid == Beginner.YETI_MOUNT1 || sourceid == Beginner.YETI_MOUNT2
+                || sourceid == Beginner.WITCH_BROOMSTICK || sourceid == Beginner.BALROG_MOUNT
+                || sourceid == Noblesse.YETI_MOUNT1 || sourceid == Noblesse.YETI_MOUNT2
+                || sourceid == Noblesse.WITCH_BROOMSTICK || sourceid == Noblesse.BALROG_MOUNT
+                || sourceid == Legend.YETI_MOUNT1 || sourceid == Legend.YETI_MOUNT2
+                || sourceid == Legend.WITCH_BROOMSTICK || sourceid == Legend.BALROG_MOUNT);
     }
 
     public boolean isMagicDoor() {
@@ -1646,7 +1751,9 @@ public class StatEffect {
     }
 
     public boolean isPoison() {
-        return skill && (sourceid == FPMage.POISON_MIST || sourceid == FPWizard.POISON_BREATH || sourceid == FPMage.ELEMENT_COMPOSITION || sourceid == NightWalker.POISON_BOMB || sourceid == BlazeWizard.FLAME_GEAR);
+        return skill && (sourceid == FPMage.POISON_MIST || sourceid == FPWizard.POISON_BREATH
+                || sourceid == FPMage.ELEMENT_COMPOSITION || sourceid == NightWalker.POISON_BOMB
+                || sourceid == BlazeWizard.FLAME_GEAR);
     }
 
     public boolean isMorph() {
@@ -1654,15 +1761,19 @@ public class StatEffect {
     }
 
     public boolean isMorphWithoutAttack() {
-        return morphId > 0 && morphId < 100; // Every morph item I have found has been under 100, pirate skill transforms start at 1000.
+        return morphId > 0 && morphId < 100; // Every morph item I have found has been under 100, pirate skill
+                                             // transforms start at 1000.
     }
 
     private boolean isMist() {
-        return skill && (sourceid == FPMage.POISON_MIST || sourceid == Shadower.SMOKE_SCREEN || sourceid == BlazeWizard.FLAME_GEAR || sourceid == NightWalker.POISON_BOMB || sourceid == Evan.RECOVERY_AURA);
+        return skill && (sourceid == FPMage.POISON_MIST || sourceid == Shadower.SMOKE_SCREEN
+                || sourceid == BlazeWizard.FLAME_GEAR || sourceid == NightWalker.POISON_BOMB
+                || sourceid == Evan.RECOVERY_AURA);
     }
 
     private boolean isSoulArrow() {
-        return skill && (sourceid == Hunter.SOUL_ARROW || sourceid == Crossbowman.SOUL_ARROW || sourceid == WindArcher.SOUL_ARROW);
+        return skill && (sourceid == Hunter.SOUL_ARROW || sourceid == Crossbowman.SOUL_ARROW
+                || sourceid == WindArcher.SOUL_ARROW);
     }
 
     private boolean isShadowClaw() {
@@ -1670,7 +1781,8 @@ public class StatEffect {
     }
 
     private boolean isCrash() {
-        return skill && (sourceid == DragonKnight.POWER_CRASH || sourceid == Crusader.ARMOR_CRASH || sourceid == WhiteKnight.MAGIC_CRASH);
+        return skill && (sourceid == DragonKnight.POWER_CRASH || sourceid == Crusader.ARMOR_CRASH
+                || sourceid == WhiteKnight.MAGIC_CRASH);
     }
 
     private boolean isSeal() {
@@ -1726,18 +1838,19 @@ public class StatEffect {
     }
 
     private boolean isDash() {
-        return skill && (sourceid == Pirate.DASH || sourceid == ThunderBreaker.DASH || sourceid == Beginner.SPACE_DASH || sourceid == Noblesse.SPACE_DASH);
+        return skill && (sourceid == Pirate.DASH || sourceid == ThunderBreaker.DASH || sourceid == Beginner.SPACE_DASH
+                || sourceid == Noblesse.SPACE_DASH);
     }
 
     private boolean isSkillMorph() {
-        return skill && (sourceid == Buccaneer.SUPER_TRANSFORMATION || sourceid == Marauder.TRANSFORMATION || sourceid == WindArcher.EAGLE_EYE || sourceid == ThunderBreaker.TRANSFORMATION);
+        return skill && (sourceid == Buccaneer.SUPER_TRANSFORMATION || sourceid == Marauder.TRANSFORMATION
+                || sourceid == WindArcher.EAGLE_EYE || sourceid == ThunderBreaker.TRANSFORMATION);
     }
 
     private boolean isInfusion() {
-        return skill && (
-                sourceid == Buccaneer.SPEED_INFUSION ||
-   //             sourceid == Corsair.SPEED_INFUSION ||
-                        sourceid == ThunderBreaker.SPEED_INFUSION);
+        return skill && (sourceid == Buccaneer.SPEED_INFUSION ||
+        // sourceid == Corsair.SPEED_INFUSION ||
+                sourceid == ThunderBreaker.SPEED_INFUSION);
     }
 
     private boolean isCygnusFA() {
@@ -1745,7 +1858,8 @@ public class StatEffect {
     }
 
     private boolean isHyperBody() {
-        return skill && (sourceid == Spearman.HYPER_BODY || sourceid == GM.HYPER_BODY || sourceid == SuperGM.HYPER_BODY);
+        return skill
+                && (sourceid == Spearman.HYPER_BODY || sourceid == GM.HYPER_BODY || sourceid == SuperGM.HYPER_BODY);
     }
 
     private boolean isComboReset() {
@@ -1817,26 +1931,27 @@ public class StatEffect {
     }
 
     /*
-     private static class CancelEffectAction implements Runnable {
-
-     private StatEffect effect;
-     private WeakReference<Character> target;
-     private long startTime;
-
-     public CancelEffectAction(Character target, StatEffect effect, long startTime) {
-     this.effect = effect;
-     this.target = new WeakReference<>(target);
-     this.startTime = startTime;
-     }
-
-     @Override
-     public void run() {
-     Character realTarget = target.get();
-     if (realTarget != null) {
-     realTarget.cancelEffect(effect, false, startTime);
-     }
-     }
-     }
+     * private static class CancelEffectAction implements Runnable {
+     * 
+     * private StatEffect effect;
+     * private WeakReference<Character> target;
+     * private long startTime;
+     * 
+     * public CancelEffectAction(Character target, StatEffect effect, long
+     * startTime) {
+     * this.effect = effect;
+     * this.target = new WeakReference<>(target);
+     * this.startTime = startTime;
+     * }
+     * 
+     * @Override
+     * public void run() {
+     * Character realTarget = target.get();
+     * if (realTarget != null) {
+     * realTarget.cancelEffect(effect, false, startTime);
+     * }
+     * }
+     * }
      */
     public short getHp() {
         return hp;

@@ -15,6 +15,7 @@ var raidBosses = [
 ];
 
 function init() {
+    java.lang.System.out.println("[BossRaid] Script loaded. Initializing schedule...");
     scheduleNextRaid();
 }
 
@@ -28,10 +29,13 @@ function scheduleNextRaid() {
     var randomHours = 1 + Math.floor(Math.random() * 3); // 1 to 3 hours (Avg 2h = ~12x/day)
     var nextTime = randomHours * 60 * 60 * 1000;
 
-    em.schedule("startRaid", nextTime);
+    // Test Mode: uncomment to make it faster (e.g., 1-3 minutes)
+    // nextTime = randomHours * 60 * 1000; 
+
+    setupTask = em.schedule("startRaid", nextTime);
 
     // Log for server console/debugging
-    // java.lang.System.out.println("[BossRaid] Next raid scheduled in " + randomHours + " hours.");
+    java.lang.System.out.println("[BossRaid] Next raid scheduled in " + randomHours + " hours (" + (nextTime / 60000) + " minutes).");
 }
 
 function startRaid() {

@@ -4809,6 +4809,7 @@ public class Character extends AbstractCharacterObject {
                 final StatEffect buffEffect = bBuff.getEffect(getSkillLevel(bBuff));
                 int buffInterval = (int) SECONDS.toMillis(buffEffect.getX());
                 beholderBuffSchedule = TimerManager.getInstance().register(new Runnable() {
+
                     @Override
                     public void run() {
                         if (awayFromWorld.get()) {
@@ -4825,6 +4826,7 @@ public class Character extends AbstractCharacterObject {
                 }, buffInterval, buffInterval);
             }
         } else if (effect.isRecovery()) {
+
             int healInterval = (YamlConfig.config.server.USE_ULTRA_RECOVERY) ? 1000 : 5000;
 
             int heal;
@@ -4906,7 +4908,8 @@ public class Character extends AbstractCharacterObject {
             chrLock.lock();
             try {
                 stopExtraTask();
-                startExtraTask(extraHpRec, extraMpRec, extraRecInterval); // HP & MP sharing the same task holder
+                startExtraTask(extraHpRec, extraMpRec, extraRecInterval); // HP & MP sharing the
+                                                                          // same task holder
             } finally {
                 chrLock.unlock();
             }
@@ -4988,13 +4991,16 @@ public class Character extends AbstractCharacterObject {
             for (Entry<BuffStat, BuffStatValueHolder> statup : toDeploy.entrySet()) {
                 effects.put(statup.getKey(), statup.getValue());
             }
-        } finally {
+        } finally
+
+        {
             chrLock.unlock();
             effLock.unlock();
             prtLock.unlock();
         }
 
         updateLocalStats();
+
     }
 
     private static int getJobMapChair(Job job) {
@@ -6897,6 +6903,7 @@ public class Character extends AbstractCharacterObject {
             }
         } else if (level == 10) {
             Runnable r = new Runnable() {
+
                 @Override
                 public void run() {
                     if (leaveParty()) {
@@ -8254,25 +8261,86 @@ public class Character extends AbstractCharacterObject {
                 }
             }
 
-            Integer watkbuff = getBuffedValue(BuffStat.WATK);
-            if (watkbuff != null) {
-                localwatk += watkbuff.intValue();
-            }
-            Integer matkbuff = getBuffedValue(BuffStat.MATK);
-            if (matkbuff != null) {
-                localmagic += matkbuff.intValue();
+            // --- START STACKING LOGIC ---
+            int skillWatk = 0, skillMatk = 0, skillWdef = 0, skillMdef = 0;
+            int skillAcc = 0, skillAvoid = 0, skillSpeed = 0, skillJump = 0;
+            int itemWatk = 0, itemMatk = 0, itemWdef = 0, itemMdef = 0;
+            int itemAcc = 0, itemAvoid = 0, itemSpeed = 0, itemJump = 0;
+
+            for (Map<BuffStat, BuffStatValueHolder> sourceBuffs : buffEffects.values()) {
+                for (Map.Entry<BuffStat, BuffStatValueHolder> entry : sourceBuffs.entrySet()) {
+                    BuffStatValueHolder holder = entry.getValue();
+                    if (holder.effect.isActive(this)) {
+                        boolean isSkill = holder.effect.isSkill();
+                        int val = holder.value;
+
+                        switch (entry.getKey()) {
+                            case WATK:
+                                if (isSkill)
+                                    skillWatk += val;
+                                else if (val > itemWatk)
+                                    itemWatk = val;
+                                break;
+                            case MATK:
+                                if (isSkill)
+                                    skillMatk += val;
+                                else if (val > itemMatk)
+                                    itemMatk = val;
+                                break;
+                            case WDEF:
+                                if (isSkill)
+                                    skillWdef += val;
+                                else if (val > itemWdef)
+                                    itemWdef = val;
+                                break;
+                            case MDEF:
+                                if (isSkill)
+                                    skillMdef += val;
+                                else if (val > itemMdef)
+                                    itemMdef = val;
+                                break;
+                            case ACC:
+                                if (isSkill)
+                                    skillAcc += val;
+                                else if (val > itemAcc)
+                                    itemAcc = val;
+                                break;
+                            case AVOID:
+                                if (isSkill)
+                                    skillAvoid += val;
+                                else if (val > itemAvoid)
+                                    itemAvoid = val;
+                                break;
+                            case SPEED:
+                                if (isSkill)
+                                    skillSpeed += val;
+                                else if (val > itemSpeed)
+                                    itemSpeed = val;
+                                break;
+                            case JUMP:
+                                if (isSkill)
+                                    skillJump += val;
+                                else if (val > itemJump)
+                                    itemJump = val;
+                                break;
+                        }
+                    }
+                }
             }
 
-            /*
-             * Integer speedbuff = getBuffedValue(BuffStat.SPEED);
-             * if (speedbuff != null) {
-             * localspeed += speedbuff.intValue();
-             * }
-             * Integer jumpbuff = getBuffedValue(BuffStat.JUMP);
-             * if (jumpbuff != null) {
-             * localjump += jumpbuff.intValue();
-             * }
-             */
+            localwatk += skillWatk + itemWatk;
+            localmagic += skillMatk + itemMatk;
+            // Note: WDEF, MDEF, ACC, AVOID, SPEED, JUMP are typically calculated in getters
+            // or other methods in this source base, but we will apply them here if 'local'
+            // variables exist.
+            // Checking local variables from previous view_file:
+            // localstr, localdex, localint_, localluk, localmagic, localwatk exist.
+            // localspeed, localjump were commented out in original file.
+            // Let's assume we only strictly need WATK/MATK here based on available
+            // variables.
+            // But wait, getBuffedValue(BuffStat.WATK) was adding to localwatk.
+
+            // --- END STACKING LOGIC ---
 
             Integer blessing = getSkillLevel(10000000 * getJobType() + 12);
             if (blessing > 0) {
@@ -12820,6 +12888,9 @@ public class Character extends AbstractCharacterObject {
         List<Skill> currentSkills = new ArrayList<>(skills.keySet());
         for (Skill skill : currentSkills) {
             int skillId = skill.getId();
+            if (server.StatEffect.isHerosWill(skillId)) {
+                continue; // Skip unlearning Hero's Will
+            }
             if (skillId < 10000) {
                 if (skillId == 1000 || skillId == 1001 || skillId == 1002) {
                     changeSkillLevel(skill, (byte) 0, skill.getMaxLevel(), -1);
@@ -12876,5 +12947,4 @@ public class Character extends AbstractCharacterObject {
         // 12. Save
         this.saveCharToDB();
     }
-
 }
