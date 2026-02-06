@@ -170,6 +170,7 @@ public class CommandsExecutor {
         addCommand("changepassword", ChangePasswordCommand.class);
         addCommand("withdrawmeso", WithdrawMesoCommand.class);
         addCommand("closeshop", CloseShopCommand.class);
+        addCommand("whereami", WhereaMiCommand.class);
 
         // --- Economy & Shops ---
         addCommand("voteshop", 0, VoteShopCommand.class);
@@ -255,7 +256,6 @@ public class CommandsExecutor {
         addCommand("mapleshop", 2, MapleShopCommand.class);
         addCommand("scrollshop", 2, ScrollShopCommand.class);
         addCommand("recharge", 2, RechargeCommand.class);
-        addCommand("whereami", 2, WhereaMiCommand.class);
         addCommand("hide", 2, HideCommand.class);
         addCommand("unhide", 2, UnHideCommand.class);
         addCommand("sp", 2, SpCommand.class);
