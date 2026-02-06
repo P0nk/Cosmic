@@ -49,7 +49,6 @@ import server.maps.Reactor;
 import tools.PacketCreator;
 import tools.Pair;
 
-
 import javax.script.ScriptException;
 import java.awt.*;
 import java.util.List;
@@ -59,7 +58,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -108,10 +106,12 @@ public class EventInstanceManager {
     // registers player status on an event (null on this Map structure equals to 0)
     private final Map<Integer, Integer> playerGrid = new HashMap<>();
 
-    // registers all opened gates on the event. Will help late characters to encounter next stages gates already opened
+    // registers all opened gates on the event. Will help late characters to
+    // encounter next stages gates already opened
     private final Map<Integer, Pair<String, Integer>> openedGates = new HashMap<>();
 
-    // forces deletion of items not supposed to be held outside of the event, dealt on a player's leaving moment.
+    // forces deletion of items not supposed to be held outside of the event, dealt
+    // on a player's leaving moment.
     private final Set<Integer> exclusiveItems = new HashSet<>();
 
     public EventInstanceManager(EventManager em, String name) {
@@ -139,8 +139,8 @@ public class EventInstanceManager {
     }
 
     public int getEventPlayersJobs() {
-        //Bits -> 0: BEGINNER 1: WARRIOR 2: MAGICIAN
-        //        3: BOWMAN 4: THIEF 5: PIRATE
+        // Bits -> 0: BEGINNER 1: WARRIOR 2: MAGICIAN
+        // 3: BOWMAN 4: THIEF 5: PIRATE
 
         int mask = 0;
         for (Character chr : getPlayers()) {
@@ -211,7 +211,7 @@ public class EventInstanceManager {
                 expToGive = ExpTable.getExpNeededForLevel(lvl);
             } else {
                 // below the first threshold: normal exp
-//                expToGive = gain * mc.getExpRate();
+                // expToGive = gain * mc.getExpRate();
             }
 
             mc.gainExp(expToGive, true, true);
@@ -221,7 +221,7 @@ public class EventInstanceManager {
 
     public void giveEventPlayersCash(int gain) {
         List<Character> players = getPlayerList();
-        int count  = players.size();
+        int count = players.size();
         for (Character mc : getPlayerList()) {
             mc.getCashShop().gainCash(1, gain * count); // nx multiplies by about of party members
         }
@@ -233,7 +233,8 @@ public class EventInstanceManager {
 
     // Replaces the long 'giveEventPlayersExp' method
     public void giveEventPlayersExp(int gain, int mapId) {
-        if (gain == 0) return;
+        if (gain == 0)
+            return;
 
         getPlayers().stream()
                 .filter(chr -> mapId == -1 || chr.getMapId() == mapId)
@@ -248,7 +249,8 @@ public class EventInstanceManager {
 
     // Replaces the long 'giveEventPlayersMeso' method
     public void giveEventPlayersMeso(int gain, int mapId) {
-        if (gain == 0) return;
+        if (gain == 0)
+            return;
 
         getPlayers().stream()
                 .filter(chr -> mapId == -1 || chr.getMapId() == mapId)
@@ -259,7 +261,9 @@ public class EventInstanceManager {
 
     public Object invokeScriptFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {
         if (!disposed) {
-            return em.getIv().invokeFunction(name, args);
+            synchronized (em) {
+                return em.getIv().invokeFunction(name, args);
+            }
         } else {
             return null;
         }
@@ -395,7 +399,7 @@ public class EventInstanceManager {
 
     public void registerParty(Party party, MapleMap map) {
         for (PartyCharacter mpc : party.getEligibleMembers()) {
-            if (mpc.isOnline()) {   // thanks resinate
+            if (mpc.isOnline()) { // thanks resinate
                 Character chr = map.getCharacterById(mpc.getId());
                 if (chr != null) {
                     registerPlayer(chr);
@@ -475,7 +479,7 @@ public class EventInstanceManager {
     }
 
     public void registerMonster(Monster mob) {
-        if (!mob.getStats().isFriendly()) { //We cannot register moon bunny
+        if (!mob.getStats().isFriendly()) { // We cannot register moon bunny
             mobs.add(mob);
         }
     }
@@ -551,7 +555,7 @@ public class EventInstanceManager {
         try {
             invokeScriptFunction("friendlyKilled", mob, EventInstanceManager.this, hasKiller);
         } catch (ScriptException | NoSuchMethodException ex) {
-        } //optional
+        } // optional
     }
 
     public void friendlyDamaged(final Monster mob) {
@@ -645,7 +649,7 @@ public class EventInstanceManager {
         dispose(false);
     }
 
-    public synchronized void dispose(boolean shutdown) {    // should not trigger any event script method after disposed
+    public synchronized void dispose(boolean shutdown) { // should not trigger any event script method after disposed
         if (disposed) {
             return;
         }
@@ -693,7 +697,7 @@ public class EventInstanceManager {
         }
 
         TimerManager.getInstance().schedule(() -> {
-            mapManager.dispose();   // issues from instantly disposing some event objects found thanks to MedicOP
+            mapManager.dispose(); // issues from instantly disposing some event objects found thanks to MedicOP
             writeLock.lock();
             try {
                 mapManager = null;
@@ -956,14 +960,14 @@ public class EventInstanceManager {
         onMapClearMeso.addAll(convertToIntegerList(gain));
     }
 
-    public Integer getClearStageExp(int stage) {    //stage counts from ONE.
+    public Integer getClearStageExp(int stage) { // stage counts from ONE.
         if (stage > onMapClearExp.size()) {
             return 0;
         }
         return onMapClearExp.get(stage - 1);
     }
 
-    public Integer getClearStageMeso(int stage) {   //stage counts from ONE.
+    public Integer getClearStageMeso(int stage) { // stage counts from ONE.
         if (stage > onMapClearMeso.size()) {
             return 0;
         }
@@ -1015,12 +1019,12 @@ public class EventInstanceManager {
         if (eventLevel <= 0 || eventLevel > YamlConfig.config.server.MAX_EVENT_LEVELS) {
             return;
         }
-        eventLevel--;    //event level starts from 1
+        eventLevel--; // event level starts from 1
 
         List<Integer> rewardIds = convertToIntegerList(rwds);
         List<Integer> rewardQtys = convertToIntegerList(qtys);
 
-        //rewardsSet and rewardsQty hold temporary values
+        // rewardsSet and rewardsQty hold temporary values
         writeLock.lock();
         try {
             collectionSet.put(eventLevel, rewardIds);
@@ -1047,9 +1051,10 @@ public class EventInstanceManager {
     }
 
     private boolean hasRewardSlot(Character player, int eventLevel) {
-        byte listReq = getRewardListRequirements(eventLevel);   //gets all types of items present in the event reward list
+        byte listReq = getRewardListRequirements(eventLevel); // gets all types of items present in the event reward
+                                                              // list
 
-        //iterating over all valid inventory types
+        // iterating over all valid inventory types
         for (byte type = 1; type <= 5; type++) {
             if ((listReq >> type) % 2 == 1 && !player.hasEmptySlot(type)) {
                 return false;
@@ -1063,14 +1068,15 @@ public class EventInstanceManager {
         return giveEventReward(player, 1);
     }
 
-    //gives out EXP & a random item in a similar fashion of when clearing KPQ, LPQ, etc.
+    // gives out EXP & a random item in a similar fashion of when clearing KPQ, LPQ,
+    // etc.
     public final boolean giveEventReward(Character player, int eventLevel) {
         List<Integer> rewardsSet, rewardsQty;
         Integer rewardExp;
 
         readLock.lock();
         try {
-            eventLevel--;       //event level starts counting from 1
+            eventLevel--; // event level starts counting from 1
             if (eventLevel >= collectionSet.size()) {
                 return true;
             }
@@ -1183,7 +1189,8 @@ public class EventInstanceManager {
         if (eventCleared) {
             return leavingEventMap && getPlayerCount() <= 1;
         } else {
-            // thanks Conrad for noticing expeditions don't need to have neither the leader nor meet the minimum requirement inside the event
+            // thanks Conrad for noticing expeditions don't need to have neither the leader
+            // nor meet the minimum requirement inside the event
             return getPlayerCount() <= 1;
         }
     }
@@ -1210,7 +1217,7 @@ public class EventInstanceManager {
             Character mc = iterator.next();
             int mapId = mc.getMapId();
 
-            for (; iterator.hasNext(); ) {
+            for (; iterator.hasNext();) {
                 mc = iterator.next();
                 if (mc.getMapId() != mapId) {
                     return false;
@@ -1352,14 +1359,14 @@ public class EventInstanceManager {
     }
 
     public final void giveEventPlayersStageReward(int thisStage) {
-        List<Integer> list = getClearStageBonus(thisStage);     // will give bonus exp & mesos to everyone in the event
+        List<Integer> list = getClearStageBonus(thisStage); // will give bonus exp & mesos to everyone in the event
         giveEventPlayersExp(list.get(0));
         giveEventPlayersMeso(list.get(1));
     }
 
     public final void linkToNextStage(int thisStage, String eventFamily, int thisMapId) {
         giveEventPlayersStageReward(thisStage);
-        thisStage--;    //stages counts from ONE, scripts from ZERO
+        thisStage--; // stages counts from ONE, scripts from ZERO
 
         MapleMap nextStage = getMapInstance(thisMapId);
         Portal portal = nextStage.getPortal("next00");
@@ -1370,7 +1377,7 @@ public class EventInstanceManager {
 
     public final void linkPortalToScript(int thisStage, String portalName, String scriptName, int thisMapId) {
         giveEventPlayersStageReward(thisStage);
-        thisStage--;    //stages counts from ONE, scripts from ZERO
+        thisStage--; // stages counts from ONE, scripts from ZERO
 
         MapleMap nextStage = getMapInstance(thisMapId);
         Portal portal = nextStage.getPortal(portalName);
@@ -1446,11 +1453,11 @@ public class EventInstanceManager {
         return true;
     }
 
-    public void increaseClearCount(){
+    public void increaseClearCount() {
         this.clearCount++;
     }
 
-    public int getClearCount(){
+    public int getClearCount() {
         return this.clearCount;
     }
 }

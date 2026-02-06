@@ -32,7 +32,7 @@ function checkAndRestoreHerosWill() {
 
     if (skillId != 0) {
         if (cm.getSkillLevel(skillId) <= 0) {
-            cm.teachSkill(skillId, 1, 5); // Level 1, Master Level 5
+            cm.teachSkill(skillId, 1, 5, -1); // Level 1, Master Level 5, No Expiration
             cm.sendOk("I noticed you were missing #bHero's Will#k despite your tough journey. I have restored it for you.");
             cm.dispose();
             return true;
@@ -61,7 +61,6 @@ function action(mode, type, selection) {
     } else if (status == 1) {
         if (cm.getMeso() >= cost) {
             cm.gainMeso(-cost);
-            // Show a random effect or just a message
             cm.sendOk("May the spirits of Mushroom Shrine bless you.");
         } else {
             cm.sendOk("You don't have enough mesos to donate.");

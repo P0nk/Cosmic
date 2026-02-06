@@ -20,22 +20,21 @@ function init() {
 }
 
 function scheduleNextRaid() {
-    // Schedule random times: Morning (10-12), Afternoon (4-6), Evening (8-10)
-    // For now, let's just schedule it to try starting every hour and check probability, 
-    // or just fixed random intervals.
-    // Simpler approach for "Randomly a few times a day":
-    // Schedule next run in 4-8 hours.
+    // Randomize minutes between 60 minutes (1 hour) and 180 minutes (3 hours)
+    // This gives a more natural distribution than just flat 1, 2, or 3 hours.
+    var minMinutes = 60;
+    var maxMinutes = 180;
+    var randomMinutes = Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
 
-    var randomHours = 1 + Math.floor(Math.random() * 3); // 1 to 3 hours (Avg 2h = ~12x/day)
-    var nextTime = randomHours * 60 * 60 * 1000;
+    var nextTime = randomMinutes * 60 * 1000;
 
     // Test Mode: uncomment to make it faster (e.g., 1-3 minutes)
-    // nextTime = randomHours * 60 * 1000; 
+    // nextTime = randomMinutes * 60 * 1000 / 60; 
 
     setupTask = em.schedule("startRaid", nextTime);
 
     // Log for server console/debugging
-    java.lang.System.out.println("[BossRaid] Next raid scheduled in " + randomHours + " hours (" + (nextTime / 60000) + " minutes).");
+    java.lang.System.out.println("[BossRaid] Next raid scheduled in " + randomMinutes + " minutes (" + (randomMinutes / 60).toFixed(1) + " hours).");
 }
 
 function startRaid() {
