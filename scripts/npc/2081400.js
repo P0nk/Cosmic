@@ -1,8 +1,8 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+               Matthias Butz <matze@odinms.de>
+               Jan Christian Meyer <vimes@odinms.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -78,9 +78,9 @@ function action(mode, type, selection) {
                 }
             } else if (mode >= 1 && cm.getJobId() % 100 % 10 == 2) {
                 if (cm.getJobId() == 412) {
-//                    if (cm.getPlayer().getSkillLevel(4121008) == 0) {
-//                        cm.teachSkill(4121008, 0, 10, -1);
-//                    }
+                    //                    if (cm.getPlayer().getSkillLevel(4121008) == 0) {
+                    //                        cm.teachSkill(4121008, 0, 10, -1);
+                    //                    }
                     if (cm.getPlayer().getSkillLevel(4121004) == 0) {
                         cm.teachSkill(4121004, 0, 10, -1);
                     }
@@ -93,6 +93,25 @@ function action(mode, type, selection) {
                     }
                 }
                 cm.sendOk("It is done. Leave me now.");
+            }
+
+            // Hero's Will Rebirth Check
+            if (cm.getPlayer().getReborns() > 0) {
+                var hwSkill = 0;
+                if (cm.getJobId() == 412) {
+                    const NightLord = Java.type('constants.skills.NightLord');
+                    hwSkill = NightLord.HEROS_WILL;
+                } else if (cm.getJobId() == 422) {
+                    const Shadower = Java.type('constants.skills.Shadower');
+                    hwSkill = Shadower.HEROS_WILL;
+                }
+
+                if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
+                    cm.teachSkill(hwSkill, 0, 5, -1);
+                    cm.sendOk("You have vast experience o great thief, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
+                    cm.dispose();
+                    return;
+                }
             }
 
             cm.dispose();

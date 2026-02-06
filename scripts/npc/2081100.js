@@ -1,8 +1,8 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+               Matthias Butz <matze@odinms.de>
+               Jan Christian Meyer <vimes@odinms.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -110,6 +110,30 @@ function action(mode, type, selection) {
                     }
                     if (cm.getPlayer().getSkillLevel(1320009) == 0) {
                         cm.teachSkill(1320009, 0, 10, -1);
+                    }
+                }
+
+                // Hero's Will Rebirth Check
+                // Checks if player has rebirthed and completely reset/lost the skill
+                if (cm.getPlayer().getReborns() > 0) {
+                    var hwSkill = 0;
+
+                    if (cm.getJobId() == 112) {
+                        const Hero = Java.type('constants.skills.Hero');
+                        hwSkill = Hero.HEROS_WILL;
+                    } else if (cm.getJobId() == 122) {
+                        const Paladin = Java.type('constants.skills.Paladin');
+                        hwSkill = Paladin.HEROS_WILL;
+                    } else if (cm.getJobId() == 132) {
+                        const DarkKnight = Java.type('constants.skills.DarkKnight');
+                        hwSkill = DarkKnight.HEROS_WILL;
+                    }
+
+                    if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
+                        cm.teachSkill(hwSkill, 0, 5, -1); // Level 0, Master Level 5
+                        cm.sendOk("You have vast experience o great warrior, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
+                        cm.dispose();
+                        return;
                     }
                 }
                 cm.sendOk("It is done. Leave me now.");

@@ -1,8 +1,8 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+               Matthias Butz <matze@odinms.de>
+               Jan Christian Meyer <vimes@odinms.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -99,6 +99,25 @@ function action(mode, type, selection) {
                     }
                 }
                 cm.sendOk("It is done. Leave me now.");
+            }
+
+            // Hero's Will Rebirth Check
+            if (cm.getPlayer().getReborns() > 0) {
+                var hwSkill = 0;
+                if (cm.getJobId() == 312) {
+                    const Bowmaster = Java.type('constants.skills.Bowmaster');
+                    hwSkill = Bowmaster.HEROS_WILL;
+                } else if (cm.getJobId() == 322) {
+                    const Marksman = Java.type('constants.skills.Marksman');
+                    hwSkill = Marksman.HEROS_WILL;
+                }
+
+                if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
+                    cm.teachSkill(hwSkill, 0, 5, -1);
+                    cm.sendOk("You have vast experience o great bowman, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
+                    cm.dispose();
+                    return;
+                }
             }
 
             cm.dispose();
