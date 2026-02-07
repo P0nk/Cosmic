@@ -98,6 +98,7 @@ function action(mode, type, selection) {
             // Hero's Will Rebirth Check
             if (cm.getPlayer().getReborns() > 0) {
                 var hwSkill = 0;
+                console.log("cm.getJobId(): "+cm.getJobId());
                 if (cm.getJobId() == 412) {
                     const NightLord = Java.type('constants.skills.NightLord');
                     hwSkill = NightLord.HEROS_WILL;
@@ -105,7 +106,8 @@ function action(mode, type, selection) {
                     const Shadower = Java.type('constants.skills.Shadower');
                     hwSkill = Shadower.HEROS_WILL;
                 }
-
+                    console.log("hwSkill: "+ hwSkill);
+                    console.log("cm.getSkillLevel(hwSkill): " + cm.getSkillLevel(hwSkill));
                 if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
                     cm.teachSkill(hwSkill, 0, 5, -1);
                     cm.sendOk("You have vast experience o great thief, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
