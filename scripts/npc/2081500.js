@@ -123,7 +123,7 @@ function action(mode, type, selection) {
                     hwSkill = Corsair.PIRATES_RAGE;
                 }
 
-                if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
+                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
                     cm.teachSkill(hwSkill, 0, 5, -1);
                     cm.sendOk("You have vast experience o great pirate, but you have forgotten something important about the #bPirate's Rage#k through your cultivation.. here let me remind you..");
                     cm.dispose();

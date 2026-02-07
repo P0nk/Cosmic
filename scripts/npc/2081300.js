@@ -112,7 +112,7 @@ function action(mode, type, selection) {
                     hwSkill = Marksman.HEROS_WILL;
                 }
 
-                if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
+                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
                     cm.teachSkill(hwSkill, 0, 5, -1);
                     cm.sendOk("You have vast experience o great bowman, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
                     cm.dispose();

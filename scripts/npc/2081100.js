@@ -117,7 +117,7 @@ function action(mode, type, selection) {
                 // Checks if player has rebirthed and completely reset/lost the skill
                 if (cm.getPlayer().getReborns() > 0) {
                     var hwSkill = 0;
-                    console.log("cm.getJobId(): "+cm.getJobId());
+                    console.log("cm.getJobId(): " + cm.getJobId());
                     if (cm.getJobId() == 112) {
                         const Hero = Java.type('constants.skills.Hero');
                         hwSkill = Hero.HEROS_WILL;
@@ -129,9 +129,7 @@ function action(mode, type, selection) {
                         hwSkill = DarkKnight.HEROS_WILL;
                     }
 
-                    console.log("hwSkill: "+ hwSkill);
-                    console.log("cm.getSkillLevel(hwSkill): " + cm.getSkillLevel(hwSkill));
-                    if (hwSkill != 0 && cm.getSkillLevel(hwSkill) <= 0) {
+                    if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
                         cm.teachSkill(hwSkill, 0, 5, -1); // Level 0, Master Level 5
                         cm.sendOk("You have vast experience o great warrior, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
                         cm.dispose();
