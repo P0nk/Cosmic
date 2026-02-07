@@ -130,7 +130,7 @@ function action(mode, type, selection) {
                     }
 
                     if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
-                        cm.teachSkill(hwSkill, 0, 5, -1); // Level 0, Master Level 5
+                        cm.teachSkill(hwSkill, 1, 5, -1); // Level 1, Master Level 5
                         cm.sendOk("You have vast experience o great warrior, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
                         cm.dispose();
                         return;

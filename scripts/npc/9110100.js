@@ -31,7 +31,7 @@ function checkAndRestoreHerosWill() {
     else if (jobId == 434) skillId = 4341008; // Dual Blade
 
     if (skillId != 0) {
-        if (cm.getSkillLevel(skillId) <= 0) {
+        if (cm.getPlayer().getSkillLevel(skillId) <= 0) {
             cm.teachSkill(skillId, 1, 5, -1); // Level 1, Master Level 5, No Expiration
             cm.sendOk("I noticed you were missing #bHero's Will#k despite your tough journey. I have restored it for you.");
             cm.dispose();

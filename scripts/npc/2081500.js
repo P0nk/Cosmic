@@ -124,7 +124,7 @@ function action(mode, type, selection) {
                 }
 
                 if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
-                    cm.teachSkill(hwSkill, 0, 5, -1);
+                    cm.teachSkill(hwSkill, 1, 5, -1);
                     cm.sendOk("You have vast experience o great pirate, but you have forgotten something important about the #bPirate's Rage#k through your cultivation.. here let me remind you..");
                     cm.dispose();
                     return;
