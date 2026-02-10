@@ -1717,7 +1717,7 @@ public class ItemInformationProvider {
     }
 
     public int getCardMobId(int id) {
-        return monsterBookID.get(id);
+        return monsterBookID.getOrDefault(id, 0);
     }
 
     public boolean isUntradeableOnEquip(int itemId) {
