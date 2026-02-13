@@ -11,30 +11,52 @@ var currentBoss = null;
 var raidBosses = [
     { name: "Mano", mobId: 2220000, mapId: 104000400 },
     { name: "Stumpy", mobId: 3220000, mapId: 101030404 },
-    { name: "Deo", mobId: 3220001, mapId: 260010201 }
+    { name: "Deo", mobId: 3220001, mapId: 260010201 },
+    { name: "Pianus", mobId: 8510000, mapId: 230040420 },
+    { name: "Pianus", mobId: 8520000, mapId: 230040420 },
+    { name: "Griffey", mobId: 8180001, mapId: 240020101 },
+    { name: "Manon", mobId: 8180000, mapId: 240020401 },
+    { name: "Giant Centipede", mobId: 5220004, mapId: 251010102 },
+    { name: "Seruf", mobId: 4220001, mapId: 230020100 },
+    { name: "Leviathan", mobId: 8220003, mapId: 240040401 },
+    { name: "Tae Roon", mobId: 7220000, mapId: 250010304 },
+    { name: "King Sage Cat", mobId: 7220002, mapId: 250010504 },
+    { name: "Stumpy", mobId: 3220000, mapId: 101030404 },
+    { name: "Jr.Balrog", mobId: 8130100, mapId: 105090900 },
+    { name: "Dyle", mobId: 6220000, mapId: 107000300 },
+    { name: "Blue Mushmom", mobId: 9400205, mapId: 800010100 },
+    { name: "Mushmom", mobId: 6130101, mapId: 100000005 },
+    { name: "Female Boss", mobId: 9400121, mapId: 801040003 },
+    { name: "Nine-Tailed Fox", mobId: 3220000, mapId: 222010310 },
+    { name: "Snowman", mobId: 8220001, mapId: 211040101 },
+    { name: "Eliza", mobId: 8220000, mapId: 200010300 },
+    { name: "Deet and Roi", mobId: 8090000, mapId: 261010102 },
+    { name: "Security Camera", mobId: 7090000, mapId: 261020401 },
+    { name: "D.Roy", mobId: 7110300, mapId: 261020500 },
+    { name: "Chimera", mobId: 8220002, mapId: 261030000 },
+    { name: "Snack Bar", mobId: 8220009, mapId: 105090310 }
 ];
 
 function init() {
-    java.lang.System.out.println("[BossRaid] Script loaded. Initializing schedule...");
+    // java.lang.System.out.println("[BossRaid] Script loaded. Initializing schedule...");
     scheduleNextRaid();
 }
 
 function scheduleNextRaid() {
     // Randomize minutes between 60 minutes (1 hour) and 180 minutes (3 hours)
     // This gives a more natural distribution than just flat 1, 2, or 3 hours.
-    var minMinutes = 60;
-    var maxMinutes = 180;
-    var randomMinutes = Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
+    // var minMinutes = 60;
+    // var maxMinutes = 180;
+    // var randomMinutes = Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
 
-    var nextTime = randomMinutes * 60 * 1000;
+    var nextTime = 30 * 60 * 1000; // 30 minutes
 
-    // Test Mode: uncomment to make it faster (e.g., 1-3 minutes)
-    // nextTime = randomMinutes * 60 * 1000 / 60; 
-
+    // java.lang.System.out.println("[BossRaid] Scheduling next raid in " + nextTime + "ms (" + (nextTime / 60000) + " minutes).");
     setupTask = em.schedule("startRaid", nextTime);
 
     // Log for server console/debugging
-    java.lang.System.out.println("[BossRaid] Next raid scheduled in " + randomMinutes + " minutes (" + (randomMinutes / 60).toFixed(1) + " hours).");
+    // java.lang.System.out.println("[BossRaid] Next raid scheduled in " + randomMinutes + " minutes (" + (randomMinutes / 60).toFixed(1) + " hours).");
+    java.lang.System.out.println("[BossRaid] Next raid scheduled in 30 seconds (TEST MODE).");
 }
 
 function startRaid() {
@@ -54,7 +76,7 @@ function startRaid() {
     var mapFactory = em.getChannelServer().getMapFactory();
     if (mapFactory) {
         // Broadcast to World (Global Announce)
-        var chId = em.getChannel();
+        var chId = em.getChannelServer().getId();
         em.getWorldServer().broadcastPacket(
             PacketCreator.serverNotice(6, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + "s are spawning rapidly at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
         );
@@ -114,7 +136,7 @@ function endRaid() {
     em.setProperty("state", "inactive");
     if (currentBoss != null) {
         em.getWorldServer().broadcastPacket(
-            PacketCreator.serverNotice(6, "[Boss Raid] Channel " + em.getChannel() + ": The invasion of " + currentBoss.name + "s has ended.")
+            PacketCreator.serverNotice(6, "[Boss Raid] Channel " + em.getChannelServer().getId() + ": The invasion of " + currentBoss.name + "s has ended.")
         );
     }
     currentBoss = null;
@@ -156,7 +178,7 @@ function forceStart(specificBossName) {
 
         var mapFactory = em.getChannelServer().getMapFactory();
         if (mapFactory) {
-            var chId = em.getChannel();
+            var chId = em.getChannelServer().getId();
             em.getWorldServer().broadcastPacket(
                 PacketCreator.serverNotice(6, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + "s are spawning rapidly at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
             );
