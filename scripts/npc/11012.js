@@ -1,11 +1,10 @@
 var status = 0;
-var TICKET_COST = 500; // 500 NX per ticket
 var manualNumber = "";
 var betType = "";
 var currentDrawDate;
-var ticketQty = 1;
+var betAmount = 0;
 var isQuickPick = false;
-var isIBet = false; // New iBet flag
+var isIBet = false;
 var dateList = null;
 var MAX_HISTORY_BETS = 100;
 var MAX_HISTORY_DRAWS = 7;
@@ -20,13 +19,13 @@ function start() {
 
     var msg = "#e#bWelcome to Merogie Pools (NX)!#n#k\r\n";
     msg += "Hi! I'm Rebecca. You can bet using #bNX Cash#k here!\r\n";
-    msg += "Price per ticket: #r" + formatNumber(TICKET_COST) + " NX#k\r\n";
     msg += "Next Draw: #e#b" + currentDrawDate + " 12:00AM (GMT+8) #n\r\n\r\n";
     msg += "#L0##bBuy 4D Ticket#k (#dManual Entry#k)#l\r\n";
     msg += "#L3##bBuy 4D Ticket#k (#gQuick Pick#k)#l\r\n";
     msg += "#L1##bView Past Draw Results#k#l\r\n";
     msg += "#L2##rClaim Prize#k#l\r\n";
     msg += "#L4##bView My Past Bets#k#l\r\n";
+    msg += "#L5##bGame Guide & Rules#k#l\r\n";
 
     if (cm.getPlayer().isGM()) {
         msg += "#L99##k(GM Only) Force Today's Draw#l\r\n";
@@ -82,10 +81,13 @@ function action(mode, type, selection) {
                 return;
             case 3: // Quick Pick
                 isQuickPick = true;
-                cm.sendGetNumber("How many Quick Pick tickets? (" + formatNumber(TICKET_COST) + " NX each)", 1, 1, 100);
+                cm.sendGetNumber("Enter NX Amount per bet:", 100, 100, 1000000);
                 break;
             case 4: // Bet History
                 showBetHistory();
+                return;
+            case 5: // Guide
+                showGuide();
                 return;
             case 99:
                 FourDDrawScheduler.forceDrawToday();
@@ -98,11 +100,10 @@ function action(mode, type, selection) {
     // --- STEP 2: INPUT VALIDATION / MANUAL IBET PROMPT ---
     if (status === 2) {
         if (isQuickPick) {
-            ticketQty = selection;
-            var totalCost = ticketQty * TICKET_COST;
+            betAmount = selection;
             // Check NX (1 = Credit)
-            if (cm.getPlayer().getCSPoints(1) < totalCost) {
-                cm.sendOk("You need " + formatNumber(totalCost) + " NX.");
+            if (cm.getPlayer().getCSPoints(1) < betAmount) {
+                cm.sendOk("You need " + formatNumber(betAmount) + " NX.");
                 cm.dispose();
                 return;
             }
@@ -115,11 +116,12 @@ function action(mode, type, selection) {
                 return;
             }
             // NEW: iBet Prompt
+            var perms = getPermutations(manualNumber);
             var msg = "You entered #e" + manualNumber + "#n.\r\n";
-            msg += "Do you want this to be an #r#eiBet (System Entry)#n#k?\r\n\r\n";
-            msg += "#d(iBet covers all permutations, e.g. 1234 covers 4321. Prize is shared.)#k\r\n";
-            msg += "#L0#No, Direct Bet only (Exact Match)#l\r\n";
-            msg += "#L1#Yes, iBet (Any Order)#l";
+            msg += "Do you want this to be an #r#eiBet (System Entry)#n#k?\r\n";
+            msg += "(iBet covers all " + perms + " permutations. You pay for each one.)\r\n\r\n";
+            msg += "#L0#No, Direct Bet only (1 unit)#l\r\n";
+            msg += "#L1#Yes, iBet (System Entry - " + perms + " units)#l";
             cm.sendSimple(msg);
         }
     }
@@ -129,24 +131,25 @@ function action(mode, type, selection) {
         if (isQuickPick) {
             // EXECUTE QUICK PICK
             betType = (selection === 0) ? "BIG" : "SMALL";
-            var totalCost = ticketQty * TICKET_COST;
 
-            if (cm.getPlayer().getCSPoints(1) < totalCost) {
+            if (cm.getPlayer().getCSPoints(1) < betAmount) {
                 cm.sendOk("Not enough NX.");
                 cm.dispose();
                 return;
             }
 
-            cm.getPlayer().modifyCSPoints(1, -totalCost);
+            cm.getPlayer().modifyCSPoints(1, -betAmount);
 
             var picks = [];
-            for (var i = 0; i < ticketQty; i++) {
-                var num = generateRandomNumber();
-                picks.push(num);
-                // Quick Pick is always Direct (isIBet = false)
-                FourDBetManager.insertBet(cm.getPlayer().getId(), num, betType, currentDrawDate.toString(), "1", "NX", false);
-            }
-            cm.sendOk("Bought " + ticketQty + " Quick Picks for " + formatNumber(totalCost) + " NX.\r\nNumbers: #b" + picks.join(", ") + "#k");
+            // Single QP Ticket for now
+            var num = generateRandomNumber();
+            num = sortString(num); // Sort
+            picks.push(num);
+
+            // iBet is false for QP
+            FourDBetManager.insertBet(cm.getPlayer().getId(), num, betType, currentDrawDate.toString(), betAmount.toString(), "NX", false);
+
+            cm.sendOk("Placed Quick Pick bet on #e" + num + "#n for " + formatNumber(betAmount) + " NX.");
             cm.dispose();
         } else {
             // MANUAL: HANDLE IBET SELECTION -> ASK TYPE
@@ -161,15 +164,20 @@ function action(mode, type, selection) {
         if (!isQuickPick) {
             betType = (selection === 0) ? "BIG" : "SMALL";
             var typeStr = isIBet ? "iBet" : "Direct";
-            cm.sendGetNumber("How many tickets for " + manualNumber + " (" + typeStr + ")? (" + formatNumber(TICKET_COST) + " NX each)", 1, 1, 100);
+            cm.sendGetNumber("Enter NX amount base per unit:\r\n(If iBet, Total = Base x Permutations)", 100, 100, 1000000);
         }
     }
 
     // --- STEP 5: EXECUTE MANUAL ---
     if (status === 5) {
         if (!isQuickPick) {
-            ticketQty = selection;
-            var totalCost = ticketQty * TICKET_COST;
+            betAmount = selection;
+            var units = 1;
+            if (isIBet) {
+                units = getPermutations(manualNumber);
+            }
+
+            var totalCost = betAmount * units;
 
             if (cm.getPlayer().getCSPoints(1) < totalCost) {
                 cm.sendOk("Not enough NX. Need: " + formatNumber(totalCost));
@@ -185,13 +193,13 @@ function action(mode, type, selection) {
                 manualNumber,
                 betType,
                 currentDrawDate.toString(),
-                ticketQty.toString(),
+                betAmount.toString(),
                 "NX",
                 isIBet
             );
 
             var typeStr = isIBet ? "iBet" : "Direct";
-            cm.sendOk("Placed " + ticketQty + " " + typeStr + " bets on #e" + manualNumber + "#n for " + formatNumber(totalCost) + " NX.");
+            cm.sendOk("Placed " + typeStr + " bet on #e" + manualNumber + "#n.\r\nTotal Cost: " + formatNumber(totalCost) + " NX.");
             cm.dispose();
         }
     }
@@ -205,6 +213,7 @@ function claimPrize() {
         for (var i = 0; i < wins.size(); i++) {
             var row = wins.get(i);
             var prizeVal = row.get("prize_quantity");
+            // Ignore prize_item_id as NX rewards stay NX
             if (prizeVal > 0) {
                 total += prizeVal;
                 FourDBetManager.markBetClaimed(row.get("bet_id"));
@@ -232,7 +241,7 @@ function showBetHistory() {
     for (var i = 0; i < bets.size(); i++) {
         var b = bets.get(i);
         var ibetStr = b.get("is_ibet") ? "(iBet)" : "";
-        msg += "#b" + b.get("draw_date") + "#k | " + b.get("number") + " " + ibetStr + " | " + b.get("currency") + "\r\n";
+        msg += "#b" + b.get("draw_date") + "#k | " + b.get("number") + " " + ibetStr + " | " + formatNumber(b.get("amount")) + " " + b.get("currency") + "\r\n";
     }
     cm.sendOk(msg);
     cm.dispose();
@@ -240,3 +249,20 @@ function showBetHistory() {
 
 function generateRandomNumber() { return ("000" + Math.floor(Math.random() * 10000)).slice(-4); }
 function formatNumber(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+function sortString(str) { return str.split('').sort().join(''); }
+
+function getPermutations(number) {
+    var counts = {};
+    for (var i = 0; i < number.length; i++) {
+        var c = number.charAt(i);
+        counts[c] = (counts[c] || 0) + 1;
+    }
+    var unique = Object.keys(counts).length;
+    if (unique === 4) return 24;
+    if (unique === 3) return 12;
+    if (unique === 2) {
+        for (var k in counts) { if (counts[k] === 3) return 4; }
+        return 6;
+    }
+    return 1;
+}

@@ -21,11 +21,12 @@ public class FourDBetManager {
      * @param currencyType Currency used ("NX", "MESO", "BCOIN", etc.).
      * @param isIBet       True if this is a System Entry (permutation bet).
      */
-    public static void insertBet(int charId, String number, String type, String date, String amount, String currencyType, boolean isIBet) {
+    public static void insertBet(int charId, String number, String type, String date, String amount,
+            String currencyType, boolean isIBet) {
         String sql = "INSERT INTO 4d_bets (char_id, bet_number, bet_type, draw_date, amount, currency_type, is_ibet) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, charId);
             ps.setString(2, number);
@@ -36,6 +37,17 @@ public class FourDBetManager {
             ps.setInt(7, isIBet ? 1 : 0);
 
             ps.executeUpdate();
+
+            // --- BONUS POT ACCUMULATION ---
+            // 70% of the bet goes to the pot
+            long betAmount = Long.parseLong(amount.trim());
+            long potContribution = (long) (betAmount * 0.70);
+            if (potContribution > 0) {
+                // Determine pot key based on currency
+                String potKey = "4D_" + currencyType; // e.g., 4D_MESO, 4D_NX
+                GamblingPotManager.addToPot(potKey, potContribution);
+            }
+
         } catch (SQLException | NumberFormatException e) {
             System.out.println("[FourDBetManager] insertBet failed: " + e.getMessage());
         }
@@ -46,10 +58,11 @@ public class FourDBetManager {
      */
     public static List<Map<String, Object>> getUnclaimedWinningBets(int characterId, String currencyType) {
         List<Map<String, Object>> results = new ArrayList<>();
-        String sql = "SELECT bet_id, prize_quantity FROM 4d_bets WHERE char_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?";
+        // Select prize_item_id to distinguish between Currency (-1) and Items (3020002)
+        String sql = "SELECT bet_id, prize_quantity, prize_item_id FROM 4d_bets WHERE char_id = ? AND is_winner = 1 AND claimed = 0 AND currency_type = ?";
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, characterId);
             ps.setString(2, currencyType);
@@ -58,10 +71,12 @@ public class FourDBetManager {
                 while (rs.next()) {
                     Map<String, Object> row = new HashMap<>();
                     row.put("bet_id", rs.getInt("bet_id"));
-                    row.put("prize_quantity", rs.getInt("prize_quantity"));
+                    row.put("prize_quantity", rs.getLong("prize_quantity")); // Changed to getLong
+                    row.put("prize_item_id", rs.getInt("prize_item_id"));
                     results.add(row);
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -75,7 +90,7 @@ public class FourDBetManager {
         String sql = "UPDATE 4d_bets SET claimed = 1 WHERE bet_id = ?";
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, betId);
             ps.executeUpdate();
@@ -93,7 +108,7 @@ public class FourDBetManager {
                 "WHERE char_id = ? ORDER BY bet_id DESC LIMIT ?";
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, charId);
             ps.setInt(2, limit);
