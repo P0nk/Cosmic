@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class DcCommand extends Command {
     {
@@ -33,21 +34,22 @@ public class DcCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !dc <playername>");
             return;
         }
 
-        Character victim = c.getWorldServer().getPlayerStorage().getCharacterByName(params[0]);
+        String chrName = params[0];
+        Character victim = c.getWorldServer().getPlayerStorage().getCharacterByName(chrName);
         if (victim == null) {
-            victim = c.getChannelServer().getPlayerStorage().getCharacterByName(params[0]);
+            victim = c.getChannelServer().getPlayerStorage().getCharacterByName(chrName);
             if (victim == null) {
-                victim = player.getMap().getCharacterByName(params[0]);
+                victim = player.getMap().getCharacterByName(chrName);
                 if (victim != null) {
                     try {//sometimes bugged because the map = null
-                        victim.getClient().disconnect(true, false);
+                        ctx.transitionService().disconnect(victim.getClient(), true);
                         player.getMap().removePlayer(victim);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -60,6 +62,6 @@ public class DcCommand extends Command {
         if (player.gmLevel() < victim.gmLevel()) {
             victim = player;
         }
-        victim.getClient().disconnect(false, false);
+        ctx.transitionService().disconnect(victim.getClient(), false);
     }
 }

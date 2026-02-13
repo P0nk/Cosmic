@@ -55,8 +55,6 @@ import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
-import server.Shop;
-import server.ShopFactory;
 import server.TimerManager;
 import server.maps.AbstractMapObject;
 import server.maps.FieldLimit;
@@ -64,6 +62,9 @@ import server.maps.Kite;
 import server.maps.MapleMap;
 import server.maps.MapleTVEffect;
 import server.maps.PlayerShopItem;
+import server.shop.Shop;
+import server.shop.ShopFactory;
+import service.AccountService;
 import service.NoteService;
 import tools.PacketCreator;
 import tools.Pair;
@@ -71,17 +72,23 @@ import tools.Pair;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class UseCashItemHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(UseCashItemHandler.class);
+    private static final int MIU_MIU_SHOP_ID = 1338;
 
     private final NoteService noteService;
+    private final ShopFactory shopFactory;
+    private final AccountService accountService;
 
-    public UseCashItemHandler(NoteService noteService) {
+    public UseCashItemHandler(NoteService noteService, ShopFactory shopFactory, AccountService accountService) {
         this.noteService = noteService;
+        this.shopFactory = shopFactory;
+        this.accountService = accountService;
     }
 
     @Override
@@ -489,7 +496,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             remove(c, position, itemId);
             c.sendPacket(PacketCreator.enableActions());
         } else if (itemType == 543) {
-            if (itemId == ItemId.MAPLE_LIFE_B && !c.gainCharacterSlot()) {
+            if (itemId == ItemId.MAPLE_LIFE_B && !accountService.addChrSlot(c)) {
                 player.dropMessage(1, "You have already used up all 12 extra character slots.");
                 c.sendPacket(PacketCreator.enableActions());
                 return;
@@ -526,9 +533,9 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             }
         } else if (itemType == 545) { // MiuMiu's travel store
             if (player.getShop() == null) {
-                Shop shop = ShopFactory.getInstance().getShop(1338);
-                if (shop != null) {
-                    shop.sendShop(c);
+                Optional<Shop> shop = shopFactory.getShop(MIU_MIU_SHOP_ID);
+                if (shop.isPresent()) {
+                    shop.get().sendShop(c);
                     remove(c, position, itemId);
                 }
             } else {

@@ -26,6 +26,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.NpcId;
 import net.server.Server;
 import net.server.guild.GuildPackets;
@@ -39,7 +40,7 @@ public class RanksCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
 
         List<Pair<String, Integer>> worldRanking = Server.getInstance().getWorldPlayerRanking(player.getWorld());

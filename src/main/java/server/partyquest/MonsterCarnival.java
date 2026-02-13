@@ -2,7 +2,6 @@ package server.partyquest;
 
 import client.Character;
 import config.YamlConfig;
-import constants.string.LanguageConstants;
 import net.server.Server;
 import net.server.channel.Channel;
 import net.server.world.Party;
@@ -21,6 +20,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @author Drago (Dragohe4rt)
  */
 public class MonsterCarnival {
+    private static final String ENTRY_TEXT = "You can select \"Summon Monsters\", \"Ability\", or \"Protector\" as your tactic during the Monster Carnival. Use Tab and F1 ~ F12 for quick access!";
+    private static final String TIME_EXTENSION_TEXT = "The time has been extended.";
+
+    public static final String FIND_ERROR_TEXT = "We could not find a group in this room.\r\nProbably the group was scrapped inside the room!";
+    public static final String ENTER_LOBBY_TEXT = "You will now receive challenges from other groups. If you do not accept a challenge within 3 minutes, you will be taken out.";
+    public static final String PICK_ROOM_TEXT = "Sign up for the Monster Festival!\r\n";
+    public static final String LEADER_NOT_FOUND_TEXT = "Could not find the Leader.";
+    public static final String FACING_CHALLENGE_TEXT = "The group is currently facing a challenge.";
+    public static final String CANCELED_CHALLENGE_TEXT = "The group in the room canceled your challenge.";
 
     public static int D = 3;
     public static int C = 2;
@@ -60,7 +68,7 @@ public class MonsterCarnival {
                     mc.setTeam(0);
                     mc.setFestivalPoints(0);
                     mc.forceChangeMap(map, map.getPortal(redPortal));
-                    mc.dropMessage(6, LanguageConstants.getMessage(mc, LanguageConstants.CPQEntry));
+                    mc.dropMessage(6, ENTRY_TEXT);
                     if (p1.getLeader().getId() == mc.getId()) {
                         leader1 = mc;
                     }
@@ -74,7 +82,7 @@ public class MonsterCarnival {
                     mc.setTeam(1);
                     mc.setFestivalPoints(0);
                     mc.forceChangeMap(map, map.getPortal(bluePortal));
-                    mc.dropMessage(6, LanguageConstants.getMessage(mc, LanguageConstants.CPQEntry));
+                    mc.dropMessage(6, ENTRY_TEXT);
                     if (p2.getLeader().getId() == mc.getId()) {
                         leader2 = mc;
                     }
@@ -85,13 +93,13 @@ public class MonsterCarnival {
                 for (PartyCharacter mpc : p1.getMembers()) {
                     Character chr = mpc.getPlayer();
                     if (chr != null) {
-                        chr.dropMessage(5, LanguageConstants.getMessage(chr, LanguageConstants.CPQError));
+                        chr.dropMessage(5, "There was a problem. Please re-create a room.");
                     }
                 }
                 for (PartyCharacter mpc : p2.getMembers()) {
                     Character chr = mpc.getPlayer();
                     if (chr != null) {
-                        chr.dropMessage(5, LanguageConstants.getMessage(chr, LanguageConstants.CPQError));
+                        chr.dropMessage(5, "There was a problem. Please re-create a room.");
                     }
                 }
                 return;
@@ -129,16 +137,12 @@ public class MonsterCarnival {
             if (team == -1) {
                 team = 1;
             }
-            String teamS = "";
-            switch (team) {
-                case 0:
-                    teamS = LanguageConstants.getMessage(chrMap, LanguageConstants.CPQRed);
-                    break;
-                case 1:
-                    teamS = LanguageConstants.getMessage(chrMap, LanguageConstants.CPQBlue);
-                    break;
-            }
-            chrMap.dropMessage(5, teamS + LanguageConstants.getMessage(chrMap, LanguageConstants.CPQPlayerExit));
+            String teamName = switch (team) {
+                case 0 -> "Maple Red";
+                case 1 -> "Maple Blue";
+                default -> "";
+            };
+            chrMap.dropMessage(5, "%s left the Carnival of Monsters.".formatted(teamName));
         }
         earlyFinish();
     }
@@ -345,7 +349,7 @@ public class MonsterCarnival {
 
     private void extendTime() {
         for (Character chrMap : map.getAllPlayers()) {
-            chrMap.dropMessage(5, LanguageConstants.getMessage(chrMap, LanguageConstants.CPQExtendTime));
+            chrMap.dropMessage(5, TIME_EXTENSION_TEXT);
         }
         startTime = System.currentTimeMillis() + MINUTES.toMillis(3);
 

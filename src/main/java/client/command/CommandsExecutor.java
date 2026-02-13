@@ -24,7 +24,6 @@
 package client.command;
 
 import client.Client;
-import client.command.commands.gm0.ChangeLanguageCommand;
 import client.command.commands.gm0.DisposeCommand;
 import client.command.commands.gm0.DropLimitCommand;
 import client.command.commands.gm0.EnableAuthCommand;
@@ -38,7 +37,6 @@ import client.command.commands.gm0.MapOwnerClaimCommand;
 import client.command.commands.gm0.OnlineCommand;
 import client.command.commands.gm0.RanksCommand;
 import client.command.commands.gm0.RatesCommand;
-import client.command.commands.gm0.ReadPointsCommand;
 import client.command.commands.gm0.ReportBugCommand;
 import client.command.commands.gm0.ShowRatesCommand;
 import client.command.commands.gm0.StaffCommand;
@@ -106,8 +104,6 @@ import client.command.commands.gm3.FameCommand;
 import client.command.commands.gm3.FlyCommand;
 import client.command.commands.gm3.GiveMesosCommand;
 import client.command.commands.gm3.GiveNxCommand;
-import client.command.commands.gm3.GiveRpCommand;
-import client.command.commands.gm3.GiveVpCommand;
 import client.command.commands.gm3.HairCommand;
 import client.command.commands.gm3.HealMapCommand;
 import client.command.commands.gm3.HealPersonCommand;
@@ -189,15 +185,10 @@ import client.command.commands.gm6.EraseAllPNpcsCommand;
 import client.command.commands.gm6.GetAccCommand;
 import client.command.commands.gm6.MapPlayersCommand;
 import client.command.commands.gm6.SaveAllCommand;
-import client.command.commands.gm6.ServerAddChannelCommand;
-import client.command.commands.gm6.ServerAddWorldCommand;
-import client.command.commands.gm6.ServerRemoveChannelCommand;
-import client.command.commands.gm6.ServerRemoveWorldCommand;
 import client.command.commands.gm6.SetGmLevelCommand;
 import client.command.commands.gm6.ShutdownCommand;
 import client.command.commands.gm6.SpawnAllPNpcsCommand;
 import client.command.commands.gm6.SupplyRateCouponCommand;
-import client.command.commands.gm6.WarpWorldCommand;
 import constants.id.MapId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,16 +201,27 @@ import java.util.List;
 
 public class CommandsExecutor {
     private static final Logger log = LoggerFactory.getLogger(CommandsExecutor.class);
-    private static final CommandsExecutor instance = new CommandsExecutor();
     private static final char USER_HEADING = '@';
     private static final char GM_HEADING = '!';
 
     private final HashMap<String, Command> registeredCommands = new HashMap<>();
     private final List<Pair<List<String>, List<String>>> commandsNameDesc = new ArrayList<>();
+    private final CommandContext commandContext;
     private Pair<List<String>, List<String>> levelCommandsCursor;
 
-    public static CommandsExecutor getInstance() {
-        return instance;
+    public CommandsExecutor(CommandContext commandContext) {
+        this.commandContext = commandContext.with(this);
+        registerCommands();
+    }
+
+    private void registerCommands() {
+        registerLv0Commands();
+        registerLv1Commands();
+        registerLv2Commands();
+        registerLv3Commands();
+        registerLv4Commands();
+        registerLv5Commands();
+        registerLv6Commands();
     }
 
     public static boolean isCommand(Client client, String content) {
@@ -228,16 +230,6 @@ public class CommandsExecutor {
             return heading == USER_HEADING || heading == GM_HEADING;
         }
         return heading == USER_HEADING;
-    }
-
-    private CommandsExecutor() {
-        registerLv0Commands();
-        registerLv1Commands();
-        registerLv2Commands();
-        registerLv3Commands();
-        registerLv4Commands();
-        registerLv5Commands();
-        registerLv6Commands();
     }
 
     public List<Pair<List<String>, List<String>>> getGmCommands() {
@@ -287,7 +279,7 @@ public class CommandsExecutor {
             params = new String[]{};
         }
 
-        command.execute(client, params);
+        command.execute(client, params, commandContext);
         log.info("Chr {} used command {}", client.getPlayer().getName(), command.getClass().getSimpleName());
     }
 
@@ -347,14 +339,12 @@ public class CommandsExecutor {
         addCommand("uptime", UptimeCommand.class);
         addCommand("gacha", GachaCommand.class);
         addCommand("dispose", DisposeCommand.class);
-        addCommand("changel", ChangeLanguageCommand.class);
         addCommand("equiplv", EquipLvCommand.class);
         addCommand("showrates", ShowRatesCommand.class);
         addCommand("rates", RatesCommand.class);
         addCommand("online", OnlineCommand.class);
         addCommand("gm", GmCommand.class);
         addCommand("reportbug", ReportBugCommand.class);
-        addCommand("points", ReadPointsCommand.class);
         addCommand("joinevent", JoinEventCommand.class);
         addCommand("leaveevent", LeaveEventCommand.class);
         addCommand("ranks", RanksCommand.class);
@@ -454,9 +444,7 @@ public class CommandsExecutor {
         addCommand("togglewhitechat", 3, ChatCommand.class);
         addCommand("fame", 3, FameCommand.class);
         addCommand("givenx", 3, GiveNxCommand.class);
-        addCommand("givevp", 3, GiveVpCommand.class);
         addCommand("givems", 3, GiveMesosCommand.class);
-        addCommand("giverp", 3, GiveRpCommand.class);
         addCommand("expeds", 3, ExpedsCommand.class);
         addCommand("kill", 3, KillCommand.class);
         addCommand("seed", 3, SeedCommand.class);
@@ -542,7 +530,6 @@ public class CommandsExecutor {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
 
         addCommand("setgmlevel", 6, SetGmLevelCommand.class);
-        addCommand("warpworld", 6, WarpWorldCommand.class);
         addCommand("saveall", 6, SaveAllCommand.class);
         addCommand("dcall", 6, DCAllCommand.class);
         addCommand("mapplayers", 6, MapPlayersCommand.class);
@@ -553,10 +540,6 @@ public class CommandsExecutor {
         addCommand("supplyratecoupon", 6, SupplyRateCouponCommand.class);
         addCommand("spawnallpnpcs", 6, SpawnAllPNpcsCommand.class);
         addCommand("eraseallpnpcs", 6, EraseAllPNpcsCommand.class);
-        addCommand("addchannel", 6, ServerAddChannelCommand.class);
-        addCommand("addworld", 6, ServerAddWorldCommand.class);
-        addCommand("removechannel", 6, ServerRemoveChannelCommand.class);
-        addCommand("removeworld", 6, ServerRemoveWorldCommand.class);
         addCommand("devtest", 6, DevtestCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);

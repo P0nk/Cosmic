@@ -59,6 +59,7 @@ import constants.skills.Buccaneer;
 import constants.skills.ChiefBandit;
 import constants.skills.Corsair;
 import constants.skills.ThunderBreaker;
+import database.monsterbook.MonsterCard;
 import net.encryption.InitializationVector;
 import net.opcodes.SendOpcode;
 import net.packet.ByteBufOutPacket;
@@ -86,7 +87,6 @@ import server.CashShop.SpecialCashItem;
 import server.DueyPackage;
 import server.ItemInformationProvider;
 import server.MTSItemInfo;
-import server.ShopItem;
 import server.Trade;
 import server.events.gm.Snowball;
 import server.life.MobSkill;
@@ -109,6 +109,7 @@ import server.maps.PlayerShopItem;
 import server.maps.Reactor;
 import server.maps.Summon;
 import server.movement.LifeMovementFragment;
+import server.shop.ShopItem;
 
 import java.awt.*;
 import java.net.InetAddress;
@@ -569,12 +570,12 @@ public class PacketCreator {
     private static void addMonsterBookInfo(OutPacket p, Character chr) {
         p.writeInt(chr.getMonsterBookCover()); // cover
         p.writeByte(0);
-        Map<Integer, Integer> cards = chr.getMonsterBook().getCards();
+        List<MonsterCard> cards = chr.getMonsterBook().getCards();
         p.writeShort(cards.size());
-        for (Entry<Integer, Integer> all : cards.entrySet()) {
-            p.writeShort(all.getKey() % 10000); // Id
-            p.writeByte(all.getValue()); // Level
-        }
+        cards.forEach(card -> {
+            p.writeShort(card.cardId() % 10000);
+            p.writeByte(card.level());
+        });
     }
 
     public static Packet sendGuestTOS() {
@@ -682,17 +683,35 @@ public class PacketCreator {
         return p;
     }
 
+    /**
+     * @param reason
+     * 0: "This is an ID that has been deleted or blocked from connection. Please check again."
+     * 1: "You account has been blocked for hacking or illegal use of third-party programs. (...)"
+     * 2: "Your account has been blocked for using macro / auto-keyboard. (...)"
+     * 3: "Your account has been blocked for illicit promotion and advertising. (...)"
+     * 4: "Your account has been blocked for harassment. (...)"
+     * 5: "Your account has been blocked for using profane language. (...)"
+     * 6: "Your account has been blocked for scamming. (...)"
+     * 7: "Your account has been blocked for misconduct. (...)"
+     * 8: "Your account has been blocked for illegal cash transaction. (...)"
+     * 9: "Your account has been blocked for illegal charging/funding. Please contact customer support for further details. (...)"
+     * 10: "Your account has been blocked for temporary request. Please contact customer support for further details. (...)"
+     * 11: "Your account has been blocked for impersonating GM. (...)"
+     * 12: "Your account has been blocked for using illegal programs or violating the game policy. (...)"
+     * 13: "Your account has been blocked for one of cursing, scamming, or illegal trading via Megaphones. (...)"
+     * 14+ "The ID has been permanently blocked. So YOu won't be able to use this account."
+     */
     public static Packet getPermBan(byte reason) {
         final OutPacket p = OutPacket.create(SendOpcode.LOGIN_STATUS);
         p.writeByte(2); // Account is banned
         p.writeByte(0);
         p.writeInt(0);
-        p.writeByte(0);
+        p.writeByte(reason);
         p.writeLong(getTime(-1));
         return p;
     }
 
-    public static Packet getTempBan(long timestampTill, byte reason) {
+    public static Packet getTempBan(byte reason, long timestampTill) {
         OutPacket p = OutPacket.create(SendOpcode.LOGIN_STATUS);
         p.writeByte(2);
         p.writeByte(0);
@@ -901,14 +920,11 @@ public class PacketCreator {
      * <br> 17: Wrong gateway or personal info<br>
      * <br> 21: Verify account via email<br>
      */
-    public static Packet getCharList(Client c, int serverId, int status) {
+    public static Packet getCharList(Client c, List<Character> chars, int status) {
         final OutPacket p = OutPacket.create(SendOpcode.CHARLIST);
         p.writeByte(status);
-        List<Character> chars = c.loadCharacters(serverId);
         p.writeByte((byte) chars.size());
-        for (Character chr : chars) {
-            addCharEntry(p, chr, false);
-        }
+        chars.forEach(chr -> addCharEntry(p, chr, false));
 
         p.writeByte(YamlConfig.config.server.ENABLE_PIC && !c.canBypassPic() ? (c.getPic() == null || c.getPic().equals("") ? 0 : 1) : 2);
         p.writeInt(YamlConfig.config.server.COLLECTIVE_CHARSLOT ? chars.size() + c.getAvailableCharacterSlots() : c.getCharacterSlots());
@@ -2425,19 +2441,19 @@ public class PacketCreator {
         p.writeInt(sid);
         p.writeShort(items.size()); // item count
         for (ShopItem item : items) {
-            p.writeInt(item.getItemId());
-            p.writeInt(item.getPrice());
-            p.writeInt(item.getPrice() == 0 ? item.getPitch() : 0); //Perfect Pitch
+            p.writeInt(item.itemId());
+            p.writeInt(item.price());
+            p.writeInt(item.price() == 0 ? item.pitch() : 0); //Perfect Pitch
             p.writeInt(0); //Can be used x minutes after purchase
             p.writeInt(0); //Hmm
-            if (!ItemConstants.isRechargeable(item.getItemId())) {
+            if (!ItemConstants.isRechargeable(item.itemId())) {
                 p.writeShort(1); // stacksize o.o
-                p.writeShort(item.getBuyable());
+                p.writeShort(item.buyable());
             } else {
                 p.writeShort(0);
                 p.writeInt(0);
-                p.writeShort(doubleToShortBits(ii.getUnitPrice(item.getItemId())));
-                p.writeShort(ii.getSlotMax(c, item.getItemId()));
+                p.writeShort(doubleToShortBits(ii.getUnitPrice(item.itemId())));
+                p.writeShort(ii.getSlotMax(c, item.itemId()));
             }
         }
         return p;
@@ -2797,8 +2813,8 @@ public class PacketCreator {
 
         MonsterBook book = chr.getMonsterBook();
         p.writeInt(book.getBookLevel());
-        p.writeInt(book.getNormalCard());
-        p.writeInt(book.getSpecialCard());
+        p.writeInt(book.getNormalCards());
+        p.writeInt(book.getSpecialCards());
         p.writeInt(book.getTotalCards());
         p.writeInt(chr.getMonsterBookCover() > 0 ? ItemInformationProvider.getInstance().getCardMobId(chr.getMonsterBookCover()) : 0);
         Item medal = chr.getInventory(InventoryType.EQUIPPED).getItem((short) -49);
@@ -6041,13 +6057,29 @@ public class PacketCreator {
         return p;
     }
 
-    public static Packet showGainCard() {
+    public static Packet addMonsterCard(MonsterCard monsterCard) {
+        OutPacket p = OutPacket.create(SendOpcode.MONSTER_BOOK_SET_CARD);
+        p.writeBool(true);
+        p.writeInt(monsterCard.cardId());
+        p.writeInt(monsterCard.level());
+        return p;
+    }
+
+    public static Packet addMonsterCardAlreadyFull() {
+        OutPacket p = OutPacket.create(SendOpcode.MONSTER_BOOK_SET_CARD);
+        p.writeBool(false);
+        return p;
+    }
+
+
+
+    public static Packet showMonsterCardEffect() {
         OutPacket p = OutPacket.create(SendOpcode.SHOW_ITEM_GAIN_INCHAT);
         p.writeByte(0x0D);
         return p;
     }
 
-    public static Packet showForeignCardEffect(int id) {
+    public static Packet showForeignMonsterCardEffect(int id) {
         OutPacket p = OutPacket.create(SendOpcode.SHOW_FOREIGN_EFFECT);
         p.writeInt(id);
         p.writeByte(0x0D);

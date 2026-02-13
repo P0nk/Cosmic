@@ -30,13 +30,13 @@ import java.util.Map;
 /**
  * @author Ronan
  */
-public class LootInventory {
-    Map<Integer, Integer> items = new HashMap<>(50);
+class LootInventory {
+    private final Map<Integer, Integer> items = new HashMap<>(50);
 
-    public LootInventory(Character from) {
-        for (InventoryType values : InventoryType.values()) {
+    LootInventory(Character from) {
+        for (InventoryType invType : InventoryType.values()) {
 
-            for (Item it : from.getInventory(values).list()) {
+            for (Item it : from.getInventory(invType).list()) {
                 Integer itemQty = items.get(it.getItemId());
 
                 if (itemQty == null) {
@@ -48,9 +48,9 @@ public class LootInventory {
         }
     }
 
-    public int hasItem(int itemid, int quantity) {
-        Integer itemQty = items.get(itemid);
-        return itemQty == null ? 0 : itemQty >= quantity ? 2 : itemQty > 0 ? 1 : 0;
+    boolean hasItem(int itemId, int quantity) {
+        Integer itemQty = items.get(itemId);
+        return itemQty != null && itemQty >= quantity;
     }
 
 }

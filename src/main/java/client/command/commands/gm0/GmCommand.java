@@ -26,6 +26,7 @@ package client.command.commands.gm0;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ public class GmCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(GmCommand.class);
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         String[] tips = {
                 "Please only use @gm in emergencies or to report somebody.",
                 "To report a bug or make a suggestion, use the forum.",

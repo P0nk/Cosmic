@@ -25,6 +25,7 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -37,7 +38,7 @@ public class TimeCommand extends Command {
     }
 
     @Override
-    public void execute(Client client, String[] params) {
+    public void execute(Client client, String[] params, CommandContext ctx) {
         DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
         dateFormat.setTimeZone(TimeZone.getDefault());
         client.getPlayer().yellowMessage("Cosmic Server Time: " + dateFormat.format(new Date()));

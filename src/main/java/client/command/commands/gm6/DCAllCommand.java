@@ -26,6 +26,7 @@ package client.command.commands.gm6;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import net.server.world.World;
 
@@ -35,12 +36,12 @@ public class DCAllCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (World world : Server.getInstance().getWorlds()) {
             for (Character chr : world.getPlayerStorage().getAllCharacters()) {
                 if (!chr.isGM()) {
-                    chr.getClient().disconnect(false, false);
+                    ctx.transitionService().disconnect(chr.getClient(), false);
                 }
             }
         }

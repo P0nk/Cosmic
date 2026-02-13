@@ -44,7 +44,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Party {
 
-    private int id;
+    private final int id;
     private Party enemy = null;
     private int leaderId;
     private final List<PartyCharacter> members = new LinkedList<>();
@@ -171,10 +171,6 @@ public class Party {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getLeaderId() {

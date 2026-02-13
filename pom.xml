@@ -69,6 +69,11 @@
         <liquibase-core.version>4.32.0</liquibase-core.version> <!-- Database migrations -->
         <junit.version>5.13.1</junit.version> <!-- Unit test -->
         <mockito.version>5.18.0</mockito.version> <!-- Unit test -->
+        <testcontainers.version>1.20.1</testcontainers.version> <!-- Docker test with real temporary database -->
+        <postgresql.version>42.5.4</postgresql.version> <!-- PostgreSQL JDBC driver -->
+        <flyway.version>9.15.1</flyway.version> <!-- Database migration -->
+        <caffeine.version>3.1.4</caffeine.version> <!-- Caching -->
+        <lombok.version>1.18.34</lombok.version> <!-- Code generation -->
     </properties>
 
     <dependencies>
@@ -81,6 +86,17 @@
             <groupId>net.jcip</groupId>
             <artifactId>jcip-annotations</artifactId>
             <version>${jcip-annotations.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Database -->
@@ -95,9 +111,19 @@
             <version>${mysql-connector-j.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-core</artifactId>
             <version>${jdbi-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
@@ -192,6 +218,25 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 

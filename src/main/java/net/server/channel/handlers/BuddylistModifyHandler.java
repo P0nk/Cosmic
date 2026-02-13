@@ -26,8 +26,8 @@ import client.BuddyList.BuddyAddResult;
 import client.BuddyList.BuddyOperation;
 import client.BuddylistEntry;
 import client.Character;
-import client.CharacterNameAndId;
 import client.Client;
+import model.CharacterIdentity;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.world.World;
@@ -42,28 +42,24 @@ import java.sql.SQLException;
 import static client.BuddyList.BuddyOperation.ADDED;
 
 public class BuddylistModifyHandler extends AbstractPacketHandler {
-    private static class CharacterIdNameBuddyCapacity extends CharacterNameAndId {
-        private final int buddyCapacity;
 
-        public CharacterIdNameBuddyCapacity(int id, String name, int buddyCapacity) {
-            super(id, name);
-            this.buddyCapacity = buddyCapacity;
-        }
-
-        public int getBuddyCapacity() {
-            return buddyCapacity;
+    private record BuddyIdentity(String name, int id, int buddyCapacity) {
+        public BuddyIdentity {
+            if (name == null) {
+                throw new IllegalArgumentException("name must not be null");
+            }
         }
     }
 
     private void nextPendingRequest(Client c) {
-        CharacterNameAndId pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
+        CharacterIdentity pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
         if (pendingBuddyRequest != null) {
-            c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.getId(), c.getPlayer().getId(), pendingBuddyRequest.getName()));
+            c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.id(), c.getPlayer().getId(), pendingBuddyRequest.name()));
         }
     }
 
-    private CharacterIdNameBuddyCapacity getCharacterIdAndNameFromDatabase(String name) throws SQLException {
-        CharacterIdNameBuddyCapacity ret = null;
+    private BuddyIdentity getBuddyIdentityFromDatabase(String name) throws SQLException {
+        BuddyIdentity buddyIdentity = null;
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT id, name, buddyCapacity FROM characters WHERE name LIKE ?")) {
@@ -71,12 +67,15 @@ public class BuddylistModifyHandler extends AbstractPacketHandler {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    ret = new CharacterIdNameBuddyCapacity(rs.getInt("id"), rs.getString("name"), rs.getInt("buddyCapacity"));
+                    String actualName = rs.getString("name");
+                    int id = rs.getInt("id");
+                    int buddyCapacity = rs.getInt("buddyCapacity");
+                    buddyIdentity = new BuddyIdentity(actualName, id, buddyCapacity);
                 }
             }
         }
 
-        return ret;
+        return buddyIdentity;
     }
 
     @Override
@@ -98,68 +97,68 @@ public class BuddylistModifyHandler extends AbstractPacketHandler {
             } else if (ble == null) {
                 try {
                     World world = c.getWorldServer();
-                    CharacterIdNameBuddyCapacity charWithId;
+                    final BuddyIdentity buddyIdentity;
                     int channel;
                     Character otherChar = c.getChannelServer().getPlayerStorage().getCharacterByName(addName);
                     if (otherChar != null) {
                         channel = c.getChannel();
-                        charWithId = new CharacterIdNameBuddyCapacity(otherChar.getId(), otherChar.getName(), otherChar.getBuddylist().getCapacity());
+                        buddyIdentity = new BuddyIdentity(otherChar.getName(), otherChar.getId(), otherChar.getBuddylist().getCapacity());
                     } else {
                         channel = world.find(addName);
-                        charWithId = getCharacterIdAndNameFromDatabase(addName);
+                        buddyIdentity = getBuddyIdentityFromDatabase(addName);
                     }
-                    if (charWithId != null) {
-                        BuddyAddResult buddyAddResult = null;
-                        if (channel != -1) {
-                            buddyAddResult = world.requestBuddyAdd(addName, c.getChannel(), player.getId(), player.getName());
-                        } else {
-                            try (Connection con = DatabaseConnection.getConnection()) {
-                                try (PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) as buddyCount FROM buddies WHERE characterid = ? AND pending = 0")) {
-                                    ps.setInt(1, charWithId.getId());
-
-                                    try (ResultSet rs = ps.executeQuery()) {
-                                        if (!rs.next()) {
-                                            throw new RuntimeException("Result set expected");
-                                        } else if (rs.getInt("buddyCount") >= charWithId.getBuddyCapacity()) {
-                                            buddyAddResult = BuddyAddResult.BUDDYLIST_FULL;
-                                        }
-                                    }
-                                }
-
-                                try (PreparedStatement ps = con.prepareStatement("SELECT pending FROM buddies WHERE characterid = ? AND buddyid = ?")) {
-                                    ps.setInt(1, charWithId.getId());
-                                    ps.setInt(2, player.getId());
-
-                                    try (ResultSet rs = ps.executeQuery()) {
-                                        if (rs.next()) {
-                                            buddyAddResult = BuddyAddResult.ALREADY_ON_LIST;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (buddyAddResult == BuddyAddResult.BUDDYLIST_FULL) {
-                            c.sendPacket(PacketCreator.serverNotice(1, "\"" + addName + "\"'s Buddylist is full"));
-                        } else {
-                            int displayChannel;
-                            displayChannel = -1;
-                            int otherCid = charWithId.getId();
-                            if (buddyAddResult == BuddyAddResult.ALREADY_ON_LIST && channel != -1) {
-                                displayChannel = channel;
-                                notifyRemoteChannel(c, channel, otherCid, ADDED);
-                            } else if (buddyAddResult != BuddyAddResult.ALREADY_ON_LIST && channel == -1) {
-                                try (Connection con = DatabaseConnection.getConnection();
-                                     PreparedStatement ps = con.prepareStatement("INSERT INTO buddies (characterid, `buddyid`, `pending`) VALUES (?, ?, 1)")) {
-                                    ps.setInt(1, charWithId.getId());
-                                    ps.setInt(2, player.getId());
-                                    ps.executeUpdate();
-                                }
-                            }
-                            buddylist.put(new BuddylistEntry(charWithId.getName(), group, otherCid, displayChannel, true));
-                            c.sendPacket(PacketCreator.updateBuddylist(buddylist.getBuddies()));
-                        }
-                    } else {
+                    if (buddyIdentity == null) {
                         c.sendPacket(PacketCreator.serverNotice(1, "A character called \"" + addName + "\" does not exist"));
+                        return;
+                    }
+                    BuddyAddResult buddyAddResult = null;
+                    if (channel != -1) {
+                        buddyAddResult = world.requestBuddyAdd(addName, c.getChannel(), player.getId(), player.getName());
+                    } else {
+                        try (Connection con = DatabaseConnection.getConnection()) {
+                            try (PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) as buddyCount FROM buddies WHERE characterid = ? AND pending = 0")) {
+                                ps.setInt(1, buddyIdentity.id());
+
+                                try (ResultSet rs = ps.executeQuery()) {
+                                    if (!rs.next()) {
+                                        throw new RuntimeException("Result set expected");
+                                    } else if (rs.getInt("buddyCount") >= buddyIdentity.buddyCapacity()) {
+                                        buddyAddResult = BuddyAddResult.BUDDYLIST_FULL;
+                                    }
+                                }
+                            }
+
+                            try (PreparedStatement ps = con.prepareStatement("SELECT pending FROM buddies WHERE characterid = ? AND buddyid = ?")) {
+                                ps.setInt(1, buddyIdentity.id());
+                                ps.setInt(2, player.getId());
+
+                                try (ResultSet rs = ps.executeQuery()) {
+                                    if (rs.next()) {
+                                        buddyAddResult = BuddyAddResult.ALREADY_ON_LIST;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (buddyAddResult == BuddyAddResult.BUDDYLIST_FULL) {
+                        c.sendPacket(PacketCreator.serverNotice(1, "\"" + addName + "\"'s Buddylist is full"));
+                    } else {
+                        int displayChannel;
+                        displayChannel = -1;
+                        int otherCid = buddyIdentity.id();
+                        if (buddyAddResult == BuddyAddResult.ALREADY_ON_LIST && channel != -1) {
+                            displayChannel = channel;
+                            notifyRemoteChannel(c, channel, otherCid, ADDED);
+                        } else if (buddyAddResult != BuddyAddResult.ALREADY_ON_LIST && channel == -1) {
+                            try (Connection con = DatabaseConnection.getConnection();
+                                 PreparedStatement ps = con.prepareStatement("INSERT INTO buddies (characterid, `buddyid`, `pending`) VALUES (?, ?, 1)")) {
+                                ps.setInt(1, buddyIdentity.id());
+                                ps.setInt(2, player.getId());
+                                ps.executeUpdate();
+                            }
+                        }
+                        buddylist.put(new BuddylistEntry(buddyIdentity.name(), group, otherCid, displayChannel, true));
+                        c.sendPacket(PacketCreator.updateBuddylist(buddylist.getBuddies()));
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();

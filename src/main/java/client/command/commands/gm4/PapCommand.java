@@ -26,6 +26,7 @@ package client.command.commands.gm4;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.MobId;
 import server.life.LifeFactory;
 
@@ -35,7 +36,7 @@ public class PapCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
 
         // thanks Conrad for noticing mobid typo here

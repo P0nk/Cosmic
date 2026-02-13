@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class UnJailCommand extends Command {
     {
@@ -33,7 +34,7 @@ public class UnJailCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !unjail <playername>");

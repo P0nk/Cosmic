@@ -25,6 +25,7 @@ package client.command.commands.gm5;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import config.YamlConfig;
 
 public class ShowPacketsCommand extends Command {
@@ -33,7 +34,7 @@ public class ShowPacketsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         YamlConfig.config.server.USE_DEBUG_SHOW_RCVD_PACKET = !YamlConfig.config.server.USE_DEBUG_SHOW_RCVD_PACKET;
     }
 }

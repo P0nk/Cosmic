@@ -23,7 +23,7 @@ package server.life;
 /**
  * @author LightPepsi
  */
-
+// TODO: replace this with MonsterDrop everywhere, which is immutable and therefore threadsafe
 public class MonsterDropEntry {
     public MonsterDropEntry(int itemId, int chance, int Minimum, int Maximum, short questid) {
         this.itemId = itemId;

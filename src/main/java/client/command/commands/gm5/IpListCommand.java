@@ -22,6 +22,7 @@ package client.command.commands.gm5;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.game.GameConstants;
 import net.server.Server;
 import net.server.world.World;
@@ -39,7 +40,7 @@ public class IpListCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         String str = "Player-IP relation:";
 
         for (World w : Server.getInstance().getWorlds()) {

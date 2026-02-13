@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import client.inventory.InventoryType;
 import client.inventory.Item;
 import constants.inventory.ItemConstants;
@@ -37,7 +38,7 @@ public class RechargeCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         for (Item torecharge : c.getPlayer().getInventory(InventoryType.USE).list()) {

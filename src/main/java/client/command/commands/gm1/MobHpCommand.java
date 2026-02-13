@@ -26,6 +26,7 @@ package client.command.commands.gm1;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.life.Monster;
 
 public class MobHpCommand extends Command {
@@ -34,7 +35,7 @@ public class MobHpCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (Monster monster : player.getMap().getAllMonsters()) {
             if (monster != null && monster.getHp() > 0) {

@@ -7,6 +7,7 @@ package client.autoban;
 
 import client.Character;
 import config.YamlConfig;
+import net.netty.GameViolationException;
 import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,35 +36,27 @@ public class AutobanManager {
         this.chr = chr;
     }
 
-    public void addPoint(AutobanFactory fac, String reason) {
-        if (YamlConfig.config.server.USE_AUTOBAN) {
-            if (chr.isGM() || chr.isBanned()) {
-                return;
-            }
-
-            if (lastTime.containsKey(fac)) {
-                if (lastTime.get(fac) < (Server.getInstance().getCurrentTime() - fac.getExpire())) {
-                    points.put(fac, points.get(fac) / 2); //So the points are not completely gone.
-                }
-            }
-            if (fac.getExpire() != -1) {
-                lastTime.put(fac, Server.getInstance().getCurrentTime());
-            }
-
-            if (points.containsKey(fac)) {
-                points.put(fac, points.get(fac) + 1);
-            } else {
-                points.put(fac, 1);
-            }
-
-            if (points.get(fac) >= fac.getMaximum()) {
-                chr.autoban(reason);
+    /**
+     * @return true if the added point should result in an autoban
+     */
+    public boolean addPoint(AutobanFactory fac) {
+        if (lastTime.containsKey(fac)) {
+            if (lastTime.get(fac) < (Server.getInstance().getCurrentTime() - fac.getExpire())) {
+                points.put(fac, points.get(fac) / 2); //So the points are not completely gone.
             }
         }
-        if (YamlConfig.config.server.USE_AUTOBAN_LOG) {
-            // Lets log every single point too.
-            log.info("Autoban - chr {} caused {} {}", Character.makeMapleReadable(chr.getName()), fac.name(), reason);
+
+        if (fac.getExpire() != -1) {
+            lastTime.put(fac, Server.getInstance().getCurrentTime());
         }
+
+        if (points.containsKey(fac)) {
+            points.put(fac, points.get(fac) + 1);
+        } else {
+            points.put(fac, 1);
+        }
+
+        return points.get(fac) >= fac.getMaximum();
     }
 
     public void addMiss() {
@@ -118,11 +111,10 @@ public class AutobanManager {
         if (this.timestamp[type] == time) {
             this.timestampcounter[type]++;
             if (this.timestampcounter[type] >= times) {
-                if (YamlConfig.config.server.USE_AUTOBAN) {
-                    chr.getClient().disconnect(false, false);
-                }
-
                 log.info("Autoban - Chr {} was caught spamming TYPE {} and has been disconnected", chr, type);
+                if (YamlConfig.config.server.USE_AUTOBAN) {
+                    throw new GameViolationException("Auto ban");
+                }
             }
         } else {
             this.timestamp[type] = time;

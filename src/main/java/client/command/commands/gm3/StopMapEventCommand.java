@@ -25,6 +25,7 @@ package client.command.commands.gm3;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class StopMapEventCommand extends Command {
     {
@@ -32,7 +33,7 @@ public class StopMapEventCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         c.getPlayer().getMap().setEventStarted(false);
     }
 }

@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import client.inventory.Pet;
 import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
@@ -40,7 +41,7 @@ public class ItemCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
 
         if (params.length < 1) {

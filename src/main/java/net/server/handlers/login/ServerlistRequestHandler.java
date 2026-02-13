@@ -29,17 +29,12 @@ import net.server.Server;
 import net.server.world.World;
 import tools.PacketCreator;
 
-import java.util.List;
-
 public final class ServerlistRequestHandler extends AbstractPacketHandler {
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
         Server server = Server.getInstance();
-        List<World> worlds = server.getWorlds();
-        c.requestedServerlist(worlds.size());
-
-        for (World world : worlds) {
+        for (World world : server.getWorlds()) {
             c.sendPacket(PacketCreator.getServerList(world.getId(), GameConstants.WORLD_NAMES[world.getId()], world.getFlag(), world.getEventMessage(), world.getChannels()));
         }
         c.sendPacket(PacketCreator.getEndOfServerList());

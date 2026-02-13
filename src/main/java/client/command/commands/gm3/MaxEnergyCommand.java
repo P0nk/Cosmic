@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import tools.PacketCreator;
 
 public class MaxEnergyCommand extends Command {
@@ -34,7 +35,7 @@ public class MaxEnergyCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         c.getPlayer().setDojoEnergy(10000);
         c.sendPacket(PacketCreator.getEnergy("energy", 10000));

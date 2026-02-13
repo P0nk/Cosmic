@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * @author Matze
  */
@@ -60,29 +62,34 @@ public class NPCScriptManager extends AbstractScriptManager {
         return engine != null;
     }
 
-    public boolean start(Client c, int npc, Character chr) {
-        return start(c, npc, -1, chr);
+    public void start(Client c, int npc) {
+        start(c, npc, -1, null);
     }
 
     public boolean start(Client c, int npc, int oid, Character chr) {
-        return start(c, npc, oid, null, chr);
+        return startNpcScript(c, npc, oid, null, chr, emptyMap());
     }
 
-    public boolean start(Client c, int npc, String fileName, Character chr) {
-        return start(c, npc, -1, fileName, chr);
+    public boolean start(Client c, int npc, String fileName) {
+        return startNpcScript(c, npc, -1, fileName, null, emptyMap());
     }
 
-    public boolean start(Client c, int npc, int oid, String fileName, Character chr) {
-        return start(c, npc, oid, fileName, chr, false, "cm");
+    public void startWithBindings(Client c, int npc, String fileName, Map<String, Object> bindings) {
+        startNpcScript(c, npc, -1, fileName, null, bindings);
     }
 
-    public boolean start(Client c, ScriptedItem scriptItem, Character chr) {
-        return start(c, scriptItem.getNpc(), -1, scriptItem.getScript(), chr, true, "im");
+    private boolean startNpcScript(Client c, int npc, int oid, String fileName, Character chr,
+                                   Map<String, Object> additionalBindings) {
+        return startWithBindings(c, npc, oid, fileName, chr, false, "cm", additionalBindings);
     }
 
-    public void start(String filename, Client c, int npc, List<PartyCharacter> chrs) {
+    public boolean startItemScript(Client c, ScriptedItem scriptItem) {
+        return startWithBindings(c, scriptItem.getNpc(), -1, scriptItem.getScript(), null, true, "im", emptyMap());
+    }
+
+    public void startCpqScript(String filename, Client c, int npc, List<PartyCharacter> chrs) {
         try {
-            final NPCConversationManager cm = new NPCConversationManager(c, npc, chrs, true);
+            final NPCConversationManager cm = new NPCConversationManager(c, npc);
             cm.dispose();
             if (cms.containsKey(c)) {
                 return;
@@ -111,7 +118,8 @@ public class NPCScriptManager extends AbstractScriptManager {
         }
     }
 
-    private boolean start(Client c, int npc, int oid, String fileName, Character chr, boolean itemScript, String engineName) {
+    private boolean startWithBindings(Client c, int npc, int oid, String fileName, Character chr, boolean itemScript,
+                                      String engineName, Map<String, Object> bindings) {
         try {
             final NPCConversationManager cm = new NPCConversationManager(c, npc, oid, fileName, itemScript);
             if (cms.containsKey(c)) {
@@ -138,6 +146,7 @@ public class NPCScriptManager extends AbstractScriptManager {
                     return false;
                 }
                 engine.put(engineName, cm);
+                bindings.forEach(engine::put);
 
                 Invocable iv = (Invocable) engine;
                 scripts.put(c, iv);
@@ -165,16 +174,18 @@ public class NPCScriptManager extends AbstractScriptManager {
 
     public void action(Client c, byte mode, byte type, int selection) {
         Invocable iv = scripts.get(c);
-        if (iv != null) {
-            try {
-                c.setClickedNPC();
-                iv.invokeFunction("action", mode, type, selection);
-            } catch (ScriptException | NoSuchMethodException t) {
-                if (getCM(c) != null) {
-                    log.error("Error performing NPC script action for npc: {}", getCM(c).getNpc(), t);
-                }
-                dispose(c);
+        if (iv == null) {
+            return;
+        }
+
+        try {
+            c.setClickedNPC();
+            iv.invokeFunction("action", mode, type, selection);
+        } catch (ScriptException | NoSuchMethodException t) {
+            if (getCM(c) != null) {
+                log.error("Error performing NPC script action for npc: {}", getCM(c).getNpc(), t);
             }
+            dispose(c);
         }
     }
 

@@ -25,15 +25,17 @@ package client.command.commands.gm2;
 
 import client.Client;
 import client.command.Command;
-import server.ShopFactory;
+import client.command.CommandContext;
 
 public class GmShopCommand extends Command {
     {
         setDescription("Open the GM shop.");
     }
 
+    private static final int GM_SHOP_ID = 1337;
+
     @Override
-    public void execute(Client c, String[] params) {
-        ShopFactory.getInstance().getShop(1337).sendShop(c);
+    public void execute(Client c, String[] params, CommandContext ctx) {
+        ctx.shopFactory().getShop(GM_SHOP_ID).ifPresent(shop -> shop.sendShop(c));
     }
 }

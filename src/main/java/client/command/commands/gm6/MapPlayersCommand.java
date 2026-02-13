@@ -26,6 +26,7 @@ package client.command.commands.gm6;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import net.server.world.World;
 
@@ -35,7 +36,7 @@ public class MapPlayersCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         String names = "";
         int map = player.getMapId();

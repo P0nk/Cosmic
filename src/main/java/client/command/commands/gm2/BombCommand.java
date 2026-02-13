@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.MobId;
 import net.server.Server;
 import server.life.LifeFactory;
@@ -37,7 +38,7 @@ public class BombCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length > 0) {
             Character victim = c.getWorldServer().getPlayerStorage().getCharacterByName(params[0]);

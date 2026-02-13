@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import testutil.AnyValues;
 import testutil.Mocks;
 
 import java.util.Collections;
@@ -24,8 +25,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static testutil.AnyValues.daoException;
-import static testutil.AnyValues.string;
+import static testutil.AnyValues.dbException;
 
 class NoteServiceTest {
 
@@ -53,8 +53,8 @@ class NoteServiceTest {
         verify(noteDao).save(noteCaptor.capture());
         var note = noteCaptor.getValue();
         assertEquals(message, note.message());
-        assertEquals(from, note.from());
-        assertEquals(to, note.to());
+        assertEquals(from, note.sender());
+        assertEquals(to, note.receiver());
         assertEquals(0, note.fame());
     }
 
@@ -71,16 +71,16 @@ class NoteServiceTest {
         verify(noteDao).save(noteCaptor.capture());
         var note = noteCaptor.getValue();
         assertEquals(message, note.message());
-        assertEquals(from, note.from());
-        assertEquals(to, note.to());
+        assertEquals(from, note.sender());
+        assertEquals(to, note.receiver());
         assertEquals(1, note.fame());
     }
 
     @Test
     void sendFailure() {
-        doThrow(daoException()).when(noteDao).save(any());
+        doThrow(dbException()).when(noteDao).save(any());
 
-        boolean success = noteService.sendNormal(string(), string(), string());
+        boolean success = noteService.sendNormal(AnyValues.string(), AnyValues.string(), AnyValues.string());
 
         assertFalse(success);
         verify(noteDao).save(any());
@@ -119,7 +119,7 @@ class NoteServiceTest {
     @Test
     void showNotesFailure_shouldNotSendPacket() {
         var chr = Mocks.chr("mockChr");
-        when(noteDao.findAllByTo(any())).thenThrow(daoException());
+        when(noteDao.findAllByTo(any())).thenThrow(dbException());
 
         noteService.show(chr);
 
@@ -140,7 +140,7 @@ class NoteServiceTest {
 
     @Test
     void deleteNoteFailure() {
-        when(noteDao.delete(anyInt())).thenThrow(daoException());
+        when(noteDao.delete(anyInt())).thenThrow(dbException());
 
         Optional<Note> deletedNote = noteService.delete(4382);
 

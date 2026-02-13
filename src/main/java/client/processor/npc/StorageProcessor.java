@@ -32,6 +32,7 @@ import client.inventory.manipulator.KarmaManipulator;
 import config.YamlConfig;
 import constants.id.ItemId;
 import constants.inventory.ItemConstants;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,8 +70,7 @@ public class StorageProcessor {
                     if (slot < 0 || slot > storage.getSlots()) { // removal starts at zero
                         AutobanFactory.PACKET_EDIT.alert(c.getPlayer(), c.getPlayer().getName() + " tried to packet edit with storage.");
                         log.warn("Chr {} tried to work with storage slot {}", c.getPlayer().getName(), slot);
-                        c.disconnect(true, false);
-                        return;
+                        throw new GameViolationException("Withdraw item from invalid slot");
                     }
 
                     slot = storage.getSlot(InventoryType.getByType(type), slot);
@@ -128,8 +128,7 @@ public class StorageProcessor {
                         AutobanFactory.PACKET_EDIT.alert(c.getPlayer(),
                                 c.getPlayer().getName() + " tried to packet edit with storage.");
                         log.warn("Chr {} tried to store item at slot {}", c.getPlayer().getName(), slot);
-                        c.disconnect(true, false);
-                        return;
+                        throw new GameViolationException("Store item at invalid slot");
                     }
 
                     if (hasGMRestrictions(chr)) {

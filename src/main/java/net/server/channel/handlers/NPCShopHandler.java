@@ -25,6 +25,7 @@ import client.Client;
 import client.autoban.AutobanFactory;
 import constants.inventory.ItemConstants;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,8 +48,7 @@ public final class NPCShopHandler extends AbstractPacketHandler {
                 AutobanFactory.PACKET_EDIT.alert(c.getPlayer(),
                         c.getPlayer().getName() + " tried to packet edit a npc shop.");
                 log.warn("Chr {} tried to buy quantity {} of itemid {}", c.getPlayer().getName(), quantity, itemId);
-                c.disconnect(true, false);
-                return;
+                throw new GameViolationException("Buy invalid amount of items");
             }
             c.getPlayer().getShop().buy(c, slot, itemId, quantity);
             break;

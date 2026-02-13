@@ -13,10 +13,10 @@ public class NoteRowMapper implements RowMapper<Note> {
     public Note map(ResultSet rs, StatementContext ctx) throws SQLException {
         int id = rs.getInt("id");
         String message = rs.getString("message");
-        String from = rs.getString("from");
-        String to = rs.getString("to");
+        String sender = rs.getString("sender");
+        String receiver = rs.getString("receiver");
         long timestamp = rs.getLong("timestamp");
         int fame = rs.getInt("fame");
-        return new Note(id, message, from, to, timestamp, fame);
+        return new Note(id, message, sender, receiver, timestamp, fame);
     }
 }

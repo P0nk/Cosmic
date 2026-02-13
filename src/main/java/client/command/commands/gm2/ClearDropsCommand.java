@@ -26,6 +26,7 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class ClearDropsCommand extends Command {
     {
@@ -33,7 +34,7 @@ public class ClearDropsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         player.getMap().clearDrops(player);
         player.dropMessage(5, "Cleared dropped items");

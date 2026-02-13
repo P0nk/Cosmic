@@ -25,6 +25,7 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import config.YamlConfig;
 
 public class DropLimitCommand extends Command {
@@ -33,7 +34,7 @@ public class DropLimitCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         int dropCount = c.getPlayer().getMap().getDroppedItemCount();
         if (((float) dropCount) / YamlConfig.config.server.ITEM_LIMIT_ON_MAP < 0.75f) {
             c.getPlayer().showHint("Current drop count: #b" + dropCount + "#k / #e" + YamlConfig.config.server.ITEM_LIMIT_ON_MAP + "#n", 300);

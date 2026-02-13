@@ -109,24 +109,6 @@ public class SessionCoordinator {
         }
     }
 
-    /**
-     * Overwrites any existing online client for the account id, making sure to disconnect it as well.
-     */
-    public void updateOnlineClient(Client client) {
-        if (client != null) {
-            int accountId = client.getAccID();
-            disconnectClientIfOnline(accountId);
-            onlineClients.put(accountId, client);
-        }
-    }
-
-    private void disconnectClientIfOnline(int accountId) {
-        Client ingameClient = onlineClients.get(accountId);
-        if (ingameClient != null) {     // thanks MedicOP for finding out a loss of loggedin account uniqueness when using the CMS "Unstuck" feature
-            ingameClient.forceDisconnect();
-        }
-    }
-
     public boolean canStartLoginSession(Client client) {
         if (!YamlConfig.config.server.DETERRED_MULTICLIENT) {
             return true;
@@ -294,7 +276,7 @@ public class SessionCoordinator {
         return fakeClient;
     }
 
-    public void closeSession(Client client, Boolean immediately) {
+    public void closeSession(Client client, boolean immediately) {
         if (client == null) {
             client = fetchInTransitionSessionClient(client);
         }
@@ -317,7 +299,7 @@ public class SessionCoordinator {
             }
         }
 
-        if (immediately != null && immediately) {
+        if (immediately) {
             client.closeSession();
         }
     }

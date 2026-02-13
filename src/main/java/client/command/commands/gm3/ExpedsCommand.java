@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.Server;
 import net.server.channel.Channel;
 import server.expeditions.Expedition;
@@ -39,7 +40,7 @@ public class ExpedsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         for (Channel ch : Server.getInstance().getChannelsFromWorld(c.getWorld())) {
             List<Expedition> expeds = ch.getExpeditions();

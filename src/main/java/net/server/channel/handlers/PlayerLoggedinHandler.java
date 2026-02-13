@@ -24,11 +24,11 @@ package net.server.channel.handlers;
 import client.BuddyList;
 import client.BuddylistEntry;
 import client.Character;
-import client.CharacterNameAndId;
 import client.Client;
 import client.Disease;
 import client.Family;
 import client.FamilyEntry;
+import client.LoginState;
 import client.Mount;
 import client.SkillFactory;
 import client.inventory.Equip;
@@ -37,9 +37,14 @@ import client.inventory.InventoryType;
 import client.inventory.Item;
 import client.inventory.Pet;
 import client.keybind.KeyBinding;
+import client.keybind.QuickslotBinding;
 import config.YamlConfig;
 import constants.game.GameConstants;
+import database.account.Account;
+import database.character.CharacterLoader;
+import model.CharacterIdentity;
 import net.AbstractPacketHandler;
+import net.netty.GameViolationException;
 import net.packet.InPacket;
 import net.server.PlayerBuffValueHolder;
 import net.server.Server;
@@ -58,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
 import server.life.MobSkill;
+import service.AccountService;
 import service.NoteService;
 import tools.DatabaseConnection;
 import tools.PacketCreator;
@@ -74,6 +80,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,9 +88,13 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
     private static final Logger log = LoggerFactory.getLogger(PlayerLoggedinHandler.class);
     private static final Set<Integer> attemptingLoginAccounts = new HashSet<>();
 
+    private final CharacterLoader chrLoader;
+    private final AccountService accountService;
     private final NoteService noteService;
 
-    public PlayerLoggedinHandler(NoteService noteService) {
+    public PlayerLoggedinHandler(CharacterLoader chrLoader, AccountService accountService, NoteService noteService) {
+        this.chrLoader = chrLoader;
+        this.accountService = accountService;
         this.noteService = noteService;
     }
 
@@ -111,7 +122,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
-        final int cid = p.readInt(); // TODO: investigate if this is the "client id" supplied in PacketCreator#getServerIP()
+        final int chrId = p.readInt();
         final Server server = Server.getInstance();
 
         if (!c.tryacquireClient()) {
@@ -122,8 +133,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
         try {
             World wserv = server.getWorld(c.getWorld());
             if (wserv == null) {
-                c.disconnect(true, false);
-                return;
+                throw new GameViolationException("World not found");
             }
 
             Channel cserv = wserv.getChannel(c.getChannel());
@@ -132,19 +142,17 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 cserv = wserv.getChannel(c.getChannel());
 
                 if (cserv == null) {
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Channel not found");
                 }
             }
 
-            Character player = wserv.getPlayerStorage().getCharacterById(cid);
+            Character player = wserv.getPlayerStorage().getCharacterById(chrId);
 
             final Hwid hwid;
             if (player == null) {
                 hwid = SessionCoordinator.getInstance().pickLoginSessionHwid(c);
                 if (hwid == null) {
-                    c.disconnect(true, false);
-                    return;
+                    throw new GameViolationException("Unable to pick hwid");
                 }
             } else {
                 hwid = player.getClient().getHwid();
@@ -152,75 +160,58 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             c.setHwid(hwid);
 
-            if (!server.validateCharacteridInTransition(c, cid)) {
-                c.disconnect(true, false);
-                return;
+            if (!server.validateCharacteridInTransition(c, chrId)) {
+                throw new GameViolationException("Attempt to enter game without chr id in transition");
             }
 
-            boolean newcomer = false;
+            boolean newlyLoggedIn = false;
             if (player == null) {
-                try {
-                    player = Character.loadCharFromDB(cid, c, true);
-                    newcomer = true;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                if (player == null) { //If you are still getting null here then please just uninstall the game >.>, we dont need you fucking with the logs
-                    c.disconnect(true, false);
-                    return;
+                Optional<Character> loadedChr = chrLoader.loadForChannel(chrId, c);
+                if (loadedChr.isPresent()) {
+                    player = loadedChr.get();
+                    newlyLoggedIn = true;
+                } else {
+                    throw new GameViolationException("Unable to load chr");
                 }
             }
             c.setPlayer(player);
-            c.setAccID(player.getAccountID());
 
-            boolean allowLogin = true;
+            Optional<Account> foundAccount = accountService.getAccount(player.getAccountID());
+            if (foundAccount.isEmpty()) {
+                c.sendPacket(PacketCreator.getAfterLoginError(5));
+                return;
+            }
+            Account account = foundAccount.get();
+            c.setAccount(account);
 
-                /*  is this check really necessary?
-                if (state == Client.LOGIN_SERVER_TRANSITION || state == Client.LOGIN_NOTLOGGEDIN) {
-                    List<String> charNames = c.loadCharacterNames(c.getWorld());
-                    if(!newcomer) {
-                        charNames.remove(player.getName());
-                    }
-
-                    for (String charName : charNames) {
-                        if(wserv.getPlayerStorage().getCharacterByName(charName) != null) {
-                            allowLogin = false;
-                            break;
-                        }
-                    }
-                }
-                */
-
-            int accId = c.getAccID();
-            if (tryAcquireAccount(accId)) { // Sync this to prevent wrong login state for double loggedin handling
-                try {
-                    int state = c.getLoginState();
-                    if (state != Client.LOGIN_SERVER_TRANSITION || !allowLogin) {
-                        c.setPlayer(null);
-                        c.setAccID(0);
-
-                        if (state == Client.LOGIN_LOGGEDIN) {
-                            c.disconnect(true, false);
-                        } else {
-                            c.sendPacket(PacketCreator.getAfterLoginError(7));
-                        }
-
-                        return;
-                    }
-                    c.updateLoginState(Client.LOGIN_LOGGEDIN);
-                } finally {
-                    releaseAccount(accId);
-                }
-            } else {
+            int accId = account.id();
+            if (!tryAcquireAccount(accId)) { // Sync this to prevent wrong login state for double loggedin handling
                 c.setPlayer(null);
                 c.setAccID(0);
                 c.sendPacket(PacketCreator.getAfterLoginError(10));
                 return;
             }
 
-            if (!newcomer) {
-                c.setLanguage(player.getClient().getLanguage());
+            try {
+                LoginState state = account.loginState();
+                if (state != LoginState.SERVER_TRANSITION) {
+                    c.setPlayer(null);
+                    c.setAccID(0);
+
+                    if (state == LoginState.LOGGED_IN) {
+                        throw new GameViolationException("Attempt to log in when already logged in");
+                    } else {
+                        c.sendPacket(PacketCreator.getAfterLoginError(7));
+                    }
+
+                    return;
+                }
+                accountService.setLoggedIn(c);
+            } finally {
+                releaseAccount(accId);
+            }
+
+            if (!newlyLoggedIn) {
                 c.setCharacterSlots((byte) player.getClient().getCharacterSlots());
                 player.newClient(c);
             }
@@ -229,13 +220,13 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             wserv.addPlayer(player);
             player.setEnteredChannelWorld();
 
-            List<PlayerBuffValueHolder> buffs = server.getPlayerBuffStorage().getBuffsFromStorage(cid);
+            List<PlayerBuffValueHolder> buffs = server.getPlayerBuffStorage().getBuffsFromStorage(chrId);
             if (buffs != null) {
                 List<Pair<Long, PlayerBuffValueHolder>> timedBuffs = getLocalStartTimes(buffs);
                 player.silentGiveBuffs(timedBuffs);
             }
 
-            Map<Disease, Pair<Long, MobSkill>> diseases = server.getPlayerBuffStorage().getDiseasesFromStorage(cid);
+            Map<Disease, Pair<Long, MobSkill>> diseases = server.getPlayerBuffStorage().getDiseasesFromStorage(chrId);
             if (diseases != null) {
                 player.silentApplyDiseases(diseases);
             }
@@ -247,7 +238,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 }
             }
             player.sendKeymap();
-            player.sendQuickmap();
+            sendQuickmap(player);
             player.sendMacros();
 
             // pot bindings being passed through other characters on the account detected thanks to Croosade dev team
@@ -318,7 +309,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                             c.sendPacket(GuildPackets.updateAllianceInfo(newAlliance, c.getWorld()));
                             c.sendPacket(GuildPackets.allianceNotice(newAlliance.getId(), newAlliance.getNotice()));
 
-                            if (newcomer) {
+                            if (newlyLoggedIn) {
                                 server.allianceMessage(allianceId, GuildPackets.allianceMemberOnline(player, true), player.getId(), -1);
                             }
                         }
@@ -353,9 +344,9 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             c.sendPacket(PacketCreator.updateBuddylist(player.getBuddylist().getBuddies()));
 
-            CharacterNameAndId pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
+            CharacterIdentity pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
             if (pendingBuddyRequest != null) {
-                c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.getId(), c.getPlayer().getId(), pendingBuddyRequest.getName()));
+                c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.id(), c.getPlayer().getId(), pendingBuddyRequest.name()));
             }
 
             c.sendPacket(PacketCreator.updateGender(player));
@@ -364,7 +355,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             player.changeSkillLevel(SkillFactory.getSkill(10000000 * player.getJobType() + 12), (byte) (player.getLinkedLevel() / 10), 20, -1);
             player.checkBerserk(player.isHidden());
 
-            if (newcomer) {
+            if (newlyLoggedIn) {
                 for (Pet pet : player.getPets()) {
                     if (pet != null) {
                         wserv.registerPetHunger(player, player.getPetIndex(pet));
@@ -378,11 +369,6 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
                 player.reloadQuestExpirations();
 
-                    /*
-                    if (!c.hasVotedAlready()){
-                        player.sendPacket(PacketCreator.earnTitleMessage("You can vote now! Vote and earn a vote point!"));
-                    }
-                    */
                 if (player.isGM()) {
                     Server.getInstance().broadcastGMMessage(c.getWorld(), PacketCreator.earnTitleMessage((player.gmLevel() < 6 ? "GM " : "Admin ") + player.getName() + " has logged in"));
                 }
@@ -431,8 +417,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 }
             }
 
-            if (newcomer) {
-                EventInstanceManager eim = EventRecallCoordinator.getInstance().recallEventInstance(cid);
+            if (newlyLoggedIn) {
+                EventInstanceManager eim = EventRecallCoordinator.getInstance().recallEventInstance(chrId);
                 if (eim != null) {
                     eim.registerPlayer(player);
                 }
@@ -451,7 +437,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 c.sendPacket(PacketCreator.setNPCScriptable(npcsIds));
             }
 
-            if (newcomer) {
+            if (newlyLoggedIn) {
                 player.setLoginTime(System.currentTimeMillis());
             }
         } catch (Exception e) {
@@ -479,6 +465,15 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void sendQuickmap(Character chr) {
+        QuickslotBinding quickslotBinding = chr.getQuickslotBinding();
+        if (quickslotBinding == null) {
+            quickslotBinding = new QuickslotBinding(QuickslotBinding.DEFAULT_QUICKSLOTS);
+        }
+
+        chr.sendPacket(PacketCreator.QuickslotMappedInit(quickslotBinding));
     }
 
     private static List<Pair<Long, PlayerBuffValueHolder>> getLocalStartTimes(List<PlayerBuffValueHolder> lpbvl) {

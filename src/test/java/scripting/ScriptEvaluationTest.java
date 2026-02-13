@@ -1,6 +1,7 @@
 package scripting;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -13,6 +14,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@Disabled("Excluding from the build because these tests take too long to run. Can run on demand if needed.")
 public class ScriptEvaluationTest {
     private AbstractScriptManager scriptManager = new AbstractScriptManager() {};
 

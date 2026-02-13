@@ -26,6 +26,7 @@ package client.command.commands.gm1;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import constants.id.NpcId;
 import server.ItemInformationProvider;
 import server.life.MonsterInformationProvider;
@@ -43,7 +44,7 @@ public class WhoDropsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.dropMessage(5, "Please do @whodrops <item name>");

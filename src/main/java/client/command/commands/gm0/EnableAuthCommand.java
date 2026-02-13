@@ -25,6 +25,7 @@ package client.command.commands.gm0;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import net.server.coordinator.login.LoginBypassCoordinator;
 
 public class EnableAuthCommand extends Command {
@@ -33,7 +34,7 @@ public class EnableAuthCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         if (c.tryacquireClient()) {
             try {
                 LoginBypassCoordinator.getInstance().unregisterLoginBypassEntry(c.getHwid(), c.getAccID());

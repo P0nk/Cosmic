@@ -25,6 +25,7 @@ package client.command.commands.gm6;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 import server.life.PlayerNPC;
 
 public class EraseAllPNpcsCommand extends Command {
@@ -33,7 +34,7 @@ public class EraseAllPNpcsCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         PlayerNPC.removeAllPlayerNPC();
     }
 }

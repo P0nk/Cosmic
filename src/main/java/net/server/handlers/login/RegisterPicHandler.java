@@ -1,6 +1,7 @@
 package net.server.handlers.login;
 
 import client.Client;
+import lombok.extern.slf4j.Slf4j;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
@@ -8,24 +9,24 @@ import net.server.coordinator.session.Hwid;
 import net.server.coordinator.session.SessionCoordinator;
 import net.server.coordinator.session.SessionCoordinator.AntiMulticlientResult;
 import net.server.world.World;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import service.AccountService;
+import service.BanService;
+import service.TransitionService;
 import tools.PacketCreator;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+@Slf4j
 public final class RegisterPicHandler extends AbstractPacketHandler {
-    private static final Logger log = LoggerFactory.getLogger(RegisterPicHandler.class);
+    private final BanService banService;
+    private final TransitionService transitionService;
+    private final AccountService accountService;
 
-    private static int parseAntiMulticlientError(AntiMulticlientResult res) {
-        return switch (res) {
-            case REMOTE_PROCESSING -> 10;
-            case REMOTE_LOGGEDIN -> 7;
-            case REMOTE_NO_MATCH -> 17;
-            case COORDINATOR_ERROR -> 8;
-            default -> 9;
-        };
+    public RegisterPicHandler(BanService banService, AccountService accountService, TransitionService transitionService) {
+        this.banService = banService;
+        this.accountService = accountService;
+        this.transitionService = transitionService;
     }
 
     @Override
@@ -45,8 +46,9 @@ public final class RegisterPicHandler extends AbstractPacketHandler {
             return;
         }
 
-        c.updateMacs(macs);
-        c.updateHwid(hwid);
+        c.setHwid(hwid);
+        c.setMacs(macs);
+        accountService.setIpAndMacsAndHwidAsync(c.getAccID(), c.getRemoteAddress(), macs, hwid);
 
         AntiMulticlientResult res = SessionCoordinator.getInstance().attemptGameSession(c, c.getAccID(), hwid);
         if (res != AntiMulticlientResult.SUCCESS) {
@@ -54,7 +56,7 @@ public final class RegisterPicHandler extends AbstractPacketHandler {
             return;
         }
 
-        if (c.hasBannedMac() || c.hasBannedHWID()) {
+        if (banService.isBanned(c)) {
             SessionCoordinator.getInstance().closeSession(c, true);
             return;
         }
@@ -67,6 +69,7 @@ public final class RegisterPicHandler extends AbstractPacketHandler {
 
         String pic = p.readString();
         if (c.getPic() == null || c.getPic().equals("")) {
+            accountService.setPic(c.getAccID(), pic);
             c.setPic(pic);
 
             c.setWorld(server.getCharacterWorld(charId));
@@ -83,7 +86,7 @@ public final class RegisterPicHandler extends AbstractPacketHandler {
             }
 
             server.unregisterLoginState(c);
-            c.setCharacterOnSessionTransitionState(charId);
+            transitionService.setInTransition(c, charId);
 
             try {
                 c.sendPacket(PacketCreator.getServerIP(InetAddress.getByName(socket[0]), Integer.parseInt(socket[1]), charId));
@@ -93,5 +96,15 @@ public final class RegisterPicHandler extends AbstractPacketHandler {
         } else {
             SessionCoordinator.getInstance().closeSession(c, true);
         }
+    }
+
+    private static int parseAntiMulticlientError(AntiMulticlientResult res) {
+        return switch (res) {
+            case REMOTE_PROCESSING -> 10;
+            case REMOTE_LOGGEDIN -> 7;
+            case REMOTE_NO_MATCH -> 17;
+            case COORDINATOR_ERROR -> 8;
+            default -> 9;
+        };
     }
 }

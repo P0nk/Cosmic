@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class ClosePortalCommand extends Command {
     {
@@ -33,7 +34,7 @@ public class ClosePortalCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         if (params.length < 1) {
             player.yellowMessage("Syntax: !closeportal <portalid>");

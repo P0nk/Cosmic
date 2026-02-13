@@ -21,6 +21,7 @@ package client.command.commands.gm2;
 
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 /**
  * @author Ronan
@@ -31,7 +32,7 @@ public class GachaListCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         c.getAbstractPlayerInteraction().openNpc(10000, "gachaponInfo");
     }
 }

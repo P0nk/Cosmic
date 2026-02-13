@@ -88,10 +88,6 @@ public enum AutobanFactory {
         return expiretime;
     }
 
-    public void addPoint(AutobanManager ban, String reason) {
-        ban.addPoint(this, reason);
-    }
-
     public void alert(Character chr, String reason) {
         if (YamlConfig.config.server.USE_AUTOBAN) {
             if (chr != null && isIgnored(chr.getId())) {
@@ -102,13 +98,6 @@ public enum AutobanFactory {
         if (YamlConfig.config.server.USE_AUTOBAN_LOG) {
             final String chrName = chr != null ? Character.makeMapleReadable(chr.getName()) : "";
             log.info("Autoban alert - chr {} caused {}-{}", chrName, this.name(), reason);
-        }
-    }
-
-    public void autoban(Character chr, String value) {
-        if (YamlConfig.config.server.USE_AUTOBAN) {
-            chr.autoban("Autobanned for (" + this.name() + ": " + value + ")");
-            //chr.sendPolice("You will be disconnected for (" + this.name() + ": " + value + ")");
         }
     }
 

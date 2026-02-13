@@ -39,7 +39,7 @@ public abstract class AbstractCharacterObject extends AbstractAnimatedMapObject 
     protected MapleMap map;
     protected int str, dex, luk, int_, hp, maxhp, mp, maxmp;
     protected int hpMpApUsed, remainingAp;
-    protected int[] remainingSp = new int[10];
+    protected int[] remainingSp = new int[10]; // TODO: change to a simple int. Evan is not in v83, so why support it?
     protected transient int clientmaxhp, clientmaxmp, localmaxhp = 50, localmaxmp = 5;
     protected float transienthp = Float.NEGATIVE_INFINITY, transientmp = Float.NEGATIVE_INFINITY;
 

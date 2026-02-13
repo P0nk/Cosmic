@@ -26,6 +26,7 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import client.command.CommandContext;
 
 public class PosCommand extends Command {
     {
@@ -33,7 +34,7 @@ public class PosCommand extends Command {
     }
 
     @Override
-    public void execute(Client c, String[] params) {
+    public void execute(Client c, String[] params, CommandContext ctx) {
         Character player = c.getPlayer();
         float xpos = player.getPosition().x;
         float ypos = player.getPosition().y;

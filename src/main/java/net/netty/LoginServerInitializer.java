@@ -6,9 +6,14 @@ import net.PacketProcessor;
 import net.server.coordinator.session.SessionCoordinator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.TransitionService;
 
 public class LoginServerInitializer extends ServerChannelInitializer {
     private static final Logger log = LoggerFactory.getLogger(LoginServerInitializer.class);
+
+    public LoginServerInitializer(TransitionService transitionService) {
+        super(transitionService);
+    }
 
     @Override
     public void initChannel(SocketChannel socketChannel) {
