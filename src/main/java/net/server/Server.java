@@ -171,7 +171,6 @@ public class Server {
         this.lgnRLock = loginLock.readLock();
         this.lgnWLock = loginLock.writeLock();
 
-        server.events.FeverScheduler.getInstance().start();
     }
 
     public int getCurrentTimestamp() {
@@ -1070,6 +1069,9 @@ public class Server {
         timeLeft = getTimeLeftForNextDay();
         ExpeditionBossLog.resetBossLogTable();
         tMan.register(new BossLogTask(), DAYS.toMillis(1), timeLeft);
+
+        // Start Fever Scheduler
+        server.events.FeverScheduler.getInstance().start();
     }
 
     public static void main(String[] args) {
