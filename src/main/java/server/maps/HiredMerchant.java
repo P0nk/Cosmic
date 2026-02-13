@@ -178,7 +178,8 @@ public class HiredMerchant extends AbstractMapObject {
                 long currentDbBcoins = 0;
 
                 // 1. Get Current Mesos
-                try (PreparedStatement ps = con.prepareStatement("SELECT MerchantMesos FROM characters WHERE id = ?")) {
+                try (PreparedStatement ps = con
+                        .prepareStatement("SELECT MerchantMesos FROM characters WHERE id = ? FOR UPDATE")) {
                     ps.setInt(1, ownerId);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
@@ -189,7 +190,7 @@ public class HiredMerchant extends AbstractMapObject {
 
                 // 2. Get Current B-Coins
                 try (PreparedStatement ps = con
-                        .prepareStatement("SELECT bcoin FROM merchantBcoin WHERE characterid = ?")) {
+                        .prepareStatement("SELECT bcoin FROM merchantBcoin WHERE characterid = ? FOR UPDATE")) {
                     ps.setInt(1, ownerId);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
