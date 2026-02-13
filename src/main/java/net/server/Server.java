@@ -170,6 +170,8 @@ public class Server {
         ReadWriteLock loginLock = new ReentrantReadWriteLock(true);
         this.lgnRLock = loginLock.readLock();
         this.lgnWLock = loginLock.writeLock();
+
+        server.events.FeverScheduler.getInstance().start();
     }
 
     public int getCurrentTimestamp() {
