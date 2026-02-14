@@ -683,13 +683,13 @@ public class MapleMap {
 
         for (final MonsterDropEntry de : dropEntry) {
             if (getWorldServer().isSpellTraceFever()) {
-                Item spellTrace = new Item(4000999, (short) 0, (short) 1, (short) 0);
+                Item spellTrace = new Item(4000999, (short) 0, (short) 1);
                 spawnDrop(spellTrace, calcDropPos(pos, mob.getPosition()), mob, chr, droptype, (short) 0, delay);
             }
             if (getWorldServer().isNxFever()) {
                 // Randomly choose between NX 100 (4031865) and NX 250 (4031866)
                 int nxCardId = Randomizer.nextBoolean() ? 4031865 : 4031866;
-                Item nxCard = new Item(nxCardId, (short) 0, (short) 1, (short) 0);
+                Item nxCard = new Item(nxCardId, (short) 0, (short) 1);
                 spawnDrop(nxCard, calcDropPos(pos, mob.getPosition()), mob, chr, droptype, (short) 0, delay);
             }
 
