@@ -3156,6 +3156,17 @@ public class MapleMap {
         }
     }
 
+    public List<MapItem> getAllItems() {
+        List<MapItem> ret = new ArrayList<>();
+        objectRLock.lock();
+        try {
+            ret.addAll(droppedItems.keySet());
+        } finally {
+            objectRLock.unlock();
+        }
+        return ret;
+    }
+
     public List<MapObject> getMapObjectsInBox(Rectangle box, List<MapObjectType> types) {
         List<MapObject> ret = new LinkedList<>();
         objectRLock.lock();

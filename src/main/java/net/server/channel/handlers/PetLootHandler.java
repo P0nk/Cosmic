@@ -129,16 +129,11 @@ public final class PetLootHandler extends AbstractPacketHandler {
             return;
         }
 
-        List<MapObject> items = c.getPlayer().getMap().getMapObjectsInRange(c.getPlayer().getPosition(),
-                Double.POSITIVE_INFINITY, Arrays.asList(MapObjectType.ITEM));
+        List<MapItem> items = c.getPlayer().getMap().getAllItems();
         final Set<Integer> petIgnore = chr.getExcludedItems();
 
-        for (MapObject item : items) {
-            if (!(item instanceof MapItem)) {
-                continue;
-            }
-
-            MapItem mapItem = (MapItem) item;
+        for (MapItem mapItem : items) {
+            // Loop simplified as we iterate MapItem directly
 
             // [GLOBAL EXCLUSION] Pink Bean Summon Item
             if (mapItem.getItemId() == 4001193) {
@@ -165,7 +160,7 @@ public final class PetLootHandler extends AbstractPacketHandler {
                             // Remove from map
                             // Use pickItemDrop to ensure correct cleanup of counters and registry
                             chr.getMap().pickItemDrop(
-                                    PacketCreator.removeItemFromMap(item.getObjectId(), 2, chr.getId()),
+                                    PacketCreator.removeItemFromMap(mapItem.getObjectId(), 2, chr.getId()),
                                     mapItem);
                             continue; // Successfully sold and removed, next item
                         }
