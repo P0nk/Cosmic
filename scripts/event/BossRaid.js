@@ -78,11 +78,11 @@ function startRaid() {
         // Broadcast to World (Global Announce)
         var chId = em.getChannelServer().getId();
         em.getWorldServer().broadcastPacket(
-            PacketCreator.serverNotice(6, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + "s are spawning rapidly at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
+            PacketCreator.serverNotice(5, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + "s are spawning rapidly at " + getMapName(currentBoss.mapId) + "! The raid will last for 5 minutes!")
         );
-        em.getWorldServer().broadcastPacket(
-            PacketCreator.serverNotice(5, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
-        );
+//        em.getWorldServer().broadcastPacket(
+//            PacketCreator.serverNotice(5, "[Boss Raid] Channel " + chId + ": " + currentBoss.name + " invasion at " + getMapName(currentBoss.mapId) + "!")
+//        );
 
         // Add Map Timer
         var map = em.getChannelServer().getMapFactory().getMap(currentBoss.mapId);
