@@ -25,23 +25,23 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            var em = cm.getEventManager("Cabin");
-            var timeMsg = "";
+            var now = java.lang.System.currentTimeMillis();
+            var cycleTime = now % 900000; // 15 min cycle
+            var departureTime = 150000; // 2.5 mins
 
-            if (em != null && em.getProperty("dockedTime") != null) {
-                var dockedTime = parseInt(em.getProperty("dockedTime"));
-                var now = java.lang.System.currentTimeMillis();
-                var departureTime = dockedTime + (5 * 60 * 1000); // 5 mins after docking
-                var diff = departureTime - now;
-                var min = Math.ceil(diff / 60000);
-
-                if (min < 1) min = 1;
-
-                timeMsg = "The ship to Leafre will depart in approximately #b" + min + " minutes#k. ";
+            var waitTime = 0;
+            if (cycleTime < departureTime) {
+                waitTime = departureTime - cycleTime;
             } else {
-                timeMsg = "The ship is preparing for departure. ";
+                // Should not happen if warped correctly, but handling login/glitch
+                // Next departure is (15 - cycle) + 2.5
+                waitTime = (900000 - cycleTime) + departureTime;
             }
 
+            var min = Math.ceil(waitTime / 60000);
+            if (min < 1) min = 1;
+
+            var timeMsg = "The ship to Leafre will depart in approximately #b" + min + " minutes#k. ";
             cm.sendYesNo(timeMsg + "Do you wish to leave the waiting room?");
         } else if (status == 1) {
             cm.sendNext("Alright, see you next time. Take care.");

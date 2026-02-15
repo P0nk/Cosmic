@@ -1,5 +1,5 @@
 /*
-    Leafre Station - To Orbis Guide (2082001)
+    Tommie (2082001) - Leafre Station
 */
 
 function start() {
@@ -12,25 +12,28 @@ function start() {
         return;
     }
 
-    if (em.getProperty("entry") == "false") {
-        var dockedTime = em.getProperty("dockedTime");
-        var now = java.lang.System.currentTimeMillis();
-        var msg = "The flight to Orbis is currently in progress or preparing for takeoff.\r\n";
+    // Check strict 15-min cycle time
+    var now = java.lang.System.currentTimeMillis();
+    var cycleTime = now % 900000; // 0 to 900,000 ms (15 mins)
+    var boardingStart = 450000; // 7.5 mins
+    var boardingEnd = 600000; // 10 mins
 
-        if (dockedTime != null) {
-            var diff = now - parseInt(dockedTime);
-            var cycle = 10 * 60 * 1000;
-            var remain = cycle - diff;
-            var min = Math.ceil(remain / 60000);
-            if (min <= 0) min = 1;
-            msg += "The travel duration is #b5 minutes#k. The next ship will arrive in approximately #b" + min + " minutes#k.";
-        } else {
-            msg += "Please wait for the next ship to arrive.";
-        }
-        cm.sendOk(msg);
-        cm.dispose();
+    if (cycleTime >= boardingStart && cycleTime < boardingEnd) {
+        action(1, 0, 0); // Boarding is open
     } else {
-        action(1, 0, 0);
+        var waitTime = 0;
+        if (cycleTime < boardingStart) {
+            waitTime = boardingStart - cycleTime;
+        } else {
+            // Already left (e.g. 11 mins), next is (15-11) + 7.5
+            waitTime = (900000 - cycleTime) + boardingStart;
+        }
+
+        var min = Math.ceil(waitTime / 60000);
+        if (min <= 0) min = 1;
+
+        cm.sendOk("The flight to Orbis is currently in progress. The next ship will arrive in approximately #b" + min + " minutes#k.\r\nThe travel duration is #b5 minutes#k.");
+        cm.dispose();
     }
 }
 
@@ -52,16 +55,10 @@ function action(mode, type, selection) {
         if (status == 0) {
             cm.sendYesNo("Do you want to go to Orbis? The trip takes #b5 minutes#k. The ship is boarding right now, would you like to go?");
         } else if (status == 1) {
-            if (cm.haveItem(4031045)) { // Ticket to Orbis (Regular)
-                var em = cm.getEventManager("Cabin");
-                if (em.getProperty("entry") == "true") {
-                    cm.gainItem(4031045, -1);
-                    cm.warp(240000111); // Leafre Docked Map
-                    cm.dispose();
-                } else {
-                    cm.sendOk("The ship has just left! You almost made it. Please wait for the next one.");
-                    cm.dispose();
-                }
+            if (cm.haveItem(4031045)) { // Ticket to Orbis
+                cm.gainItem(4031045, -1);
+                cm.warp(240000111); // Leafre Docked Map
+                cm.dispose();
             } else {
                 cm.sendOk("Make sure you got a #bTicket to Orbis (Regular)#k to travel in this flight. Check your inventory.");
                 cm.dispose();
