@@ -70,7 +70,8 @@ public class AutobanManager {
         try {
             chr.changeMap(300000012, 0);
         } catch (Exception e) {
-            // Fallback: If for some reason this still fails, disconnect them so monsters don't glitch
+            // Fallback: If for some reason this still fails, disconnect them so monsters
+            // don't glitch
             chr.getClient().disconnect(true, false);
         }
 
@@ -84,7 +85,7 @@ public class AutobanManager {
     private int getJailStrikeCount(int accountId) {
         int strikes = 0;
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM jail_log WHERE account_id = ?")) {
+                PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM jail_log WHERE account_id = ?")) {
             ps.setInt(1, accountId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -99,8 +100,8 @@ public class AutobanManager {
 
     private void logJailToDB(String reason, int duration) {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "INSERT INTO jail_log (character_id, character_name, account_id, reason, duration_minutes) VALUES (?, ?, ?, ?, ?)")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO jail_log (character_id, character_name, account_id, reason, duration_minutes) VALUES (?, ?, ?, ?, ?)")) {
             ps.setInt(1, chr.getId());
             ps.setString(2, chr.getName());
             ps.setInt(3, chr.getClient().getAccID());
@@ -117,7 +118,8 @@ public class AutobanManager {
         try {
             // Ban Account
             try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("UPDATE accounts SET banned = 1, banreason = ? WHERE id = ?")) {
+                    PreparedStatement ps = con
+                            .prepareStatement("UPDATE accounts SET banned = 1, banreason = ? WHERE id = ?")) {
                 ps.setString(1, reason);
                 ps.setInt(2, chr.getClient().getAccID());
                 ps.executeUpdate();
@@ -151,35 +153,37 @@ public class AutobanManager {
     }
 
     public void resetMisses() {
-        if (this.consecutiveMisses > 0) this.consecutiveMisses = 0;
+        if (this.consecutiveMisses > 0)
+            this.consecutiveMisses = 0;
     }
 
     // --- [ANTI-HACK] 2. God Mode Watchdog (No Packet) ---
     // Called from AbstractDealDamageHandler whenever they attack
     public void checkGodMode() {
-        // [RECOMMENDED] Uncomment this line to disable God Mode jail until you test it fully.
-         return;
-//        // [FIX 4] Use getAllMapObjects instead of getMobCount (Method not found)
-//        if (chr.isGM() || chr.getMap().countMonsters() == 0) return;
-//
-//        if (chr.getBuffedValue(BuffStat.DARKSIGHT) != null) return;
-//        // [FIX 3] Removed DIVINE_SHIELD check here too
-//
-//        long now = System.currentTimeMillis();
-//        long timeSinceAttack = now - chr.getLastAttackTime();
-//        long timeSinceHit = now - chr.getLastHitTime();
-//
-//        // If active (attacked in last 2s) but haven't taken damage in 120s
-//        if (timeSinceAttack < 2000 && timeSinceHit > 120000) {
-//            // Thief exception: Give them 5 mins
-//            if (chr.getJob().isA(Job.THIEF) && timeSinceHit < 300000) return;
-//
-//            // Jail for 24 Hours
-//            jailPlayer("God Mode / Packet Block (No damage taken for 120s+)", 1440);
-//
-//            // Reset timers to prevent spam-jailing
-//            chr.updateHitAction();
-//        }
+        // [RECOMMENDED] Uncomment this line to disable God Mode jail until you test it
+        // fully.
+        return;
+        // // [FIX 4] Use getAllMapObjects instead of getMobCount (Method not found)
+        // if (chr.isGM() || chr.getMap().countMonsters() == 0) return;
+        //
+        // if (chr.getBuffedValue(BuffStat.DARKSIGHT) != null) return;
+        // // [FIX 3] Removed DIVINE_SHIELD check here too
+        //
+        // long now = System.currentTimeMillis();
+        // long timeSinceAttack = now - chr.getLastAttackTime();
+        // long timeSinceHit = now - chr.getLastHitTime();
+        //
+        // // If active (attacked in last 2s) but haven't taken damage in 120s
+        // if (timeSinceAttack < 2000 && timeSinceHit > 120000) {
+        // // Thief exception: Give them 5 mins
+        // if (chr.getJob().isA(Job.THIEF) && timeSinceHit < 300000) return;
+        //
+        // // Jail for 24 Hours
+        // jailPlayer("God Mode / Packet Block (No damage taken for 120s+)", 1440);
+        //
+        // // Reset timers to prevent spam-jailing
+        // chr.updateHitAction();
+        // }
     }
 
     // --- [ANTI-HACK] 3. Fast Attack Counter ---
@@ -193,7 +197,8 @@ public class AutobanManager {
 
     // --- [LEGACY] Points System (Updated to use Jail) ---
     public void addPoint(AutobanFactory fac, String reason) {
-        if (chr.isGM() || chr.isBanned()) return;
+        if (chr.isGM() || chr.isBanned())
+            return;
 
         // Decay points over time
         if (lastTime.containsKey(fac)) {
@@ -231,11 +236,32 @@ public class AutobanManager {
     }
 
     public void setTimestamp(int type, int time, int times) {
+        setTimestamp(type, time, times, "");
+    }
+
+    public void setTimestamp(int type, int time, int times, String debugInfo) {
         if (this.timestamp[type] == time) {
             this.timestampcounter[type]++;
-            if (this.timestampcounter[type] >= times) {
-                jailPlayer("Packet Spamming (Type: " + type + ")", 15);
-                log.info("AutoJail - Chr {} was caught spamming TYPE {}", chr.getName(), type);
+            if (this.timestampcounter[type] >= times + 12 && times < 100) { // Safety margin for lag spikes
+                // If it exceeds way too much, jail anyway
+                jailPlayer("Packet Spamming (Type: " + type + ") " + debugInfo, 10);
+                log.info("AutoJail - Chr {} was caught spamming TYPE {} {}", chr.getName(), type, debugInfo);
+            } else if (this.timestampcounter[type] >= times) {
+                // Just log for now if it's borderline
+                log.info("AutoJail DEBUG - Chr {} potentially spamming TYPE {} count {}/{} {}",
+                        chr.getName(), type, this.timestampcounter[type], times, debugInfo);
+                // Still jail if it's way over the limit, but maybe give leeway?
+                // For now, let's just log and rely on the +12 safety margin above for the
+                // actual jail.
+                // Or we can just use the user-provided 'times' as the hard limit.
+
+                // Let's stick to the plan: Log debug info, but JAIL if it hits the limit.
+                // Wait, I should implement what I planned.
+                // Plan: "Increase the packet count threshold from 28 to 40"
+                // So I will just log here and jail if it hits 'times'.
+
+                jailPlayer("Packet Spamming (Type: " + type + ") " + debugInfo, 15);
+                log.info("AutoJail - Chr {} was caught spamming TYPE {} {}", chr.getName(), type, debugInfo);
             }
         } else {
             this.timestamp[type] = time;

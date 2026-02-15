@@ -50,17 +50,24 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
     public final void handlePacket(InPacket p, Client c) {
         Character chr = c.getPlayer();
         p.readInt();
-        chr.getAutobanManager().setTimestamp(4, Server.getInstance().getCurrentTimestamp(), 28);
         int skillid = p.readInt();
-        
+        // Increased threshold to 40 and added debug info
+        chr.getAutobanManager().setTimestamp(4, Server.getInstance().getCurrentTimestamp(), 40, "SkillID: " + skillid);
+
         /*
-        if ((!GameConstants.isPqSkillMap(chr.getMapId()) && GameConstants.isPqSkill(skillid)) || (!chr.isGM() && GameConstants.isGMSkills(skillid)) || (!GameConstants.isInJobTree(skillid, chr.getJob().getId()) && !chr.isGM())) {
-        	AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() + " tried to packet edit skills.");
-        	FilePrinter.printError(FilePrinter.EXPLOITS + chr.getName() + ".txt", chr.getName() + " tried to use skill " + skillid + " without it being in their job.");
-    		c.disconnect(true, false);
-            return;
-        }
-        */
+         * if ((!GameConstants.isPqSkillMap(chr.getMapId()) &&
+         * GameConstants.isPqSkill(skillid)) || (!chr.isGM() &&
+         * GameConstants.isGMSkills(skillid)) || (!GameConstants.isInJobTree(skillid,
+         * chr.getJob().getId()) && !chr.isGM())) {
+         * AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() +
+         * " tried to packet edit skills.");
+         * FilePrinter.printError(FilePrinter.EXPLOITS + chr.getName() + ".txt",
+         * chr.getName() + " tried to use skill " + skillid +
+         * " without it being in their job.");
+         * c.disconnect(true, false);
+         * return;
+         * }
+         */
 
         Point pos = null;
         int __skillLevel = p.readByte();
@@ -73,7 +80,8 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
             skillLevel = 1;
             chr.setDojoEnergy(0);
             c.sendPacket(PacketCreator.getEnergy("energy", chr.getDojoEnergy()));
-            c.sendPacket(PacketCreator.serverNotice(5, "As you used the secret skill, your energy bar has been reset."));
+            c.sendPacket(
+                    PacketCreator.serverNotice(5, "As you used the secret skill, your energy bar has been reset."));
         }
         if (skillLevel == 0 || skillLevel != __skillLevel) {
             return;
@@ -93,7 +101,8 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
                 chr.addCooldown(skillid, currentServerTime(), SECONDS.toMillis(cooldownTime));
             }
         }
-        if (skillid == Hero.MONSTER_MAGNET || skillid == Paladin.MONSTER_MAGNET || skillid == DarkKnight.MONSTER_MAGNET) { // Monster Magnet
+        if (skillid == Hero.MONSTER_MAGNET || skillid == Paladin.MONSTER_MAGNET
+                || skillid == DarkKnight.MONSTER_MAGNET) { // Monster Magnet
             int num = p.readInt();
             for (int i = 0; i < num; i++) {
                 int mobOid = p.readInt();
@@ -105,14 +114,18 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
                         monster.aggroClearDamages();
                         monster.aggroMonsterDamage(chr, 1);
 
-                        // thanks onechord for pointing out Magnet crashing the caster (issue would actually happen upon failing to catch mob)
-                        // thanks Conrad for noticing Magnet crashing when trying to pull bosses and fixed mobs
+                        // thanks onechord for pointing out Magnet crashing the caster (issue would
+                        // actually happen upon failing to catch mob)
+                        // thanks Conrad for noticing Magnet crashing when trying to pull bosses and
+                        // fixed mobs
                         monster.aggroSwitchController(chr, true);
                     }
                 }
             }
-            byte direction = p.readByte();   // thanks MedicOP for pointing some 3rd-party related issues with Magnet
-            chr.getMap().broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), skillid, chr.getSkillLevel(skillid), 1, direction), false);
+            byte direction = p.readByte(); // thanks MedicOP for pointing some 3rd-party related issues with Magnet
+            chr.getMap().broadcastMessage(chr,
+                    PacketCreator.showBuffEffect(chr.getId(), skillid, chr.getSkillLevel(skillid), 1, direction),
+                    false);
             c.sendPacket(PacketCreator.enableActions());
             return;
         } else if (skillid == Brawler.MP_RECOVERY) {// MP Recovery
@@ -124,7 +137,8 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
             chr.addMP(gain);
         } else if (skillid == SuperGM.HEAL_PLUS_DISPEL) {
             p.skip(11);
-            chr.getMap().broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), skillid, chr.getSkillLevel(skillid)), false);
+            chr.getMap().broadcastMessage(chr,
+                    PacketCreator.showBuffEffect(chr.getId(), skillid, chr.getSkillLevel(skillid)), false);
         } else if (skillid % 10000000 == 1004) {
             p.readShort();
         }
