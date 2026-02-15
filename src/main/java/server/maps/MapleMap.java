@@ -682,16 +682,6 @@ public class MapleMap {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         for (final MonsterDropEntry de : dropEntry) {
-            if (getWorldServer().isSpellTraceFever()) {
-                Item spellTrace = new Item(4000999, (short) 0, (short) 1);
-                spawnDrop(spellTrace, calcDropPos(pos, mob.getPosition()), mob, chr, droptype, (short) 0, delay);
-            }
-            if (getWorldServer().isNxFever()) {
-                // Randomly choose between NX 100 (4031865) and NX 250 (4031866)
-                int nxCardId = Randomizer.nextBoolean() ? 4031865 : 4031866;
-                Item nxCard = new Item(nxCardId, (short) 0, (short) 1);
-                spawnDrop(nxCard, calcDropPos(pos, mob.getPosition()), mob, chr, droptype, (short) 0, delay);
-            }
 
             float cardRate = chr.getCardRate(de.itemId);
             int dropChance = (int) Math.min((float) de.chance * chRate * cardRate, Integer.MAX_VALUE);
@@ -756,9 +746,11 @@ public class MapleMap {
                     if (ItemConstants.getInventoryType(de.itemId) == InventoryType.EQUIP) {
                         idrop = ii.randomizeStats((Equip) ii.getEquipById(de.itemId));
                     } else {
-                        idrop = new Item(de.itemId, (short) 0,
-                                (short) (de.Maximum != 1 ? Randomizer.nextInt(de.Maximum - de.Minimum) + de.Minimum
-                                        : 1));
+                        int qty = (de.Maximum != 1 ? Randomizer.nextInt(de.Maximum - de.Minimum) + de.Minimum : 1);
+                        if (getWorldServer().isSpellTraceFever() && de.itemId == 4000999) { // Spell Trace
+                            qty *= 10;
+                        }
+                        idrop = new Item(de.itemId, (short) 0, (short) qty);
                     }
                     spawnDrop(idrop, calcDropPos(pos, mob.getPosition()), mob, chr, droptype, de.questid, delay);
                     d++;
@@ -1428,6 +1420,9 @@ public class MapleMap {
             checkMapEvolution(chr);
 
             int nx_chance = 10000; // chance to get nx from mob 5000 for 5%
+            if (getWorldServer().isNxFever()) {
+                nx_chance *= 2;
+            }
             boolean nx_gain = (int) (Math.random() * 100000) <= nx_chance; // check success or failure to gain nx
 
             // formula for nx gain
@@ -1441,6 +1436,10 @@ public class MapleMap {
             int nxAmount = Math.min(
                     (int) Math.max((min_nx_gain + (ratio * (max_nx_gain - min_nx_gain))), monster.getLevel() * 5),
                     6000); // formula for nx gain
+
+            if (getWorldServer().isNxFever()) {
+                nxAmount *= 2;
+            }
             if (nx_gain) {
                 chr.getCashShop().gainCash(1, (int) (nxAmount * Variance)); // gain nx
                 chr.sendPacket(PacketCreator.earnTitleMessage("NX God Teto grants " + (int) (nxAmount * Variance)

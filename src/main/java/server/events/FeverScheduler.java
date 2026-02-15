@@ -15,6 +15,7 @@ public class FeverScheduler {
     private final Random rand = new Random();
     private boolean isFeverActive = false;
     private FeverType currentFever = null;
+    private FeverType lastFever = null;
 
     // Configuration
     private static final int MIN_INTERVAL_MIN = 20;
@@ -26,7 +27,8 @@ public class FeverScheduler {
         DROP("Drop Rate", 2), // 2x Drop
         MESO("Meso Rate", 2), // 2x Meso
         NX("NX Rate", 2), // 2x NX
-        SPELL_TRACE("Spell Trace", 1); // Guaranteed Spell Trace
+        SPELL_TRACE("Spell Trace", 1), // Guaranteed Spell Trace
+        EXP("Exp Rate", 2); // 2x Exp
 
         private final String name;
         private final int multiplier;
@@ -82,8 +84,11 @@ public class FeverScheduler {
             currentFever = forcedType;
         } else {
             FeverType[] types = FeverType.values();
-            currentFever = types[rand.nextInt(types.length)];
+            do {
+                currentFever = types[rand.nextInt(types.length)];
+            } while (currentFever == lastFever);
         }
+        lastFever = currentFever;
 
         isFeverActive = true;
 
@@ -104,6 +109,9 @@ public class FeverScheduler {
                 break;
             case SPELL_TRACE:
                 world.setSpellTraceFever(true);
+                break;
+            case EXP:
+                world.setExpRate(world.getExpRate() * currentFever.getMultiplier());
                 break;
         }
 
@@ -151,6 +159,9 @@ public class FeverScheduler {
                     break;
                 case SPELL_TRACE:
                     world.setSpellTraceFever(false);
+                    break;
+                case EXP:
+                    world.setExpRate(world.getExpRate() / currentFever.getMultiplier());
                     break;
             }
             world.broadcastPacket(PacketCreator.serverNotice(6, "[Fever] The Fever event has ended."));
