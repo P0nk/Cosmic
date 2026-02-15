@@ -113,22 +113,23 @@ public class LifeFactory {
                 return null;
             }
 
-            // thanks resinate for noticing non-propagable infos such as revives getting retrieved
+            // thanks resinate for noticing non-propagable infos such as revives getting
+            // retrieved
             attackInfos.addAll(linkStats.getRight());
         }
         int monsterLevel = DataTool.getIntConvert("level", monsterInfoData);
         int maxHp = DataTool.getIntConvert("maxHP", monsterInfoData);
         // Modify the experience and maxHP based on the monster's level
-//        if (monsterLevel >= 160  && maxHp > 30000000 && !stats.isBoss()) {
-//            stats.setHp(maxHp / 5);
-//        }
+        // if (monsterLevel >= 160 && maxHp > 30000000 && !stats.isBoss()) {
+        // stats.setHp(maxHp / 5);
+        // }
         if (mid == 8840000) { // Von Leon
             stats.setHp(75_000_000_000L);
         } else if (mid == 8850011) { // Cygnus
             stats.setHp(150_000_000_000L);
         } else if (mid == 9400408) { // Castellan B1
             stats.setHp(100_000_000_000L);
-        } else if ( mid == 9400409) { // Castellan B2
+        } else if (mid == 9400409) { // Castellan B2
             stats.setHp(150_000_000_000L);
         } else if (mid == 8880302 || mid == 8880301) { // Will
             stats.setHp(300_000_000_000L);
@@ -136,30 +137,30 @@ public class LifeFactory {
             stats.setHp(450_000_000_000L);
         } else if (mid == 8880415) { // Verus
             stats.setHp(700_000_000_000L);
-        } else if (mid == 9001007 ) {
+        } else if (mid == 9001007) {
             stats.setHp(999_999_999_999_999L);
         }
-//        else if (mid == 8850011 || mid == 8850012) {
-//            stats.setHp(3_000_000_000L);
-//        } else if (mid == 9001007) {
-//            stats.setHp(100_000_000_000_000_000L);
-//        } else if (mid >= 8850000 && mid <= 8850004) {
-//            stats.setHp(600_000_000);
-//        } else if(mid == 8880000) {
-//            stats.setHp(6_000_000_000L);
-//        } else if (mid == 8880002) {
-//            stats.setHp(10_000_000_000L);
-//        } else if (mid == 8880010) {
-//            stats.setHp(20_000_000_000L);
-//        } else if (mid == 8240098) {
-//            stats.setHp(10_000_000_000L);
-//        } else if (mid == 8240099) {
-//            stats.setHp(15_000_000_000L);
-//        }
+        // else if (mid == 8850011 || mid == 8850012) {
+        // stats.setHp(3_000_000_000L);
+        // } else if (mid == 9001007) {
+        // stats.setHp(100_000_000_000_000_000L);
+        // } else if (mid >= 8850000 && mid <= 8850004) {
+        // stats.setHp(600_000_000);
+        // } else if(mid == 8880000) {
+        // stats.setHp(6_000_000_000L);
+        // } else if (mid == 8880002) {
+        // stats.setHp(10_000_000_000L);
+        // } else if (mid == 8880010) {
+        // stats.setHp(20_000_000_000L);
+        // } else if (mid == 8240098) {
+        // stats.setHp(10_000_000_000L);
+        // } else if (mid == 8240099) {
+        // stats.setHp(15_000_000_000L);
+        // }
         else {
             stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
         }
-//        stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
+        // stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
         stats.setFriendly(DataTool.getIntConvert("damagedByMob", monsterInfoData, stats.isFriendly() ? 1 : 0) == 1);
         stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData));
         stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData));
@@ -170,13 +171,15 @@ public class LifeFactory {
         stats.setLevel(DataTool.getIntConvert("level", monsterInfoData));
         stats.setRemoveAfter(DataTool.getIntConvert("removeAfter", monsterInfoData, stats.removeAfter()));
         stats.setBoss(DataTool.getIntConvert("boss", monsterInfoData, stats.isBoss() ? 1 : 0) > 0);
-        stats.setExplosiveReward(DataTool.getIntConvert("explosiveReward", monsterInfoData, stats.isExplosiveReward() ? 1 : 0) > 0);
+        stats.setExplosiveReward(
+                DataTool.getIntConvert("explosiveReward", monsterInfoData, stats.isExplosiveReward() ? 1 : 0) > 0);
         stats.setFfaLoot(DataTool.getIntConvert("publicReward", monsterInfoData, stats.isFfaLoot() ? 1 : 0) > 0);
         stats.setUndead(DataTool.getIntConvert("undead", monsterInfoData, stats.isUndead() ? 1 : 0) > 0);
         stats.setName(DataTool.getString(mid + "/name", mobStringData, "MISSINGNO"));
         stats.setBuffToGive(DataTool.getIntConvert("buff", monsterInfoData, stats.getBuffToGive()));
         stats.setCP(DataTool.getIntConvert("getCP", monsterInfoData, stats.getCP()));
-        stats.setRemoveOnMiss(DataTool.getIntConvert("removeOnMiss", monsterInfoData, stats.removeOnMiss() ? 1 : 0) > 0);
+        stats.setRemoveOnMiss(
+                DataTool.getIntConvert("removeOnMiss", monsterInfoData, stats.removeOnMiss() ? 1 : 0) > 0);
 
         Data special = monsterInfoData.getChildByPath("coolDamage");
         if (special != null) {
@@ -187,12 +190,15 @@ public class LifeFactory {
         special = monsterInfoData.getChildByPath("loseItem");
         if (special != null) {
             for (Data liData : special.getChildren()) {
-                stats.addLoseItem(new loseItem(DataTool.getInt(liData.getChildByPath("id")), (byte) DataTool.getInt(liData.getChildByPath("prop")), (byte) DataTool.getInt(liData.getChildByPath("x"))));
+                stats.addLoseItem(new loseItem(DataTool.getInt(liData.getChildByPath("id")),
+                        (byte) DataTool.getInt(liData.getChildByPath("prop")),
+                        (byte) DataTool.getInt(liData.getChildByPath("x"))));
             }
         }
         special = monsterInfoData.getChildByPath("selfDestruction");
         if (special != null) {
-            stats.setSelfDestruction(new selfDestruction((byte) DataTool.getInt(special.getChildByPath("action")), DataTool.getIntConvert("removeAfter", special, -1), DataTool.getIntConvert("hp", special, -1)));
+            stats.setSelfDestruction(new selfDestruction((byte) DataTool.getInt(special.getChildByPath("action")),
+                    DataTool.getIntConvert("removeAfter", special, -1), DataTool.getIntConvert("hp", special, -1)));
         }
         Data firstAttackData = monsterInfoData.getChildByPath("firstAttack");
         int firstAttack = 0;
@@ -204,9 +210,11 @@ public class LifeFactory {
             }
         }
         stats.setFirstAttack(firstAttack > 0);
-        stats.setDropPeriod(DataTool.getIntConvert("dropItemPeriod", monsterInfoData, stats.getDropPeriod() / 10000) * 10000);
+        stats.setDropPeriod(
+                DataTool.getIntConvert("dropItemPeriod", monsterInfoData, stats.getDropPeriod() / 10000) * 10000);
 
-        // thanks yuxaij, Riizade, Z1peR, Anesthetic for noticing some bosses crashing players due to missing requirements
+        // thanks yuxaij, Riizade, Z1peR, Anesthetic for noticing some bosses crashing
+        // players due to missing requirements
         boolean hpbarBoss = stats.isBoss() && hpbarBosses.contains(mid);
         stats.setTagColor(hpbarBoss ? DataTool.getIntConvert("hpTagColor", monsterInfoData, 0) : 0);
         stats.setTagBgColor(hpbarBoss ? DataTool.getIntConvert("hpTagBgcolor", monsterInfoData, 0) : 0);
@@ -283,7 +291,7 @@ public class LifeFactory {
         if (noFlip > 0) {
             Point origin = DataTool.getPoint("stand/0/origin", monsterData, null);
             if (origin != null) {
-                stats.setFixedStance(origin.getX() < 1 ? 5 : 4);    // fixed left/right
+                stats.setFixedStance(origin.getX() < 1 ? 5 : 4); // fixed left/right
             }
         }
 
@@ -295,9 +303,19 @@ public class LifeFactory {
             MonsterStats stats = monsterStats.get(mid);
             if (stats == null) {
                 Pair<MonsterStats, List<MobAttackInfoHolder>> mobStats = getMonsterStats(mid);
+                if (mobStats == null) {
+                    mobStats = createDefaultStats(mid);
+                }
                 stats = mobStats.getLeft();
                 setMonsterAttackInfo(mid, mobStats.getRight());
 
+                // Don't cache default stats to avoid persistent broken mobs if data is later
+                // added
+                // monsterStats.put(mid, stats);
+                // Wait, if I don't cache, it will re-create every time. That's fine for
+                // placeholders.
+                // But wait, getMonster is called probably every spawn tick if not cached.
+                // Let's cache it, but maybe log a warning.
                 monsterStats.put(mid, stats);
             }
             return new Monster(mid, stats);
@@ -305,6 +323,33 @@ public class LifeFactory {
             log.error("[SEVERE] MOB {} failed to load.", mid, npe);
             return null;
         }
+    }
+
+    private static Pair<MonsterStats, List<MobAttackInfoHolder>> createDefaultStats(int mid) {
+        MonsterStats stats = new MonsterStats();
+        boolean isBoss = (mid >= 8800000 && mid < 9000000) || (mid >= 9400000 && mid < 10000000);
+        // Generalized boss ID range for GMS-like servers
+
+        int level = isBoss ? 100 : 50;
+
+        // Scaling Logic
+        long hp = 50L * level * level; // 50 * 2500 = 125,000 (Lvl 50), 500,000 (Lvl 100)
+        int damage = 10 * level; // 500 (Lvl 50), 1000 (Lvl 100)
+
+        stats.setHp(hp);
+        stats.setMp(10 * level);
+        stats.setExp(0);
+        stats.setLevel(level);
+        stats.setPADamage(damage);
+        stats.setPDDamage(damage);
+        stats.setMADamage(damage);
+        stats.setMDDamage(damage);
+        stats.setFriendly(false);
+        stats.setChange(false);
+
+        stats.setName("Glitched Mob " + mid + " (Lvl " + level + ")");
+
+        return new Pair<>(stats, new LinkedList<>());
     }
 
     public static int getMonsterLevel(int mid) {
@@ -329,7 +374,8 @@ public class LifeFactory {
 
     private static void decodeElementalString(MonsterStats stats, String elemAttr) {
         for (int i = 0; i < elemAttr.length(); i += 2) {
-            stats.setEffectiveness(Element.getFromChar(elemAttr.charAt(i)), ElementalEffectiveness.getByNumber(Integer.parseInt(String.valueOf(elemAttr.charAt(i + 1)))));
+            stats.setEffectiveness(Element.getFromChar(elemAttr.charAt(i)),
+                    ElementalEffectiveness.getByNumber(Integer.parseInt(String.valueOf(elemAttr.charAt(i + 1)))));
         }
     }
 
