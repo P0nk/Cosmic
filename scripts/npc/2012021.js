@@ -23,7 +23,7 @@ function start() {
             var remain = cycle - diff;
             var min = Math.ceil(remain / 60000);
             if (min <= 0) min = 1;
-            msg += "The travel duration is **5 minutes**. The next ship will arrive in approximately **" + min + " minutes**.";
+            msg += "The travel duration is #b5 minutes#k. The next ship will arrive in approximately #b" + min + " minutes#k.";
         } else {
             msg += "Please wait for the next ship to arrive.";
         }
@@ -50,7 +50,7 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendYesNo("Do you want to go to Leafre? The trip takes **5 minutes**. The ship is boarding right now, would you like to go?");
+            cm.sendYesNo("Do you want to go to Leafre? The trip takes #b5 minutes#k. The ship is boarding right now, would you like to go?");
         } else if (status == 1) {
             if (cm.haveItem(4031331)) { // Ticket to Leafre
                 var em = cm.getEventManager("Cabin");

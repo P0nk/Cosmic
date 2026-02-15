@@ -37,7 +37,7 @@ function action(mode, type, selection) {
 
                 if (min < 1) min = 1;
 
-                timeMsg = "The ship to Leafre will depart in approximately " + min + " minutes. ";
+                timeMsg = "The ship to Leafre will depart in approximately #b" + min + " minutes#k. ";
             } else {
                 timeMsg = "The ship is preparing for departure. ";
             }
