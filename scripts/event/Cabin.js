@@ -8,13 +8,8 @@ var Orbis_Docked;      // 200000132
 var Leafre_Docked;     // 240000111
 var Ride_To_Leafre;    // 200090200
 var Ride_To_Orbis;     // 200090210
-var Orbis_Arrival;     // 200000100 (Default Landing)
-
-// System & Time
-var t_OrbisBoarding = 150000; // 2.5 mins (0-150s)
-var t_RideToLeafre = 300000;  // 5.0 mins (150-450s)
-var t_LeafreBoarding = 150000;// 2.5 mins (450-600s)
-var t_RideToOrbis = 300000;   // 5.0 mins (600-900s)
+var Orbis_Arrival;     // 200000131
+var Leafre_Arrival;    // 240000110
 
 function init() {
     var mf = em.getChannelServer().getMapFactory();
@@ -36,21 +31,27 @@ function syncEvent() {
 
     if (cycleTime < 150000) {
         // 0 - 2.5 mins: Orbis Boarding
+        Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
+        Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
         runOrbisBoarding(150000 - cycleTime);
     } else if (cycleTime < 450000) {
         // 2.5 - 7.5 mins: Ride to Leafre
+        Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
         runRideToLeafre(450000 - cycleTime);
     } else if (cycleTime < 600000) {
         // 7.5 - 10 mins: Leafre Boarding
+        Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
+        Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
         runLeafreBoarding(600000 - cycleTime);
     } else {
         // 10 - 15 mins: Ride to Orbis
+        Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
         runRideToOrbis(900000 - cycleTime);
     }
 }
 
 function runOrbisBoarding(timeLeft) {
-    // Arrival from Leafre
+    // Arrival from Leafre cleanup
     Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
 
     // Setup Orbis Boarding
@@ -59,12 +60,14 @@ function runOrbisBoarding(timeLeft) {
     em.setProperty("entry", "true");
 
     Orbis_Docked.setDocked(true);
-    Leafre_Docked.setDocked(false); // Ensure Leafre closed
+    Leafre_Docked.setDocked(false);
 
     em.schedule("runRideToLeafre", timeLeft);
-
-    // Broadcast arrival/docking?
     Orbis_Docked.broadcastShip(true);
+
+    // Timer
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Orbis_Docked.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
 function runRideToLeafre(timeLeft) {
@@ -78,12 +81,15 @@ function runRideToLeafre(timeLeft) {
     Orbis_Docked.warpEveryone(Ride_To_Leafre.getId());
 
     em.schedule("runLeafreBoarding", timeLeft);
-
     Orbis_Docked.broadcastShip(false);
+
+    // Timer
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Ride_To_Leafre.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
 function runLeafreBoarding(timeLeft) {
-    // Arrival from Orbis
+    // Arrival from Orbis cleanup
     Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
 
     // Setup Leafre Boarding
@@ -95,8 +101,11 @@ function runLeafreBoarding(timeLeft) {
     Orbis_Docked.setDocked(false);
 
     em.schedule("runRideToOrbis", timeLeft);
-
     Leafre_Docked.broadcastShip(true);
+
+    // Timer
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Leafre_Docked.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
 function runRideToOrbis(timeLeft) {
@@ -110,8 +119,11 @@ function runRideToOrbis(timeLeft) {
     Leafre_Docked.warpEveryone(Ride_To_Orbis.getId());
 
     em.schedule("runOrbisBoarding", timeLeft);
-
     Leafre_Docked.broadcastShip(false);
+
+    // Timer
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Ride_To_Orbis.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
 // Required Filler Functions
