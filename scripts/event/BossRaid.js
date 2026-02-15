@@ -27,7 +27,7 @@ var raidBosses = [
     { name: "Blue Mushmom", mobId: 9400205, mapId: 800010100 },
     { name: "Mushmom", mobId: 6130101, mapId: 100000005 },
     { name: "Female Boss", mobId: 9400121, mapId: 801040003 },
-    { name: "Nine-Tailed Fox", mobId: 3220000, mapId: 222010310 },
+    { name: "Nine-Tailed Fox", mobId: 7220001, mapId: 222010310 },
     { name: "Snowman", mobId: 8220001, mapId: 211040101 },
     { name: "Eliza", mobId: 8220000, mapId: 200010300 },
     { name: "Deet and Roi", mobId: 8090000, mapId: 261010102 },
