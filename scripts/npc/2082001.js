@@ -53,8 +53,10 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendYesNo("Do you want to go to Orbis? The trip takes #b5 minutes#k. The ship is boarding right now, would you like to go?");
+            cm.sendNext("Welcome to the Leafre Station. We have flights departing for Orbis every 15 minutes, starting at 7 minutes past the hour.\r\n(XX:07, XX:22, XX:37, XX:52)");
         } else if (status == 1) {
+            cm.sendYesNo("The ship is currently boarding. The ride takes #b5 minutes#k. Would you like to head to the dock?");
+        } else if (status == 2) {
             if (cm.haveItem(4031045)) { // Ticket to Orbis
                 cm.gainItem(4031045, -1);
                 cm.warp(240000111); // Leafre Docked Map
