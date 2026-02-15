@@ -4,7 +4,21 @@ function start() {
         if (em.getProperty("entry") == "true") {
             cm.sendYesNo("Do you wish to board the flight?");
         } else {
-            cm.sendOk("The flight has not arrived yet. Come back soon.");
+            var dockedTime = em.getProperty("dockedTime");
+            var now = java.lang.System.currentTimeMillis();
+
+            if (dockedTime != null) {
+                var diff = now - dockedTime;
+                var cycle = 10 * 60 * 1000;
+                var remain = cycle - diff;
+                var min = Math.ceil(remain / 60000);
+
+                if (min <= 0) min = 1;
+
+                cm.sendOk("The flight has not arrived yet. Come back in ~" + min + " minutes.");
+            } else {
+                cm.sendOk("The flight has not arrived yet. Come back soon.");
+            }
             cm.dispose();
         }
     } else {

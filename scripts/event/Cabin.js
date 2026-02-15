@@ -41,32 +41,40 @@ function init() {
 
         var mf = em.getChannelServer().getMapFactory();
 
-        Orbis_Docked = mf.getMap(200000132);
-        Leafre_Docked = mf.getMap(240000111);
+        Orbis_Docked = mf.getMap(200000132); // Orbis Docked
+        Leafre_Docked = mf.getMap(240000111); // Leafre Docked
 
-        Ride_To_Leafre = mf.getMap(200090200);
-        Ride_To_Orbis = mf.getMap(200090210);
+        Ride_To_Leafre = mf.getMap(200090200); // Ride to Leafre
+        Ride_To_Orbis = mf.getMap(200090210); // Ride to Orbis
 
-        Orbis_Arrival = mf.getMap(200000100);
-        Leafre_Arrival = mf.getMap(240000100);
+        Orbis_Arrival = mf.getMap(200000131); // Orbis Station (to Leafre)
+        Leafre_Arrival = mf.getMap(240000110); // Leafre Station (to Orbis)
 
-        scheduleNew();
+        try {
+            startBoarding();
+        } catch (sched_e) {
+            console.error("[Cabin JS] Failed to call startBoarding: " + sched_e);
+        }
+
         console.log("[Cabin JS] Travel initialized.");
     } catch (e) {
-        console.error("[Cabin JS] Error in init: " + e);
+        console.error("[Cabin JS] CRASH in init(): " + e);
+        e.printStackTrace(); // If supported
     }
 }
 
-function scheduleNew() {
+function startBoarding() {
     try {
         em.setProperty("docked", "true");
         em.setProperty("entry", "true");
+        em.setProperty("dockedTime", "" + java.lang.System.currentTimeMillis()); // Ensure string
 
         Orbis_Docked.setDocked(true);
         Leafre_Docked.setDocked(true);
 
         em.schedule("stopEntry", closeTime);
         em.schedule("takeoff", beginTime);
+
     } catch (e) {
         console.error("[Cabin JS] Error in scheduleNew: " + e);
     }
@@ -103,7 +111,7 @@ function arrived() {
     Orbis_Docked.broadcastShip(true);
     Leafre_Docked.broadcastShip(true);
 
-    scheduleNew();
+    startBoarding();
 }
 
 // Required Filler Functions
