@@ -7,8 +7,8 @@ function start(ms) {
     try {
         var PacketCreator = Java.type("tools.PacketCreator");
 
-        // AirPlane Phase: Ride (05:00 - 30:00)
-        // Arrival at 30:00 (1,800,000 ms)
+        // Plane Phase: Ride to KC (17:30 - 30:00)
+        // Arrival at 30:00 (1,800,000 ms = 0)
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 1800000; // 30 min cycle
         var arrivalTime = 1800000; // 30:00

@@ -1,9 +1,11 @@
 /*
-    Airplane Event Script (Kerning <-> CBD)
+    Airplane Event Script (Kerning <-> CBD) - Split Cycle
     Cycle: 30 Minutes (Real-Time)
     Phases:
-    - 00:00 - 05:00: Boarding (5 mins)
-    - 05:00 - 30:00: Ride (25 mins)
+    - 00:00 - 02:30: Kerning Boarding (2.5 mins)
+    - 02:30 - 15:00: Ride to CBD (12.5 mins)
+    - 15:00 - 17:30: CBD Boarding (2.5 mins)
+    - 17:30 - 30:00: Ride to Kerning (12.5 mins)
 */
 
 // Maps
@@ -16,8 +18,10 @@ var Plane_to_CBD;      // 540010101
 var Plane_to_KC;       // 540010002
 
 // Durations (30 min cycle)
-var BOARDING_TIME = 300000;  // 5 mins
-var RIDE_TIME = 1500000;     // 25 mins
+var KC_BOARDING_TIME = 150000;   // 2.5 mins
+var RIDE_TO_CBD_TIME = 750000;   // 12.5 mins
+var CBD_BOARDING_TIME = 150000;  // 2.5 mins
+var RIDE_TO_KC_TIME = 750000;    // 12.5 mins
 
 function init() {
     try {
@@ -46,18 +50,24 @@ function syncEvent() {
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 1800000; // 30 min cycle
 
-        if (cycleTime < 300000) {
-            // 0 - 5 mins: Boarding
-            // Ensure ride maps are empty
+        if (cycleTime < 150000) {
+            // 0 - 2.5 mins: Kerning Boarding
+            Plane_to_KC.warpEveryone(KC_Docked.getId());
+            Plane_to_CBD.warpEveryone(CBD_Docked.getId());
+            setupKCBoarding(150000 - cycleTime);
+        } else if (cycleTime < 900000) {
+            // 2.5 - 15.0 mins: Ride to CBD
+            Plane_to_KC.warpEveryone(KC_Docked.getId());
+            setupRideToCBD(900000 - cycleTime);
+        } else if (cycleTime < 1050000) {
+            // 15.0 - 17.5 mins: CBD Boarding
             Plane_to_CBD.warpEveryone(CBD_Docked.getId());
             Plane_to_KC.warpEveryone(KC_Docked.getId());
-            setupBoarding(300000 - cycleTime);
+            setupCBDBoarding(1050000 - cycleTime);
         } else {
-            // 5 - 30 mins: Ride
-            // Warp waiting rooms to ride
-            KC_BTF.warpEveryone(Plane_to_CBD.getId());
-            CBD_BTF.warpEveryone(Plane_to_KC.getId());
-            setupRide(1800000 - cycleTime);
+            // 17.5 - 30.0 mins: Ride to Kerning
+            Plane_to_CBD.warpEveryone(CBD_Docked.getId());
+            setupRideToKC(1800000 - cycleTime);
         }
     } catch (e) {
         var System = Java.type("java.lang.System");
@@ -67,49 +77,81 @@ function syncEvent() {
 }
 
 // --- Scheduler Hooks ---
-function runBoarding(eim) {
-    setupBoarding(BOARDING_TIME);
+function runKCBoarding(eim) {
+    setupKCBoarding(KC_BOARDING_TIME);
 }
 
-function runRide(eim) {
-    setupRide(RIDE_TIME);
+function runRideToCBD(eim) {
+    setupRideToCBD(RIDE_TO_CBD_TIME);
+}
+
+function runCBDBoarding(eim) {
+    setupCBDBoarding(CBD_BOARDING_TIME);
+}
+
+function runRideToKC(eim) {
+    setupRideToKC(RIDE_TO_KC_TIME);
 }
 
 // --- Setup Logic ---
-function setupBoarding(timeLeft) {
-    // Cleanup previous ride
-    Plane_to_CBD.warpEveryone(CBD_Docked.getId());
+function setupKCBoarding(timeLeft) {
+    // Arrival from CBD cleanup
     Plane_to_KC.warpEveryone(KC_Docked.getId());
 
     em.setProperty("docked", "true");
     em.setProperty("entry", "true");
+    em.setProperty("location", "kerning");
 
-    // Docked logic unknown for these maps, usually station NPCs check property
-    // But setting maps to docked just in case
-    // KC_Docked.setDocked(true); 
-    // CBD_Docked.setDocked(true);
+    // Docked logic if applicable
+    // KC_Docked.setDocked(true);
 
-    em.schedule("runRide", timeLeft);
+    em.schedule("runRideToCBD", timeLeft);
 
     // Timers for Boarding Rooms
     var PacketCreator = Java.type("tools.PacketCreator");
     KC_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
-    CBD_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
-function setupRide(timeLeft) {
+function setupRideToCBD(timeLeft) {
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
 
     // Warp Waiting Room -> Ride
     KC_BTF.warpEveryone(Plane_to_CBD.getId());
-    CBD_BTF.warpEveryone(Plane_to_KC.getId());
 
-    em.schedule("runBoarding", timeLeft);
+    em.schedule("runCBDBoarding", timeLeft);
 
     // Timers for Ride Maps
     var PacketCreator = Java.type("tools.PacketCreator");
     Plane_to_CBD.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+}
+
+function setupCBDBoarding(timeLeft) {
+    // Arrival from Kerning cleanup
+    Plane_to_CBD.warpEveryone(CBD_Docked.getId());
+
+    em.setProperty("docked", "true");
+    em.setProperty("entry", "true");
+    em.setProperty("location", "cbd");
+
+    // CBD_Docked.setDocked(true);
+
+    em.schedule("runRideToKC", timeLeft);
+
+    var PacketCreator = Java.type("tools.PacketCreator");
+    CBD_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+}
+
+function setupRideToKC(timeLeft) {
+    em.setProperty("docked", "false");
+    em.setProperty("entry", "false");
+
+    // Warp Waiting Room -> Ride
+    CBD_BTF.warpEveryone(Plane_to_KC.getId());
+
+    em.schedule("runKCBoarding", timeLeft);
+
+    var PacketCreator = Java.type("tools.PacketCreator");
     Plane_to_KC.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 

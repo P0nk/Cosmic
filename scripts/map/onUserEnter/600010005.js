@@ -7,11 +7,11 @@ function start(ms) {
     try {
         var PacketCreator = Java.type("tools.PacketCreator");
 
-        // Subway Phase: Ride (05:00 - 10:00)
-        // Arrival at 10:00 (600,000 ms)
+        // Subway Phase: Ride to NLC (01:30 - 05:00)
+        // Arrival at 05:00 (300,000 ms)
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 600000; // 10 min cycle
-        var arrivalTime = 600000; // 10:00
+        var arrivalTime = 300000; // 05:00
 
         var timeLeft = arrivalTime - cycleTime;
 

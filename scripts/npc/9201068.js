@@ -12,21 +12,23 @@ function start() {
     var min = cal.get(java.util.Calendar.MINUTE);
     var nowStr = (hour < 10 ? "0" + hour : hour) + ":" + (min < 10 ? "0" + min : min);
 
-    // Wait Time Logic (10 min cycle: 0-5 Board, 5-10 Ride)
-    // Departure is at x5 minutes (5, 15, 25...)
+    // Wait Time Logic (10 min cycle: 00:00-01:30 Board, 01:30-10:00 Wait)
+    // Boarding Phase: 0 - 90,000 (1.5 mins)
+    // Departure at x1.5 mins (1:30, 11:30, 21:30...)
+
     var nowMs = java.lang.System.currentTimeMillis();
-    var cycle = nowMs % 600000;
+    var cycle = nowMs % 600000; // 10 min
     var waitMs = 0;
 
-    if (cycle < 300000) { // Boarding Phase (0-5)
-        waitMs = 300000 - cycle;
-    } else { // Ride Phase (5-10) -> Next departure is next cycle's 5 min mark
-        waitMs = (600000 - cycle) + 300000;
+    if (cycle < 90000) { // Boarding Phase (0 - 1.5 mins)
+        waitMs = 90000 - cycle;
+    } else { // Ride Phase (1.5 - 10 mins) -> Next boarding finishes at next cycle's 1.5 min mark
+        waitMs = (600000 - cycle) + 90000;
     }
     var waitMin = Math.ceil(waitMs / 60000);
 
     var statusText = "";
-    if (cycle < 300000) {
+    if (cycle < 90000) {
         statusText = "\r\n#gSTATUS: Can board now#k";
     } else {
         statusText = "\r\n#rSTATUS: Train not arrived#k";

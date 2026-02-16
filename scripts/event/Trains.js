@@ -1,9 +1,11 @@
 /*
-    Trains Event Script (Orbis <-> Ludibrium)
-    Cycle: 10 Minutes (Real-Time)
+    Trains Event Script (Orbis <-> Ludibrium) - Split Cycle
+    Cycle: 15 Minutes (Real-Time)
     Phases:
-    - 00:00 - 05:00: Boarding
-    - 05:00 - 10:00: Ride
+    - 00:00 - 02:30: Orbis Boarding (2.5 mins)
+    - 02:30 - 07:30: Ride to Ludi (5 mins)
+    - 07:30 - 10:00: Ludi Boarding (2.5 mins)
+    - 10:00 - 15:00: Ride to Orbis (5 mins)
 */
 
 // Maps
@@ -18,8 +20,10 @@ var Train_to_Ludi;     // 200090100
 var Train_to_Orbis;    // 200090110
 
 // Durations
-var BOARDING_TIME = 300000; // 5 mins
-var RIDE_TIME = 300000;     // 5 mins
+var ORBIS_BOARDING_TIME = 150000; // 2.5 mins
+var RIDE_TO_LUDI_TIME = 300000;   // 5 mins
+var LUDI_BOARDING_TIME = 150000;  // 2.5 mins
+var RIDE_TO_ORBIS_TIME = 300000;  // 5 mins
 
 function init() {
     try {
@@ -48,20 +52,26 @@ function init() {
 function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
-        var cycleTime = now % 600000; // 10 min cycle
+        var cycleTime = now % 900000; // 15 min cycle
 
-        if (cycleTime < 300000) {
-            // 0 - 5 mins: Boarding
-            // Ensure ride maps are empty
+        if (cycleTime < 150000) {
+            // 0 - 2.5 mins: Orbis Boarding
+            Train_to_Orbis.warpEveryone(Orbis_Station.getId());
+            Train_to_Ludi.warpEveryone(Ludi_Station.getId());
+            setupOrbisBoarding(150000 - cycleTime);
+        } else if (cycleTime < 450000) {
+            // 2.5 - 7.5 mins: Ride to Ludi
+            Train_to_Orbis.warpEveryone(Orbis_Station.getId());
+            setupRideToLudi(450000 - cycleTime);
+        } else if (cycleTime < 600000) {
+            // 7.5 - 10 mins: Ludi Boarding
             Train_to_Ludi.warpEveryone(Ludi_Station.getId());
             Train_to_Orbis.warpEveryone(Orbis_Station.getId());
-            setupBoarding(300000 - cycleTime);
+            setupLudiBoarding(600000 - cycleTime);
         } else {
-            // 5 - 10 mins: Ride
-            // Warp waiting rooms to ride
-            Orbis_BTF.warpEveryone(Train_to_Ludi.getId());
-            Ludi_BTF.warpEveryone(Train_to_Orbis.getId());
-            setupRide(600000 - cycleTime);
+            // 10 - 15 mins: Ride to Orbis
+            Train_to_Ludi.warpEveryone(Ludi_Station.getId());
+            setupRideToOrbis(900000 - cycleTime);
         }
     } catch (e) {
         var System = Java.type("java.lang.System");
@@ -71,55 +81,92 @@ function syncEvent() {
 }
 
 // --- Scheduler Hooks ---
-function runBoarding(eim) {
-    setupBoarding(BOARDING_TIME);
+function runOrbisBoarding(eim) {
+    setupOrbisBoarding(ORBIS_BOARDING_TIME);
 }
 
-function runRide(eim) {
-    setupRide(RIDE_TIME);
+function runRideToLudi(eim) {
+    setupRideToLudi(RIDE_TO_LUDI_TIME);
+}
+
+function runLudiBoarding(eim) {
+    setupLudiBoarding(LUDI_BOARDING_TIME);
+}
+
+function runRideToOrbis(eim) {
+    setupRideToOrbis(RIDE_TO_ORBIS_TIME);
 }
 
 // --- Setup Logic ---
-function setupBoarding(timeLeft) {
-    // Cleanup previous ride
-    Train_to_Ludi.warpEveryone(Ludi_Station.getId());
+function setupOrbisBoarding(timeLeft) {
+    // Arrival from Ludi cleanup
     Train_to_Orbis.warpEveryone(Orbis_Station.getId());
 
     em.setProperty("docked", "true");
     em.setProperty("entry", "true");
+    em.setProperty("location", "orbis"); // Optional helper prop
 
     Orbis_Docked.setDocked(true);
-    Ludi_Docked.setDocked(true);
+    Ludi_Docked.setDocked(false);
 
-    em.schedule("runRide", timeLeft);
+    em.schedule("runRideToLudi", timeLeft);
     Orbis_Docked.broadcastShip(true);
-    Ludi_Docked.broadcastShip(true);
 
     // Timers for Boarding Rooms
     var PacketCreator = Java.type("tools.PacketCreator");
     Orbis_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
-    Ludi_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
-function setupRide(timeLeft) {
+function setupRideToLudi(timeLeft) {
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
 
     Orbis_Docked.setDocked(false);
-    Ludi_Docked.setDocked(false);
 
     // Warp Waiting Room -> Ride
     Orbis_BTF.warpEveryone(Train_to_Ludi.getId());
-    Ludi_BTF.warpEveryone(Train_to_Orbis.getId());
 
     Orbis_Docked.broadcastShip(false);
-    Ludi_Docked.broadcastShip(false);
 
-    em.schedule("runBoarding", timeLeft);
+    em.schedule("runLudiBoarding", timeLeft);
 
     // Timers for Ride Maps
     var PacketCreator = Java.type("tools.PacketCreator");
     Train_to_Ludi.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+}
+
+function setupLudiBoarding(timeLeft) {
+    // Arrival from Orbis cleanup
+    Train_to_Ludi.warpEveryone(Ludi_Station.getId());
+
+    em.setProperty("docked", "true");
+    em.setProperty("entry", "true");
+    em.setProperty("location", "ludi");
+
+    Ludi_Docked.setDocked(true);
+    Orbis_Docked.setDocked(false);
+
+    em.schedule("runRideToOrbis", timeLeft);
+    Ludi_Docked.broadcastShip(true);
+
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Ludi_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+}
+
+function setupRideToOrbis(timeLeft) {
+    em.setProperty("docked", "false");
+    em.setProperty("entry", "false");
+
+    Ludi_Docked.setDocked(false);
+
+    // Warp Waiting Room -> Ride
+    Ludi_BTF.warpEveryone(Train_to_Orbis.getId());
+
+    Ludi_Docked.broadcastShip(false);
+
+    em.schedule("runOrbisBoarding", timeLeft);
+
+    var PacketCreator = Java.type("tools.PacketCreator");
     Train_to_Orbis.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 

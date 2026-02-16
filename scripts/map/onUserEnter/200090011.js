@@ -7,11 +7,11 @@ function start(ms) {
     try {
         var PacketCreator = Java.type("tools.PacketCreator");
 
-        // Boats Phase: Ride (05:00 - 15:00)
-        // Arrival at 15:00 (900,000 ms)
+        // Boat Phase: Ride to Orbis (12:00 - 20:00)
+        // Arrival at 20:00 (1,200,000 ms)
         var now = java.lang.System.currentTimeMillis();
-        var cycleTime = now % 900000;
-        var arrivalTime = 900000;
+        var cycleTime = now % 1200000; // 20 min cycle
+        var arrivalTime = 1200000; // 20:00
 
         var timeLeft = arrivalTime - cycleTime;
 
