@@ -60,6 +60,17 @@ function action(mode, type, selection) {
             if (cm.haveItem(4031045)) { // Ticket to Orbis
                 cm.gainItem(4031045, -1);
                 cm.warp(240000111); // Leafre Docked Map
+
+                // Calculate timer manually for late joiners
+                var now = java.lang.System.currentTimeMillis();
+                var cycleTime = now % 900000;
+                var boardingEnd = 600000; // 10 mins (450,000 to 600,000)
+                var timeLeft = boardingEnd - cycleTime;
+                if (timeLeft > 0) {
+                    var PacketCreator = Java.type("tools.PacketCreator");
+                    cm.sendPacket(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+                }
+
                 cm.dispose();
             } else {
                 cm.sendOk("Make sure you got a #bTicket to Orbis (Regular)#k to travel in this flight. Check your inventory.");
