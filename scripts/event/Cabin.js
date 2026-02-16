@@ -55,7 +55,7 @@ function syncEvent() {
         if (cycleTime < 150000) {
             // 0 - 2.5 mins: Orbis Boarding
             console.log("[Cabin JS] Phase: Orbis Boarding");
-            Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId()); // Use simple method if possible
+            Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
             Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
             runOrbisBoarding(150000 - cycleTime);
         } else if (cycleTime < 450000) {
@@ -167,3 +167,19 @@ function runRideToOrbis(timeLeft) {
 // Required Filler Functions
 function cancelSchedule() { }
 function dispose() { }
+function monsterValue(eim, mobId) { return 0; }
+function setup(level, lobbyid) { return em.newInstance("Cabin"); }
+function playerEntry(eim, player) { }
+function playerExit(eim, player) { }
+function playerDisconnected(eim, player) { }
+function playerRevive(eim, player) { return true; }
+function scheduledTimeout(eim) { }
+function changedMap(eim, player, mapid) { }
+function playerDead(eim, player) { }
+function playerUnregistered(eim, player) { }
+function leftParty(eim, player) { }
+function disbandParty(eim) { }
+function clearPQ(eim) { }
+function allMonstersDead(eim) { }
+function friendlyKilled(mob, eim) { }
+function monsterKilled(mob, eim) { }
