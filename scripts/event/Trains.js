@@ -6,18 +6,6 @@
     - 05:00 - 10:00: Ride
 */
 
-// Polyfill: Map console.log to Java System.out
-var console = {
-    log: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.out.println(msg);
-    },
-    error: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.err.println(msg);
-    }
-};
-
 // Maps
 var Orbis_Station;     // 200000100
 var Orbis_Docked;      // 200000121
@@ -35,7 +23,6 @@ var RIDE_TIME = 300000;     // 5 mins
 
 function init() {
     try {
-        console.log("[Trains JS] init() started.");
         var mf = em.getChannelServer().getMapFactory();
 
         Orbis_Station = mf.getMap(200000100);
@@ -52,7 +39,8 @@ function init() {
         // Initial sync
         syncEvent();
     } catch (e) {
-        console.error("[Trains JS] Crash in init: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Trains JS] Crash in init: " + e);
         e.printStackTrace();
     }
 }
@@ -61,25 +49,23 @@ function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 600000; // 10 min cycle
-        console.log("[Trains JS] Sync Event. Cycle Time: " + cycleTime);
 
         if (cycleTime < 300000) {
             // 0 - 5 mins: Boarding
-            console.log("[Trains JS] Phase: Boarding (Sync)");
             // Ensure ride maps are empty
             Train_to_Ludi.warpEveryone(Ludi_Station.getId());
             Train_to_Orbis.warpEveryone(Orbis_Station.getId());
             setupBoarding(300000 - cycleTime);
         } else {
             // 5 - 10 mins: Ride
-            console.log("[Trains JS] Phase: Ride (Sync)");
             // Warp waiting rooms to ride
             Orbis_BTF.warpEveryone(Train_to_Ludi.getId());
             Ludi_BTF.warpEveryone(Train_to_Orbis.getId());
             setupRide(600000 - cycleTime);
         }
     } catch (e) {
-        console.error("[Trains JS] Crash in syncEvent: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Trains JS] Crash in syncEvent: " + e);
         e.printStackTrace();
     }
 }
@@ -95,8 +81,6 @@ function runRide(eim) {
 
 // --- Setup Logic ---
 function setupBoarding(timeLeft) {
-    console.log("[Trains JS] Setup Boarding for " + timeLeft + "ms");
-
     // Cleanup previous ride
     Train_to_Ludi.warpEveryone(Ludi_Station.getId());
     Train_to_Orbis.warpEveryone(Orbis_Station.getId());
@@ -118,8 +102,6 @@ function setupBoarding(timeLeft) {
 }
 
 function setupRide(timeLeft) {
-    console.log("[Trains JS] Setup Ride for " + timeLeft + "ms");
-
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
 

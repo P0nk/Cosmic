@@ -2,18 +2,6 @@
     Orbis <-> Leafre Travel Script (Cabin) - Real Time 15 Min Cycle
 */
 
-// Polyfill: Map console.log to Java System.out
-var console = {
-    log: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.out.println(msg);
-    },
-    error: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.err.println(msg);
-    }
-};
-
 // Maps
 var Orbis_Station;     // 200000131
 var Orbis_Docked;      // 200000132
@@ -31,7 +19,6 @@ var RIDE_TO_ORBIS_TIME = 300000; // 5 mins
 
 function init() {
     try {
-        console.log("[Cabin JS] init() started.");
         var mf = em.getChannelServer().getMapFactory();
 
         Orbis_Docked = mf.getMap(200000132);
@@ -42,13 +29,15 @@ function init() {
         Leafre_Arrival = mf.getMap(240000110);
 
         if (Orbis_Docked == null || Leafre_Docked == null) {
-            console.error("[Cabin JS] Maps failed to load!");
+            var System = Java.type("java.lang.System");
+            System.err.println("[Cabin JS] Maps failed to load!");
         }
 
         // Initial sync
         syncEvent();
     } catch (e) {
-        console.error("[Cabin JS] Crash in init: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Cabin JS] Crash in init: " + e);
     }
 }
 
@@ -56,33 +45,29 @@ function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 900000; // 15 min cycle
-        console.log("[Cabin JS] Sync Event. Cycle Time: " + cycleTime);
 
         if (cycleTime < 150000) {
             // 0 - 2.5 mins: Orbis Boarding
-            console.log("[Cabin JS] Phase: Orbis Boarding (Sync)");
             Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
             Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
             setupOrbisBoarding(150000 - cycleTime);
         } else if (cycleTime < 450000) {
             // 2.5 - 7.5 mins: Ride to Leafre
-            console.log("[Cabin JS] Phase: Ride to Leafre (Sync)");
             Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
             setupRideToLeafre(450000 - cycleTime);
         } else if (cycleTime < 600000) {
             // 7.5 - 10 mins: Leafre Boarding
-            console.log("[Cabin JS] Phase: Leafre Boarding (Sync)");
             Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
             Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
             setupLeafreBoarding(600000 - cycleTime);
         } else {
             // 10 - 15 mins: Ride to Orbis
-            console.log("[Cabin JS] Phase: Ride to Orbis (Sync)");
             Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
             setupRideToOrbis(900000 - cycleTime);
         }
     } catch (e) {
-        console.error("[Cabin JS] Crash in syncEvent: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Cabin JS] Crash in syncEvent: " + e);
         e.printStackTrace();
     }
 }
@@ -106,7 +91,6 @@ function runRideToOrbis(eim) {
 
 // --- Setup Logic ---
 function setupOrbisBoarding(timeLeft) {
-    console.log("[Cabin JS] Setup Orbis Boarding for " + timeLeft + "ms");
     // Arrival from Leafre cleanup
     Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
 
@@ -127,7 +111,6 @@ function setupOrbisBoarding(timeLeft) {
 }
 
 function setupRideToLeafre(timeLeft) {
-    console.log("[Cabin JS] Setup Ride to Leafre for " + timeLeft + "ms");
     // Close Orbis Boarding
     em.setProperty("entry", "false");
     em.setProperty("docked", "false");
@@ -136,7 +119,6 @@ function setupRideToLeafre(timeLeft) {
 
     // Warp to Ride
     Orbis_Docked.warpEveryone(Ride_To_Leafre.getId());
-    console.log("[Cabin JS] Warped everyone to Ride to Leafre (200090200)");
 
     em.schedule("runLeafreBoarding", timeLeft);
     Orbis_Docked.broadcastShip(false);
@@ -147,10 +129,8 @@ function setupRideToLeafre(timeLeft) {
 }
 
 function setupLeafreBoarding(timeLeft) {
-    console.log("[Cabin JS] Setup Leafre Boarding for " + timeLeft + "ms");
     // Arrival from Orbis cleanup
     Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
-    console.log("[Cabin JS] Warped everyone to Leafre Arrival (240000110)");
 
     // Setup Leafre Boarding
     em.setProperty("location", "leafre");
@@ -169,7 +149,6 @@ function setupLeafreBoarding(timeLeft) {
 }
 
 function setupRideToOrbis(timeLeft) {
-    console.log("[Cabin JS] Setup Ride to Orbis for " + timeLeft + "ms");
     // Close Leafre Boarding
     em.setProperty("entry", "false");
     em.setProperty("docked", "false");
@@ -178,7 +157,6 @@ function setupRideToOrbis(timeLeft) {
 
     // Warp to Ride
     Leafre_Docked.warpEveryone(Ride_To_Orbis.getId());
-    console.log("[Cabin JS] Warped everyone to Ride to Orbis (200090210)");
 
     em.schedule("runOrbisBoarding", timeLeft);
     Leafre_Docked.broadcastShip(false);

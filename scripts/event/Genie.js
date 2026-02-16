@@ -6,18 +6,6 @@
     - 05:00 - 10:00: Ride
 */
 
-// Polyfill: Map console.log to Java System.out
-var console = {
-    log: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.out.println(msg);
-    },
-    error: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.err.println(msg);
-    }
-};
-
 // Maps
 var Orbis_Station;     // 200000100
 var Orbis_Docked;      // 200000151
@@ -34,7 +22,6 @@ var RIDE_TIME = 300000;     // 5 mins
 
 function init() {
     try {
-        console.log("[Genie JS] init() started.");
         var mf = em.getChannelServer().getMapFactory();
 
         Orbis_Station = mf.getMap(200000100);
@@ -50,7 +37,8 @@ function init() {
         // Initial sync
         syncEvent();
     } catch (e) {
-        console.error("[Genie JS] Crash in init: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Genie JS] Crash in init: " + e);
         e.printStackTrace();
     }
 }
@@ -59,25 +47,23 @@ function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 600000; // 10 min cycle
-        console.log("[Genie JS] Sync Event. Cycle Time: " + cycleTime);
 
         if (cycleTime < 300000) {
             // 0 - 5 mins: Boarding
-            console.log("[Genie JS] Phase: Boarding (Sync)");
             // Ensure ride maps are empty
             Genie_to_Ariant.warpEveryone(Ariant_Docked.getId());
             Genie_to_Orbis.warpEveryone(Orbis_Station.getId());
             setupBoarding(300000 - cycleTime);
         } else {
             // 5 - 10 mins: Ride
-            console.log("[Genie JS] Phase: Ride (Sync)");
             // Warp waiting rooms to ride
             Orbis_BTF.warpEveryone(Genie_to_Ariant.getId());
             Ariant_BTF.warpEveryone(Genie_to_Orbis.getId());
             setupRide(600000 - cycleTime);
         }
     } catch (e) {
-        console.error("[Genie JS] Crash in syncEvent: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Genie JS] Crash in syncEvent: " + e);
         e.printStackTrace();
     }
 }
@@ -93,8 +79,6 @@ function runRide(eim) {
 
 // --- Setup Logic ---
 function setupBoarding(timeLeft) {
-    console.log("[Genie JS] Setup Boarding for " + timeLeft + "ms");
-
     // Cleanup previous ride
     Genie_to_Ariant.warpEveryone(Ariant_Docked.getId());
     Genie_to_Orbis.warpEveryone(Orbis_Station.getId());
@@ -116,8 +100,6 @@ function setupBoarding(timeLeft) {
 }
 
 function setupRide(timeLeft) {
-    console.log("[Genie JS] Setup Ride for " + timeLeft + "ms");
-
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
 

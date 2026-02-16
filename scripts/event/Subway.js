@@ -6,18 +6,6 @@
     - 05:00 - 10:00: Ride
 */
 
-// Polyfill: Map console.log to Java System.out
-var console = {
-    log: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.out.println(msg);
-    },
-    error: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.err.println(msg);
-    }
-};
-
 // Maps
 var KC_Station;        // 103000100
 var KC_Docked;         // 103000100 (Station is docked?)
@@ -35,7 +23,6 @@ var RIDE_TIME = 300000;     // 5 mins
 
 function init() {
     try {
-        console.log("[Subway JS] init() started.");
         var mf = em.getChannelServer().getMapFactory();
 
         KC_Station = mf.getMap(103000100);
@@ -52,7 +39,8 @@ function init() {
         // Initial sync
         syncEvent();
     } catch (e) {
-        console.error("[Subway JS] Crash in init: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Subway JS] Crash in init: " + e);
         e.printStackTrace();
     }
 }
@@ -61,25 +49,23 @@ function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 600000; // 10 min cycle
-        console.log("[Subway JS] Sync Event. Cycle Time: " + cycleTime);
 
         if (cycleTime < 300000) {
             // 0 - 5 mins: Boarding
-            console.log("[Subway JS] Phase: Boarding (Sync)");
             // Ensure ride maps are empty
             Subway_to_NLC.warpEveryone(NLC_Station.getId());
             Subway_to_KC.warpEveryone(KC_Station.getId());
             setupBoarding(300000 - cycleTime);
         } else {
             // 5 - 10 mins: Ride
-            console.log("[Subway JS] Phase: Ride (Sync)");
             // Warp waiting rooms to ride
             KC_Waiting.warpEveryone(Subway_to_NLC.getId());
             NLC_Waiting.warpEveryone(Subway_to_KC.getId());
             setupRide(600000 - cycleTime);
         }
     } catch (e) {
-        console.error("[Subway JS] Crash in syncEvent: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[Subway JS] Crash in syncEvent: " + e);
         e.printStackTrace();
     }
 }
@@ -95,8 +81,6 @@ function runRide(eim) {
 
 // --- Setup Logic ---
 function setupBoarding(timeLeft) {
-    console.log("[Subway JS] Setup Boarding for " + timeLeft + "ms");
-
     // Cleanup previous ride
     Subway_to_NLC.warpEveryone(NLC_Station.getId());
     Subway_to_KC.warpEveryone(KC_Station.getId());
@@ -118,8 +102,6 @@ function setupBoarding(timeLeft) {
 }
 
 function setupRide(timeLeft) {
-    console.log("[Subway JS] Setup Ride for " + timeLeft + "ms");
-
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
 

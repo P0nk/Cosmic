@@ -6,18 +6,6 @@
     - 05:00 - 30:00: Ride (25 mins)
 */
 
-// Polyfill: Map console.log to Java System.out
-var console = {
-    log: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.out.println(msg);
-    },
-    error: function (msg) {
-        var System = Java.type("java.lang.System");
-        System.err.println(msg);
-    }
-};
-
 // Maps
 var KC_Docked;         // 103000000 (Kerning City)
 var KC_BTF;            // 540010100 (Boarding Room)
@@ -33,7 +21,6 @@ var RIDE_TIME = 1500000;     // 25 mins
 
 function init() {
     try {
-        console.log("[AirPlane JS] init() started.");
         var mf = em.getChannelServer().getMapFactory();
 
         KC_Docked = mf.getMap(103000000);
@@ -48,7 +35,8 @@ function init() {
         // Initial sync
         syncEvent();
     } catch (e) {
-        console.error("[AirPlane JS] Crash in init: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[AirPlane JS] Crash in init: " + e);
         e.printStackTrace();
     }
 }
@@ -57,25 +45,23 @@ function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
         var cycleTime = now % 1800000; // 30 min cycle
-        console.log("[AirPlane JS] Sync Event. Cycle Time: " + cycleTime);
 
         if (cycleTime < 300000) {
             // 0 - 5 mins: Boarding
-            console.log("[AirPlane JS] Phase: Boarding (Sync)");
             // Ensure ride maps are empty
             Plane_to_CBD.warpEveryone(CBD_Docked.getId());
             Plane_to_KC.warpEveryone(KC_Docked.getId());
             setupBoarding(300000 - cycleTime);
         } else {
             // 5 - 30 mins: Ride
-            console.log("[AirPlane JS] Phase: Ride (Sync)");
             // Warp waiting rooms to ride
             KC_BTF.warpEveryone(Plane_to_CBD.getId());
             CBD_BTF.warpEveryone(Plane_to_KC.getId());
             setupRide(1800000 - cycleTime);
         }
     } catch (e) {
-        console.error("[AirPlane JS] Crash in syncEvent: " + e);
+        var System = Java.type("java.lang.System");
+        System.err.println("[AirPlane JS] Crash in syncEvent: " + e);
         e.printStackTrace();
     }
 }
@@ -91,8 +77,6 @@ function runRide(eim) {
 
 // --- Setup Logic ---
 function setupBoarding(timeLeft) {
-    console.log("[AirPlane JS] Setup Boarding for " + timeLeft + "ms");
-
     // Cleanup previous ride
     Plane_to_CBD.warpEveryone(CBD_Docked.getId());
     Plane_to_KC.warpEveryone(KC_Docked.getId());
@@ -114,8 +98,6 @@ function setupBoarding(timeLeft) {
 }
 
 function setupRide(timeLeft) {
-    console.log("[AirPlane JS] Setup Ride for " + timeLeft + "ms");
-
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
 
