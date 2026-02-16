@@ -25,7 +25,14 @@ function start() {
     }
     var waitMin = Math.ceil(waitMs / 60000);
 
-    var text = "Here's the ticket reader.\r\nCurrent Time: #b" + nowStr + "#k\r\nThe next train leaves in: #b" + waitMin + " minutes#k";
+    var statusText = "";
+    if (cycle < 300000) {
+        statusText = "\r\n#gSTATUS: Can board now#k";
+    } else {
+        statusText = "\r\n#rSTATUS: Train not arrived#k";
+    }
+
+    var text = "Here's the ticket reader.\r\nCurrent Time: #b" + nowStr + "#k\r\nThe next train leaves in: #b" + waitMin + " minutes#k" + statusText;
     var hasTicket = false;
     if (cm.haveItem(4031713) && cm.getPlayer().getMapId() == 600010001) {
         text += "\r\n#b#L0##t4031713#";
