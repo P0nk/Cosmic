@@ -46,15 +46,41 @@ function action(mode, type, selection) {
 
             }
         } else if (selection == 2) {
+            // Time Logic
+            var cal = java.util.Calendar.getInstance();
+            var hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+            var min = cal.get(java.util.Calendar.MINUTE);
+            var nowStr = (hour < 10 ? "0" + hour : hour) + ":" + (min < 10 ? "0" + min : min);
+
+            // Wait Time Logic (10 min cycle: 00:00-01:30 Board, 01:30-10:00 Wait)
+            // Departure at x1.5 mins (1:30, 11:30, 21:30...)
+            var nowMs = java.lang.System.currentTimeMillis();
+            var cycle = nowMs % 600000; // 10 min
+            var waitMs = 0;
+
+            if (cycle < 90000) { // Boarding Phase (0 - 1.5 mins)
+                waitMs = 90000 - cycle;
+            } else { // Ride Phase (1.5 - 10 mins) -> Next boarding finishes at next cycle's 1.5 min mark
+                waitMs = (600000 - cycle) + 90000;
+            }
+            var waitMin = Math.ceil(waitMs / 60000);
+
+            var statusText = "";
+            if (cycle < 90000) {
+                statusText = "\r\n#gSTATUS: Can board now#k";
+            } else {
+                statusText = "\r\n#rSTATUS: Train not arrived#k";
+            }
+
             if (!cm.haveItem(4031711) && cm.getPlayer().getMapId() == 103000100) {
                 cm.sendOk("It seems you don't have a ticket! You can buy one from Bell.");
                 cm.dispose();
                 return;
             }
             if (em.getProperty("entry") == "true") {
-                cm.sendYesNo("It looks like there's plenty of room for this ride. Please have your ticket ready so I can let you in. The ride will be long, but you'll get to your destination just fine. What do you think? Do you want to get on this ride?");
+                cm.sendYesNo("It looks like there's plenty of room for this ride. Please have your ticket ready so I can let you in. The ride will be long, but you'll get to your destination just fine. What do you think? Do you want to get on this ride?\r\nCurrent Time: #b" + nowStr + "#k\r\nThe next train leaves in: #b" + waitMin + " minutes#k" + statusText);
             } else {
-                cm.sendNext("We will begin boarding 1 minute before the takeoff. Please be patient and wait for a few minutes. Be aware that the subway will take off right on time, and we stop receiving tickets 1 minute before that, so please make sure to be here on time.");
+                cm.sendNext("We will begin boarding 1 minute before the takeoff. Please be patient and wait for a few minutes. Be aware that the subway will take off right on time, and we stop receiving tickets 1 minute before that, so please make sure to be here on time.\r\nCurrent Time: #b" + nowStr + "#k\r\nThe next train leaves in: #b" + waitMin + " minutes#k" + statusText);
                 cm.dispose();
 
             }
