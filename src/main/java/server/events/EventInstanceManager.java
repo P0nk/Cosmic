@@ -438,6 +438,10 @@ public class EventInstanceManager {
             writeLock.unlock();
         }
 
+        if (isTimerStarted()) {
+            chr.sendPacket(PacketCreator.removeClock());
+        }
+
         gridRemove(chr);
         dropExclusiveItems(chr);
     }
