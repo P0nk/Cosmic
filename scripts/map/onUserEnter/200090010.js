@@ -1,14 +1,25 @@
-// Author: Ronan
-var mapId = 200090010;
+/*
+    Map: 200090010 (Boat to Orbis)
+    Description: Displays countdown timer upon entry
+*/
 
 function start(ms) {
-    var map = ms.getClient().getChannelServer().getMapFactory().getMap(mapId);
+    try {
+        var PacketCreator = Java.type("tools.PacketCreator");
 
-    if (map.getDocked()) {
-        const PacketCreator = Java.type('tools.PacketCreator');
-        ms.getClient().sendPacket(PacketCreator.musicChange("Bgm04/ArabPirate"));
-        ms.getClient().sendPacket(PacketCreator.crogBoatPacket(true));
+        // Boats Phase: Ride (05:00 - 15:00)
+        // Arrival at 15:00 (900,000 ms)
+        var now = java.lang.System.currentTimeMillis();
+        var cycleTime = now % 900000; // 15 min cycle
+        var arrivalTime = 900000; // 15:00
+
+        var timeLeft = arrivalTime - cycleTime;
+
+        if (timeLeft > 0) {
+            ms.getClient().sendPacket(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+        }
+    } catch (e) {
+        var System = Java.type("java.lang.System");
+        System.err.println("[Map 200090010] Error: " + e);
     }
-
-    return true;
 }

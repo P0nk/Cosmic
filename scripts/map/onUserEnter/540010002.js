@@ -1,5 +1,5 @@
 /*
-    Map: 200090000 (Boat to Ellinia)
+    Map: 540010002 (Plane to KC)
     Description: Displays countdown timer upon entry
 */
 
@@ -7,11 +7,11 @@ function start(ms) {
     try {
         var PacketCreator = Java.type("tools.PacketCreator");
 
-        // Boats Phase: Ride (05:00 - 15:00)
-        // Arrival at 15:00 (900,000 ms)
+        // AirPlane Phase: Ride (05:00 - 30:00)
+        // Arrival at 30:00 (1,800,000 ms)
         var now = java.lang.System.currentTimeMillis();
-        var cycleTime = now % 900000; // 15 min cycle
-        var arrivalTime = 900000; // 15:00
+        var cycleTime = now % 1800000; // 30 min cycle
+        var arrivalTime = 1800000; // 30:00
 
         var timeLeft = arrivalTime - cycleTime;
 
@@ -20,6 +20,6 @@ function start(ms) {
         }
     } catch (e) {
         var System = Java.type("java.lang.System");
-        System.err.println("[Map 200090000] Error: " + e);
+        System.err.println("[Map 540010002] Error: " + e);
     }
 }
