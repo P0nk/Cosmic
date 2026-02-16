@@ -2,6 +2,18 @@
     Orbis <-> Leafre Travel Script (Cabin) - Real Time 15 Min Cycle
 */
 
+// Polyfill: Map console.log to Java System.out
+var console = {
+    log: function (msg) {
+        var System = Java.type("java.lang.System");
+        System.out.println(msg);
+    },
+    error: function (msg) {
+        var System = Java.type("java.lang.System");
+        System.err.println(msg);
+    }
+};
+
 // Maps
 var Orbis_Station;     // 200000131
 var Orbis_Docked;      // 200000132
@@ -12,47 +24,67 @@ var Orbis_Arrival;     // 200000131
 var Leafre_Arrival;    // 240000110
 
 function init() {
-    var mf = em.getChannelServer().getMapFactory();
+    try {
+        console.log("[Cabin JS] init() started.");
+        var mf = em.getChannelServer().getMapFactory();
 
-    Orbis_Docked = mf.getMap(200000132);
-    Leafre_Docked = mf.getMap(240000111);
-    Ride_To_Leafre = mf.getMap(200090200);
-    Ride_To_Orbis = mf.getMap(200090210);
-    Orbis_Arrival = mf.getMap(200000131);
-    Leafre_Arrival = mf.getMap(240000110);
+        Orbis_Docked = mf.getMap(200000132);
+        Leafre_Docked = mf.getMap(240000111);
+        Ride_To_Leafre = mf.getMap(200090200);
+        Ride_To_Orbis = mf.getMap(200090210);
+        Orbis_Arrival = mf.getMap(200000131);
+        Leafre_Arrival = mf.getMap(240000110);
 
-    // Initial sync
-    syncEvent();
+        if (Orbis_Docked == null || Leafre_Docked == null) {
+            console.error("[Cabin JS] Maps failed to load!");
+        }
+
+        // Initial sync
+        syncEvent();
+    } catch (e) {
+        console.error("[Cabin JS] Crash in init: " + e);
+    }
 }
 
 function syncEvent() {
-    var now = java.lang.System.currentTimeMillis();
-    var cycleTime = now % 900000; // 15 min cycle
+    try {
+        var now = java.lang.System.currentTimeMillis();
+        var cycleTime = now % 900000; // 15 min cycle
+        console.log("[Cabin JS] Sync Event. Cycle Time: " + cycleTime);
 
-    if (cycleTime < 150000) {
-        // 0 - 2.5 mins: Orbis Boarding
-        Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
-        Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
-        runOrbisBoarding(150000 - cycleTime);
-    } else if (cycleTime < 450000) {
-        // 2.5 - 7.5 mins: Ride to Leafre
-        Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
-        runRideToLeafre(450000 - cycleTime);
-    } else if (cycleTime < 600000) {
-        // 7.5 - 10 mins: Leafre Boarding
-        Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
-        Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
-        runLeafreBoarding(600000 - cycleTime);
-    } else {
-        // 10 - 15 mins: Ride to Orbis
-        Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
-        runRideToOrbis(900000 - cycleTime);
+        if (cycleTime < 150000) {
+            // 0 - 2.5 mins: Orbis Boarding
+            console.log("[Cabin JS] Phase: Orbis Boarding");
+            Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId()); // Use simple method if possible
+            Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
+            runOrbisBoarding(150000 - cycleTime);
+        } else if (cycleTime < 450000) {
+            // 2.5 - 7.5 mins: Ride to Leafre
+            console.log("[Cabin JS] Phase: Ride to Leafre");
+            Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
+            runRideToLeafre(450000 - cycleTime);
+        } else if (cycleTime < 600000) {
+            // 7.5 - 10 mins: Leafre Boarding
+            console.log("[Cabin JS] Phase: Leafre Boarding");
+            Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
+            Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
+            runLeafreBoarding(600000 - cycleTime);
+        } else {
+            // 10 - 15 mins: Ride to Orbis
+            console.log("[Cabin JS] Phase: Ride to Orbis");
+            Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
+            runRideToOrbis(900000 - cycleTime);
+        }
+    } catch (e) {
+        console.error("[Cabin JS] Crash in syncEvent: " + e);
+        e.printStackTrace();
     }
 }
 
 function runOrbisBoarding(timeLeft) {
+    console.log("[Cabin JS] runOrbisBoarding schedule for " + timeLeft + "ms");
     // Arrival from Leafre cleanup
-    Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId(), 0);
+    Ride_To_Orbis.warpEveryone(Orbis_Arrival.getId());
 
     // Setup Orbis Boarding
     em.setProperty("location", "orbis");
@@ -71,6 +103,7 @@ function runOrbisBoarding(timeLeft) {
 }
 
 function runRideToLeafre(timeLeft) {
+    console.log("[Cabin JS] runRideToLeafre schedule for " + timeLeft + "ms");
     // Close Orbis Boarding
     em.setProperty("entry", "false");
     em.setProperty("docked", "false");
@@ -79,6 +112,7 @@ function runRideToLeafre(timeLeft) {
 
     // Warp to Ride
     Orbis_Docked.warpEveryone(Ride_To_Leafre.getId());
+    console.log("[Cabin JS] Warped everyone to Ride to Leafre (200090200)");
 
     em.schedule("runLeafreBoarding", timeLeft);
     Orbis_Docked.broadcastShip(false);
@@ -89,8 +123,10 @@ function runRideToLeafre(timeLeft) {
 }
 
 function runLeafreBoarding(timeLeft) {
+    console.log("[Cabin JS] runLeafreBoarding schedule for " + timeLeft + "ms");
     // Arrival from Orbis cleanup
-    Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId(), 0);
+    Ride_To_Leafre.warpEveryone(Leafre_Arrival.getId());
+    console.log("[Cabin JS] Warped everyone to Leafre Arrival (240000110)");
 
     // Setup Leafre Boarding
     em.setProperty("location", "leafre");
@@ -109,6 +145,7 @@ function runLeafreBoarding(timeLeft) {
 }
 
 function runRideToOrbis(timeLeft) {
+    console.log("[Cabin JS] runRideToOrbis schedule for " + timeLeft + "ms");
     // Close Leafre Boarding
     em.setProperty("entry", "false");
     em.setProperty("docked", "false");
@@ -117,6 +154,7 @@ function runRideToOrbis(timeLeft) {
 
     // Warp to Ride
     Leafre_Docked.warpEveryone(Ride_To_Orbis.getId());
+    console.log("[Cabin JS] Warped everyone to Ride to Orbis (200090210)");
 
     em.schedule("runOrbisBoarding", timeLeft);
     Leafre_Docked.broadcastShip(false);
