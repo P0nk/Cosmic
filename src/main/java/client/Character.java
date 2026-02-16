@@ -8903,7 +8903,7 @@ public class Character extends AbstractCharacterObject {
             return;
         }
 
-        log.debug("Attempting to {} chr {}", notAutosave ? "save" : "autosave", name);
+//        log.debug("Attempting to {} chr {}", notAutosave ? "save" : "autosave", name);
         Server.getInstance().updateCharacterEntry(this);
 
         long globalStart = System.currentTimeMillis();
