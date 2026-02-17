@@ -14,7 +14,7 @@ var rewardtype;
 // Quest requirements
 var quest_item = -1;
 var quest_qty = -1;
-var quest_item_blocked = [3020001,3020002,2002031,2002032,2002033,2002034,2002035,2002036];
+var quest_item_blocked = [3020001, 3020002, 2002031, 2002032, 2002033, 2002034, 2002035, 2002036];
 
 // Quest rewards
 var item1Id = -1;
@@ -45,9 +45,9 @@ function action(mode, type, selection) {
 
     if (status === 0) {
         cm.sendSimple("#eMerogie Bounty Board#n\r\nWhat would you like to do?\r\n" +
-                      "#g#L0#View Available Bounties#l\r\n" +
-                      "#r#L1#Create New Bounty (10M) #l\r\n" +
-                      "#b#L2#Manage My Bounties#l");
+            "#g#L0#View Available Bounties#l\r\n" +
+            "#r#L1#Create New Bounty (10M) #l\r\n" +
+            "#b#L2#Manage My Bounties#l");
     } // Menu
     else if (status === 1) {
         // re-routes selection
@@ -110,13 +110,13 @@ function action(mode, type, selection) {
     else if (status == 27) {
         return secondReward(selection)
 
-//    } // handles second reward/ posting of quest to sql
-//    else if (status == 31) { // -------------------------------------------- Manage My Bounties
-//        // claim all button at top
-//        // if not, click into quest for option to withdraw if #r or if #b then option to claim.
-//    }
-//    else if (status == 32) {
-//        // Handle dialogue to say item is claimed and all claimed
+        //    } // handles second reward/ posting of quest to sql
+        //    else if (status == 31) { // -------------------------------------------- Manage My Bounties
+        //        // claim all button at top
+        //        // if not, click into quest for option to withdraw if #r or if #b then option to claim.
+        //    }
+        //    else if (status == 32) {
+        //        // Handle dialogue to say item is claimed and all claimed
 
     }
     else if (status === 31) {
@@ -148,7 +148,7 @@ function action(mode, type, selection) {
 
 function viewAvailableQuests() {
     questList = qm.getOpenQuests();
- //               console.log(questList);
+    //               console.log(questList);
 
     if (questList.length === 0) {
         cm.sendOk("There are no active bounties available right now.");
@@ -159,26 +159,26 @@ function viewAvailableQuests() {
     var msg = "#eAvailable Bounties:#n\r\n";
     for (var i = 0; i < questList.length; i++) {
         var q = questList[i];
- //           console.log(q);
-//              var map = playerQuests.get(i);
-//              var questId = map.get("quest_id");
-//              var status = map.get("status");
-//              var isClaimed = map.get("is_req_claimed");
-//              var reqItemId = map.get("requirement_itemid");
-//              var reqQty = map.get("requirement_quantity");
+        //           console.log(q);
+        //              var map = playerQuests.get(i);
+        //              var questId = map.get("quest_id");
+        //              var status = map.get("status");
+        //              var isClaimed = map.get("is_req_claimed");
+        //              var reqItemId = map.get("requirement_itemid");
+        //              var reqQty = map.get("requirement_quantity");
 
 
         var creatorName = q.get("creator_name");
         var qid = q.get("quest_id");
 
-     //       console.log(creatorName);
+        //       console.log(creatorName);
         msg += "#L" + i + "# Q_ID";
         msg += qid;
         msg += ": Help ";
-        msg += "#e" +creatorName + "#n ";
+        msg += "#e" + creatorName + "#n ";
         msg += "Collect #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k\r\n";
     }
-       //     console.log(msg);
+    //     console.log(msg);
     cm.sendSimple(msg);
 }
 
@@ -200,28 +200,20 @@ function actionQuestDetail(index) {
 
 function submitQuest(selection) {
     if (selection == 99) {
-        if (cm.haveItem(quest.requirement_itemid, quest.requirement_quantity)) {
-            console.log(quest.quest_id)
-            var canClaim = qm.claimReward(cm.getPlayer(), quest.quest_id)
-            if (!canClaim) {
-                cm.sendOk("Hey you don't have enough space please make sure you have at least 2 empty slots!")
-                return cm.dispose()
-            }
-            qm.fulfillQuest(cm.getPlayer(), quest.quest_id)
-            cm.gainItem(quest.requirement_itemid, -quest.requirement_quantity)
+        // Atomic Completion
+        var result = qm.completeQuest(cm.getPlayer(), quest.quest_id);
 
-//            if (quest.reward_meso > 0) cm.gainMeso(quest.reward_meso);
-//            if (quest.reward_nx > 0) cm.gainCash(quest.reward_nx);
-//            if (quest.reward_item1_id > 0) cm.gainItem(quest.reward_item1_id, quest.reward_item1_qty);
-//            if (quest.reward_item2_id > 0) cm.gainItem(quest.reward_item2_id, quest.reward_item2_qty);
-            return cm.dispose()
+        if (result === "Success") {
+            cm.sendOk("Quest completed! Rewards have been added to your inventory.");
+            return cm.dispose();
         } else {
-            cm.sendOk("You do not have the required items!")
-            return cm.dispose()
+            cm.sendOk("Failed to complete quest: " + result);
+            return cm.dispose();
         }
+
     } else if (selection == 98) {
         status = 0;
-        action(1,0,0);
+        action(1, 0, 0);
     }
 }
 
@@ -238,18 +230,18 @@ function listSearchName() {
     var allItems = qm.getItemInformationProvider();  // List<Pair<Integer,String>>
     var maxResults = 30; // "magical" (34) crashes game
 
-    for each (var itemPair in allItems) {
+    for each(var itemPair in allItems) {
         var id = itemPair.getLeft();
         var name = itemPair.getRight();
 
 
-        if (name && name.toLowerCase().includes(query) && Number(id) >= 2000000 && Number(id) != 0 && Number(id) <5000000 && !quest_item_blocked.includes(Number(id))) {
+        if (name && name.toLowerCase().includes(query) && Number(id) >= 2000000 && Number(id) != 0 && Number(id) < 5000000 && !quest_item_blocked.includes(Number(id))) {
             searchResults.push(itemPair);
-            }
+        }
     }
     if (searchResults.length > maxResults) {
         cm.sendOk("Too many matches (" + searchResults.length + ") for \"" + query + "\".\r\n" +
-                  "Please refine your search to return fewer than " + maxResults + " results.");
+            "Please refine your search to return fewer than " + maxResults + " results.");
         cm.dispose();
         return;
     }
@@ -280,33 +272,33 @@ function itemQuantity() {
 
 function rewardType() {
     if (!cm.isEquipment(quest_item)) {
-        if ( Number(cm.getText()) < 1 ) {
+        if (Number(cm.getText()) < 1) {
             cm.sendOk("Hey! Are you trying to create a quest or test the system! As punishment, you have to repost the quest!")
             return cm.dispose();
         }
     }
-    msg = "You are creating a quest with these requirements:\r\n" + "#i" + quest_item + "# x" + quest_qty +"\r\n"
+    msg = "You are creating a quest with these requirements:\r\n" + "#i" + quest_item + "# x" + quest_qty + "\r\n"
     if (item2Id == -1) {
         cm.sendSimple(msg + "Please select the rewards you wish to grant upon quest completion!\r\n" +
-                      "#b#L0#Use#l\r\n" +
-                      "#b#L1#Set-up#l\r\n" +
-                      "#b#L2#Etc#l\r\n" +
-                      "#b#L3#Cash#l\r\n" +
-                      "#b#L4#Mesos#l\r\n" +
-                      "#b#L5#Nx#l\r\n")
+            "#b#L0#Use#l\r\n" +
+            "#b#L1#Set-up#l\r\n" +
+            "#b#L2#Etc#l\r\n" +
+            "#b#L3#Cash#l\r\n" +
+            "#b#L4#Mesos#l\r\n" +
+            "#b#L5#Nx#l\r\n")
     } else {
         cm.sendSimple(msg + "Please select the rewards you wish to grant upon quest completion!\r\n" +
-                      "#b#L0#Mesos#l\r\n" +
-                      "#b#L1#Nx#l\r\n")
+            "#b#L0#Mesos#l\r\n" +
+            "#b#L1#Nx#l\r\n")
     }
 } // Status 23
 
 function listInventory(rewardtype) {
     rewardtype = (item2Id == -1) ? rewardtype : rewardtype + 4
     if (rewardtype <= 3) { // Items
-        var inv      = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
-        var limit    = inv.getSlotLimit();
-        var lines    = [];
+        var inv = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
+        var limit = inv.getSlotLimit();
+        var lines = [];
         for (var slot = 1; slot <= limit; slot++) {
             var item = inv.getItem(slot);
             if (!item) continue;
@@ -320,14 +312,14 @@ function listInventory(rewardtype) {
             // 🚫 Block throwing stars & bullets
             var prefix = Math.floor(itemId / 1000);
             if (prefix === 207 || prefix === 233) {
-            continue;
+                continue;
             }
 
             // Prevent selecting same reward twice
             if (itemId === item1Id) continue;
 
             var name = Packages.server.ItemInformationProvider
-                       .getInstance().getName(item.getItemId());
+                .getInstance().getName(item.getItemId());
             lines.push(
                 "#L" + slot + "#"
                 + "#v" + item.getItemId() + "# "
@@ -337,7 +329,7 @@ function listInventory(rewardtype) {
         }
         cm.sendSimple(
             "Select the item you wish to give as a reward.\r\n"
-          + lines.join("\r\n")
+            + lines.join("\r\n")
         );
     } else if (rewardtype == 4) { // Mesos
         balance = cm.getMeso();
@@ -351,10 +343,10 @@ function listInventory(rewardtype) {
 } // Status 24
 
 function rewardsQuantity(rewardtype, slot) {
-    var inv     = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
-    var item    = inv.getItem(slot);
-    var name    = Packages.server.ItemInformationProvider
-                   .getInstance().getName(item.getItemId());
+    var inv = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
+    var item = inv.getItem(slot);
+    var name = Packages.server.ItemInformationProvider
+        .getInstance().getName(item.getItemId());
     balance = cm.getPlayer().getItemQuantity(item.getItemId(), false)
     // Store the reward to the variables
     if (item1Id == -1) {
@@ -368,7 +360,7 @@ function rewardsQuantity(rewardtype, slot) {
 function storeQuantity() {
     rewardtype = (item2Id == -1 || item2Qty == -1) ? rewardtype : rewardtype + 4
     storedItem = (item2Id == -1) ? item1Id : item2Id
-    if (balance < Number(cm.getText()) ||  Number(cm.getText()) < 1) {
+    if (balance < Number(cm.getText()) || Number(cm.getText()) < 1) {
         cm.sendOk("Hey! You entered more than you have! As a punishment for being greedy, you have to repost the quest!")
         return cm.dispose()
     } else if (rewardtype < 4 && Number(cm.getText()) > 32000) {
@@ -392,21 +384,21 @@ function storeQuantity() {
     }
 
     cm.sendSimple("You have added these rewards to the quest\r\n" +
-                  checkExistingRewards() +
-                  "\r\nDo you wish to add more rewards?\r\n" +
-                  "#b#L0#Yes#l\r\n" +
-                  "#b#L1#No, proceed to post quest#l\r\n")
+        checkExistingRewards() +
+        "\r\nDo you wish to add more rewards?\r\n" +
+        "#b#L0#Yes#l\r\n" +
+        "#b#L1#No, proceed to post quest#l\r\n")
 } // status 26
 
 function secondReward(selection) {
     if (selection == 0) {
         status = 22;
-        action(1,0,0);
+        action(1, 0, 0);
     } else if (selection == 1) {
-            balance = cm.getMeso();
-        if (balance < meso + 10000000){
-        cm.sendOk("Insufficent Funds to Pay Questboard Tax!")
-        return cm.dispose()
+        balance = cm.getMeso();
+        if (balance < meso + 10000000) {
+            cm.sendOk("Insufficent Funds to Pay Questboard Tax!")
+            return cm.dispose()
         }
         // Post quest
         qm.createQuest(cm.getPlayer(), quest_item, quest_qty, meso, nx, item1Id, item1Qty, item2Id, item2Qty)
@@ -499,8 +491,8 @@ function manageCreatedQuests() {
 
         // Add icon + name + quantity
         msg += "#L" + i + "#"
-             + "#v" + reqItemId + "# "  // item icon
-             + itemName + " x" + reqQty + " : " + status;
+            + "#v" + reqItemId + "# "  // item icon
+            + itemName + " x" + reqQty + " : " + status;
 
         if (status === "COMPLETED" && isClaimed == 0) {
             canClaim = true;
@@ -560,6 +552,6 @@ function handleQuestAction(selection) {
     } else if (selection === 2) {
         // Go back
         status = 30; // reload menu
-        action(1,0,0)
+        action(1, 0, 0)
     }
 }
