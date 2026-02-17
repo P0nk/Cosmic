@@ -169,7 +169,7 @@ public class QuestBoardManager {
 
             // 6. Update DB Status
             PreparedStatement update = con.prepareStatement(
-                    "UPDATE quest_board SET status = 'COMPLETED', completed_by = ?, is_reward_claimed = 1, period = NOW() WHERE quest_id = ?");
+                    "UPDATE quest_board SET status = 'COMPLETED', completed_by = ?, is_reward_claimed = 1, reward_claimed_on = NOW() WHERE quest_id = ?");
             update.setInt(1, player.getId());
             update.setInt(2, questId);
             int rows = update.executeUpdate();
