@@ -136,7 +136,7 @@ function endRaid() {
     em.setProperty("state", "inactive");
     if (currentBoss != null) {
         em.getWorldServer().broadcastPacket(
-            PacketCreator.serverNotice(6, "[Boss Raid] Channel " + em.getChannelServer().getId() + ": The invasion of " + currentBoss.name + "s has ended.")
+            PacketCreator.serverNotice(5, "[Boss Raid] Channel " + em.getChannelServer().getId() + ": The invasion of " + currentBoss.name + "s has ended.")
         );
     }
     currentBoss = null;
