@@ -56,7 +56,7 @@ public final class PetLootHandler extends AbstractPacketHandler {
 
             // [FEATURE] Auto-Sell (Single Item Click)
             if (chr.isAutoSellEnabled()) {
-                if (mapitem.getItem().getInventoryType() == InventoryType.EQUIP) {
+                if (mapitem.getItem() != null && mapitem.getItem().getInventoryType() == InventoryType.EQUIP) {
                     int gain = client.command.commands.gm0.SellAllCommand.sellItem(c, chr, mapitem.getItem(), null);
                     if (gain > 0) {
                         chr.gainMeso(gain, true);
