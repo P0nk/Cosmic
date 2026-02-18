@@ -419,11 +419,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             }
                         }
                     } else if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
-                        Skill skill;
-                        if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
-                            skill = SkillFactory.getSkill(21100005);
-                            player.addHP(((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
-                        }
+                        Skill skill = SkillFactory.getSkill(Aran.COMBO_DRAIN);
+                        player.addHP(((totDamageToOneMonster * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
                     } else if (job == 412 || job == 422 || job == 1411) {
                         Skill type = SkillFactory.getSkill(player.getJob().getId() == 412 ? 4120005 : (player.getJob().getId() == 1411 ? 14110004 : 4220005));
                         if (player.getSkillLevel(type) > 0) {
