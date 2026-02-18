@@ -1,5 +1,5 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
                        Matthias Butz <matze@odinms.de>
                        Jan Christian Meyer <vimes@odinms.de>
@@ -34,7 +34,23 @@ status = -1;
 oldSelection = -1;
 
 function start() {
-    cm.sendSimple("Hello, I am Shalon from Singapore Airport. I can assist you in getting you to Kerning City in no time. Do you want to go to Kerning City?\r\n#b#L0#I would like to buy a plane ticket to Kerning City\r\n#b#L1#Let me go in to the departure point.");
+    var now = new Date();
+    var minutes = now.getMinutes();
+    var msg = "Hello, I am Shalon from Singapore Airport.\r\n";
+
+    // CBD Boarding: :30 - :40
+    // Flight: :40 - :55
+
+    if (minutes >= 30 && minutes < 40) {
+        msg += "We are currently #bboarding#k for Kerning City!\r\nThe plane will take off at " + (40 - minutes) + " mins past the hour.\r\n";
+    } else {
+        msg += "We are currently #rnot boarding#k.\r\n";
+        msg += "Next Boarding Time: #bXX:30#k\r\n";
+        msg += "Next Take Off Time: #bXX:40#k\r\n";
+    }
+
+    msg += "Do you want to go to Kerning City?";
+    cm.sendSimple(msg + "\r\n#b#L0#I would like to buy a plane ticket to Kerning City\r\n#b#L1#Let me go in to the departure point.");
 }
 
 function action(mode, type, selection) {
@@ -70,11 +86,15 @@ function action(mode, type, selection) {
         } else if (oldSelection == 1) {
             if (cm.itemQuantity(4031732) > 0) {
                 var em = cm.getEventManager("AirPlane");
-                if (em.getProperty("entry") == "true") {
+                if (em.getProperty("entry") == "true" && em.getProperty("location") == "cbd") {
                     cm.warp(540010001);
                     cm.gainItem(4031732, -1);
                 } else {
-                    cm.sendOk("Sorry the plane has taken off, please wait a few minutes.");
+                    if (em.getProperty("entry") == "true" && em.getProperty("location") == "kerning") {
+                        cm.sendOk("The plane is currently boarding at Kerning City. Please wait for it to arrive.");
+                    } else {
+                        cm.sendOk("Sorry the plane has taken off, please wait a few minutes.");
+                    }
                 }
             } else {
                 cm.sendOk("You need a #b#t4031732##k to get on the plane!");

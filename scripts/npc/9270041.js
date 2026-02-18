@@ -1,5 +1,5 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
                        Matthias Butz <matze@odinms.de>
                        Jan Christian Meyer <vimes@odinms.de>
@@ -34,7 +34,27 @@ status = -1;
 oldSelection = -1;
 
 function start() {
-    cm.sendSimple("Hello, I am Irene from Singapore Airport. I can assist you in getting you to Singapore in no time. Do you want to go to Singapore?\r\n#b#L0#I would like to buy a plane ticket to Singapore\r\n#b#L1#Let me go in to the departure point.");
+    var now = new Date();
+    var minutes = now.getMinutes();
+    var msg = "Hello, I am Irene from Kerning City Airport.\r\n";
+
+    // Kerning Boarding: :00 - :10
+    // Flight: :10 - :25
+
+    var nextBoarding = "";
+    var nextFlight = "";
+
+    // Logic for display
+    if (minutes < 10) {
+        msg += "We are currently #bboarding#k for Singapore!\r\nThe plane will take off at the top of the hour (approx " + (10 - minutes) + " mins).\r\n";
+    } else {
+        msg += "We are currently #rnot boarding#k.\r\n";
+        msg += "Next Boarding Time: #bXX:00#k\r\n";
+        msg += "Next Take Off Time: #bXX:10#k\r\n";
+    }
+
+    msg += "Do you want to go to Singapore?";
+    cm.sendSimple(msg + "\r\n#b#L0#I would like to buy a plane ticket to Singapore\r\n#b#L1#Let me go in to the departure point.");
 }
 
 function action(mode, type, selection) {
@@ -70,11 +90,15 @@ function action(mode, type, selection) {
         } else if (oldSelection == 1) {
             if (cm.itemQuantity(4031731) > 0) {
                 var em = cm.getEventManager("AirPlane");
-                if (em.getProperty("entry") == "true") {
+                if (em.getProperty("entry") == "true" && em.getProperty("location") == "kerning") {
                     cm.warp(540010100);
                     cm.gainItem(4031731, -1);
                 } else {
-                    cm.sendOk("Sorry the plane has taken off, please wait a few minutes.");
+                    if (em.getProperty("entry") == "true" && em.getProperty("location") == "cbd") {
+                        cm.sendOk("The plane is currently boarding at Singapore. Please wait for it to arrive.");
+                    } else {
+                        cm.sendOk("Sorry the plane has taken off, please wait a few minutes.");
+                    }
                 }
             } else {
                 cm.sendOk("You need a #b#t4031731##k to get on the plane!");
