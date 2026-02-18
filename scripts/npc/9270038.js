@@ -51,7 +51,7 @@ function start() {
         } else {
             nextFlightIn = (60 - minutes) + 40; // After 40, flight is next hour :40
         }
-        msg += "The next flight will be in " + nextFlightIn + " mins.\r\n";
+        msg += "The next flight will be in #b" + nextFlightIn + " mins#k.\r\n";
     }
 
     msg += "Do you want to go to Kerning City?";

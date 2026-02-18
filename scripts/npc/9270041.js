@@ -55,7 +55,7 @@ function start() {
         } else {
             nextFlightIn = (60 - minutes) + 10;
         }
-        msg += "The next flight will be in " + nextFlightIn + " mins.\r\n";
+        msg += "The next flight will be in #b" + nextFlightIn + " mins#k.\r\n";
     }
 
     msg += "Do you want to go to Singapore?";

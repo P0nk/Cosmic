@@ -24,7 +24,7 @@ function start() {
         var min = Math.ceil(waitTime / 60000);
         if (min <= 0) min = 1;
 
-        cm.sendOk("The flight to Leafre is currently in progress. The next ship will arrive in approximately #b" + min + " minutes#k.\r\nThe travel duration is #b5 minutes#k.");
+        cm.sendOk("The flight to Leafre is currently in progress. The next flight will be in #b" + min + " mins#k.");
         cm.dispose();
     }
 }
