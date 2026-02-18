@@ -42,11 +42,16 @@ function start() {
     // Flight: :40 - :55
 
     if (minutes >= 30 && minutes < 40) {
-        msg += "We are currently #bboarding#k for Kerning City!\r\nThe plane will take off at " + (40 - minutes) + " mins past the hour.\r\n";
+        msg += "We are currently #bboarding#k for Kerning City!\r\nThe plane will take off in " + (40 - minutes) + " mins.\r\n";
     } else {
         msg += "We are currently #rnot boarding#k.\r\n";
-        msg += "Next Boarding Time: #bXX:30#k\r\n";
-        msg += "Next Take Off Time: #bXX:40#k\r\n";
+        var nextFlightIn = 0;
+        if (minutes < 40) {
+            nextFlightIn = 40 - minutes; // Before 40, flight is at 40
+        } else {
+            nextFlightIn = (60 - minutes) + 40; // After 40, flight is next hour :40
+        }
+        msg += "The next flight will be in " + nextFlightIn + " mins.\r\n";
     }
 
     msg += "Do you want to go to Kerning City?";

@@ -46,11 +46,16 @@ function start() {
 
     // Logic for display
     if (minutes < 10) {
-        msg += "We are currently #bboarding#k for Singapore!\r\nThe plane will take off at the top of the hour (approx " + (10 - minutes) + " mins).\r\n";
+        msg += "We are currently #bboarding#k for Singapore!\r\nThe plane will take off in " + (10 - minutes) + " mins.\r\n";
     } else {
         msg += "We are currently #rnot boarding#k.\r\n";
-        msg += "Next Boarding Time: #bXX:00#k\r\n";
-        msg += "Next Take Off Time: #bXX:10#k\r\n";
+        var nextFlightIn = 0;
+        if (minutes < 10) {
+            nextFlightIn = 10 - minutes;
+        } else {
+            nextFlightIn = (60 - minutes) + 10;
+        }
+        msg += "The next flight will be in " + nextFlightIn + " mins.\r\n";
     }
 
     msg += "Do you want to go to Singapore?";
