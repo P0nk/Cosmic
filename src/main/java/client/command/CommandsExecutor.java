@@ -189,7 +189,8 @@ public class CommandsExecutor {
         addCommand("stats", CheckMyDmgCommand.class);
         addCommand("powerup", UnlockedBuffsCommand.class);
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
-        addCommand("toggleexp", 0, ToggleExpCommand.class); // Note: Moved from GM1 as per your list
+        // addCommand("toggleexp", 0, ToggleExpCommand.class); // Note: Moved from GM1
+        // as per your list
         addCommand("exp", 0, ExpGainCommand.class); // Assuming check exp gain
 
         // --- Items & Equipment ---
