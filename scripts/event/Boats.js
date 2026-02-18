@@ -1,11 +1,13 @@
 /*
     Boats Event Script (Orbis <-> Ellinia) - Split Cycle
-    Cycle: 20 Minutes (Real-Time)
+    Cycle: 60 Minutes (Real-Time)
     Phases:
-    - 00:00 - 02:00: Orbis Boarding (2 mins)
-    - 02:00 - 10:00: Ride to Ellinia (8 mins)
-    - 10:00 - 12:00: Ellinia Boarding (2 mins)
-    - 12:00 - 20:00: Ride to Orbis (8 mins)
+    - 00:00 - 10:00: Ellinia Boarding (10 mins)
+    - 10:00 - 25:00: Ride to Orbis (15 mins)
+    - 25:00 - 30:00: Docked at Orbis (Gap 5 mins)
+    - 30:00 - 40:00: Orbis Boarding (10 mins)
+    - 40:00 - 55:00: Ride to Ellinia (15 mins)
+    - 55:00 - 60:00: Docked at Ellinia (Gap 5 mins)
 */
 
 // Maps
@@ -22,11 +24,10 @@ var Boat_to_Ellinia;   // 200090000
 var Ellinia_Boat_Cabin;// 200090001
 
 // Durations
-var ORBIS_BOARDING_TIME = 120000; // 2 mins
-var RIDE_TO_ELLINIA_TIME = 480000; // 8 mins
-var ELLINIA_BOARDING_TIME = 120000; // 2 mins
-var RIDE_TO_ORBIS_TIME = 480000;   // 8 mins
-var INVASION_DELAY = 180000; // 3 mins into ride
+var BOARDING_TIME = 600000; // 10 mins
+var RIDE_TIME = 900000;    // 15 mins
+var GAP_TIME = 300000;     // 5 mins
+var INVASION_DELAY = 300000; // 5 mins into ride
 
 function init() {
     try {
@@ -57,33 +58,57 @@ function init() {
 function syncEvent() {
     try {
         var now = java.lang.System.currentTimeMillis();
-        var cycleTime = now % 1200000; // 20 min cycle
+        var cycleTime = now % 3600000; // 60 min cycle
 
-        if (cycleTime < 120000) {
-            // 0 - 2.0 mins: Orbis Boarding
-            Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
-            Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
-            Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
-            Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
-            setupOrbisBoarding(120000 - cycleTime);
-        } else if (cycleTime < 600000) {
-            // 2.0 - 10.0 mins: Ride to Ellinia
-            Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
-            Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
-            setupRideToEllinia(600000 - cycleTime, cycleTime - 120000);
-        } else if (cycleTime < 720000) {
-            // 10.0 - 12.0 mins: Ellinia Boarding
+        // 00:00 - 10:00: Ellinia Boarding
+        if (cycleTime < 600000) {
             Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
             Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
             Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
             Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
-            setupElliniaBoarding(720000 - cycleTime);
-        } else {
-            // 12.0 - 20.0 mins: Ride to Orbis
-            Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
-            Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
-            setupRideToOrbis(1200000 - cycleTime, cycleTime - 720000);
+
+            setupElliniaBoarding(600000 - cycleTime);
         }
+        // 10:00 - 25:00: Ride to Orbis
+        else if (cycleTime < 1500000) {
+            Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
+            Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
+
+            setupRideToOrbis(1500000 - cycleTime, cycleTime - 600000);
+        }
+        // 25:00 - 30:00: Gap at Orbis
+        else if (cycleTime < 1800000) {
+            Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
+            Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
+            Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
+            Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
+
+            setupDockAtOrbis(1800000 - cycleTime);
+        }
+        // 30:00 - 40:00: Orbis Boarding
+        else if (cycleTime < 2400000) {
+            Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
+            Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
+
+            setupOrbisBoarding(2400000 - cycleTime);
+        }
+        // 40:00 - 55:00: Ride to Ellinia
+        else if (cycleTime < 3300000) {
+            Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
+            Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
+
+            setupRideToEllinia(3300000 - cycleTime, cycleTime - 2400000);
+        }
+        // 55:00 - 60:00: Gap at Ellinia
+        else {
+            Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
+            Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
+            Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
+            Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
+
+            setupDockAtEllinia(3600000 - cycleTime);
+        }
+
     } catch (e) {
         var System = Java.type("java.lang.System");
         System.err.println("[Boats JS] Crash in syncEvent: " + e);
@@ -92,20 +117,28 @@ function syncEvent() {
 }
 
 // --- Scheduler Hooks ---
-function runOrbisBoarding(eim) {
-    setupOrbisBoarding(ORBIS_BOARDING_TIME);
-}
-
-function runRideToEllinia(eim) {
-    setupRideToEllinia(RIDE_TO_ELLINIA_TIME, 0);
-}
-
 function runElliniaBoarding(eim) {
-    setupElliniaBoarding(ELLINIA_BOARDING_TIME);
+    setupElliniaBoarding(BOARDING_TIME);
 }
 
 function runRideToOrbis(eim) {
-    setupRideToOrbis(RIDE_TO_ORBIS_TIME, 0);
+    setupRideToOrbis(RIDE_TIME, 0);
+}
+
+function runDockAtOrbis(eim) {
+    setupDockAtOrbis(GAP_TIME);
+}
+
+function runOrbisBoarding(eim) {
+    setupOrbisBoarding(BOARDING_TIME);
+}
+
+function runRideToEllinia(eim) {
+    setupRideToEllinia(RIDE_TIME, 0);
+}
+
+function runDockAtEllinia(eim) {
+    setupDockAtEllinia(GAP_TIME);
 }
 
 function runInvasionCheck(eim) {
@@ -113,54 +146,10 @@ function runInvasionCheck(eim) {
 }
 
 // --- Setup Logic ---
-function setupOrbisBoarding(timeLeft) {
-    // Cleanup previous ride
-    Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
-    Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
 
-    em.setProperty("docked", "true");
-    em.setProperty("entry", "true");
-    em.setProperty("location", "orbis");
-    em.setProperty("haveBalrog", "false");
-
-    Orbis_Docked.setDocked(true);
-    Ellinia_Docked.setDocked(false);
-
-    em.schedule("runRideToEllinia", timeLeft);
-    Orbis_Docked.broadcastShip(true);
-
-    // Timers for Boarding Rooms
-    var PacketCreator = Java.type("tools.PacketCreator");
-    Orbis_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
-}
-
-function setupRideToEllinia(timeLeft, offset) {
-    em.setProperty("docked", "false");
-    em.setProperty("entry", "false");
-
-    Orbis_Docked.setDocked(false);
-
-    // Warp Waiting Room -> Ride
-    Orbis_BTF.warpEveryone(Boat_to_Ellinia.getId());
-
-    Orbis_Docked.broadcastShip(false);
-
-    em.schedule("runElliniaBoarding", timeLeft);
-
-    // Timers for Ride Maps
-    var PacketCreator = Java.type("tools.PacketCreator");
-    Boat_to_Ellinia.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
-    Ellinia_Boat_Cabin.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
-
-    // Invasion Logic
-    var timeUntilInvasion = INVASION_DELAY - offset;
-    if (timeUntilInvasion > 0) {
-        em.schedule("runInvasionCheck", timeUntilInvasion);
-    }
-}
-
+// 00:00 - 10:00
 function setupElliniaBoarding(timeLeft) {
-    // Cleanup previous ride
+    // Cleanup previous ride (from DockAtEllinia)
     Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
     Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
 
@@ -179,6 +168,7 @@ function setupElliniaBoarding(timeLeft) {
     Ellinia_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 }
 
+// 10:00 - 25:00
 function setupRideToOrbis(timeLeft, offset) {
     em.setProperty("docked", "false");
     em.setProperty("entry", "false");
@@ -188,7 +178,7 @@ function setupRideToOrbis(timeLeft, offset) {
     // Warp Waiting Room -> Ride
     Ellinia_BTF.warpEveryone(Boat_to_Orbis.getId());
 
-    em.schedule("runOrbisBoarding", timeLeft);
+    em.schedule("runDockAtOrbis", timeLeft);
 
     // Timers for Ride Maps
     var PacketCreator = Java.type("tools.PacketCreator");
@@ -200,6 +190,80 @@ function setupRideToOrbis(timeLeft, offset) {
     if (timeUntilInvasion > 0) {
         em.schedule("runInvasionCheck", timeUntilInvasion);
     }
+}
+
+// 25:00 - 30:00
+function setupDockAtOrbis(timeLeft) {
+    // Arrival from Ellinia cleanup
+    Boat_to_Orbis.warpEveryone(Orbis_Station.getId());
+    Orbis_Boat_Cabin.warpEveryone(Orbis_Station.getId());
+
+    em.setProperty("docked", "true");
+    em.setProperty("entry", "false"); // Not boarding yet
+    em.setProperty("location", "orbis");
+
+    Orbis_Docked.setDocked(true);
+
+    em.schedule("runOrbisBoarding", timeLeft);
+}
+
+// 30:00 - 40:00
+function setupOrbisBoarding(timeLeft) {
+    em.setProperty("docked", "true");
+    em.setProperty("entry", "true");
+    em.setProperty("location", "orbis");
+    em.setProperty("haveBalrog", "false");
+
+    Orbis_Docked.setDocked(true);
+    Ellinia_Docked.setDocked(false);
+
+    em.schedule("runRideToEllinia", timeLeft);
+    Orbis_Docked.broadcastShip(true);
+
+    // Timers for Boarding Rooms
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Orbis_BTF.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+}
+
+// 40:00 - 55:00
+function setupRideToEllinia(timeLeft, offset) {
+    em.setProperty("docked", "false");
+    em.setProperty("entry", "false");
+
+    Orbis_Docked.setDocked(false);
+
+    // Warp Waiting Room -> Ride
+    Orbis_BTF.warpEveryone(Boat_to_Ellinia.getId());
+
+    Orbis_Docked.broadcastShip(false);
+
+    em.schedule("runDockAtEllinia", timeLeft);
+
+    // Timers for Ride Maps
+    var PacketCreator = Java.type("tools.PacketCreator");
+    Boat_to_Ellinia.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+    Ellinia_Boat_Cabin.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
+
+    // Invasion Logic
+    var timeUntilInvasion = INVASION_DELAY - offset;
+    if (timeUntilInvasion > 0) {
+        em.schedule("runInvasionCheck", timeUntilInvasion);
+    }
+}
+
+// 55:00 - 60:00
+function setupDockAtEllinia(timeLeft) {
+    // Arrival from Orbis cleanup
+    Boat_to_Ellinia.warpEveryone(Ellinia_Station.getId());
+    Ellinia_Boat_Cabin.warpEveryone(Ellinia_Station.getId());
+
+    em.setProperty("docked", "true");
+    em.setProperty("entry", "false");
+    em.setProperty("location", "ellinia");
+
+    Ellinia_Docked.setDocked(true);
+
+    em.schedule("runElliniaBoarding", timeLeft);
 }
 
 function checkInvasion(eim) {
