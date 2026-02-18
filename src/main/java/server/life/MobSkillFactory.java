@@ -99,7 +99,7 @@ public class MobSkillFactory {
             long duration = SECONDS.toMillis(DataTool.getInt("time", skillData, 0));
             long cooltime = SECONDS.toMillis(DataTool.getInt("interval", skillData, 0));
             int iprop = DataTool.getInt("prop", skillData, 100);
-            float prop = iprop / 100;
+            float prop = (float)iprop / 100;
             int limit = DataTool.getInt("limit", skillData, 0);
 
             Data ltData = skillData.getChildByPath("lt");
