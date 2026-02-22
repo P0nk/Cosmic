@@ -111,7 +111,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
-        final int cid = p.readInt(); // TODO: investigate if this is the "client id" supplied in PacketCreator#getServerIP()
+        final int cid = p.readInt(); // TODO: investigate if this is the "client id" supplied in
+                                     // PacketCreator#getServerIP()
         final Server server = Server.getInstance();
 
         if (!c.tryacquireClient()) {
@@ -155,7 +156,6 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             c.setHwid(hwid);
             c.setRemoteIP(c.getRemoteIP());
 
-
             if (!server.validateCharacteridInTransition(c, cid)) {
                 c.disconnect(true, false);
                 return;
@@ -170,7 +170,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                     e.printStackTrace();
                 }
 
-                if (player == null) { //If you are still getting null here then please just uninstall the game >.>, we dont need you fucking with the logs
+                if (player == null) { // If you are still getting null here then please just uninstall the game >.>,
+                                      // we dont need you fucking with the logs
                     c.disconnect(true, false);
                     return;
                 }
@@ -180,21 +181,23 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             boolean allowLogin = true;
 
-                /*  is this check really necessary?
-                if (state == Client.LOGIN_SERVER_TRANSITION || state == Client.LOGIN_NOTLOGGEDIN) {
-                    List<String> charNames = c.loadCharacterNames(c.getWorld());
-                    if(!newcomer) {
-                        charNames.remove(player.getName());
-                    }
-
-                    for (String charName : charNames) {
-                        if(wserv.getPlayerStorage().getCharacterByName(charName) != null) {
-                            allowLogin = false;
-                            break;
-                        }
-                    }
-                }
-                */
+            /*
+             * is this check really necessary?
+             * if (state == Client.LOGIN_SERVER_TRANSITION || state ==
+             * Client.LOGIN_NOTLOGGEDIN) {
+             * List<String> charNames = c.loadCharacterNames(c.getWorld());
+             * if(!newcomer) {
+             * charNames.remove(player.getName());
+             * }
+             * 
+             * for (String charName : charNames) {
+             * if(wserv.getPlayerStorage().getCharacterByName(charName) != null) {
+             * allowLogin = false;
+             * break;
+             * }
+             * }
+             * }
+             */
 
             int accId = c.getAccID();
             if (tryAcquireAccount(accId)) { // Sync this to prevent wrong login state for double loggedin handling
@@ -254,7 +257,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             player.sendQuickmap();
             player.sendMacros();
 
-            // pot bindings being passed through other characters on the account detected thanks to Croosade dev team
+            // pot bindings being passed through other characters on the account detected
+            // thanks to Croosade dev team
             KeyBinding autohpPot = player.getKeymap().get(91);
             player.sendPacket(PacketCreator.sendAutoHpPot(autohpPot != null ? autohpPot.getAction() : 0));
 
@@ -286,7 +290,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                         c.sendPacket(PacketCreator.getFamilyInfo(familyEntry));
                         familyEntry.announceToSenior(PacketCreator.sendFamilyLoginNotice(player.getName(), true), true);
                     } else {
-                        log.error("Chr {}'s family doesn't have an entry for them. (familyId {})", player.getName(), f.getID());
+                        log.error("Chr {}'s family doesn't have an entry for them. (familyId {})", player.getName(),
+                                f.getID());
                     }
                 } else {
                     log.error("Chr {} has an invalid family ID ({})", player.getName(), player.getFamilyId());
@@ -323,7 +328,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                             c.sendPacket(GuildPackets.allianceNotice(newAlliance.getId(), newAlliance.getNotice()));
 
                             if (newcomer) {
-                                server.allianceMessage(allianceId, GuildPackets.allianceMemberOnline(player, true), player.getId(), -1);
+                                server.allianceMessage(allianceId, GuildPackets.allianceMemberOnline(player, true),
+                                        player.getId(), -1);
                             }
                         }
                     }
@@ -335,8 +341,9 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             if (player.getParty() != null) {
                 PartyCharacter pchar = player.getMPC();
 
-                //Use this in case of enabling party HPbar HUD when logging in, however "you created a party" will appear on chat.
-                //c.sendPacket(PacketCreator.partyCreated(pchar));
+                // Use this in case of enabling party HPbar HUD when logging in, however "you
+                // created a party" will appear on chat.
+                // c.sendPacket(PacketCreator.partyCreated(pchar));
 
                 pchar.setChannel(c.getChannel());
                 pchar.setMapId(player.getMapId());
@@ -359,13 +366,15 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             CharacterNameAndId pendingBuddyRequest = c.getPlayer().getBuddylist().pollPendingRequest();
             if (pendingBuddyRequest != null) {
-                c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.getId(), c.getPlayer().getId(), pendingBuddyRequest.getName()));
+                c.sendPacket(PacketCreator.requestBuddylistAdd(pendingBuddyRequest.getId(), c.getPlayer().getId(),
+                        pendingBuddyRequest.getName()));
             }
 
             c.sendPacket(PacketCreator.updateGender(player));
             player.checkMessenger();
             c.sendPacket(PacketCreator.enableReport());
-            player.changeSkillLevel(SkillFactory.getSkill(10000000 * player.getJobType() + 12), (byte) (player.getLinkedLevel() / 10), 20, -1);
+            player.changeSkillLevel(SkillFactory.getSkill(10000000 * player.getJobType() + 12),
+                    (byte) (player.getLinkedLevel() / 10), 20, -1);
             player.checkBerserk(player.isHidden());
 
             if (newcomer) {
@@ -375,25 +384,29 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                     }
                 }
 
-                Mount mount = player.getMount();   // thanks Ari for noticing a scenario where Silver Mane quest couldn't be started
+                Mount mount = player.getMount(); // thanks Ari for noticing a scenario where Silver Mane quest couldn't
+                                                 // be started
                 if (mount.getItemId() != 0) {
                     player.sendPacket(PacketCreator.updateMount(player.getId(), mount, false));
                 }
 
                 player.reloadQuestExpirations();
 
-                    /*
-                    if (!c.hasVotedAlready()){
-                        player.sendPacket(PacketCreator.earnTitleMessage("You can vote now! Vote and earn a vote point!"));
-                    }
-                    */
+                /*
+                 * if (!c.hasVotedAlready()){
+                 * player.sendPacket(PacketCreator.
+                 * earnTitleMessage("You can vote now! Vote and earn a vote point!"));
+                 * }
+                 */
                 if (player.isGM()) {
-                    Server.getInstance().broadcastGMMessage(c.getWorld(), PacketCreator.earnTitleMessage((player.gmLevel() < 6 ? "GM " : "Admin ") + player.getName() + " has logged in"));
+                    Server.getInstance().broadcastGMMessage(c.getWorld(), PacketCreator.earnTitleMessage(
+                            (player.gmLevel() < 6 ? "GM " : "Admin ") + player.getName() + " has logged in"));
                 }
 
                 if (diseases != null) {
                     for (Entry<Disease, Pair<Long, MobSkill>> e : diseases.entrySet()) {
-                        final List<Pair<Disease, Integer>> debuff = Collections.singletonList(new Pair<>(e.getKey(), e.getValue().getRight().getX()));
+                        final List<Pair<Disease, Integer>> debuff = Collections
+                                .singletonList(new Pair<>(e.getKey(), e.getValue().getRight().getX()));
                         c.sendPacket(PacketCreator.giveDebuff(debuff, e.getValue().getRight()));
                     }
                 }
@@ -417,10 +430,9 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             player.resetPlayerRates();
             if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
-                player.setPlayerRates();
+                // Feature removed, handled dynamically
             }
 
-            player.setWorldRates();
             player.updateCouponRates();
 
             player.receivePartyMemberHP();
@@ -431,7 +443,8 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
                 if (partner != null && !partner.isAwayFromWorld()) {
                     player.sendPacket(WeddingPackets.OnNotifyWeddingPartnerTransfer(partnerId, partner.getMapId()));
-                    partner.sendPacket(WeddingPackets.OnNotifyWeddingPartnerTransfer(player.getId(), player.getMapId()));
+                    partner.sendPacket(
+                            WeddingPackets.OnNotifyWeddingPartnerTransfer(player.getId(), player.getMapId()));
                 }
             }
 
@@ -442,15 +455,15 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                 }
             }
 
-            // Tell the client to use the custom scripts available for the NPCs provided, instead of the WZ entries.
+            // Tell the client to use the custom scripts available for the NPCs provided,
+            // instead of the WZ entries.
             if (YamlConfig.config.server.USE_NPCS_SCRIPTABLE) {
 
                 // Create a copy to prevent always adding entries to the server's list.
                 Map<Integer, String> npcsIds = YamlConfig.config.server.NPCS_SCRIPTABLE
                         .entrySet().stream().collect(Collectors.toMap(
                                 entry -> Integer.parseInt(entry.getKey()),
-                                Entry::getValue
-                        ));
+                                Entry::getValue));
 
                 c.sendPacket(PacketCreator.setNPCScriptable(npcsIds));
             }
@@ -467,12 +480,14 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
     private static void showDueyNotification(Client c, Character player) {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT Type FROM dueypackages WHERE ReceiverId = ? AND Checked = 1 ORDER BY Type DESC")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT Type FROM dueypackages WHERE ReceiverId = ? AND Checked = 1 ORDER BY Type DESC")) {
             ps.setInt(1, player.getId());
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    try (PreparedStatement ps2 = con.prepareStatement("UPDATE dueypackages SET Checked = 0 WHERE ReceiverId = ?")) {
+                    try (PreparedStatement ps2 = con
+                            .prepareStatement("UPDATE dueypackages SET Checked = 0 WHERE ReceiverId = ?")) {
                         ps2.setInt(1, player.getId());
                         ps2.executeUpdate();
 

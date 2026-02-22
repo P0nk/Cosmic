@@ -162,10 +162,10 @@ public class LifeFactory {
         }
         // stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
         stats.setFriendly(DataTool.getIntConvert("damagedByMob", monsterInfoData, stats.isFriendly() ? 1 : 0) == 1);
-        stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData));
-        stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData));
-        stats.setMADamage(DataTool.getIntConvert("MADamage", monsterInfoData));
-        stats.setMDDamage(DataTool.getIntConvert("MDDamage", monsterInfoData));
+        stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData, 0));
+        stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData, 0));
+        stats.setMADamage(DataTool.getIntConvert("MADamage", monsterInfoData, 0));
+        stats.setMDDamage(DataTool.getIntConvert("MDDamage", monsterInfoData, 0));
         stats.setMp(DataTool.getIntConvert("maxMP", monsterInfoData, stats.getMp()));
         stats.setExp(DataTool.getIntConvert("exp", monsterInfoData, stats.getExp()));
         stats.setLevel(DataTool.getIntConvert("level", monsterInfoData));

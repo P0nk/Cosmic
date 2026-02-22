@@ -430,21 +430,7 @@ public class World {
     }
 
     public void setExpRate(int exp) {
-        Collection<Character> list = getPlayerStorage().getAllCharacters();
-
-        for (Character chr : list) {
-            if (!chr.isLoggedin()) {
-                continue;
-            }
-            chr.revertWorldRates();
-        }
         this.exprate = exp;
-        for (Character chr : list) {
-            if (!chr.isLoggedin()) {
-                continue;
-            }
-            chr.setWorldRates();
-        }
     }
 
     public int getDropRate() {
@@ -452,21 +438,7 @@ public class World {
     }
 
     public void setDropRate(int drop) {
-        Collection<Character> list = getPlayerStorage().getAllCharacters();
-
-        for (Character chr : list) {
-            if (!chr.isLoggedin()) {
-                continue;
-            }
-            chr.revertWorldRates();
-        }
         this.droprate = drop;
-        for (Character chr : list) {
-            if (!chr.isLoggedin()) {
-                continue;
-            }
-            chr.setWorldRates();
-        }
     }
 
     public int getBossDropRate() { // boss rate concept thanks to Lapeiro
@@ -482,21 +454,7 @@ public class World {
     }
 
     public void setMesoRate(int meso) {
-        Collection<Character> list = getPlayerStorage().getAllCharacters();
-
-        for (Character chr : list) {
-            if (!chr.isLoggedin()) {
-                continue;
-            }
-            chr.revertWorldRates();
-        }
         this.mesorate = meso;
-        for (Character chr : list) {
-            if (!chr.isLoggedin()) {
-                continue;
-            }
-            chr.setWorldRates();
-        }
     }
 
     public int getQuestRate() {

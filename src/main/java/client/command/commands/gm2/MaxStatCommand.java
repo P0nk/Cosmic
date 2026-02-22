@@ -41,9 +41,9 @@ public class MaxStatCommand extends Command {
         player.setLevel(255);
         player.resetPlayerRates();
         if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
-            player.setPlayerRates();
+            player.resetPlayerRates();
         }
-        player.setWorldRates();
+        player.updateCouponRates();
         player.updateStrDexIntLuk(Short.MAX_VALUE);
         player.setFame(13337);
         player.updateMaxHpMaxMp(30000, 30000);

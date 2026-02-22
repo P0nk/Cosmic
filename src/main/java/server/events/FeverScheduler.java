@@ -105,45 +105,46 @@ public class FeverScheduler {
 
         isFeverActive = true;
 
-        // Apply Boost
-        World world = Server.getInstance().getWorld(0); // Assuming World 0
-        if (world == null)
-            return;
-
-        switch (currentFever) {
-            case DROP:
-                world.setDropRate(world.getDropRate() * currentFever.getMultiplier());
-                break;
-            case MESO:
-                world.setMesoRate(world.getMesoRate() * currentFever.getMultiplier());
-                break;
-            case NX:
-                world.setNxFever(true);
-                break;
-            case SPELL_TRACE:
-                world.setSpellTraceFever(true);
-                break;
-            case EXP:
-                world.setExpRate(world.getExpRate() * currentFever.getMultiplier());
-                break;
-        }
-
-        // Broadcast Message
         int duration = MIN_DURATION_MIN + rand.nextInt(MAX_DURATION_MIN - MIN_DURATION_MIN + 1);
         long durationMs = duration * 60 * 1000L;
         feverEndTime = System.currentTimeMillis() + durationMs;
 
-        java.text.DateFormat dateFormat = new java.text.SimpleDateFormat("HH:mm:ss");
-        dateFormat.setTimeZone(java.util.TimeZone.getDefault());
-        String startTimeStr = dateFormat.format(new java.util.Date());
-        String endTimeStr = dateFormat.format(new java.util.Date(feverEndTime));
+        // Apply Boost
+        for (World world : Server.getInstance().getWorlds()) {
+            if (world == null)
+                continue;
 
-        String msg = "[Fever] " + currentFever.getName() + " Fever has started at " + startTimeStr
-                + "! Enjoy the boost for " + duration
-                + " more mins until " + endTimeStr + "!";
-        world.broadcastPacket(PacketCreator.serverNotice(6, msg));
-        // 5120009: Weather effect (Snow) - Example, adjust ID as needed
-        world.broadcastPacket(PacketCreator.startMapEffect(msg, 5120009, true));
+            switch (currentFever) {
+                case DROP:
+                    world.setDropRate(world.getDropRate() * currentFever.getMultiplier());
+                    break;
+                case MESO:
+                    world.setMesoRate(world.getMesoRate() * currentFever.getMultiplier());
+                    break;
+                case NX:
+                    world.setNxFever(true);
+                    break;
+                case SPELL_TRACE:
+                    world.setSpellTraceFever(true);
+                    break;
+                case EXP:
+                    world.setExpRate(world.getExpRate() * currentFever.getMultiplier());
+                    break;
+            }
+
+            // Broadcast Message
+            java.text.DateFormat dateFormat = new java.text.SimpleDateFormat("HH:mm:ss");
+            dateFormat.setTimeZone(java.util.TimeZone.getDefault());
+            String startTimeStr = dateFormat.format(new java.util.Date());
+            String endTimeStr = dateFormat.format(new java.util.Date(feverEndTime));
+
+            String msg = "[Fever] " + currentFever.getName() + " Fever has started at " + startTimeStr
+                    + "! Enjoy the boost for " + duration
+                    + " more mins until " + endTimeStr + "!";
+            world.broadcastPacket(PacketCreator.serverNotice(6, msg));
+            // 5120009: Weather effect (Snow) - Example, adjust ID as needed
+            world.broadcastPacket(PacketCreator.startMapEffect(msg, 5120009, true));
+        }
 
         System.out.println(
                 "[FeverScheduler] Fever started: " + currentFever.getName() + " for " + duration + " minutes.");
@@ -165,27 +166,28 @@ public class FeverScheduler {
         if (!isFeverActive)
             return;
 
-        World world = Server.getInstance().getWorld(0);
-        if (world != null) {
-            switch (currentFever) {
-                case DROP:
-                    world.setDropRate(world.getDropRate() / currentFever.getMultiplier());
-                    break;
-                case MESO:
-                    world.setMesoRate(world.getMesoRate() / currentFever.getMultiplier());
-                    break;
-                case NX:
-                    world.setNxFever(false);
-                    break;
-                case SPELL_TRACE:
-                    world.setSpellTraceFever(false);
-                    break;
-                case EXP:
-                    world.setExpRate(world.getExpRate() / currentFever.getMultiplier());
-                    break;
+        for (World world : Server.getInstance().getWorlds()) {
+            if (world != null) {
+                switch (currentFever) {
+                    case DROP:
+                        world.setDropRate(world.getDropRate() / currentFever.getMultiplier());
+                        break;
+                    case MESO:
+                        world.setMesoRate(world.getMesoRate() / currentFever.getMultiplier());
+                        break;
+                    case NX:
+                        world.setNxFever(false);
+                        break;
+                    case SPELL_TRACE:
+                        world.setSpellTraceFever(false);
+                        break;
+                    case EXP:
+                        world.setExpRate(world.getExpRate() / currentFever.getMultiplier());
+                        break;
+                }
+                world.broadcastPacket(PacketCreator.serverNotice(6, "[Fever] The Fever event has ended."));
+                world.broadcastPacket(PacketCreator.removeMapEffect());
             }
-            world.broadcastPacket(PacketCreator.serverNotice(6, "[Fever] The Fever event has ended."));
-            world.broadcastPacket(PacketCreator.removeMapEffect());
         }
 
         isFeverActive = false;

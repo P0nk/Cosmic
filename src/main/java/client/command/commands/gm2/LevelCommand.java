@@ -76,7 +76,8 @@ public class LevelCommand extends Command {
         int calculatedPreLevel = Math.min(targetLevel, target.getMaxClassLevel()) - 1;
         player.yellowMessage("[DEBUG] Calculated Pre-Level (Target - 1): " + calculatedPreLevel);
 
-        // Set level to (Target - 1) because levelUp() is called immediately after to refresh stats
+        // Set level to (Target - 1) because levelUp() is called immediately after to
+        // refresh stats
         target.setLevel(calculatedPreLevel);
 
         // [DEBUG] Check if setLevel actually worked
@@ -85,9 +86,9 @@ public class LevelCommand extends Command {
 
         target.resetPlayerRates();
         if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
-            target.setPlayerRates();
+            target.resetPlayerRates();
         }
-        target.setWorldRates();
+        target.updateCouponRates();
 
         // This triggers the level up effect and recalculates stats
         target.levelUp(false);

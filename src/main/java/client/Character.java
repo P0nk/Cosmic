@@ -234,8 +234,12 @@ public class Character extends AbstractCharacterObject {
     private int mesosTraded = 0;
     private int possibleReports = 10;
     private int ariantPoints, dojoPoints, vanquisherStage, dojoStage, dojoEnergy, vanquisherKills;
-    private double expRate = 1;
-    private int mesoRate = 1, dropRate = 1, expCoupon = 1, mesoCoupon = 1, dropCoupon = 1;
+    private double expRate = 1.0;
+    private double mesoRate = 1.0;
+    private double dropRate = 1.0;
+    private double expCoupon = 1.0;
+    private double mesoCoupon = 1.0;
+    private double dropCoupon = 1.0;
     private int omokwins, omokties, omoklosses, matchcardwins, matchcardties, matchcardlosses;
     private int owlSearch;
     private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastDeathtime, jailExpiration = -1;
@@ -5314,10 +5318,15 @@ public class Character extends AbstractCharacterObject {
 
     public double getExpRate() {
         if (hasNoviceExpRate()) { // base exp rate 1x for early levels idea thanks to Vcoc
-            return 1;
+            return 1.0;
         }
 
-        return expRate;
+        double rate = getWorldServer().getExpRate();
+        if (getWorldServer().getProgExpToggle()) {
+            int tier = Math.min(this.level / 10, 25);
+            rate *= getExpRateGainFromWorld(tier);
+        }
+        return rate * expCoupon;
     }
 
     public double getCouponExpRate() {
@@ -5325,36 +5334,52 @@ public class Character extends AbstractCharacterObject {
     }
 
     public double getRawExpRate() {
-        return expRate / (expCoupon * getWorldServer().getExpRate());
+        double rate = getWorldServer().getExpRate();
+        if (getWorldServer().getProgExpToggle()) {
+            int tier = Math.min(this.level / 10, 25);
+            rate *= getExpRateGainFromWorld(tier);
+        }
+        return rate;
     }
 
-    public int getDropRate() {
-        return dropRate;
+    public double getDropRate() {
+        double rate = getWorldServer().getDropRate();
+        int tier = Math.min(this.level / 10, 25);
+        rate *= getDropRateGainFromWorld(tier);
+        return rate * dropCoupon;
     }
 
-    public int getCouponDropRate() {
+    public double getCouponDropRate() {
         return dropCoupon;
     }
 
-    public int getRawDropRate() {
-        return dropRate / (dropCoupon * getWorldServer().getDropRate());
+    public double getRawDropRate() {
+        double rate = getWorldServer().getDropRate();
+        int tier = Math.min(this.level / 10, 25);
+        rate *= getDropRateGainFromWorld(tier);
+        return rate;
     }
 
-    public int getBossDropRate() {
-        World w = getWorldServer();
-        return (dropRate / w.getDropRate()) * w.getBossDropRate();
+    public double getBossDropRate() {
+        return getRawDropRate() * getWorldServer().getBossDropRate() * dropCoupon;
     }
 
-    public int getMesoRate() {
-        return mesoRate;
+    public double getMesoRate() {
+        double rate = getWorldServer().getMesoRate();
+        int tier = Math.min(this.level / 10, 25);
+        rate *= getMesoRateGainFromWorld(tier);
+        return rate * mesoCoupon;
     }
 
-    public int getCouponMesoRate() {
+    public double getCouponMesoRate() {
         return mesoCoupon;
     }
 
-    public int getRawMesoRate() {
-        return mesoRate / (mesoCoupon * getWorldServer().getMesoRate());
+    public double getRawMesoRate() {
+        double rate = getWorldServer().getMesoRate();
+        int tier = Math.min(this.level / 10, 25);
+        rate *= getMesoRateGainFromWorld(tier);
+        return rate;
     }
 
     public int getQuestExpRate() {
@@ -6891,8 +6916,6 @@ public class Character extends AbstractCharacterObject {
                 }
             }
             if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
-                revertLastPlayerRates();
-                setPlayerRates();
                 this.yellowMessage("You managed to get level " + level + "! Rates updated.");
             }
         }
@@ -6975,53 +6998,6 @@ public class Character extends AbstractCharacterObject {
             return gains.get(tier);
         }
         return GameConstants.getPlayerBonusDropRate(tier);
-    }
-
-    public void setPlayerRates() {
-        int tier = Math.min(this.level / 10, 25); // 10-level tier system, capped at 25 (for level 251–255)
-
-        if (getWorldServer().getProgExpToggle()) {
-            this.expRate *= getExpRateGainFromWorld(tier);
-            this.mesoRate *= getMesoRateGainFromWorld(tier);
-            this.dropRate *= getDropRateGainFromWorld(tier);
-        } else {
-            this.expRate *= 1; // No exp scaling
-            this.mesoRate *= getMesoRateGainFromWorld(tier);
-            this.dropRate *= getDropRateGainFromWorld(tier);
-        }
-    }
-
-    public void revertLastPlayerRates() {
-        int previousLevel = Math.max(this.level - 1, 1); // Ensure no negative indexing
-        int tier = Math.min(previousLevel / 10, 25);
-
-        this.expRate /= getExpRateGainFromWorld(tier);
-        this.mesoRate /= getMesoRateGainFromWorld(tier);
-        this.dropRate /= getDropRateGainFromWorld(tier);
-    }
-
-    public void revertPlayerRates() {
-        int tier = Math.min(this.level / 10, 25);
-
-        this.expRate /= getExpRateGainFromWorld(tier);
-        this.mesoRate /= getMesoRateGainFromWorld(tier);
-        this.dropRate /= getDropRateGainFromWorld(tier);
-    }
-
-    public void setWorldRates() {
-        World worldz = getWorldServer();
-
-        this.expRate *= worldz.getExpRate();
-        this.mesoRate *= worldz.getMesoRate();
-        this.dropRate *= worldz.getDropRate();
-    }
-
-    public void revertWorldRates() {
-        World worldz = getWorldServer();
-
-        this.expRate /= worldz.getExpRate();
-        this.mesoRate /= worldz.getMesoRate();
-        this.dropRate /= worldz.getDropRate();
     }
 
     private void setCouponRates() {
@@ -12927,9 +12903,7 @@ public class Character extends AbstractCharacterObject {
 
         // 7. [FIXED] Recalculate Rates Correctly
         this.resetPlayerRates(); // 1. Reset to 1x
-        this.setWorldRates(); // 2. Apply Server Base Rate (e.g. 5x)
-        this.updateCouponRates(); // 3. Re-apply any active 2x Cards
-        this.setPlayerRates(); // 4. Apply Level 1 Tier Bonus
+        this.updateCouponRates(); // 2. Re-apply any active 2x Cards
 
         // 8. Announce
         if (!this.isGM()) {
