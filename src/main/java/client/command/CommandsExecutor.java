@@ -171,6 +171,8 @@ public class CommandsExecutor {
         addCommand("withdrawmeso", WithdrawMesoCommand.class);
         addCommand("closeshop", CloseShopCommand.class);
         addCommand("whereami", WhereaMiCommand.class);
+        addCommand("fever", FeverCommand.class);
+        addCommand("trade", TradeCommand.class);
 
         // --- Economy & Shops ---
         addCommand("voteshop", 0, VoteShopCommand.class);

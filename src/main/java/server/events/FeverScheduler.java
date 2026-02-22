@@ -16,6 +16,7 @@ public class FeverScheduler {
     private boolean isFeverActive = false;
     private FeverType currentFever = null;
     private FeverType lastFever = null;
+    private long feverEndTime = 0;
 
     // Configuration
     private static final int MIN_INTERVAL_MIN = 20;
@@ -54,6 +55,18 @@ public class FeverScheduler {
     public void start() {
         scheduleNextFever();
         System.out.println("[FeverScheduler] Started.");
+    }
+
+    public long getFeverEndTime() {
+        return feverEndTime;
+    }
+
+    public FeverType getCurrentFever() {
+        return currentFever;
+    }
+
+    public boolean isFeverActive() {
+        return isFeverActive;
     }
 
     public void scheduleNextFever() {
@@ -117,16 +130,23 @@ public class FeverScheduler {
 
         // Broadcast Message
         int duration = MIN_DURATION_MIN + rand.nextInt(MAX_DURATION_MIN - MIN_DURATION_MIN + 1);
-        String msg = "[Fever] " + currentFever.getName() + " Fever has started! Enjoy the boost for " + duration
-                + " minutes!";
+        long durationMs = duration * 60 * 1000L;
+        feverEndTime = System.currentTimeMillis() + durationMs;
+
+        java.text.DateFormat dateFormat = new java.text.SimpleDateFormat("HH:mm:ss");
+        dateFormat.setTimeZone(java.util.TimeZone.getDefault());
+        String startTimeStr = dateFormat.format(new java.util.Date());
+        String endTimeStr = dateFormat.format(new java.util.Date(feverEndTime));
+
+        String msg = "[Fever] " + currentFever.getName() + " Fever has started at " + startTimeStr
+                + "! Enjoy the boost for " + duration
+                + " more mins until " + endTimeStr + "!";
         world.broadcastPacket(PacketCreator.serverNotice(6, msg));
         // 5120009: Weather effect (Snow) - Example, adjust ID as needed
         world.broadcastPacket(PacketCreator.startMapEffect(msg, 5120009, true));
 
         System.out.println(
                 "[FeverScheduler] Fever started: " + currentFever.getName() + " for " + duration + " minutes.");
-
-        long durationMs = duration * 60 * 1000L;
 
         if (stopTask != null && !stopTask.isDone()) {
             stopTask.cancel(false);
@@ -170,6 +190,7 @@ public class FeverScheduler {
 
         isFeverActive = false;
         currentFever = null;
+        feverEndTime = 0;
         System.out.println("[FeverScheduler] Fever ended.");
     }
 }
