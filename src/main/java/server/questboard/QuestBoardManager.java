@@ -54,6 +54,11 @@ public class QuestBoardManager {
 
     public static boolean createQuest(Character player, int itemId, int quantity,
             long meso, long nx, Integer item1Id, Integer item1Qty, Integer item2Id, Integer item2Qty) {
+        if (player.getWorld() == 1) {
+            player.message("The Quest Board is not available in your world.");
+            return false;
+        }
+
         if (player.getMeso() < 10_000_000) {
             System.out.println("[QuestBoard] Not enough mesos to create quest.");
             return false;
@@ -108,6 +113,10 @@ public class QuestBoardManager {
 
     // New Atomic Method for completing quest
     public static String completeQuest(Character player, int questId) {
+        if (player.getWorld() == 1) {
+            return "The Quest Board is not available in your world.";
+        }
+
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
@@ -255,6 +264,11 @@ public class QuestBoardManager {
     }
 
     public static boolean claimReward(Character player, int questId) {
+        if (player.getWorld() == 1) {
+            player.message("The Quest Board is not available in your world.");
+            return false;
+        }
+
         System.out.println("[QuestBoard] Attempting to claim reward for quest ID: " + questId + ", Player ID: "
                 + player.getId() + " (" + player.getName() + ")");
 
@@ -306,6 +320,11 @@ public class QuestBoardManager {
     }
 
     public static boolean claimRequirements(Character player, int questId) {
+        if (player.getWorld() == 1) {
+            player.message("The Quest Board is not available in your world.");
+            return false;
+        }
+
         try (Connection con = DatabaseConnection.getConnection();
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT * FROM quest_board WHERE quest_id = ? AND created_by = ? AND status = 'COMPLETED' AND is_req_claimed = 0")) {
@@ -337,6 +356,11 @@ public class QuestBoardManager {
     }
 
     public static boolean withdrawQuest(Character player, int questId) {
+        if (player.getWorld() == 1) {
+            player.message("The Quest Board is not available in your world.");
+            return false;
+        }
+
         System.out.println("[QuestBoard] Attempting to withdraw quest ID: " + questId + ", Player ID: " + player.getId()
                 + " (" + player.getName() + ")");
 

@@ -37,6 +37,12 @@ public final class DueyHandler extends AbstractPacketHandler {
             return;
         }
 
+        if (c.getPlayer().getWorld() == 1) {
+            c.getPlayer().message("Duey Deliveries are disabled in this world.");
+            c.sendPacket(PacketCreator.enableActions());
+            return;
+        }
+
         byte operation = p.readByte();
         if (operation == DueyProcessor.Actions.TOSERVER_RECV_ITEM.getCode()) { // on click 'O' Button, thanks inhyuk
             DueyProcessor.dueySendTalk(c, false);

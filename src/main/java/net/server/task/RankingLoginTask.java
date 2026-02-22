@@ -48,21 +48,27 @@ public class RankingLoginTask implements Runnable {
     }
 
     private void updateRanking(int job, int world) throws SQLException {
-        String sqlCharSelect = "SELECT c.id, " + (job != -1 ? "c.jobRank, c.jobRankMove" : "c.`rank`, c.rankMove") + ", a.lastlogin AS lastlogin, a.loggedin FROM characters AS c LEFT JOIN accounts AS a ON c.accountid = a.id WHERE c.gm < 2 AND c.world = ? ";
+        if (world == 1)
+            return; // World 1 is excluded from rankings
+
+        String sqlCharSelect = "SELECT c.id, " + (job != -1 ? "c.jobRank, c.jobRankMove" : "c.`rank`, c.rankMove")
+                + ", a.lastlogin AS lastlogin, a.loggedin FROM characters AS c LEFT JOIN accounts AS a ON c.accountid = a.id WHERE c.gm < 2 AND c.world = ? ";
         if (job != -1) {
             sqlCharSelect += "AND c.job DIV 100 = ? ";
         }
         sqlCharSelect += "ORDER BY c.level DESC , c.exp DESC , c.lastExpGainTime ASC, c.fame DESC , c.meso DESC";
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement charSelect = con.prepareStatement(sqlCharSelect)) {
+                PreparedStatement charSelect = con.prepareStatement(sqlCharSelect)) {
             charSelect.setInt(1, world);
             if (job != -1) {
                 charSelect.setInt(2, job);
             }
 
             try (ResultSet rs = charSelect.executeQuery();
-                 PreparedStatement ps = con.prepareStatement("UPDATE characters SET " + (job != -1 ? "jobRank = ?, jobRankMove = ? " : "`rank` = ?, rankMove = ? ") + "WHERE id = ?")) {
+                    PreparedStatement ps = con.prepareStatement("UPDATE characters SET "
+                            + (job != -1 ? "jobRank = ?, jobRankMove = ? " : "`rank` = ?, rankMove = ? ")
+                            + "WHERE id = ?")) {
                 int rank = 0;
 
                 while (rs.next()) {
@@ -95,7 +101,7 @@ public class RankingLoginTask implements Runnable {
                 }
 
                 for (int j = 0; j < Server.getInstance().getWorldsSize(); j++) {
-                    updateRanking(-1, j);    //overall ranking
+                    updateRanking(-1, j); // overall ranking
                     for (int i = 0; i <= Job.getMax(); i++) {
                         updateRanking(i, j);
                     }

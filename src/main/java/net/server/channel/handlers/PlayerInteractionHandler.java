@@ -110,6 +110,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
         SKIP(0x3F),
         MOVE_OMOK(0x40),
         SELECT_CARD(0x44);
+
         final byte code;
 
         Action(int code) {
@@ -139,7 +140,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
 
     @Override
     public final void handlePacket(InPacket p, Client c) {
-        if (!c.tryacquireClient()) {    // thanks GabrielSin for pointing dupes within player interactions
+        if (!c.tryacquireClient()) { // thanks GabrielSin for pointing dupes within player interactions
             c.sendPacket(PacketCreator.enableActions());
             return;
         }
@@ -148,14 +149,23 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
             byte mode = p.readByte();
             final Character chr = c.getPlayer();
 
+            if (chr.getWorld() == 1) {
+                if (mode == Action.CREATE.getCode() || mode == Action.INVITE.getCode() || mode == Action.VISIT.getCode()
+                        || mode == Action.ROOM.getCode()) {
+                    chr.message("Player interactions are disabled in this world.");
+                    c.sendPacket(PacketCreator.enableActions());
+                    return;
+                }
+            }
+
             if (mode == Action.CREATE.getCode()) {
-                if (!chr.isAlive()) {    // thanks GabrielSin for pointing this
+                if (!chr.isAlive()) { // thanks GabrielSin for pointing this
                     chr.sendPacket(PacketCreator.getMiniRoomError(4));
                     return;
                 }
 
                 byte createType = p.readByte();
-                if (createType == 3) {  // trade
+                if (createType == 3) { // trade
                     Trade.startTrade(chr);
                 } else if (createType == 1) { // omok mini game
                     int status = establishMiniroomStatus(chr, true);
@@ -262,7 +272,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                         chr.getMap().addMapObject(shop);
                         shop.sendShop(c);
                         c.getWorldServer().registerPlayerShop(shop);
-                        //c.sendPacket(PacketCreator.getPlayerShopRemoveVisitor(1));
+                        // c.sendPacket(PacketCreator.getPlayerShopRemoveVisitor(1));
                     } else if (ItemConstants.isHiredMerchant(itemId)) {
                         HiredMerchant merchant = new HiredMerchant(chr, desc, itemId);
                         chr.setHiredMerchant(merchant);
@@ -328,7 +338,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                 HiredMerchant merchant = chr.getHiredMerchant();
                 if (chr.getTrade() != null) {
                     chr.getTrade().chat(p.readString());
-                } else if (chr.getPlayerShop() != null) { //mini game
+                } else if (chr.getPlayerShop() != null) { // mini game
                     PlayerShop shop = chr.getPlayerShop();
                     if (shop != null) {
                         shop.chat(c, p.readString());
@@ -355,11 +365,12 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                 }
 
                 if (mode == Action.OPEN_STORE.getCode()) {
-                    p.readByte();    //01
+                    p.readByte(); // 01
                 } else {
                     p.readShort();
                     int birthday = p.readInt();
-                    if (!CashOperationHandler.checkBirthday(c, birthday)) { // birthday check here found thanks to lucasziron
+                    if (!CashOperationHandler.checkBirthday(c, birthday)) { // birthday check here found thanks to
+                                                                            // lucasziron
                         c.sendPacket(PacketCreator.serverNotice(1, "Please check again the birthday date."));
                         return;
                     }
@@ -367,7 +378,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                     c.sendPacket(PacketCreator.hiredMerchantOwnerMaintenanceLeave());
                 }
 
-                if (!canPlaceStore(chr)) {    // thanks Ari for noticing player shops overlapping on opening time
+                if (!canPlaceStore(chr)) { // thanks Ari for noticing player shops overlapping on opening time
                     return;
                 }
 
@@ -455,7 +466,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
             } else if (mode == Action.MOVE_OMOK.getCode()) {
                 int x = p.readInt(); // x point
                 int y = p.readInt(); // y point
-                int type = p.readByte(); // piece ( 1 or 2; Owner has one piece, visitor has another, it switches every game.)
+                int type = p.readByte(); // piece ( 1 or 2; Owner has one piece, visitor has another, it switches every
+                                         // game.)
                 chr.getMiniGame().setPiece(x, y, type, chr);
             } else if (mode == Action.SELECT_CARD.getCode()) {
                 int turn = p.readByte(); // 1st turn = 1; 2nd turn = 0
@@ -523,8 +535,10 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
 
                 Trade trade = chr.getTrade();
                 if (trade != null) {
-                    if ((quantity <= item.getQuantity() && quantity >= 0) || ItemConstants.isRechargeable(item.getItemId())) {
-                        if (ii.isDropRestricted(item.getItemId())) { // ensure that undroppable items do not make it to the trade window
+                    if ((quantity <= item.getQuantity() && quantity >= 0)
+                            || ItemConstants.isRechargeable(item.getItemId())) {
+                        if (ii.isDropRestricted(item.getItemId())) { // ensure that undroppable items do not make it to
+                                                                     // the trade window
                             if (!KarmaManipulator.hasKarmaFlag(item)) {
                                 c.sendPacket(PacketCreator.serverNotice(1, "That item is untradeable."));
                                 c.sendPacket(PacketCreator.enableActions());
@@ -555,11 +569,13 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
 
                                 trade.getChr().sendPacket(PacketCreator.getTradeItemAdd((byte) 0, tradeItem));
                                 if (trade.getPartner() != null) {
-                                    trade.getPartner().getChr().sendPacket(PacketCreator.getTradeItemAdd((byte) 1, tradeItem));
+                                    trade.getPartner().getChr()
+                                            .sendPacket(PacketCreator.getTradeItemAdd((byte) 1, tradeItem));
                                 }
                             }
                         } catch (Exception e) {
-                            log.warn("Chr {} tried to add {}x {} in trade (slot {}), then exception occurred", chr, ii.getName(item.getItemId()), item.getQuantity(), targetSlot, e);
+                            log.warn("Chr {} tried to add {}x {} in trade (slot {}), then exception occurred", chr,
+                                    ii.getName(item.getItemId()), item.getQuantity(), targetSlot, e);
                         } finally {
                             inv.unlockInventory();
                         }
@@ -583,9 +599,11 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                     return;
                 } else if (ItemInformationProvider.getInstance().isUnmerchable(ivItem.getItemId())) {
                     if (ItemConstants.isPet(ivItem.getItemId())) {
-                        c.sendPacket(PacketCreator.serverNotice(1, "Pets are not allowed to be sold on the Player Store."));
+                        c.sendPacket(
+                                PacketCreator.serverNotice(1, "Pets are not allowed to be sold on the Player Store."));
                     } else {
-                        c.sendPacket(PacketCreator.serverNotice(1, "Cash items are not allowed to be sold on the Player Store."));
+                        c.sendPacket(PacketCreator.serverNotice(1,
+                                "Cash items are not allowed to be sold on the Player Store."));
                     }
 
                     c.sendPacket(PacketCreator.enableActions());
@@ -597,16 +615,19 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                 if (ItemConstants.isRechargeable(ivItem.getItemId())) {
                     perBundle = 1;
                     bundles = 1;
-                } else if (ivItem.getQuantity() < (bundles * perBundle)) {     // thanks GabrielSin for finding a dupe here
+                } else if (ivItem.getQuantity() < (bundles * perBundle)) { // thanks GabrielSin for finding a dupe here
                     c.sendPacket(PacketCreator.serverNotice(1, "Could not perform shop operation with that item."));
                     c.sendPacket(PacketCreator.enableActions());
                     return;
                 }
 
                 int price = p.readInt();
-                if (perBundle <= 0 || perBundle * bundles > 2000 || bundles <= 0 || price <= 0 || price > Integer.MAX_VALUE) {
-                    AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() + " tried to packet edit with hired merchants.");
-                    log.warn("Chr {} might possibly have packet edited Hired Merchants. perBundle: {}, perBundle * bundles (This multiplied cannot be greater than 2000): {}, bundles: {}, price: {}",
+                if (perBundle <= 0 || perBundle * bundles > 2000 || bundles <= 0 || price <= 0
+                        || price > Integer.MAX_VALUE) {
+                    AutobanFactory.PACKET_EDIT.alert(chr,
+                            chr.getName() + " tried to packet edit with hired merchants.");
+                    log.warn(
+                            "Chr {} might possibly have packet edited Hired Merchants. perBundle: {}, perBundle * bundles (This multiplied cannot be greater than 2000): {}, bundles: {}, price: {}",
                             chr.getName(), perBundle, perBundle * bundles, bundles, price);
                     return;
                 }
@@ -620,7 +641,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                 PlayerShop shop = chr.getPlayerShop();
                 HiredMerchant merchant = chr.getHiredMerchant();
                 if (shop != null && shop.isOwner(chr)) {
-                    if (shop.isOpen() || !shop.addItem(shopItem)) { // thanks Vcoc for pointing an exploit with unlimited shop slots
+                    if (shop.isOpen() || !shop.addItem(shopItem)) { // thanks Vcoc for pointing an exploit with
+                                                                    // unlimited shop slots
                         c.sendPacket(PacketCreator.serverNotice(1, "You can't sell it anymore."));
                         return;
                     }
@@ -634,11 +656,13 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                     c.sendPacket(PacketCreator.getPlayerShopItemUpdate(shop));
                 } else if (merchant != null && merchant.isOwner(chr)) {
                     if (ivType.equals(InventoryType.CASH) && merchant.isPublished()) {
-                        c.sendPacket(PacketCreator.serverNotice(1, "Cash items are only allowed to be sold when first opening the store."));
+                        c.sendPacket(PacketCreator.serverNotice(1,
+                                "Cash items are only allowed to be sold when first opening the store."));
                         return;
                     }
 
-                    if (merchant.isOpen() || !merchant.addItem(shopItem)) { // thanks Vcoc for pointing an exploit with unlimited shop slots
+                    if (merchant.isOpen() || !merchant.addItem(shopItem)) { // thanks Vcoc for pointing an exploit with
+                                                                            // unlimited shop slots
                         c.sendPacket(PacketCreator.serverNotice(1, "You can't sell it anymore."));
                         return;
                     }
@@ -656,7 +680,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                     }
 
                     try {
-                        merchant.saveItems(false);   // thanks Masterrulax for realizing yet another dupe with merchants/Fredrick
+                        merchant.saveItems(false); // thanks Masterrulax for realizing yet another dupe with
+                                                   // merchants/Fredrick
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
@@ -677,7 +702,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
 
                     int slot = p.readShort();
                     if (slot >= shop.getItems().size() || slot < 0) {
-                        AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() + " tried to packet edit with a player shop.");
+                        AutobanFactory.PACKET_EDIT.alert(chr,
+                                chr.getName() + " tried to packet edit with a player shop.");
                         log.warn("Chr {} tried to remove item at slot {}", chr.getName(), slot);
                         c.disconnect(true, false);
                         return;
@@ -743,7 +769,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                 int itemid = p.readByte();
                 short quantity = p.readShort();
                 if (quantity < 1) {
-                    AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() + " tried to packet edit with a hired merchant and or player shop.");
+                    AutobanFactory.PACKET_EDIT.alert(chr,
+                            chr.getName() + " tried to packet edit with a hired merchant and or player shop.");
                     log.warn("Chr {} tried to buy item {} with quantity {}", chr.getName(), itemid, quantity);
                     c.disconnect(true, false);
                     return;
@@ -772,7 +799,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
 
                     int slot = p.readShort();
                     if (slot >= merchant.getItems().size() || slot < 0) {
-                        AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() + " tried to packet edit with a hired merchant.");
+                        AutobanFactory.PACKET_EDIT.alert(chr,
+                                chr.getName() + " tried to packet edit with a hired merchant.");
                         log.warn("Chr {} tried to remove item at slot {}", chr.getName(), slot);
                         c.disconnect(true, false);
                         return;
@@ -843,8 +871,9 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
     }
 
     private static boolean isTradeOpen(Character chr) {
-        if (chr.getTrade() != null) {   // thanks to Rien dev team
-            //Apparently there is a dupe exploit that causes racing conditions when saving/retrieving from the db with stuff like trade open.
+        if (chr.getTrade() != null) { // thanks to Rien dev team
+            // Apparently there is a dupe exploit that causes racing conditions when
+            // saving/retrieving from the db with stuff like trade open.
             chr.sendPacket(PacketCreator.enableActions());
             return true;
         }
@@ -854,7 +883,8 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
 
     private static boolean canPlaceStore(Character chr) {
         try {
-            for (MapObject mmo : chr.getMap().getMapObjectsInRange(chr.getPosition(), 23000, Arrays.asList(MapObjectType.HIRED_MERCHANT, MapObjectType.PLAYER))) {
+            for (MapObject mmo : chr.getMap().getMapObjectsInRange(chr.getPosition(), 23000,
+                    Arrays.asList(MapObjectType.HIRED_MERCHANT, MapObjectType.PLAYER))) {
                 if (mmo instanceof Character mc) {
                     if (mc.getId() == chr.getId()) {
                         continue;

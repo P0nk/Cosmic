@@ -40,6 +40,13 @@ public final class MesoDropHandler extends AbstractPacketHandler {
             c.sendPacket(PacketCreator.enableActions());
             return;
         }
+
+        if (player.getWorld() == 1) {
+            player.message("Dropping mesos is disabled in this world.");
+            c.sendPacket(PacketCreator.enableActions());
+            return;
+        }
+
         p.skip(4);
         int meso = p.readInt();
 
@@ -48,7 +55,7 @@ public final class MesoDropHandler extends AbstractPacketHandler {
             return;
         }
 
-        if (c.tryacquireClient()) {     // thanks imbee for noticing players not being able to throw mesos too fast
+        if (c.tryacquireClient()) { // thanks imbee for noticing players not being able to throw mesos too fast
             try {
                 if (meso <= player.getMeso() && meso > 9 && meso < 50001) {
                     player.gainMeso(-meso, false, true, false);

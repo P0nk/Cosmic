@@ -11,6 +11,10 @@ public class TradeCommand extends Command {
 
     @Override
     public void execute(Client c, String[] params) {
+        if (c.getPlayer().getWorld() == 1) {
+            c.getPlayer().message("The trade command is disabled in this world.");
+            return;
+        }
         NPCScriptManager.getInstance().start(c, 9010009, "trade", c.getPlayer());
     }
 }

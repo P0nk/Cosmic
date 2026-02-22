@@ -17,4 +17,7 @@ public class WorldConfig {
     public int max_mob_per_spawnpoint = 1;
     public boolean use_progressive_exp = true;
     public int mob_per_spawntick = 1; // default 1 tick spawn per spawn point
+    public java.util.List<Double> exp_rate_gain = null;
+    public java.util.List<Integer> meso_rate_gain = null;
+    public java.util.List<Integer> drop_rate_gain = null;
 }

@@ -440,6 +440,9 @@ public class Server {
         int mobperspawnpoint = YamlConfig.config.worlds.get(i).max_mob_per_spawnpoint;
         int mobperspawntick = YamlConfig.config.worlds.get(i).mob_per_spawntick;
         boolean progexptoggle = YamlConfig.config.worlds.get(i).use_progressive_exp;
+        List<Double> expRateGain = YamlConfig.config.worlds.get(i).exp_rate_gain;
+        List<Integer> mesoRateGain = YamlConfig.config.worlds.get(i).meso_rate_gain;
+        List<Integer> dropRateGain = YamlConfig.config.worlds.get(i).drop_rate_gain;
         int flag = YamlConfig.config.worlds.get(i).flag;
         String event_message = YamlConfig.config.worlds.get(i).event_message;
         String why_am_i_recommended = YamlConfig.config.worlds.get(i).why_am_i_recommended;
@@ -458,7 +461,10 @@ public class Server {
                 mobrate, // Added by merogie
                 mobperspawnpoint, // Added by merogie
                 mobperspawntick, // added by merogie
-                progexptoggle);
+                progexptoggle,
+                expRateGain,
+                mesoRateGain,
+                dropRateGain);
 
         Map<Integer, String> channelInfo = new HashMap<>();
         long bootTime = getCurrentTime();

@@ -6953,17 +6953,41 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    private double getExpRateGainFromWorld(int tier) {
+        List<Double> gains = getWorldServer().getExpRateGain();
+        if (gains != null && tier < gains.size()) {
+            return gains.get(tier);
+        }
+        return GameConstants.getPlayerBonusExpRate(tier);
+    }
+
+    private int getMesoRateGainFromWorld(int tier) {
+        List<Integer> gains = getWorldServer().getMesoRateGain();
+        if (gains != null && tier < gains.size()) {
+            return gains.get(tier);
+        }
+        return GameConstants.getPlayerBonusMesoRate(tier);
+    }
+
+    private int getDropRateGainFromWorld(int tier) {
+        List<Integer> gains = getWorldServer().getDropRateGain();
+        if (gains != null && tier < gains.size()) {
+            return gains.get(tier);
+        }
+        return GameConstants.getPlayerBonusDropRate(tier);
+    }
+
     public void setPlayerRates() {
         int tier = Math.min(this.level / 10, 25); // 10-level tier system, capped at 25 (for level 251–255)
 
         if (getWorldServer().getProgExpToggle()) {
-            this.expRate *= GameConstants.getPlayerBonusExpRate(tier);
-            this.mesoRate *= GameConstants.getPlayerBonusMesoRate(tier);
-            this.dropRate *= GameConstants.getPlayerBonusDropRate(tier);
+            this.expRate *= getExpRateGainFromWorld(tier);
+            this.mesoRate *= getMesoRateGainFromWorld(tier);
+            this.dropRate *= getDropRateGainFromWorld(tier);
         } else {
             this.expRate *= 1; // No exp scaling
-            this.mesoRate *= GameConstants.getPlayerBonusMesoRate(tier);
-            this.dropRate *= GameConstants.getPlayerBonusDropRate(tier);
+            this.mesoRate *= getMesoRateGainFromWorld(tier);
+            this.dropRate *= getDropRateGainFromWorld(tier);
         }
     }
 
@@ -6971,17 +6995,17 @@ public class Character extends AbstractCharacterObject {
         int previousLevel = Math.max(this.level - 1, 1); // Ensure no negative indexing
         int tier = Math.min(previousLevel / 10, 25);
 
-        this.expRate /= GameConstants.getPlayerBonusExpRate(tier);
-        this.mesoRate /= GameConstants.getPlayerBonusMesoRate(tier);
-        this.dropRate /= GameConstants.getPlayerBonusDropRate(tier);
+        this.expRate /= getExpRateGainFromWorld(tier);
+        this.mesoRate /= getMesoRateGainFromWorld(tier);
+        this.dropRate /= getDropRateGainFromWorld(tier);
     }
 
     public void revertPlayerRates() {
         int tier = Math.min(this.level / 10, 25);
 
-        this.expRate /= GameConstants.getPlayerBonusExpRate(tier);
-        this.mesoRate /= GameConstants.getPlayerBonusMesoRate(tier);
-        this.dropRate /= GameConstants.getPlayerBonusDropRate(tier);
+        this.expRate /= getExpRateGainFromWorld(tier);
+        this.mesoRate /= getMesoRateGainFromWorld(tier);
+        this.dropRate /= getDropRateGainFromWorld(tier);
     }
 
     public void setWorldRates() {
@@ -8903,7 +8927,8 @@ public class Character extends AbstractCharacterObject {
             return;
         }
 
-//        log.debug("Attempting to {} chr {}", notAutosave ? "save" : "autosave", name);
+        // log.debug("Attempting to {} chr {}", notAutosave ? "save" : "autosave",
+        // name);
         Server.getInstance().updateCharacterEntry(this);
 
         long globalStart = System.currentTimeMillis();

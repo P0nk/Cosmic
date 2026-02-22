@@ -131,6 +131,9 @@ public class World {
     private int mobperspawnpoint;
     private final int mobperspawntick;
     private boolean progexptoggle;
+    private List<Double> exp_rate_gain;
+    private List<Integer> meso_rate_gain;
+    private List<Integer> drop_rate_gain;
     private int nxRate = 1;
     private boolean spellTraceFever = false;
     private boolean nxFever = false;
@@ -223,7 +226,10 @@ public class World {
             float mobrate,
             int mobperspawnpoint,
             int mobperspawntick,
-            boolean progexptoggle) {
+            boolean progexptoggle,
+            List<Double> expRateGain,
+            List<Integer> mesoRateGain,
+            List<Integer> dropRateGain) {
 
         this.id = world;
         this.flag = flag;
@@ -239,6 +245,9 @@ public class World {
         this.mobperspawnpoint = mobperspawnpoint;
         this.mobperspawntick = mobperspawntick;
         this.progexptoggle = progexptoggle;
+        this.exp_rate_gain = expRateGain;
+        this.meso_rate_gain = mesoRateGain;
+        this.drop_rate_gain = dropRateGain;
 
         runningPartyId.set(1000000001); // partyid must not clash with charid to solve update item looting issues, found
                                         // thanks to Vcoc
@@ -406,6 +415,18 @@ public class World {
 
     public boolean getProgExpToggle() {
         return progexptoggle;
+    }
+
+    public List<Double> getExpRateGain() {
+        return exp_rate_gain;
+    }
+
+    public List<Integer> getMesoRateGain() {
+        return meso_rate_gain;
+    }
+
+    public List<Integer> getDropRateGain() {
+        return drop_rate_gain;
     }
 
     public void setExpRate(int exp) {
