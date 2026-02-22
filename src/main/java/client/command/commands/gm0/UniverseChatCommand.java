@@ -21,7 +21,7 @@ public class UniverseChatCommand extends Command {
 
         // Validate command usage
         if (params.length < 1) {
-            player.dropMessage("Usage: !universechat <message>");
+            player.dropMessage("Usage: @u <message> or @universe <message>");
             return;
         }
 

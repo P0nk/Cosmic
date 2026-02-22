@@ -209,7 +209,7 @@ public class CommandsExecutor {
 
         // --- Chat ---
         addCommand(new String[] { "w", "world" }, 0, WorldChatCommand.class);
-        // addCommand(new String[]{"u", "uni"}, 0, UniverseChatCommand.class);
+        addCommand(new String[] { "u", "universe", "uni" }, 0, UniverseChatCommand.class);
 
         // --- Game Mechanics ---
         addCommand("gacha", GachaCommand.class);
