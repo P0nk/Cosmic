@@ -13,16 +13,16 @@ const CashShop = Packages.server.CashShop;
 // ========================= CONFIG =========================
 
 const materials = {
-    zakDiamond:    4032133,
-    hTegg:         4001094,
-    rockOfTime:    4021010,
-    vonleonSeal:   4001693,
+    zakDiamond: 4032133,
+    hTegg: 4001094,
+    rockOfTime: 4021010,
+    vonleonSeal: 4001693,
     cygnusCirclet: 4000659,
     gigaToadPurse: 4000703,
 };
 const matValues = Object.values(materials);
 
-const FEES    = [5e6, 15e6, 45e6, 95e6];
+const FEES = [5e6, 15e6, 45e6, 95e6];
 const AMOUNTS = [1, 2, 3, 3];
 
 const RB_LEVELS = [70, 110, 140, 160, 180, 200];
@@ -39,7 +39,7 @@ const NX_MULT_COST = 2_000_000;
 const BOOM_PROTECT_SCROLL = 3020003;
 
 const BCOIN_ITEM_ID = 3020002;
-const BCOIN_VALUE   = 1_000_000_000;
+const BCOIN_VALUE = 1_000_000_000;
 
 const REBIRTH_BUCKET_MESOS = 150_000_000;
 
@@ -140,22 +140,22 @@ function showMenu(selection) {
 
 function showGuide() {
     var msg = "#e#b[Subordinate Rebirth Carry-Over Rates]#k#n\r\n" +
-              "When you Rebirth (Lv 5 -> Clean), you keep a % of stats.\r\n\r\n" +
-              "#bBASE STATS (STR/DEX/INT/LUK/DEF):#k 17%\r\n" +
-              "---------------------------------\r\n" +
-              "#bATTACK RATES (WATK/MATK):#k\r\n" +
-              " Claw: #r35%#k\r\n" +
-              " Knuckle, Gun: #r33%#k\r\n" +
-              " Dagger: #r30.5%#k\r\n" +
-              " Bow, XBow: #r30%#k\r\n" +
-              " 1H Weps, : #r30%#k\r\n" +
-              " 2H Weps, Spear, Polearm: #r30%#k\r\n" +
-              " Wand, Staff: #r29%#k\r\n" +
-              " Others: #r30%#k\r\n" +
-              "---------------------------------\r\n" +
-              "#bARMOR ATTACK RATES:#k\r\n" +
-              " Gloves, Shoes: #d30%#k\r\n" +
-              " Hats, Capes, Overalls: #d28%#k";
+        "When you Rebirth (Lv 5 -> Clean), you keep a % of stats.\r\n\r\n" +
+        "#bBASE STATS (STR/DEX/INT/LUK/DEF):#k 17%\r\n" +
+        "---------------------------------\r\n" +
+        "#bATTACK RATES (WATK/MATK):#k\r\n" +
+        " Claw: #r35%#k\r\n" +
+        " Knuckle, Gun: #r33%#k\r\n" +
+        " Dagger: #r30.5%#k\r\n" +
+        " Bow, XBow: #r30%#k\r\n" +
+        " 1H Weps, : #r30%#k\r\n" +
+        " 2H Weps, Spear, Polearm: #r30%#k\r\n" +
+        " Wand, Staff: #r29%#k\r\n" +
+        " Others: #r30%#k\r\n" +
+        "---------------------------------\r\n" +
+        "#bARMOR ATTACK RATES:#k\r\n" +
+        " Gloves, Shoes: #d30%#k\r\n" +
+        " Hats, Capes, Overalls: #d28%#k";
 
     cm.sendOk(msg);
     cm.dispose();
@@ -199,9 +199,9 @@ function showItemList() {
     const hint =
         (ctx.mode === "REG") ? "Cost: Item Lv * 10k mesos to preview.\r\n"
             : (ctx.mode === "PREM") ? "Cost: Item Lv * 150k mesos to preview.\r\n"
-            : "";
+                : "";
 
-    cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] Mesos are deducted upon previewing stats!#n#b \r\n"+ lines.join("\r\n"));
+    cm.sendSimple("Select the item you want to proceed with.\r\n" + hint + "#e#r[WARNING] Mesos are deducted upon previewing stats!#n#b \r\n" + lines.join("\r\n"));
 }
 
 function isWeapon(item) {
@@ -289,12 +289,12 @@ function doPreview() {
 
     const needMesos = ctx.previewFee + (FEES[lvl - 1] || 0);
 
+    let bcoinConvertedMsg = "";
     if (cm.getMeso() < needMesos) {
         if (cm.haveItem(BCOIN_ITEM_ID, 1)) {
             cm.gainItem(BCOIN_ITEM_ID, -1);
             cm.gainMeso(BCOIN_VALUE);
-            cm.sendOk("Consumed 1 Billion Coin for Mesos. Please try again.");
-            return cm.dispose();
+            bcoinConvertedMsg = "#e#rBCoin Converted!#n#k\r\n";
         } else {
             cm.sendOk("You need at least " + format(needMesos) + " mesos.");
             return cm.dispose();
@@ -319,11 +319,12 @@ function doPreview() {
     const warning = (lvl === 4) ? "\r\n#rWARNING: 1% chance to destroy your item!#k" : "";
 
     const msg =
-        "Previewing Upgrade (Lv " + (lvl) + " -> " + (lvl+1) + "):\r\n" +
-        "STR: " + item.getStr()  + " > #b" + s.str  + " (x" + s.mult[0].toFixed(3) + ")#k\r\n" +
-        "DEX: " + item.getDex()  + " > #b" + s.dex  + " (x" + s.mult[1].toFixed(3) + ")#k\r\n" +
-        "INT: " + item.getInt()  + " > #b" + s.int  + " (x" + s.mult[2].toFixed(3) + ")#k\r\n" +
-        "LUK: " + item.getLuk()  + " > #b" + s.luk  + " (x" + s.mult[3].toFixed(3) + ")#k\r\n" +
+        bcoinConvertedMsg +
+        "Previewing Upgrade (Lv " + (lvl) + " -> " + (lvl + 1) + "):\r\n" +
+        "STR: " + item.getStr() + " > #b" + s.str + " (x" + s.mult[0].toFixed(3) + ")#k\r\n" +
+        "DEX: " + item.getDex() + " > #b" + s.dex + " (x" + s.mult[1].toFixed(3) + ")#k\r\n" +
+        "INT: " + item.getInt() + " > #b" + s.int + " (x" + s.mult[2].toFixed(3) + ")#k\r\n" +
+        "LUK: " + item.getLuk() + " > #b" + s.luk + " (x" + s.mult[3].toFixed(3) + ")#k\r\n" +
         "WATK: " + item.getWatk() + " > #b" + s.watk + " (x" + s.mult[4].toFixed(3) + ")#k\r\n" +
         "MATK: " + item.getMatk() + " > #b" + s.matk + " (x" + s.mult[5].toFixed(3) + ")#k\r\n" +
         "Cost: " + format(FEES[lvl - 1]) + " + " + amt + "x#v" + mat + "#";
@@ -406,7 +407,7 @@ function doUpgrade(newStats) {
     cm.gainItem(mat, -amt);
 
     const successRate = 1 - 0.1 * (lvl - 2);
-    const boomChance  = (lvl === 4 ? 0.01 : 0);
+    const boomChance = (lvl === 4 ? 0.01 : 0);
 
     const roll = Math.random();
     const success = (roll < successRate);
@@ -538,7 +539,7 @@ function runAutoRerollIfEnabled() {
 
     if (iterations === 0) return "";
 
-    let statLabel = (ctx.mode === "REG") ? ["STR","DEX","INT","LUK","WATK","MATK"][ctx.autoRerollStatIndex] : "All Stats";
+    let statLabel = (ctx.mode === "REG") ? ["STR", "DEX", "INT", "LUK", "WATK", "MATK"][ctx.autoRerollStatIndex] : "All Stats";
 
     return (
         "\r\n#d[Auto Results - " + statLabel + "]#k\r\n" +
@@ -593,7 +594,7 @@ function salvageSelection(slot) {
     msg += "Items to be returned:\r\n";
 
     var hasMaterials = false;
-    Object.keys(totals.totalMats).forEach(function(matId) {
+    Object.keys(totals.totalMats).forEach(function (matId) {
         var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
         if (amt > 0) {
             msg += "- " + amt + "x #v" + matId + "#\r\n";
@@ -633,7 +634,7 @@ function handleSalvageConfirm() {
 
     cm.gainMeso(refundMesos);
 
-    Object.keys(totals.totalMats).forEach(function(matId) {
+    Object.keys(totals.totalMats).forEach(function (matId) {
         var amt = Math.floor(totals.totalMats[matId] * REFUND_RATE);
         if (amt > 0) cm.gainItem(parseInt(matId), amt);
     });
@@ -650,7 +651,7 @@ function getTotals(uptoLevel, hands) {
     for (let h = 0; h < hands; h++) {
         let matId = matValues[h];
         if (matId) {
-            totalMats[matId] = (totalMats[matId] || 0) + (1+2+3+3);
+            totalMats[matId] = (totalMats[matId] || 0) + (1 + 2 + 3 + 3);
             totalFee += (5e6 + 15e6 + 45e6 + 95e6);
         }
     }
@@ -659,9 +660,9 @@ function getTotals(uptoLevel, hands) {
     // Loop FIXED to strictly less than for standard cases to accumulate past levels
     // But Pity handles the Lv 2 case explicitly now.
     for (let l = 1; l < uptoLevel; l++) {
-        totalFee += (FEES[l-1] || 0);
+        totalFee += (FEES[l - 1] || 0);
         if (matIdCurrent) {
-            totalMats[matIdCurrent] = (totalMats[matIdCurrent] || 0) + (AMOUNTS[l-1] || 0);
+            totalMats[matIdCurrent] = (totalMats[matIdCurrent] || 0) + (AMOUNTS[l - 1] || 0);
         }
     }
 
@@ -671,21 +672,21 @@ function getTotals(uptoLevel, hands) {
 // ========================= UTILS =========================
 
 function calcNewStats(item, nxMultiplier, maxRate) {
-    const roll = function() { return MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE); };
-    const defRoll = function() { return 1.1 + Math.random() * 0.1; };
+    const roll = function () { return MIN_RATE_BASE + Math.random() * (maxRate - MIN_RATE_BASE); };
+    const defRoll = function () { return 1.1 + Math.random() * 0.1; };
 
     const m = [roll(), roll(), roll(), roll(), roll(), roll()];
 
     return {
-        str:  Math.floor(item.getStr()  * m[0]),
-        dex:  Math.floor(item.getDex()  * m[1]),
-        int:  Math.floor(item.getInt()  * m[2]),
-        luk:  Math.floor(item.getLuk()  * m[3]),
+        str: Math.floor(item.getStr() * m[0]),
+        dex: Math.floor(item.getDex() * m[1]),
+        int: Math.floor(item.getInt() * m[2]),
+        luk: Math.floor(item.getLuk() * m[3]),
         watk: Math.floor(item.getWatk() * m[4]),
         matk: Math.floor(item.getMatk() * m[5]),
         wdef: Math.floor(item.getWdef() * defRoll()),
         mdef: Math.floor(item.getMdef() * defRoll()),
-        lvl:  item.getItemLevel() + 1,
+        lvl: item.getItemLevel() + 1,
         hiddenlvl: item.getLevel() + 1,
         mult: m
     };
@@ -698,15 +699,15 @@ function calcBetterNewStats(item, nxMultiplier, maxRate) {
     const m = [roll, roll, roll, roll, roll, roll];
 
     return {
-        str:  Math.floor(item.getStr()  * m[0]),
-        dex:  Math.floor(item.getDex()  * m[1]),
-        int:  Math.floor(item.getInt()  * m[2]),
-        luk:  Math.floor(item.getLuk()  * m[3]),
+        str: Math.floor(item.getStr() * m[0]),
+        dex: Math.floor(item.getDex() * m[1]),
+        int: Math.floor(item.getInt() * m[2]),
+        luk: Math.floor(item.getLuk() * m[3]),
         watk: Math.floor(item.getWatk() * m[4]),
         matk: Math.floor(item.getMatk() * m[5]),
         wdef: Math.floor(item.getWdef() * defRoll),
         mdef: Math.floor(item.getMdef() * defRoll),
-        lvl:  item.getItemLevel() + 1,
+        lvl: item.getItemLevel() + 1,
         hiddenlvl: item.getLevel() + 1,
         mult: m
     };

@@ -3,22 +3,22 @@
  */
 
 var SubordinateManager = Java.type("server.subordinate.SubordinateManager");
-var SubordinateMath    = Java.type("server.subordinate.SubordinateMath");
+var SubordinateMath = Java.type("server.subordinate.SubordinateMath");
 var ItemInformationProvider = Java.type("server.ItemInformationProvider");
 
 // ================= CONSTANTS =================
 const materials = {
-    zakDiamond:    4032133,
-    hTegg:         4001094,
-    rockOfTime:    4021010,
-    vonleonSeal:   4001693,
+    zakDiamond: 4032133,
+    hTegg: 4001094,
+    rockOfTime: 4021010,
+    vonleonSeal: 4001693,
     cygnusCirclet: 4000659,
     gigaToadPurse: 4000703
 };
 const matValues = Object.values(materials);
 
 // Upgrade Config
-const FEES    = [15e6, 45e6, 125e6, 275e6];
+const FEES = [15e6, 45e6, 125e6, 275e6];
 const AMOUNTS = [1, 3, 5, 7];
 
 // Rebirth Required Levels (Must match Java Constants)
@@ -107,7 +107,7 @@ function showItemList() {
     }
 
     var div = upgradeNormal ? 100000 : 1000000;
-    var costDesc = "Item Req Level / 2 * " + Math.floor(div/3);
+    var costDesc = "Item Req Level / 2 * " + Math.floor(div / 3);
 
     cm.sendSimple("Pick an item.\r\nBase Cost: " + costDesc + " mesos.\r\n" + lines.join("\r\n"));
 }
@@ -139,7 +139,7 @@ function handlePreview(isNormal) {
         cm.sendYesNo(
             "Your item has reached Level 5! I can Rebirth it to unlock higher potential.\r\n\r\n" +
             "#e#r[WARNING] Upon Rebirth, this item will require Level " + nextReq + " to equip!#k#n\r\n\r\n" +
-            "Cost: 1x #v" + rebirthMat + "# + " + Math.trunc(rebirthNxCost/1000) + "k NX.\r\n" +
+            "Cost: 1x #v" + rebirthMat + "# + " + Math.trunc(rebirthNxCost / 1000) + "k NX.\r\n" +
             "Proceed?"
         );
         return;
@@ -158,9 +158,21 @@ function handlePreview(isNormal) {
     }
 
     // Check Resources
-    if (cm.getMeso() < previewFee + FEES[lvl-1]) {
-         cm.sendOk("You need " + cm.numberWithCommas(previewFee + FEES[lvl-1]) + " mesos.");
-         return cm.dispose();
+    if (cm.getMeso() < previewFee + FEES[lvl - 1]) {
+        if (cm.haveItem(4310024, 1)) {
+            cm.gainItem(4310024, -1);
+            cm.gainMeso(1000000000);
+            if (isNormal) {
+                status = 19;
+            } else {
+                status = 29;
+            }
+            cm.sendOk("You ran out of mesos! I consumed 1 #v4310024# B-Coin to grant you 1,000,000,000 mesos.");
+            return;
+        } else {
+            cm.sendOk("You need " + cm.numberWithCommas(previewFee + FEES[lvl - 1]) + " mesos.");
+            return cm.dispose();
+        }
     }
     if (!cm.haveItem(mat, amt)) {
         cm.sendOk("You need " + amt + "x #v" + mat + "#.");
@@ -173,14 +185,14 @@ function handlePreview(isNormal) {
     // Call Java Math
     newStats = SubordinateMath.simulateUpgrade(selectedItem, !isNormal, nxMultiplier, max_rate);
 
-    var msg = "Stats Preview (Level " + (lvl) + " > " + (lvl+1) + "):\r\n" +
-              "STR: " + selectedItem.getStr() + " > " + newStats.str + "\r\n" +
-              "DEX: " + selectedItem.getDex() + " > " + newStats.dex + "\r\n" +
-              "INT: " + selectedItem.getInt() + " > " + newStats.int_ + "\r\n" +
-              "LUK: " + selectedItem.getLuk() + " > " + newStats.luk + "\r\n" +
-              "WATK: " + selectedItem.getWatk() + " > " + newStats.watk + "\r\n" +
-              "MATK: " + selectedItem.getMatk() + " > " + newStats.matk + "\r\n" +
-              "\r\n#L0#Reroll#l\r\n#L1#Upgrade#l";
+    var msg = "Stats Preview (Level " + (lvl) + " > " + (lvl + 1) + "):\r\n" +
+        "STR: " + selectedItem.getStr() + " > " + newStats.str + "\r\n" +
+        "DEX: " + selectedItem.getDex() + " > " + newStats.dex + "\r\n" +
+        "INT: " + selectedItem.getInt() + " > " + newStats.int_ + "\r\n" +
+        "LUK: " + selectedItem.getLuk() + " > " + newStats.luk + "\r\n" +
+        "WATK: " + selectedItem.getWatk() + " > " + newStats.watk + "\r\n" +
+        "MATK: " + selectedItem.getMatk() + " > " + newStats.matk + "\r\n" +
+        "\r\n#L0#Reroll#l\r\n#L1#Upgrade#l";
 
     cm.sendSimple(msg);
 }
@@ -197,7 +209,7 @@ function doUpgrade() {
 
     // Calc Success/Boom
     var successRate = 1 - 0.1 * (lvl - 1);
-    var boomChance  = (lvl === 4 ? 0.005 : 0);
+    var boomChance = (lvl === 4 ? 0.005 : 0);
     var roll = Math.random();
 
     if (roll < successRate) {
@@ -208,15 +220,15 @@ function doUpgrade() {
     } else {
         // Fail
         if (Math.random() < boomChance) {
-             // Boom Logic
-             if (cm.haveItem(boomProtectScroll, 1)) {
-                 cm.gainItem(boomProtectScroll, -1);
-                 cm.sendOk("Upgrade Failed, but Protection Scroll saved your item!");
-             } else {
-                 cm.removeItem(selectedItem.getPosition(), 1);
-                 cm.scrollBoom(cm.getPlayer().getId());
-                 cm.sendOk("BOOM! Your item was destroyed.");
-             }
+            // Boom Logic
+            if (cm.haveItem(boomProtectScroll, 1)) {
+                cm.gainItem(boomProtectScroll, -1);
+                cm.sendOk("Upgrade Failed, but Protection Scroll saved your item!");
+            } else {
+                cm.removeItem(selectedItem.getPosition(), 1);
+                cm.scrollBoom(cm.getPlayer().getId());
+                cm.sendOk("BOOM! Your item was destroyed.");
+            }
         } else {
             // Just Fail
             cm.scrollFail(cm.getPlayer().getId());
@@ -228,11 +240,11 @@ function doUpgrade() {
 
 function doRebirth() {
     var hands = selectedItem.getHands();
-    var rebirthMat = matValues[hands+1];
+    var rebirthMat = matValues[hands + 1];
     var cost = Math.trunc(curvedScale(hands));
 
     if (!cm.haveItem(rebirthMat, 1) || cm.getCashShop().getCash(1) < cost) {
-        cm.sendOk("You need 1x #v"+rebirthMat+"# and " + cm.numberWithCommas(cost) + " NX.");
+        cm.sendOk("You need 1x #v" + rebirthMat + "# and " + cm.numberWithCommas(cost) + " NX.");
         return cm.dispose();
     }
 
@@ -250,9 +262,9 @@ function doRebirth() {
 
 function curvedScale(hands) {
     var start = 100_000.0;
-    var end   = 500_000_000.0;
-    var p     = 1.3;
-    var t     = hands / 7.0;
-    var r     = end / start;
+    var end = 500_000_000.0;
+    var p = 1.3;
+    var t = hands / 7.0;
+    var r = end / start;
     return start * Math.pow(r, Math.pow(t, p));
 }
