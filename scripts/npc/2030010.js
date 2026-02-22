@@ -46,7 +46,11 @@ function start() {
             if (!altarReady) {
                 msg += "#b#L1#Let me spawn Zakum again#l\r\n";
             } else {
-                msg += "\r\n#k(Drop an Eye of Fire on the altar to summon the first Zakum)#k\r\n";
+                if (cm.getPlayer().getWorld() === 1) { // Bera
+                    msg += "#b#L2#Offer an Eye of Fire to summon Zakum#l\r\n";
+                } else {
+                    msg += "\r\n#k(Drop an Eye of Fire on the altar to summon the first Zakum)#k\r\n";
+                }
             }
 
             msg += "#b#L0#Leave the map#l";
@@ -132,6 +136,43 @@ function action(mode, type, selection) {
             cm.sendOk("The floor has been cleared and Zakum has been respawned.");
         } else {
             cm.sendOk("You do not have an #v4001017#.");
+        }
+        cm.dispose();
+    } else if (selection === 2) {
+        // Double Check: Is Zakum alive?
+        zakumAlive = false;
+        var map = cm.getPlayer().getMap();
+        var monsters = map.getMonsters();
+        for (var i = 0; i < monsters.size(); i++) {
+            var mob = monsters.get(i);
+            if (mob.getId() >= 8800000 && mob.getId() <= 8800010) {
+                zakumAlive = true;
+                break;
+            }
+        }
+
+        if (zakumAlive) {
+            cm.sendOk("You cannot spawn Zakum while he is already alive.");
+            cm.dispose();
+            return;
+        }
+
+        // Check items and Spawn
+        if (cm.haveItem(4001017, 1)) {
+            cm.gainItem(4001017, -1);
+
+            // --- AUTO CLEAR FUNCTION ---
+            // Clears floor items before spawning
+            cm.getPlayer().getMap().clearDrops();
+            // ---------------------------
+
+            cm.spawnZakum();
+            cm.getPlayer().getMap().broadcastMessage(Packages.tools.PacketCreator.musicChange("Bgm06/FinalFight"));
+            cm.getPlayer().getMap().broadcastMessage(Packages.tools.PacketCreator.serverNotice(5, "Zakum is summoned by the force of Eye of Fire."));
+
+            cm.sendOk("The floor has been cleared and Zakum has been summoned.");
+        } else {
+            cm.sendOk("You do not have an Eye of Fire (#v4001017#).");
         }
         cm.dispose();
     }
