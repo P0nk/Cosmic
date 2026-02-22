@@ -21,7 +21,8 @@ public class UntradableTradeManager {
     public int addTradeRequest(int senderId, String senderName, int receiverId, String receiverName, Item item,
             long fee) {
         int id = idCounter.getAndIncrement();
-        TradeRequest req = new TradeRequest(id, senderId, senderName, receiverId, receiverName, item, fee);
+        Item clonedItem = item.copy();
+        TradeRequest req = new TradeRequest(id, senderId, senderName, receiverId, receiverName, clonedItem, fee);
         activeTrades.put(id, req);
         return id;
     }

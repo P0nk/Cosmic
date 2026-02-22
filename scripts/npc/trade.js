@@ -303,7 +303,7 @@ function action(mode_act, type, selection) {
                 }
             }
 
-            cm.getPlayer().dropMessage(5, "[Trade Escrow] Successfully sent " + eligibleItems[selection].getItemId() + " to " + recipientName + ".");
+            cm.getPlayer().dropMessage(5, "[Trade Escrow] Successfully sent " + selectedIt.getItemId() + " to " + recipientName + ".");
             cm.sendOk("The item has been sent securely!");
             cm.dispose();
         }
