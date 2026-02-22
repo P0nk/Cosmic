@@ -3,7 +3,7 @@
 */
 
 var isPq = true;
-var minPlayers = 2, maxPlayers = 2;
+var minPlayers = 1, maxPlayers = 2;
 var minLevel = 100, maxLevel = 255;
 var entryMap = 922020100;
 var exitMap = 220050300;
@@ -181,11 +181,11 @@ function monsterKilled(mob, eim) {
 }
 
 // ---------- FILLER FUNCTIONS ----------
-function afterSetup(eim) {}
-function respawnStages(eim) {}
-function playerUnregistered(eim, player) {}
-function playerDead(eim, player) {}
+function afterSetup(eim) { }
+function respawnStages(eim) { }
+function playerUnregistered(eim, player) { }
+function playerDead(eim, player) { }
 function monsterValue(eim, mobId) { return 1; }
-function allMonstersDead(eim) {}
-function cancelSchedule() {}
-function dispose(eim) {}
+function allMonstersDead(eim) { }
+function cancelSchedule() { }
+function dispose(eim) { }
