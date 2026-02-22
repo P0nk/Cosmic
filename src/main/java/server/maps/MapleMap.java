@@ -699,7 +699,7 @@ public class MapleMap {
                         if (chr.getBuffedValue(BuffStat.MESOUP) != null) {
                             mesos = (int) (mesos * chr.getBuffedValue(BuffStat.MESOUP).doubleValue() / 100.0);
                         }
-                        mesos = mesos * chr.getMesoRate();
+                        mesos = (int) (mesos * chr.getMesoRate());
                         if (mesos <= 0) {
                             mesos = Integer.MAX_VALUE;
                         }
@@ -769,7 +769,7 @@ public class MapleMap {
         final byte droptype = (byte) (mob.getStats().isExplosiveReward() ? 3
                 : mob.getStats().isFfaLoot() ? 2 : chr.getParty() != null ? 1 : 0);
         final int mobpos = mob.getPosition().x;
-        int chRate = !mob.isBoss() ? chr.getDropRate() : chr.getBossDropRate();
+        int chRate = (int) (!mob.isBoss() ? chr.getDropRate() : chr.getBossDropRate());
         Point pos = new Point(0, mob.getPosition().y);
 
         MonsterStatusEffect stati = mob.getStati(MonsterStatus.SHOWDOWN);
@@ -1448,8 +1448,8 @@ public class MapleMap {
                                                                                                        // show nx gained
             }
             killMonster(monster, chr, true, delay);
-            int meso_normal = ((int) (Math.pow(monster.getLevel(), 1.2) + Math.pow(monster.getMaxHp(), 0.5)
-                    + monster.getPADamage())) * chr.getMesoRate();
+            int meso_normal = (int) (((int) (Math.pow(monster.getLevel(), 1.2) + Math.pow(monster.getMaxHp(), 0.5)
+                    + monster.getPADamage())) * chr.getMesoRate());
             // MesoUp buff applied
             if (chr.getBuffedValue(BuffStat.MESOUP) != null) {
                 meso_normal = (int) ((meso_normal) * chr.getBuffedValue(BuffStat.MESOUP).doubleValue() / 100.0);

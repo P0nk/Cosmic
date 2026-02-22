@@ -67,7 +67,8 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
         reactor.getMap().destroyNPC(npcId);
     }
 
-    private static void sortDropEntries(List<ReactorDropEntry> from, List<ReactorDropEntry> item, List<ReactorDropEntry> visibleQuest, List<ReactorDropEntry> otherQuest, Character chr) {
+    private static void sortDropEntries(List<ReactorDropEntry> from, List<ReactorDropEntry> item,
+            List<ReactorDropEntry> visibleQuest, List<ReactorDropEntry> otherQuest, Character chr) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         for (ReactorDropEntry mde : from) {
@@ -124,7 +125,8 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
     }
 
     public void sprayItems(boolean meso, int mesoChance, int minMeso, int maxMeso, int minItems) {
-        sprayItems((int) reactor.getPosition().getX(), (int) reactor.getPosition().getY(), meso, mesoChance, minMeso, maxMeso, minItems);
+        sprayItems((int) reactor.getPosition().getX(), (int) reactor.getPosition().getY(), meso, mesoChance, minMeso,
+                maxMeso, minItems);
     }
 
     public void sprayItems(int posX, int posY, boolean meso, int mesoChance, int minMeso, int maxMeso, int minItems) {
@@ -140,20 +142,25 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
     }
 
     public void dropItems(boolean meso, int mesoChance, int minMeso, int maxMeso, int minItems) {
-        dropItems((int) reactor.getPosition().getX(), (int) reactor.getPosition().getY(), meso, mesoChance, minMeso, maxMeso, minItems);
+        dropItems((int) reactor.getPosition().getX(), (int) reactor.getPosition().getY(), meso, mesoChance, minMeso,
+                maxMeso, minItems);
     }
 
     public void dropItems(int posX, int posY, boolean meso, int mesoChance, int minMeso, int maxMeso, int minItems) {
-        dropItems(true, posX, posY, meso, mesoChance, minMeso, maxMeso, minItems);  // all reactors actually drop items sequentially... thanks inhyuk for pointing this out!
+        dropItems(true, posX, posY, meso, mesoChance, minMeso, maxMeso, minItems); // all reactors actually drop items
+                                                                                   // sequentially... thanks inhyuk for
+                                                                                   // pointing this out!
     }
 
-    public void dropItems(boolean delayed, int posX, int posY, boolean meso, int mesoChance, final int minMeso, final int maxMeso, int minItems) {
+    public void dropItems(boolean delayed, int posX, int posY, boolean meso, int mesoChance, final int minMeso,
+            final int maxMeso, int minItems) {
         Character chr = c.getPlayer();
         if (chr == null) {
             return;
         }
 
-        List<ReactorDropEntry> items = assembleReactorDropEntries(chr, generateDropList(getDropChances(), chr.getDropRate(), meso, mesoChance, minItems));
+        List<ReactorDropEntry> items = assembleReactorDropEntries(chr,
+                generateDropList(getDropChances(), chr.getDropRate(), meso, mesoChance, minItems));
         if (items.size() % 2 == 0) {
             posX -= 12;
         }
@@ -220,7 +227,8 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
         return ReactorScriptManager.getInstance().getDrops(reactor.getId());
     }
 
-    private List<ReactorDropEntry> generateDropList(List<ReactorDropEntry> drops, int dropRate, boolean meso, int mesoChance, int minItems) {
+    private List<ReactorDropEntry> generateDropList(List<ReactorDropEntry> drops, double dropRate, boolean meso,
+            int mesoChance, int minItems) {
         List<ReactorDropEntry> items = new ArrayList<>();
         if (meso && Math.random() < (1 / (double) mesoChance)) {
             items.add(new ReactorDropEntry(0, mesoChance, -1));
@@ -268,8 +276,7 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
     public void killMonster(int id, boolean withDrops) {
         if (withDrops) {
             getMap().killMonsterWithDrops(id);
-        }
-        else {
+        } else {
             getMap().killMonster(id);
         }
     }
@@ -300,7 +307,7 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
      * Used for Targa and Scarlion
      */
     public void summonBossDelayed(final int mobId, final int delayMs, final int x, final int y, final String bgm,
-                                  final String summonMessage) {
+            final String summonMessage) {
         TimerManager.getInstance().schedule(() -> {
             summonBoss(mobId, x, y, bgm, summonMessage);
         }, delayMs);
@@ -312,7 +319,7 @@ public class ReactorActionManager extends AbstractPlayerInteraction {
         mapMessage(6, summonMessage);
     }
 
-    public void dispelAllMonsters(int num, int team) { //dispels all mobs, cpq
+    public void dispelAllMonsters(int num, int team) { // dispels all mobs, cpq
         final MCSkill skil = CarnivalFactory.getInstance().getGuardian(num);
         if (skil != null) {
             for (Monster mons : getMap().getAllMonsters()) {

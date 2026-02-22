@@ -255,7 +255,7 @@ public class EventInstanceManager {
         getPlayers().stream()
                 .filter(chr -> mapId == -1 || chr.getMapId() == mapId)
                 .forEach(chr -> {
-                    chr.gainMeso(gain * chr.getMesoRate());
+                    chr.gainMeso((int) (gain * chr.getMesoRate()));
                 });
     }
 

@@ -1,0 +1,58 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< cosmic-maplestory:Cosmic >----------------------
+[INFO] Building Cosmic 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ Cosmic ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ Cosmic ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 940 source files with javac [debug target 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] /D:/Devmaple/MerogieMS_Server/src/main/java/server/voting/GTopVoteTask.java: Some input files use or override a deprecated API.
+[INFO] /D:/Devmaple/MerogieMS_Server/src/main/java/server/voting/GTopVoteTask.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java: Recompile with -Xlint:unchecked for details.
+[INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java:[702,39] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java:[772,36] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java:[1452,47] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/events/EventInstanceManager.java:[258,39] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/client/command/commands/gm0/WhatDropsFromCommand.java:[65,48] incompatible types: possible lossy conversion from double to float
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/quest/actions/MesoAction.java:[59,35] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/tools/packets/Fishing.java:[98,95] incompatible types: possible lossy conversion from double to int
+[INFO] 7 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  17.907 s
+[INFO] Finished at: 2026-02-22T23:48:40+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project Cosmic: Compilation failure: Compilation failure: 
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java:[702,39] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java:[772,36] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/maps/MapleMap.java:[1452,47] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/events/EventInstanceManager.java:[258,39] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/client/command/commands/gm0/WhatDropsFromCommand.java:[65,48] incompatible types: possible lossy conversion from double to float
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/server/quest/actions/MesoAction.java:[59,35] incompatible types: possible lossy conversion from double to int
+[ERROR] /D:/Devmaple/MerogieMS_Server/src/main/java/tools/packets/Fishing.java:[98,95] incompatible types: possible lossy conversion from double to int
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

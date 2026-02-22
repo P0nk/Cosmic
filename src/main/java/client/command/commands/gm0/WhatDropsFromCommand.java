@@ -49,7 +49,8 @@ public class WhatDropsFromCommand extends Command {
         String monsterName = player.getLastCommandMessage();
         String output = "";
         int limit = 3;
-        Iterator<Pair<Integer, String>> listIterator = MonsterInformationProvider.getMobsIDsFromName(monsterName).iterator();
+        Iterator<Pair<Integer, String>> listIterator = MonsterInformationProvider.getMobsIDsFromName(monsterName)
+                .iterator();
         for (int i = 0; i < limit; i++) {
             if (listIterator.hasNext()) {
                 Pair<Integer, String> data = listIterator.next();
@@ -62,7 +63,10 @@ public class WhatDropsFromCommand extends Command {
                         if (name == null || name.equals("null") || drop.chance == 0) {
                             continue;
                         }
-                        float chance = Math.max(1000000 / drop.chance / (!MonsterInformationProvider.getInstance().isBoss(mobId) ? player.getDropRate() : player.getBossDropRate()), 1);
+                        float chance = (float) Math.max(1000000 / drop.chance
+                                / (!MonsterInformationProvider.getInstance().isBoss(mobId) ? player.getDropRate()
+                                        : player.getBossDropRate()),
+                                1);
                         output += "- " + name + " (1/" + (int) chance + ")\r\n";
                     } catch (Exception ex) {
                         ex.printStackTrace();
