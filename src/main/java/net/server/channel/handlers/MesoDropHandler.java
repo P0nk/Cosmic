@@ -41,12 +41,6 @@ public final class MesoDropHandler extends AbstractPacketHandler {
             return;
         }
 
-        if (player.getWorld() == 1) {
-            player.message("Dropping mesos is disabled in this world.");
-            c.sendPacket(PacketCreator.enableActions());
-            return;
-        }
-
         p.skip(4);
         int meso = p.readInt();
 

@@ -58,6 +58,19 @@ public final class ItemPickupHandler extends AbstractPacketHandler {
             return;
         }
 
+        if (ob instanceof server.maps.MapItem) {
+            server.maps.MapItem mapItem = (server.maps.MapItem) ob;
+
+            // [RESTRICTION] Bera Ironman - Cannot pick up items dropped by other players
+            if (chr.getWorld() == 1) {
+                if (mapItem.isPlayerDrop() && mapItem.getOwnerId() != chr.getId()) {
+                    chr.dropMessage(5, "As an Ironman, you cannot pick up drops belonging to other players.");
+                    c.sendPacket(tools.PacketCreator.enableActions());
+                    return;
+                }
+            }
+        }
+
         if (chr.isAutoSellEnabled() && ob instanceof server.maps.MapItem) {
             server.maps.MapItem mapItem = (server.maps.MapItem) ob;
             client.inventory.Item item = mapItem.getItem();

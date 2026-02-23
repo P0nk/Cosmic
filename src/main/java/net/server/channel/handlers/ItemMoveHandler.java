@@ -50,11 +50,7 @@ public final class ItemMoveHandler extends AbstractPacketHandler {
         } else if (action < 0) {
             InventoryManipulator.equip(c, src, action);
         } else if (action == 0) {
-            if (c.getPlayer().getWorld() == 1) {
-                c.getPlayer().message("Dropping items is disabled in this world.");
-                c.sendPacket(PacketCreator.enableActions());
-                return;
-            }
+
             InventoryManipulator.drop(c, type, src, quantity);
         } else {
             InventoryManipulator.move(c, type, src, action);

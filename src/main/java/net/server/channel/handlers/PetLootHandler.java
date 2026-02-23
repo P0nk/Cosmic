@@ -48,6 +48,15 @@ public final class PetLootHandler extends AbstractPacketHandler {
         if (ob instanceof MapItem) {
             MapItem mapitem = (MapItem) ob;
 
+            // [RESTRICTION] Bera Ironman - Pets cannot pick up items dropped by other
+            // players
+            if (chr.getWorld() == 1) {
+                if (mapitem.isPlayerDrop() && mapitem.getOwnerId() != chr.getId()) {
+                    c.sendPacket(PacketCreator.enableActions());
+                    return;
+                }
+            }
+
             // [GLOBAL EXCLUSION] Pink Bean Summon Item
             if (mapitem.getItemId() == 4001193) {
                 c.sendPacket(PacketCreator.enableActions());
@@ -188,13 +197,19 @@ public final class PetLootHandler extends AbstractPacketHandler {
                         continue;
                 }
 
-                // 3. Ownership & Quest Checks
                 boolean is_player_kill = mapItem.getOwnerId() == c.getPlayer().getId();
-                boolean is_party_kill = mapItem.getOwnerId() == c.getPlayer().getPartyId();
+                boolean is_party_kill = mapItem.getPartyOwnerId() != -1
+                        && mapItem.getPartyOwnerId() == c.getPlayer().getPartyId();
                 boolean common_or_meso_item = mapItem.getQuest() <= 0;
                 boolean is_quest_item_and_active = c.getPlayer().getQuestStatus(mapItem.getQuest()) == 1;
 
-                if ((is_player_kill || is_party_kill) && (common_or_meso_item || is_quest_item_and_active)) {
+                if ((is_player_kill || is_party_kill || mapItem.isFFADrop())
+                        && (common_or_meso_item || is_quest_item_and_active)) {
+                    // [RESTRICTION] Bera Ironman
+                    if (chr.getWorld() == 1 && mapItem.isPlayerDrop() && mapItem.getOwnerId() != chr.getId()) {
+                        continue;
+                    }
+
                     chr.pickupItem(mapItem, petIndex);
                 }
             } catch (Exception e) {
