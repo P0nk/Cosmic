@@ -288,19 +288,18 @@ function executeScroll() {
     var failCount = 0;
     var boom = false;
 
-    // Safety: Don't waste White Scrolls on 100% scrolls
-    // Assuming 100% scrolls are defined by ID ranges or data.
-    // If we can't detect rate easily, we default to using WS if the user has them.
-    // Optimization: Check strict boolean for using WS
+    // Safety: Don't waste White Scrolls on 100% scrolls (Assumption)
+    var startedWithWhites = cm.itemQuantity(ID_WHITE_SCROLL) > 0;
 
     while (equip.getUpgradeSlots() > 0 && scroll.getQuantity() > 0) {
 
         // Determine WS usage
         var useWhite = false;
         if (cm.itemQuantity(ID_WHITE_SCROLL) > 0) {
-             // Optional: Add logic here to NOT use WS if scroll success is 100
-             // For now, we assume user wants protection if they have WS
-             useWhite = true;
+            useWhite = true;
+        } else if (startedWithWhites) {
+            // Stop scrolling if the user ran out of their protected white scrolls!
+            break;
         }
 
         // Consume Items
