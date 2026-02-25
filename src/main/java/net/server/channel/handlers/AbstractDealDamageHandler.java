@@ -281,7 +281,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                 int allowedDist = (int) Math.sqrt(thresholdSq);
 
                                 player.getAutobanManager().jailPlayer(
-                                        "Kami/Distance Hack: Consistent mismatch > 15 times. Dist: " + (int) realDist,
+                                        "Kami/Distance Hack: Consistent mismatch > 15 times. Dist: " + (int) realDist
+                                                + " SID: " + skillId,
                                         30);
                                 return;
                             }
@@ -988,18 +989,36 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     maxWithCrit *= 3.5;
                 }
 
-                if (damage > maxWithCrit * 1.5) {
+                // Scale the damage tolerance based on rebirths.
+                // Each rebirth gives +5 bonus AP (stats), which compound into higher damage.
+                // We apply a 20% tolerance increase per rebirth, capped at 5x the base limit.
+                int reborns = chr.getReborns();
+                double rebornMultiplier = Math.min(1.0 + (reborns * 0.20), 5.0);
+
+                // Scale the damage tolerance based on the player's actual ATK power.
+                // Strong custom equipment can push WATK/MATK far above the vanilla 300
+                // baseline,
+                // causing the formula-derived cap to under-estimate real damage output.
+                // We scale proportionally above 300 ATK, capped at 4x to stay meaningful.
+                int totalAtk = magic ? chr.getTotalMagic() : chr.getTotalWatk();
+                int baselineAtk = 300;
+                double atkMultiplier = Math.min(Math.max(1.0, (double) totalAtk / baselineAtk), 4.0);
+
+                long adjustedMaxWithCrit = (long) (maxWithCrit * rebornMultiplier * atkMultiplier);
+
+                String dmgHackContext = " SID: " + ret.skill
+                        + " MobID: " + (monster != null ? monster.getId() : "null")
+                        + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")"
+                        + " Reborns: " + reborns + " ATK: " + totalAtk;
+
+                if (damage > adjustedMaxWithCrit * 1.5) {
                     AutobanFactory.DAMAGE_HACK.alert(chr,
-                            "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: "
-                                    + (monster != null ? monster.getId() : "null") + " Map: "
-                                    + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                            "DMG: " + damage + " MaxDMG: " + adjustedMaxWithCrit + dmgHackContext);
                 }
 
-                if (damage > maxWithCrit * 5) {
+                if (damage > adjustedMaxWithCrit * 5) {
                     AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(),
-                            "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: "
-                                    + (monster != null ? monster.getId() : "null") + " Map: "
-                                    + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                            "DMG: " + damage + " MaxDMG: " + adjustedMaxWithCrit + dmgHackContext);
                 }
                 if (ret.skill == Marksman.SNIPE || (canCrit && damage > hitDmgMax)) {
                 }
@@ -1036,7 +1055,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                 + maxattack + ")");
                         // If you want to enable the ban again later, uncomment the line below and
                         // remove the dropMessage
-                        chr.getAutobanManager().jailPlayer("Damage Line Hack (" + ret.numDamage + " lines)", 60);
+                        chr.getAutobanManager()
+                                .jailPlayer("Damage Line Hack (" + ret.numDamage + " lines) SID: " + ret.skill, 60);
                     }
                 }
 
