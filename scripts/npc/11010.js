@@ -32,7 +32,7 @@ var oreNames = {
     4004004: "Dark Crystal Ore",
     4011000: "Bronze", 4011001: "Steel", 4011002: "Mithril",
     4011003: "Adamantium", 4011004: "Silver", 4011005: "Orihalcon",
-    4011006: "Gold", 4011007: "Moon Rock",4011008: "Lidium", 4021000: "Garnet",
+    4011006: "Gold", 4011007: "Moon Rock", 4011008: "Lidium", 4021000: "Garnet",
     4021001: "Amethyst", 4021002: "Aquamarine", 4021003: "Emerald",
     4021004: "Opal", 4021005: "Sapphire", 4021006: "Topaz",
     4021007: "Diamond", 4021008: "Black Crystal", 4005000: "Power Crystal",
@@ -48,7 +48,10 @@ var oreNames = {
 var blacklist = [
     2022174, // Gelt Chocolate
     2022179, // Onyx Apple
-    2022143  // Graham Pie
+    2022143, // Graham Pie
+    2022050, // Roasted Pork (Quest item)
+    2022051, // Buckwheat Paste (Quest item)
+    2055052  // Rice Wine (Quest item)
 ];
 
 var potionList = [
@@ -65,7 +68,6 @@ var potionList = [
     [2000010, 100, "MP"],  // Blue Pill
     [2000011, 300, "MP"],  // Mana Elixir Pill
     [2022022, 500, "MP"],  // Fish Cake
-    [2022051, 800, "MP"],  // Buckwheat Paste
     [2022210, 1600, "MP"], // Dragon Fruit
     [2001002, 2000, "MP"], // Red Bean Sundae
     [2022211, 3200, "MP"], // Durian
@@ -275,7 +277,7 @@ function action(mode, type, selection) {
     // =========================================================================
     if (status === 0) {
         var text = "H-hello... um... I'm Menma... I-I think I... I was alive... once? But now, I'm... here... as a ghost... \r\n\n"
-                 + "I... don't really know what I'm supposed to do... but... I can help you with some things? P-please be patient with me...\r\n\r\n";
+            + "I... don't really know what I'm supposed to do... but... I can help you with some things? P-please be patient with me...\r\n\r\n";
         text += "#bPlease choose... I'm sorry if it's confusing.:#k\r\n";
         text += "#L0#Menma helps you keep your heavy etcs.. (Ore Pouch)\r\n";
         text += "#L1#Menma helps to mix your potions.. (Potion Bank)\r\n";
@@ -289,7 +291,7 @@ function action(mode, type, selection) {
     else if (status === 1 && selection === 0) {
         selectedService = 0;
         var text = "O-oh! You want to store... ores? Or take them out? M-maybe I can help...\r\n\r\n"
-                 + "I'm not sure how much I can carry, but... I'll try my best...";
+            + "I'm not sure how much I can carry, but... I'll try my best...";
         text += "\r\n#L10#Can you hold these ores for me?\r\n";
         text += "#L11#Can I have some ores back?\r\n";
         text += "#L12#Please give me everything back!\r\n";
@@ -361,7 +363,7 @@ function action(mode, type, selection) {
             var eligible = getEligibleWithdrawByCanHold(itemId, stored, 32000);
 
             text += "#L" + i + "##v" + itemId + "# " + name
-                 + "  (I have: " + stored + " | You can hold: #b" + eligible + "#k)\r\n";
+                + "  (I have: " + stored + " | You can hold: #b" + eligible + "#k)\r\n";
             any = true;
         }
 
@@ -396,7 +398,7 @@ function action(mode, type, selection) {
 
         cm.sendGetNumber(
             "How many.. #b" + name + "#k should Menma give you..?\r\n"
-          + "(I have: " + stored + " | You can hold: #b" + eligible + "#k)",
+            + "(I have: " + stored + " | You can hold: #b" + eligible + "#k)",
             eligible, 1, eligible
         );
     }
@@ -474,7 +476,7 @@ function action(mode, type, selection) {
         var mp = potionBank.getBankedMP(cm.getPlayer().getId());
 
         var text = "U-um, potions are tricky... but I'll try to organize them for you!\r\n"
-                 + "\r\n#e#r[Menma's Potion Stash]#n#k\r\n\r\n";
+            + "\r\n#e#r[Menma's Potion Stash]#n#k\r\n\r\n";
         text += "Stored HP: #b" + hp + "#k\r\n";
         text += "Stored MP: #b" + mp + "#k\r\n\r\n";
         text += "#L20#Please take my healing items!\r\n";
@@ -493,32 +495,32 @@ function action(mode, type, selection) {
         var totalMP = 0;
         var count = 0;
 
-while (iter.hasNext()) {
-        var item = iter.next();
-        var id = item.getItemId();
+        while (iter.hasNext()) {
+            var item = iter.next();
+            var id = item.getItemId();
 
-        // 1. Check Blacklist
-        if (blacklist.indexOf(id) !== -1) continue;
+            // 1. Check Blacklist
+            if (blacklist.indexOf(id) !== -1) continue;
 
-        // 2. Safe Check for Potion Stats
-        try {
-            var effect = ii.getItemEffect(id);
-            if (effect == null) continue; // Skip if it's not a usable item
+            // 2. Safe Check for Potion Stats
+            try {
+                var effect = ii.getItemEffect(id);
+                if (effect == null) continue; // Skip if it's not a usable item
 
-            var healHP = effect.getHp();
-            var healMP = effect.getMp();
+                var healHP = effect.getHp();
+                var healMP = effect.getMp();
 
-            if (healHP > 0 || healMP > 0) {
-                var qty = item.getQuantity();
-                totalHP += (healHP * qty);
-                totalMP += (healMP * qty);
-                count++;
+                if (healHP > 0 || healMP > 0) {
+                    var qty = item.getQuantity();
+                    totalHP += (healHP * qty);
+                    totalMP += (healMP * qty);
+                    count++;
+                }
+            } catch (e) {
+                // This catches the NullPointerException for Scrolls/Cash items/etc
+                continue;
             }
-        } catch (e) {
-            // This catches the NullPointerException for Scrolls/Cash items/etc
-            continue;
         }
-    }
 
         if (count === 0) {
             cm.sendOk("Menma looked everywhere... but I couldn't find any potions to store... (Did you lock them?)");
@@ -543,27 +545,27 @@ while (iter.hasNext()) {
         var totalMP = 0;
         var toRemove = [];
 
-while (iter.hasNext()) {
-        var item = iter.next();
-        var id = item.getItemId();
+        while (iter.hasNext()) {
+            var item = iter.next();
+            var id = item.getItemId();
 
-        if (blacklist.indexOf(id) !== -1) continue;
+            if (blacklist.indexOf(id) !== -1) continue;
 
-        try {
-            var effect = ii.getItemEffect(id);
-            if (effect == null) continue;
+            try {
+                var effect = ii.getItemEffect(id);
+                if (effect == null) continue;
 
-            var healHP = effect.getHp();
-            var healMP = effect.getMp();
+                var healHP = effect.getHp();
+                var healMP = effect.getMp();
 
-            if (healHP > 0 || healMP > 0) {
-                toRemove.push([id, item.getQuantity(), healHP, healMP]);
+                if (healHP > 0 || healMP > 0) {
+                    toRemove.push([id, item.getQuantity(), healHP, healMP]);
+                }
+            } catch (e) {
+                // Ignore items that cause errors
+                continue;
             }
-        } catch (e) {
-            // Ignore items that cause errors
-            continue;
         }
-    }
 
         for (var i = 0; i < toRemove.length; i++) {
             var rec = toRemove[i];
@@ -676,8 +678,8 @@ while (iter.hasNext()) {
     else if (status === 1 && selection === 2) {
         selectedService = 2;
         var text = "Food... food is something I understand... well... not really, but it’s important, right?\r\n"
-                 + "I-I can help store some... but, please, be gentle with me...\r\n\r\n"
-                 + "#e[Menma's Food Storage]#n\r\n\r\n";
+            + "I-I can help store some... but, please, be gentle with me...\r\n\r\n"
+            + "#e[Menma's Food Storage]#n\r\n\r\n";
         text += "#L20#Please keep my food safe!\r\n";
         text += "#L21#I'm hungry... give me food back.\r\n";
         text += "#L22#Give me all my food back!\r\n";
@@ -751,7 +753,7 @@ while (iter.hasNext()) {
             var eligible = getEligibleWithdrawByCanHold(itemId, stored, 32000);
 
             text += "#L" + i + "##v" + itemId + "# " + name
-                 + "  (I have: " + stored + " | You can hold: #b" + eligible + "#k)\r\n";
+                + "  (I have: " + stored + " | You can hold: #b" + eligible + "#k)\r\n";
         }
         cm.sendSimple(text);
     }
@@ -778,7 +780,7 @@ while (iter.hasNext()) {
 
         cm.sendGetNumber(
             "How many #b" + name + "#k do you want?\r\n"
-          + "(I have: " + stored + " | You can hold: #b" + eligible + "#k)",
+            + "(I have: " + stored + " | You can hold: #b" + eligible + "#k)",
             eligible, 1, eligible
         );
     }
