@@ -35,7 +35,7 @@ function end(mode, type, selection) {
                     return;
                 }
 
-                qm.gainItem(1472061, 1);
+                qm.gainItem(1472000, 1);
                 qm.gainItem(2070000, 800);
                 qm.gainItem(1142066, 1);
                 const Job = Java.type('client.Job');

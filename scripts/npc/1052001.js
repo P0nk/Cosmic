@@ -110,12 +110,12 @@ function action(mode, type, selection) {
                 cm.dispose();
             }
         } else if (status == 1) {
-            if (cm.canHold(2070000) && cm.canHoldAll([1472061, 1332063])) {
+            if (cm.canHold(2070000) && cm.canHoldAll([1472000, 1332007])) {
                 if (cm.getJobId() == 0) {
                     cm.changeJobById(400);
                     cm.gainItem(2070015, 500); // Subis
-                    cm.gainItem(1472061, 1); // Garnier
-                    cm.gainItem(1332063, 1); // Knife
+                    cm.gainItem(1472000, 1); // Garnier
+                    cm.gainItem(1332007, 1); // Knife
                     cm.resetStats();
                 }
                 cm.sendNext("You are now a Rogue. You live in the shadows now. I have given you the basic tools of our trade.");
