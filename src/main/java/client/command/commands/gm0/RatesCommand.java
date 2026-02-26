@@ -37,10 +37,16 @@ public class RatesCommand extends Command {
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
 
-        // travel rates not applicable since it's intrinsically a server/environment rate rather than a character rate
+        // travel rates not applicable since it's intrinsically a server/environment
+        // rate rather than a character rate
+        boolean isSubscribed = server.subscription.SubscriptionManager.isSubscribed(player.getId());
+        String subMsg = isSubscribed ? " #r(1.5x Sub Bonus!)#k" : "";
+
         String showMsg_ = "#eCHARACTER RATES#n" + "\r\n\r\n";
-        showMsg_ += "EXP Rate: #e#b" + player.getExpRate() + "x#k#n" + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
-        showMsg_ += "MESO Rate: #e#b" + player.getMesoRate() + "x#k#n" + "\r\n";
+        showMsg_ += "EXP Rate: #e#b" + (isSubscribed ? (player.getExpRate() * 1.5) : player.getExpRate()) + "x#k#n"
+                + subMsg + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
+        showMsg_ += "MESO Rate: #e#b" + (isSubscribed ? (player.getMesoRate() * 1.5) : player.getMesoRate()) + "x#k#n"
+                + subMsg + "\r\n";
         showMsg_ += "DROP Rate: #e#b" + player.getDropRate() + "x#k#n" + "\r\n";
         showMsg_ += "BOSS DROP Rate: #e#b" + player.getBossDropRate() + "x#k#n" + "\r\n";
         if (YamlConfig.config.server.USE_QUEST_RATE) {
