@@ -1458,6 +1458,10 @@ public class MapleMap {
             if (chr.getBuffedValue(BuffStat.MESOUP) != null) {
                 meso_normal = (int) ((meso_normal) * chr.getBuffedValue(BuffStat.MESOUP).doubleValue() / 100.0);
             }
+            // Subscriber bonus: 1.5x meso from monster kills
+            if (server.subscription.SubscriptionManager.isSubscribed(chr.getId())) {
+                meso_normal = (int) (meso_normal * 1.5);
+            }
             // if (monster.getId() = chr.getdailybountymonster() ) {
             // int meso_bounty = Math.min(Math.max(500,meso_normal),4000);
             // chr.gainMeso(meso_bounty);}
