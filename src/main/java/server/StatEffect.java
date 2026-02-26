@@ -1364,10 +1364,12 @@ public class StatEffect {
         }
 
         List<Pair<BuffStat, Integer>> localstatups = statups;
+
         int localDuration = getBuffLocalDuration();
         int localsourceid = sourceid;
         int seconds = localDuration / 1000;
         Mount givemount = null;
+
         if (isMonsterRiding()) {
             int ridingMountId = 0;
             Item mount = applyfrom.getInventory(InventoryType.EQUIPPED).getItem((short) -18);

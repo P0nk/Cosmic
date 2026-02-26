@@ -5,6 +5,7 @@
  */
 
 var DonorCreditManager = Java.type("server.donor.DonorCreditManager");
+var SubscriptionManager = Java.type("server.subscription.SubscriptionManager");
 
 var status = -1;
 var page = "HOME";
@@ -81,6 +82,8 @@ function action(m, t, sel) {
         if (page == "QTY") return qtyFlow(sel);
         if (page == "CONFIRM") return confirmFlow(sel);
         if (page == "HISTORY") return historyFlow(sel);
+        if (page == "SUBSCRIBE") return subscribeFlow(sel);
+        if (page == "STAT_ALLOC") return statAllocFlow(sel);
         cm.dispose();
     } catch (e) {
         cm.sendOk("Error:\r\n\r\n" + e);
@@ -152,7 +155,9 @@ function homeFlow(sel) {
 
         txt += "\r\n#L0#Donor Shop#l\r\n";
         txt += "#L1#Transaction History#l\r\n";
-        txt += "#L2#Exit#l\r\n";
+        txt += "#L2#Subscription Benefits#l\r\n";
+        txt += "#L3#Stat Allocation#l\r\n";
+        txt += "#L4#Exit#l\r\n";
 
         cm.sendSimple(txt);
         return;
@@ -160,7 +165,9 @@ function homeFlow(sel) {
 
     if (sel == 0) return jump("SHOP");
     if (sel == 1) return jump("HISTORY");
-    cm.dispose();
+    if (sel == 2) return jump("SUBSCRIBE");
+    if (sel == 3) return jump("STAT_ALLOC");
+    cm.dispose(); // sel == 4 = Exit
 }
 
 /* ============ SHOP ============ */
@@ -455,4 +462,115 @@ function historyFlow(sel) {
         return;
     }
     cm.dispose();
+}
+
+/* ============ SUBSCRIBE ============ */
+
+function subscribeFlow(sel) {
+    var chr = cm.getPlayer();
+    var info = SubscriptionManager.getInfo(chr.getId());
+
+    if (status == 0) {
+        var bal = getBalanceCents();
+        var txt = "#e[ Subscription Benefits ]#n\r\n\r\n";
+
+        if (info != null) {
+            var active = info.get("active");
+            txt += "Status: " + (active ? "#bACTIVE#k" : "#rEXPIRED#k") + "\r\n";
+            txt += "Tier: #b" + safeStr(info.get("tier")) + "#k\r\n";
+            txt += "Expires: #b" + safeStr(info.get("expiresAt")).substring(0, 10) + "#k (" + info.get("daysLeft") + " days left)\r\n";
+            txt += "Unspent Stat Points: #b" + info.get("unspentPoints") + "#k\r\n";
+            txt += "Total Stat Points Earned: #b" + info.get("totalPoints") + "#k\r\n\r\n";
+        } else {
+            txt += "You do not have an active subscription.\r\n\r\n";
+        }
+
+        txt += "#ePerks (while active):#n\r\n";
+        txt += "- 1.5x EXP from all sources\r\n";
+        txt += "- 1.5x Meso from monster drops\r\n";
+        txt += "- +5 permanent stat points per month purchased\r\n";
+        txt += "  (STR / DEX / INT / LUK / Speed / Jump - not WATK/MATK)\r\n\r\n";
+        txt += "Balance: #b" + fmtCents(bal) + " DC#k\r\n\r\n";
+        txt += "#L0#Buy 1 Month  (#r5.00 DC#k)#l\r\n";
+        txt += "#L1#Buy 1 Year   (#r50.00 DC#k - 2 months free!)#l\r\n";
+
+        if (info != null && Number(info.get("unspentPoints")) > 0) {
+            txt += "#L2#Allocate Stat Points (" + info.get("unspentPoints") + " available)#l\r\n";
+        }
+        txt += "#L999#Back#l";
+        cm.sendSimple(txt);
+        return;
+    }
+
+    if (sel == 999) return jump("HOME");
+    if (sel == 2) return jump("STAT_ALLOC");
+
+    var tier = (sel == 1) ? "ANNUAL" : "MONTHLY";
+    var result = SubscriptionManager.subscribe(cm.getClient().getAccID(), chr.getId(), tier);
+    if (result.success) {
+        cm.sendOk("#eSubscription activated!#n\r\n\r\n" + result.message);
+    } else {
+        cm.sendOk("#eFailed:#n " + result.message);
+    }
+    cm.dispose();
+}
+
+/* ============ STAT ALLOC ============ */
+
+var statAllocChoice = null;
+
+function statAllocFlow(sel) {
+    var chr = cm.getPlayer();
+    var info = SubscriptionManager.getInfo(chr.getId());
+    var available = (info != null) ? Number(info.get("unspentPoints")) : 0;
+
+    if (status == 0) {
+        if (available <= 0) {
+            cm.sendOk("You have no unspent stat points.\r\nPurchase more subscription months to earn more!");
+            cm.dispose();
+            return;
+        }
+
+        var txt = "#e[ Allocate Subscriber Stat (" + available + " left) ]#n\r\n\r\n";
+        txt += "Choose a stat to increase:\r\n\r\n";
+        txt += "#L0#STR#l\r\n";
+        txt += "#L1#DEX#l\r\n";
+        txt += "#L2#INT#l\r\n";
+        txt += "#L3#LUK#l\r\n";
+        txt += "#L4#Speed#l\r\n";
+        txt += "#L5#Jump#l\r\n";
+        txt += "#L999#Back#l";
+        cm.sendSimple(txt);
+        return;
+    }
+
+    if (status == 1) {
+        if (sel == 999) return jump("SUBSCRIBE");
+
+        var statNames = ["str", "dex", "int", "luk", "speed", "jump"];
+        if (sel < 0 || sel >= statNames.length) { cm.dispose(); return; }
+
+        statAllocChoice = statNames[sel];
+
+        cm.sendGetNumber("How many points would you like to add to #b" + statAllocChoice.toUpperCase() + "#k?\r\n(Available: " + available + ")", 1, 1, available);
+        return;
+    }
+
+    if (status == 2) {
+        var amountRaw = sel;
+        if (amountRaw <= 0 || amountRaw > available) {
+            cm.sendOk("Invalid amount entered.");
+            pendingJump = "STAT_ALLOC";
+            return;
+        }
+
+        var result = SubscriptionManager.allocateStat(chr, statAllocChoice, amountRaw);
+        if (result.success) {
+            cm.sendNext("#eApplied!#n\r\n" + result.message + "\r\n\r\nNote: Re-equip your Medal to see the stats update immediately!");
+            pendingJump = "STAT_ALLOC";
+        } else {
+            cm.sendOk("#eFailed:#n " + result.message);
+            cm.dispose();
+        }
+    }
 }

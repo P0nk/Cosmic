@@ -214,7 +214,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 return;
             }
 
-            int totDamage = 0;
+            long totDamage = 0;
 
             if (attack.skill == ChiefBandit.MESO_EXPLOSION) {
                 removeExplodedMesos(map, attack);
@@ -299,7 +299,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     }
 
-                    int totDamageToOneMonster = 0;
+                    long totDamageToOneMonster = 0;
                     List<Integer> onedList = target.getValue().damageLines();
 
                     if (attack.magic) {
@@ -324,13 +324,14 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     }
 
                     for (Integer eachd : onedList) {
-                        if (eachd < 0) {
-                            eachd += Integer.MAX_VALUE;
-                        }
-                        totDamageToOneMonster += eachd;
+                        // The client sends damage as a signed int. If the value is negative,
+                        // it means the client overflowed past Integer.MAX_VALUE (~2.14b).
+                        // We unwrap it to recover the true positive value as a long.
+                        long eachdLong = eachd < 0 ? (long) eachd + Integer.MAX_VALUE + 1L : (long) eachd;
+                        totDamageToOneMonster += eachdLong;
                     }
                     totDamage += totDamageToOneMonster;
-                    monster.aggroMonsterDamage(player, totDamageToOneMonster);
+                    monster.aggroMonsterDamage(player, (int) Math.min(totDamageToOneMonster, Integer.MAX_VALUE));
                     if (player.getBuffedValue(BuffStat.PICKPOCKET) != null && (attack.skill == 0
                             || attack.skill == Rogue.DOUBLE_STAB || attack.skill == Bandit.SAVAGE_BLOW
                             || attack.skill == ChiefBandit.ASSAULTER || attack.skill == ChiefBandit.BAND_OF_THIEVES
@@ -517,7 +518,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             skill = SkillFactory.getSkill(21100005);
                             int maxheal = player.getCurrentMaxHp() - player.getHp();
                             player.addHP(Math.min(Math.min(5000, maxheal), Math
-                                    .abs(((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 1000))));
+                                    .abs((int) ((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX())
+                                            / 1000))));
                         }
                     } else if (job == 412 || job == 422 || job == 1411) {
                         Skill type = SkillFactory.getSkill(player.getJob().getId() == 412 ? 4120005
@@ -602,23 +604,46 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     }
                     if (attack.skill == Paladin.HEAVENS_HAMMER) {
-                        int HHDmg = (player.calculateMaxBaseDamage(player.getTotalWatk())
-                                * (SkillFactory.getSkill(Paladin.HEAVENS_HAMMER)
-                                        .getEffect(player.getSkillLevel(SkillFactory.getSkill(Paladin.HEAVENS_HAMMER)))
-                                        .getDamage() / 100));
-                        damageMonsterWithSkill(player, map, monster,
-                                (int) (Math.floor(Math.random() * (HHDmg / 5) + HHDmg * .8)), attack.skill, 1777);
+                        // SERVER-SIDE: Heaven's Hammer — scales with WATK, skill%, and reborns
+                        long hhBase = (long) player.calculateMaxBaseDamage(player.getTotalWatk());
+                        int hhSkillPct = SkillFactory.getSkill(Paladin.HEAVENS_HAMMER)
+                                .getEffect(player.getSkillLevel(SkillFactory.getSkill(Paladin.HEAVENS_HAMMER)))
+                                .getDamage();
+                        double hhRebornMult = 1.0 + (player.getReborns() * 0.08); // +8% per rebirth
+                        long hhDmg = (long) (hhBase * hhSkillPct / 100.0 * hhRebornMult);
+                        // ±20% variance for feel
+                        long finalHH = (long) (Math.random() * (hhDmg * 0.2) + hhDmg * 0.9);
+                        damageMonsterWithSkill(player, map, monster, finalHH, attack.skill, 1777);
+
                     } else if (attack.skill == Aran.COMBO_TEMPEST) {
-                        int TmpDmg = (player.calculateMaxBaseDamage(player.getTotalWatk())
-                                * (SkillFactory.getSkill(Aran.COMBO_TEMPEST)
-                                        .getEffect(player.getSkillLevel(SkillFactory.getSkill(Aran.COMBO_TEMPEST)))
-                                        .getDamage() / 100));
-                        damageMonsterWithSkill(player, map, monster,
-                                (int) (Math.floor(Math.random() * (TmpDmg / 5) + TmpDmg * .8)), attack.skill, 0);
+                        // SERVER-SIDE: Combo Tempest — bossing finisher, scales with WATK, reborns, and
+                        // combo orbs
+                        long ctBase = (long) player.calculateMaxBaseDamage(player.getTotalWatk());
+                        int ctSkillPct = SkillFactory.getSkill(Aran.COMBO_TEMPEST)
+                                .getEffect(player.getSkillLevel(SkillFactory.getSkill(Aran.COMBO_TEMPEST)))
+                                .getDamage();
+                        double ctRebornMult = 1.0 + (player.getReborns() * 0.12); // +12% per rebirth (more than HH)
+                        // Combo orb bonus: each orb beyond 1 adds 25% extra damage (max 5 orbs = +100%)
+                        Integer comboOrbs = player.getBuffedValue(BuffStat.COMBO);
+                        int orbs = (comboOrbs != null) ? Math.max(0, comboOrbs - 1) : 0;
+                        double ctComboMult = 1.0 + (orbs * 0.25); // 1x at 0 orbs, up to 2x at max orbs
+                        long ctDmg = (long) (ctBase * ctSkillPct / 100.0 * ctRebornMult * ctComboMult);
+                        // ±20% variance for feel
+                        long finalCT = (long) (Math.random() * (ctDmg * 0.2) + ctDmg * 0.9);
+                        damageMonsterWithSkill(player, map, monster, finalCT, attack.skill, 0);
                     } else {
                         if (attack.skill == Aran.BODY_PRESSURE) {
+                            // SERVER-SIDE: Body Pressure — % of monster max HP as long to handle >2.14b HP
+                            // bosses
+                            long bodyPressureDmg = (long) Math.ceil(monster.getMaxHp()
+                                    * SkillFactory.getSkill(Aran.BODY_PRESSURE).getEffect(attack.skilllevel).getDamage()
+                                    / 100.0);
+                            if (bodyPressureDmg > totDamageToOneMonster) {
+                                totDamageToOneMonster = bodyPressureDmg;
+                            }
                             map.broadcastMessage(
-                                    PacketCreator.damageMonster(monster.getObjectId(), totDamageToOneMonster));
+                                    PacketCreator.damageMonster(monster.getObjectId(),
+                                            (int) Math.min(totDamageToOneMonster, Integer.MAX_VALUE)));
                         }
 
                         map.damageMonster(player, monster, totDamageToOneMonster, target.getValue().delay());
@@ -657,7 +682,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
     }
 
     private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
-            final int damage, int skillid, int fixedTime) {
+            final long damage, int skillid, int fixedTime) {
         int animationTime;
 
         if (fixedTime == 0) {
@@ -666,14 +691,19 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             animationTime = fixedTime;
         }
 
+        // Visual broadcast caps at INT_MAX (client limitation); server applies full
+        // long damage.
+        int visualDamage = (int) Math.min(damage, Integer.MAX_VALUE);
+
         if (animationTime > 0) {
             TimerManager.getInstance().schedule(() -> {
-                int remainingHP = (int) Math.max(1, (monster.getMaxHp() - damage) * 100f / monster.getMaxHp());
-                map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
+                map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), visualDamage),
+                        monster.getPosition());
                 map.damageMonster(attacker, monster, damage);
             }, animationTime);
         } else {
-            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
+            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), visualDamage),
+                    monster.getPosition());
             map.damageMonster(attacker, monster, damage);
         }
     }
@@ -963,22 +993,45 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
                 if (ret.skill == Marksman.SNIPE) {
                     Monster mob = chr.getMap().getMonsterByOid(oid);
-                    Point mobPos = mob.getPosition();
-                    Point chrPos = chr.getPosition();
-                    double damage_mult = Math.max(Math.abs((chrPos.getX() - mobPos.getX()) / 57) / 10, 0.25) * 2;
-                    int maxBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
-                    int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
-                    damage = (int) ((maxBase * (snipeLevel / 10 + 7)) * damage_mult);
+                    if (mob != null) {
+                        Point mobPos = mob.getPosition();
+                        Point chrPos = chr.getPosition();
 
-                    int finalDamage = damage; // required for Timer task
-                    int delayMs = 500; // 500 milliseconds delay
+                        // SERVER-SIDE: Snipe — dynamic formula; bypasses 2.14b int cap via long
+                        long snipeBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
+                        int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
 
-                    TimerManager.getInstance().schedule(() -> {
-                        chr.getMap().broadcastMessage(
-                                PacketCreator.damageMonster(oid, finalDamage, mob.getHp(), mob.getMaxHp()), mobPos);
-                    }, delay);
+                        // Skill level mult: Lv1 = 8.5x, Lv30 = 23x
+                        double skillMult = 8.0 + (snipeLevel * 0.5);
 
-                    hitDmgMax = (int) (((maxBase * 10)) * 2);
+                        // Distance mult: 1.0x at melee, caps at 3.0x beyond ~1200px
+                        double distPx = Math.abs(chrPos.getX() - mobPos.getX());
+                        double distMult = Math.min(1.0 + (distPx / 400.0), 3.0);
+
+                        // Rebirth mult: +10% per rebirth, uncapped
+                        double rebornMult = 1.0 + (chr.getReborns() * 0.10);
+
+                        long snipeDmg = (long) (snipeBase * skillMult * distMult * rebornMult);
+
+                        // Override the damage line with the server-computed value
+                        // damageLines already holds ints; we apply the long directly to
+                        // totDamageToOneMonster
+                        // by setting damage = INT_MAX visually while the real value is applied below.
+                        damage = Integer.MAX_VALUE; // visual placeholder — real damage applied via snipeDmg override
+
+                        final long finalSnipeDmg = snipeDmg;
+                        TimerManager.getInstance().schedule(() -> {
+                            chr.getMap().broadcastMessage(
+                                    PacketCreator.damageMonster(oid, (int) Math.min(finalSnipeDmg, Integer.MAX_VALUE),
+                                            mob.getHp(), mob.getMaxHp()),
+                                    mobPos);
+                            chr.getMap().damageMonster(chr, mob, finalSnipeDmg);
+                        }, delay);
+
+                        // Skip normal totDamageToOneMonster accumulation for Snipe;
+                        // damage is applied directly above via the scheduled task.
+                        hitDmgMax = Long.MAX_VALUE; // exempt Snipe from damage hack check
+                    }
                 } else if (ret.skill == Beginner.BAMBOO_RAIN || ret.skill == Noblesse.BAMBOO_RAIN
                         || ret.skill == Evan.BAMBOO_THRUST || ret.skill == Legend.BAMBOO_THRUST) {
                     hitDmgMax = 82569000; // 30% of Max HP of strongest Dojo boss
@@ -1078,28 +1131,15 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         for (Map.Entry<Integer, AttackTarget> entry : ret.targets.entrySet()) {
             int mobId = entry.getKey(); // get monsterId on map
             Monster monster = chr.getMap().getMonsterByOid(mobId); // get monster class
-            AttackTarget tgt = entry.getValue(); // get attack details on that monster
 
             // [FIX] Add this check!
             if (monster == null) {
                 continue;
             }
 
-            long total = 0; // used to check if damage overflows
-            for (Integer dmg : tgt.damageLines) {
-                if (dmg != null) {
-                    total += dmg;
-                }
-            }
-            int actualDamage = (int) total;
-            long toDamage = total - actualDamage; // if damage overflow in client was negative, add it to total dmg to
-                                                  // 'reimburse' the dmg. if damage overflow is positive, remove it from
-                                                  // total damage
-            MapleMap map = chr.getMap();
-            if (total > Integer.MAX_VALUE) {
-                map.damageMonster(chr, monster, toDamage, tgt.delay); // deal the remainder of damage after
-                                                                      // Integer.MAX_VALUE
-            }
+            // Damage overflow is now handled correctly in the main attack loop above.
+            // totDamageToOneMonster is a long that correctly accumulates all hit lines,
+            // including unwrapping client-side negatives. No extra pass needed here.
         }
 
         return ret;

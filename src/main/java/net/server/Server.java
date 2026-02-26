@@ -1075,6 +1075,7 @@ public class Server {
         timeLeft = getTimeLeftForNextDay();
         ExpeditionBossLog.resetBossLogTable();
         tMan.register(new BossLogTask(), DAYS.toMillis(1), timeLeft);
+        tMan.register(new server.subscription.SubscriptionStatGrantTask(), DAYS.toMillis(1), timeLeft);
 
         // Start Fever Scheduler
         server.events.FeverScheduler.getInstance().start();

@@ -49,7 +49,8 @@ import java.util.List;
 
 /**
  * @author Matze
- * @author Ronan - improved check space feature and removed redundant object calls
+ * @author Ronan - improved check space feature and removed redundant object
+ *         calls
  */
 public class InventoryManipulator {
     private static final Logger log = LoggerFactory.getLogger(InventoryManipulator.class);
@@ -70,7 +71,8 @@ public class InventoryManipulator {
         return addById(c, itemId, quantity, owner, petid, (byte) 0, expiration);
     }
 
-    public static boolean addById(Client c, int itemId, short quantity, String owner, int petid, short flag, long expiration) {
+    public static boolean addById(Client c, int itemId, short quantity, String owner, int petid, short flag,
+            long expiration) {
         Character chr = c.getPlayer();
         InventoryType type = ItemConstants.getInventoryType(itemId);
 
@@ -83,7 +85,8 @@ public class InventoryManipulator {
         }
     }
 
-    private static boolean addByIdInternal(Client c, Character chr, InventoryType type, Inventory inv, int itemId, short quantity, String owner, int petid, short flag, long expiration) {
+    private static boolean addByIdInternal(Client c, Character chr, InventoryType type, Inventory inv, int itemId,
+            short quantity, String owner, int petid, short flag, long expiration) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         if (!type.equals(InventoryType.EQUIP)) {
             short slotMax = ii.getSlotMax(c, itemId);
@@ -95,13 +98,15 @@ public class InventoryManipulator {
                         if (i.hasNext()) {
                             Item eItem = i.next();
                             short oldQ = eItem.getQuantity();
-                            if (oldQ < slotMax && ((eItem.getOwner().equals(owner) || owner == null) && eItem.getFlag() == flag)) {
+                            if (oldQ < slotMax
+                                    && ((eItem.getOwner().equals(owner) || owner == null) && eItem.getFlag() == flag)) {
                                 short newQ = (short) Math.min(oldQ + quantity, slotMax);
                                 quantity -= (newQ - oldQ);
                                 eItem.setQuantity(newQ);
                                 eItem.setExpiration(expiration);
                                 // [MODIFIED] Added c.getPlayer()
-                                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, eItem)), c.getPlayer()));
+                                c.sendPacket(PacketCreator.modifyInventory(true,
+                                        Collections.singletonList(new ModifyInventory(1, eItem)), c.getPlayer()));
                             }
                         } else {
                             break;
@@ -126,7 +131,8 @@ public class InventoryManipulator {
                             nItem.setOwner(owner);
                         }
                         // [MODIFIED] Added c.getPlayer()
-                        c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
+                        c.sendPacket(PacketCreator.modifyInventory(true,
+                                Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                         if (sandboxItem) {
                             chr.setHasSandboxItem();
                         }
@@ -146,7 +152,8 @@ public class InventoryManipulator {
                     return false;
                 }
                 // [MODIFIED] Added c.getPlayer()
-                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
+                c.sendPacket(PacketCreator.modifyInventory(true,
+                        Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                 if (InventoryManipulator.isSandboxItem(nItem)) {
                     chr.setHasSandboxItem();
                 }
@@ -165,7 +172,8 @@ public class InventoryManipulator {
                 return false;
             }
             // [MODIFIED] Added c.getPlayer()
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nEquip)), c.getPlayer()));
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nEquip)),
+                    c.getPlayer()));
             if (InventoryManipulator.isSandboxItem(nEquip)) {
                 chr.setHasSandboxItem();
             }
@@ -196,7 +204,8 @@ public class InventoryManipulator {
         }
     }
 
-    private static boolean addFromDropInternal(Client c, Character chr, InventoryType type, Inventory inv, Item item, boolean show, int petId) {
+    private static boolean addFromDropInternal(Client c, Character chr, InventoryType type, Inventory inv, Item item,
+            boolean show, int petId) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         int itemid = item.getItemId();
         if (ii.isPickupRestricted(itemid) && chr.haveItemWithId(itemid, true)) {
@@ -216,13 +225,15 @@ public class InventoryManipulator {
                         if (i.hasNext()) {
                             Item eItem = i.next();
                             short oldQ = eItem.getQuantity();
-                            if (oldQ < slotMax && item.getFlag() == eItem.getFlag() && item.getOwner().equals(eItem.getOwner())) {
+                            if (oldQ < slotMax && item.getFlag() == eItem.getFlag()
+                                    && item.getOwner().equals(eItem.getOwner())) {
                                 short newQ = (short) Math.min(oldQ + quantity, slotMax);
                                 quantity -= (newQ - oldQ);
                                 eItem.setQuantity(newQ);
                                 item.setPosition(eItem.getPosition());
                                 // [MODIFIED] Added c.getPlayer()
-                                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, eItem)), c.getPlayer()));
+                                c.sendPacket(PacketCreator.modifyInventory(true,
+                                        Collections.singletonList(new ModifyInventory(1, eItem)), c.getPlayer()));
                             }
                         } else {
                             break;
@@ -246,7 +257,8 @@ public class InventoryManipulator {
                     nItem.setPosition(newSlot);
                     item.setPosition(newSlot);
                     // [MODIFIED] Added c.getPlayer()
-                    c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
+                    c.sendPacket(PacketCreator.modifyInventory(true,
+                            Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                     if (InventoryManipulator.isSandboxItem(nItem)) {
                         chr.setHasSandboxItem();
                     }
@@ -265,7 +277,8 @@ public class InventoryManipulator {
                 nItem.setPosition(newSlot);
                 item.setPosition(newSlot);
                 // [MODIFIED] Added c.getPlayer()
-                c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
+                c.sendPacket(PacketCreator.modifyInventory(true,
+                        Collections.singletonList(new ModifyInventory(0, nItem)), c.getPlayer()));
                 if (InventoryManipulator.isSandboxItem(nItem)) {
                     chr.setHasSandboxItem();
                 }
@@ -280,7 +293,8 @@ public class InventoryManipulator {
             }
             item.setPosition(newSlot);
             // [MODIFIED] Added c.getPlayer()
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, item)), c.getPlayer()));
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(0, item)),
+                    c.getPlayer()));
             if (InventoryManipulator.isSandboxItem(item)) {
                 chr.setHasSandboxItem();
             }
@@ -309,7 +323,8 @@ public class InventoryManipulator {
         if (ii.isPickupRestricted(itemid)) {
             if (haveItemWithId(inv, itemid)) {
                 return false;
-            } else if (ItemConstants.isEquipment(itemid) && haveItemWithId(chr.getInventory(InventoryType.EQUIPPED), itemid)) {
+            } else if (ItemConstants.isEquipment(itemid)
+                    && haveItemWithId(chr.getInventory(InventoryType.EQUIPPED), itemid)) {
                 return false;
             }
         }
@@ -349,9 +364,10 @@ public class InventoryManipulator {
         }
     }
 
-    public static int checkSpaceProgressively(Client c, int itemid, int quantity, String owner, int usedSlots, boolean useProofInv) {
+    public static int checkSpaceProgressively(Client c, int itemid, int quantity, String owner, int usedSlots,
+            boolean useProofInv) {
         // return value --> bit0: if has space for this one;
-        //                  value after: new slots filled;
+        // value after: new slots filled;
         // assumption: equipments always have slotMax == 1.
 
         int returnValue;
@@ -364,8 +380,10 @@ public class InventoryManipulator {
         if (ii.isPickupRestricted(itemid)) {
             if (haveItemWithId(inv, itemid)) {
                 return 0;
-            } else if (ItemConstants.isEquipment(itemid) && haveItemWithId(chr.getInventory(InventoryType.EQUIPPED), itemid)) {
-                return 0;   // thanks Captain & Aika & Vcoc for pointing out inventory checkup on player trades missing out one-of-a-kind items.
+            } else if (ItemConstants.isEquipment(itemid)
+                    && haveItemWithId(chr.getInventory(InventoryType.EQUIPPED), itemid)) {
+                return 0; // thanks Captain & Aika & Vcoc for pointing out inventory checkup on player
+                          // trades missing out one-of-a-kind items.
             }
         }
 
@@ -401,11 +419,13 @@ public class InventoryManipulator {
 
             returnValue = ((numSlotsNeeded + usedSlots) << 1);
             returnValue += (numSlotsNeeded == 0 || !inv.isFullAfterSomeItems(numSlotsNeeded - 1, usedSlots)) ? 1 : 0;
-            //System.out.print(" needed " + numSlotsNeeded + " used " + usedSlots + " rval " + returnValue);
+            // System.out.print(" needed " + numSlotsNeeded + " used " + usedSlots + " rval
+            // " + returnValue);
         } else {
             returnValue = ((quantity + usedSlots) << 1);
             returnValue += (!inv.isFullAfterSomeItems(0, usedSlots)) ? 1 : 0;
-            //System.out.print(" eqpneeded " + 1 + " used " + usedSlots + " rval " + returnValue);
+            // System.out.print(" eqpneeded " + 1 + " used " + usedSlots + " rval " +
+            // returnValue);
         }
 
         return returnValue;
@@ -415,7 +435,8 @@ public class InventoryManipulator {
         removeFromSlot(c, type, slot, quantity, fromDrop, false);
     }
 
-    public static void removeFromSlot(Client c, InventoryType type, short slot, short quantity, boolean fromDrop, boolean consume) {
+    public static void removeFromSlot(Client c, InventoryType type, short slot, short quantity, boolean fromDrop,
+            boolean consume) {
         Character chr = c.getPlayer();
         Inventory inv = chr.getInventory(type);
         Item item = inv.getItem(slot);
@@ -433,7 +454,8 @@ public class InventoryManipulator {
             announceModifyInventory(c, item, fromDrop, allowZero);
         } else {
             int petid = item.getPetId();
-            if (petid > -1) { // thanks Vcoc for finding a d/c issue with equipped pets and pets remaining on DB here
+            if (petid > -1) { // thanks Vcoc for finding a d/c issue with equipped pets and pets remaining on
+                              // DB here
                 int petIdx = chr.getPetIndex(petid);
                 if (petIdx > -1) {
                     Pet pet = chr.getPet(petIdx);
@@ -458,14 +480,17 @@ public class InventoryManipulator {
     private static void announceModifyInventory(Client c, Item item, boolean fromDrop, boolean allowZero) {
         if (item.getQuantity() == 0 && !allowZero) {
             // [MODIFIED] Added c.getPlayer()
-            c.sendPacket(PacketCreator.modifyInventory(fromDrop, Collections.singletonList(new ModifyInventory(3, item)), c.getPlayer()));
+            c.sendPacket(PacketCreator.modifyInventory(fromDrop,
+                    Collections.singletonList(new ModifyInventory(3, item)), c.getPlayer()));
         } else {
             // [MODIFIED] Added c.getPlayer()
-            c.sendPacket(PacketCreator.modifyInventory(fromDrop, Collections.singletonList(new ModifyInventory(1, item)), c.getPlayer()));
+            c.sendPacket(PacketCreator.modifyInventory(fromDrop,
+                    Collections.singletonList(new ModifyInventory(1, item)), c.getPlayer()));
         }
     }
 
-    public static void removeById(Client c, InventoryType type, int itemId, int quantity, boolean fromDrop, boolean consume) {
+    public static void removeById(Client c, InventoryType type, int itemId, int quantity, boolean fromDrop,
+            boolean consume) {
         int removeQuantity = quantity;
         Inventory inv = c.getPlayer().getInventory(type);
         int slotLimit = type == InventoryType.EQUIPPED ? 128 : inv.getSlotLimit();
@@ -486,7 +511,9 @@ public class InventoryManipulator {
             }
         }
         if (removeQuantity > 0 && type != InventoryType.CANHOLD) {
-            throw new RuntimeException("[Hack] Not enough items available of Item:" + itemId + ", Quantity (After Quantity/Over Current Quantity): " + (quantity - removeQuantity) + "/" + quantity);
+            throw new RuntimeException("[Hack] Not enough items available of Item:" + itemId
+                    + ", Quantity (After Quantity/Over Current Quantity): " + (quantity - removeQuantity) + "/"
+                    + quantity);
         }
     }
 
@@ -517,7 +544,9 @@ public class InventoryManipulator {
         short slotMax = ii.getSlotMax(c, source.getItemId());
         inv.move(src, dst, slotMax);
         final List<ModifyInventory> mods = new ArrayList<>();
-        if (!(type.equals(InventoryType.EQUIP) || type.equals(InventoryType.CASH)) && initialTarget != null && initialTarget.getItemId() == source.getItemId() && !ItemConstants.isRechargeable(source.getItemId()) && isSameOwner(source, initialTarget)) {
+        if (!(type.equals(InventoryType.EQUIP) || type.equals(InventoryType.CASH)) && initialTarget != null
+                && initialTarget.getItemId() == source.getItemId() && !ItemConstants.isRechargeable(source.getItemId())
+                && isSameOwner(source, initialTarget)) {
             if ((olddstQ + oldsrcQ) > slotMax) {
                 mods.add(new ModifyInventory(1, source));
                 mods.add(new ModifyInventory(1, initialTarget));
@@ -534,7 +563,8 @@ public class InventoryManipulator {
 
     public static void equip(Client c, short src, short dst) {
         // [DEBUG] Print destination slot to confirm Medal Slot ID
-//        System.out.println("[DEBUG] Equipping Item. Source: " + src + " | Destination (dst): " + dst);
+        // System.out.println("[DEBUG] Equipping Item. Source: " + src + " | Destination
+        // (dst): " + dst);
 
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
@@ -560,14 +590,13 @@ public class InventoryManipulator {
         if (!ii.canWearEquipment(chr, source, dst)) {
             c.sendPacket(PacketCreator.enableActions());
             return;
-        }
-        else if ((ItemId.isExplorerMount(source.getItemId()) && chr.isCygnus()) ||
+        } else if ((ItemId.isExplorerMount(source.getItemId()) && chr.isCygnus()) ||
                 ((ItemId.isCygnusMount(source.getItemId())) && !chr.isCygnus())) {// Adventurer taming equipment
             return;
         }
         boolean itemChanged = false;
         if (ii.isUntradeableOnEquip(source.getItemId())) {
-            short flag = source.getFlag();      // thanks BHB for noticing flags missing after equipping these
+            short flag = source.getFlag(); // thanks BHB for noticing flags missing after equipping these
             flag |= ItemConstants.UNTRADEABLE;
             source.setFlag(flag);
 
@@ -642,7 +671,7 @@ public class InventoryManipulator {
         final List<ModifyInventory> mods = new ArrayList<>();
         if (itemChanged) {
             mods.add(new ModifyInventory(3, source));
-            mods.add(new ModifyInventory(0, source.copy()));//to prevent crashes
+            mods.add(new ModifyInventory(0, source.copy()));// to prevent crashes
         }
 
         source.setPosition(dst);
@@ -652,6 +681,36 @@ public class InventoryManipulator {
             if (source.getRingId() > -1) {
                 chr.getRingById(source.getRingId()).equip();
             }
+            // ==========================================
+            // [START] Inject Passive Stats onto Medal
+            // ==========================================
+            if (dst == -49) {
+                System.out.println("[MedalEquip] Injecting passive stats for " + chr.getName());
+                System.out.println(" - Passive STR: " + chr.getPassiveStr());
+                System.out.println(" - Passive DEX: " + chr.getPassiveDex());
+                System.out.println(" - Passive Speed: " + chr.getPassiveSpeed());
+                System.out.println(" - Passive Jump: " + chr.getPassiveJump());
+
+                source.setStr((short) Math.min(source.getStr() + chr.getPassiveStr(), Short.MAX_VALUE));
+                source.setDex((short) Math.min(source.getDex() + chr.getPassiveDex(), Short.MAX_VALUE));
+                source.setInt((short) Math.min(source.getInt() + chr.getPassiveInt(), Short.MAX_VALUE));
+                source.setLuk((short) Math.min(source.getLuk() + chr.getPassiveLuk(), Short.MAX_VALUE));
+                source.setWatk((short) Math.min(source.getWatk() + chr.getPassiveWatk(), Short.MAX_VALUE));
+                source.setMatk((short) Math.min(source.getMatk() + chr.getPassiveMatk(), Short.MAX_VALUE));
+                source.setWdef((short) Math.min(source.getWdef() + chr.getPassiveWdef(), Short.MAX_VALUE));
+                source.setMdef((short) Math.min(source.getMdef() + chr.getPassiveMdef(), Short.MAX_VALUE));
+                source.setAcc((short) Math.min(source.getAcc() + chr.getPassiveAcc(), Short.MAX_VALUE));
+                source.setAvoid((short) Math.min(source.getAvoid() + chr.getPassiveEva(), Short.MAX_VALUE));
+                source.setSpeed((short) Math.min(source.getSpeed() + chr.getPassiveSpeed(), Short.MAX_VALUE));
+                source.setJump((short) Math.min(source.getJump() + chr.getPassiveJump(), Short.MAX_VALUE));
+
+                System.out.println("[MedalEquip] New Equip Speed: " + source.getSpeed());
+                System.out.println("[MedalEquip] New Equip Jump: " + source.getJump());
+            }
+            // ==========================================
+            // [END] Inject Passive Stats onto Medal
+            // ==========================================
+
             chr.equippedItem(source);
             eqpdInv.addItemFromDB(source);
         } finally {
@@ -666,23 +725,31 @@ public class InventoryManipulator {
             chr.cancelBuffStats(BuffStat.BOOSTER);
         }
 
+        final List<ModifyInventory> modsList = new ArrayList<>();
+        if (itemChanged) {
+            modsList.add(new ModifyInventory(3, source));
+            modsList.add(new ModifyInventory(0, source.copy()));// to prevent crashes
+        }
+
         // === FIX: Force "Add" packet for Medals to trigger addItemInfo ===
         if (dst == -49) {
             // 1. Remove the item from the Source Slot (Inventory)
-            // We create a temporary copy to ensure the packet uses the correct 'src' position
+            // We create a temporary copy to ensure the packet uses the correct 'src'
+            // position
             Item removeClone = source.copy();
             removeClone.setPosition(src);
-            mods.add(new ModifyInventory(3, removeClone));
+            modsList.add(new ModifyInventory(3, removeClone));
 
             // 2. Add the item to the Destination Slot (Equip Slot -49)
-            // This triggers Mode 0 -> which calls addItemInfo -> which runs your Stat Injection
-            mods.add(new ModifyInventory(0, source));
+            // This triggers Mode 0 -> which calls addItemInfo -> which runs your Stat
+            // Injection
+            modsList.add(new ModifyInventory(0, source));
         } else {
             // Standard behavior for all other items (Move)
-            mods.add(new ModifyInventory(2, source, src));
+            modsList.add(new ModifyInventory(2, source, src));
         }
 
-        c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
+        c.sendPacket(PacketCreator.modifyInventory(true, modsList, c.getPlayer()));
         chr.equipChanged();
 
         // [OPTIONAL] You can keep your recalc here just to be safe server-side
@@ -690,6 +757,7 @@ public class InventoryManipulator {
             chr.recalcLocalStats();
         }
     }
+
     public static void unequip(Client c, short src, short dst) {
         Character chr = c.getPlayer();
         Inventory eqpInv = chr.getInventory(InventoryType.EQUIP);
@@ -704,7 +772,8 @@ public class InventoryManipulator {
         if (source == null) {
             return;
         }
-        // Note: This check usually blocks swapping if target exists, ensuring dst is empty.
+        // Note: This check usually blocks swapping if target exists, ensuring dst is
+        // empty.
         if (target != null && src <= 0) {
             c.sendPacket(PacketCreator.getInventoryFull());
             return;
@@ -725,6 +794,27 @@ public class InventoryManipulator {
             eqpInv.removeSlot(dst);
         }
 
+        // ========================================================================
+        // [START] Remove Passive Stats from Medal (Keep DB clean)
+        // ========================================================================
+        if (src == -49) {
+            source.setStr((short) Math.max(0, source.getStr() - chr.getPassiveStr()));
+            source.setDex((short) Math.max(0, source.getDex() - chr.getPassiveDex()));
+            source.setInt((short) Math.max(0, source.getInt() - chr.getPassiveInt()));
+            source.setLuk((short) Math.max(0, source.getLuk() - chr.getPassiveLuk()));
+            source.setWatk((short) Math.max(0, source.getWatk() - chr.getPassiveWatk()));
+            source.setMatk((short) Math.max(0, source.getMatk() - chr.getPassiveMatk()));
+            source.setWdef((short) Math.max(0, source.getWdef() - chr.getPassiveWdef()));
+            source.setMdef((short) Math.max(0, source.getMdef() - chr.getPassiveMdef()));
+            source.setAcc((short) Math.max(0, source.getAcc() - chr.getPassiveAcc()));
+            source.setAvoid((short) Math.max(0, source.getAvoid() - chr.getPassiveEva()));
+            source.setSpeed((short) Math.max(0, source.getSpeed() - chr.getPassiveSpeed()));
+            source.setJump((short) Math.max(0, source.getJump() - chr.getPassiveJump()));
+        }
+        // ========================================================================
+        // [END] Remove Passive Stats from Medal
+        // ========================================================================
+
         // Update position object to new Inventory slot
         source.setPosition(dst);
         eqpInv.addItemFromDB(source);
@@ -737,7 +827,7 @@ public class InventoryManipulator {
         // ========================================================================
         // [FIX START] Handle Medal Visuals (Remove + Add to clear spoofed stats)
         // ========================================================================
-        List<ModifyInventory> mods = new ArrayList<>();
+        List<ModifyInventory> modsList = new ArrayList<>();
 
         if (src == -49) { // If unequipped item is a Medal
             // 1. Packet: Remove from Equip Slot (-49)
@@ -745,18 +835,19 @@ public class InventoryManipulator {
             // The client needs to know which slot to remove FROM (-49).
             Item removeClone = source.copy();
             removeClone.setPosition(src);
-            mods.add(new ModifyInventory(3, removeClone));
+            modsList.add(new ModifyInventory(3, removeClone));
 
             // 2. Packet: Add to Inventory Slot (dst)
             // This triggers Mode 0 -> calls addItemInfo.
-            // Since source.getPosition() is now positive (dst), addItemInfo writes CLEAN stats.
-            mods.add(new ModifyInventory(0, source));
+            // Since source.getPosition() is now positive (dst), addItemInfo writes CLEAN
+            // stats.
+            modsList.add(new ModifyInventory(0, source));
         } else {
             // Standard Move for all other items
-            mods.add(new ModifyInventory(2, source, src));
+            modsList.add(new ModifyInventory(2, source, src));
         }
 
-        c.sendPacket(PacketCreator.modifyInventory(true, mods, c.getPlayer()));
+        c.sendPacket(PacketCreator.modifyInventory(true, modsList, c.getPlayer()));
         // ========================================================================
         // [FIX END]
         // ========================================================================
@@ -770,13 +861,13 @@ public class InventoryManipulator {
         }
     }
 
-
     private static boolean isDisappearingItemDrop(Item it) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         if (ii.isDropRestricted(it.getItemId())) {
             return true;
         } else if (ii.isCash(it.getItemId())) {
-            if (YamlConfig.config.server.USE_ENFORCE_UNMERCHABLE_CASH) {     // thanks Ari for noticing cash drops not available server-side
+            if (YamlConfig.config.server.USE_ENFORCE_UNMERCHABLE_CASH) { // thanks Ari for noticing cash drops not
+                                                                         // available server-side
                 return true;
             } else {
                 return ItemConstants.isPet(it.getItemId()) && YamlConfig.config.server.USE_ENFORCE_UNMERCHABLE_PET;
@@ -803,7 +894,9 @@ public class InventoryManipulator {
             return;
         }
 
-        if (chr.getTrade() != null || chr.getMiniGame() != null || source == null) { //Only check needed would prob be merchants (to see if the player is in one)
+        if (chr.getTrade() != null || chr.getMiniGame() != null || source == null) { // Only check needed would prob be
+                                                                                     // merchants (to see if the player
+                                                                                     // is in one)
             return;
         }
         int itemId = source.getItemId();
@@ -828,7 +921,8 @@ public class InventoryManipulator {
             target.setQuantity(quantity);
             source.setQuantity((short) (source.getQuantity() - quantity));
             // [MODIFIED] Added c.getPlayer()
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, source)), c.getPlayer()));
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(1, source)),
+                    c.getPlayer()));
 
             if (ItemConstants.isNewYearCardEtc(itemId)) {
                 if (itemId == ItemId.NEW_YEARS_CARD_SEND) {
@@ -859,7 +953,8 @@ public class InventoryManipulator {
             }
 
             // [MODIFIED] Added c.getPlayer()
-            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(3, source)), c.getPlayer()));
+            c.sendPacket(PacketCreator.modifyInventory(true, Collections.singletonList(new ModifyInventory(3, source)),
+                    c.getPlayer()));
             if (src < 0) {
                 chr.equipChanged();
             } else if (ItemConstants.isNewYearCardEtc(itemId)) {
@@ -902,4 +997,3 @@ public class InventoryManipulator {
         return (it.getFlag() & ItemConstants.SANDBOX) == ItemConstants.SANDBOX;
     }
 }
-

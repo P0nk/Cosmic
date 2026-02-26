@@ -227,6 +227,9 @@ public class Character extends AbstractCharacterObject {
     private int gmLevel;
     private int ci = 0;
     private int reborns = 0; // The rebirth counter
+    // Permanent passive stats from subscriber bonus allocations
+    private int passiveStr = 0, passiveDex = 0, passiveInt = 0, passiveLuk = 0;
+    private int passiveSpeed = 0, passiveJump = 0;
     private FamilyEntry familyEntry;
     private int familyId;
     private int bookCover;
@@ -3385,6 +3388,12 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void gainExp(double gain, int party, boolean show, boolean inChat, boolean white) {
+        // Subscriber bonus: 1.5x EXP while subscription is active
+        if (server.subscription.SubscriptionManager.isSubscribed(getId())) {
+            gain *= 1.5;
+            party *= 1.5;
+        }
+
         if (hasDisease(Disease.CURSE)) {
             gain *= 0.5;
             party *= 0.5;
@@ -7457,6 +7466,12 @@ public class Character extends AbstractCharacterObject {
                 ret.passiveMdef = rs.getInt("passive_mdef");
                 ret.passiveAcc = rs.getInt("passive_acc");
                 ret.passiveEva = rs.getInt("passive_eva");
+                ret.passiveStr = rs.getInt("passive_str");
+                ret.passiveDex = rs.getInt("passive_dex");
+                ret.passiveInt = rs.getInt("passive_int");
+                ret.passiveLuk = rs.getInt("passive_luk");
+                ret.passiveSpeed = rs.getInt("passive_speed");
+                ret.passiveJump = rs.getInt("passive_jump");
                 ret.dailyPlaytime = rs.getInt("dailyPlaytime");
                 ret.reborns = rs.getInt("reborns");
 
@@ -8330,6 +8345,10 @@ public class Character extends AbstractCharacterObject {
 
             localwatk += skillWatk + itemWatk;
             localmagic += skillMatk + itemMatk;
+            // Subscriber passive speed/jump stack as skill-type permanent bonuses
+            skillSpeed += passiveSpeed;
+            skillJump += passiveJump;
+
             // Note: WDEF, MDEF, ACC, AVOID, SPEED, JUMP are typically calculated in getters
             // or other methods in this source base, but we will apply them here if 'local'
             // variables exist.
@@ -8489,11 +8508,6 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
-    public static void removeAriantRoom(int room) {
-        ariantroomleader[room] = "";
-        ariantroomslot[room] = 0;
-    }
-
     public void removeCooldown(int skillId) {
         effLock.lock();
         chrLock.lock();
@@ -8503,6 +8517,11 @@ public class Character extends AbstractCharacterObject {
             chrLock.unlock();
             effLock.unlock();
         }
+    }
+
+    public static void removeAriantRoom(int room) {
+        ariantroomleader[room] = "";
+        ariantroomslot[room] = 0;
     }
 
     public void removePet(Pet pet, boolean shift_left) {
@@ -8979,7 +8998,10 @@ public class Character extends AbstractCharacterObject {
                 " matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?," +
                 " jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?," +
                 " partySearch = ?, autopotEnabled = ?, passive_watk = ?, passive_matk = ?, passive_wdef = ?," +
-                " passive_mdef = ?, passive_acc = ?, passive_eva = ?, dailyPlaytime = ?, reborns = ?, sell_untradables = ?, sell_rebirths = ?, sell_exclusions = ? WHERE id = ?",
+                " passive_mdef = ?, passive_acc = ?, passive_eva = ?," +
+                " passive_str = ?, passive_dex = ?, passive_int = ?, passive_luk = ?, passive_speed = ?, passive_jump = ?,"
+                +
+                " dailyPlaytime = ?, reborns = ?, sell_untradables = ?, sell_rebirths = ?, sell_exclusions = ? WHERE id = ?",
                 Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, level);
@@ -9069,6 +9091,8 @@ public class Character extends AbstractCharacterObject {
                 ps.setInt(30, 0);
                 ps.setInt(31, 0);
             }
+            // Wait, there are 4 slots (equip, use, setup, etc), so they take indices 32,
+            // 33, 34, 35.
             for (int i = 1; i < 5; i++) {
                 ps.setInt(i + 31, getSlots(i));
             }
@@ -9102,11 +9126,16 @@ public class Character extends AbstractCharacterObject {
             ps.setInt(60, passiveMdef);
             ps.setInt(61, passiveAcc);
             ps.setInt(62, passiveEva);
-            ps.setInt(63, dailyPlaytime);
-            ps.setInt(64, reborns);
-            ps.setInt(64, reborns);
-            ps.setInt(65, sellUntradables ? 1 : 0);
-            ps.setInt(66, sellRebirths ? 1 : 0);
+            ps.setInt(63, passiveStr);
+            ps.setInt(64, passiveDex);
+            ps.setInt(65, passiveInt);
+            ps.setInt(66, passiveLuk);
+            ps.setInt(67, passiveSpeed);
+            ps.setInt(68, passiveJump);
+            ps.setInt(69, dailyPlaytime);
+            ps.setInt(70, reborns);
+            ps.setInt(71, sellUntradables ? 1 : 0);
+            ps.setInt(72, sellRebirths ? 1 : 0);
             StringBuilder sb = new StringBuilder();
             for (Integer i : excludedSellItems) {
                 sb.append(i).append(",");
@@ -9114,8 +9143,8 @@ public class Character extends AbstractCharacterObject {
             if (sb.length() > 0) {
                 sb.setLength(sb.length() - 1);
             }
-            ps.setString(67, sb.toString());
-            ps.setInt(68, id);
+            ps.setString(73, sb.toString());
+            ps.setInt(74, id);
 
             int updateRows = ps.executeUpdate();
             if (updateRows < 1) {
@@ -12508,6 +12537,54 @@ public class Character extends AbstractCharacterObject {
     public void setPassiveEva(int amount) {
         this.passiveEva = amount;
         this.updateLocalStats();
+    }
+
+    public int getPassiveStr() {
+        return passiveStr;
+    }
+
+    public void setPassiveStr(int passiveStr) {
+        this.passiveStr = passiveStr;
+    }
+
+    public int getPassiveDex() {
+        return passiveDex;
+    }
+
+    public void setPassiveDex(int passiveDex) {
+        this.passiveDex = passiveDex;
+    }
+
+    public int getPassiveInt() {
+        return passiveInt;
+    }
+
+    public void setPassiveInt(int passiveInt) {
+        this.passiveInt = passiveInt;
+    }
+
+    public int getPassiveLuk() {
+        return passiveLuk;
+    }
+
+    public void setPassiveLuk(int passiveLuk) {
+        this.passiveLuk = passiveLuk;
+    }
+
+    public int getPassiveSpeed() {
+        return passiveSpeed;
+    }
+
+    public void setPassiveSpeed(int passiveSpeed) {
+        this.passiveSpeed = passiveSpeed;
+    }
+
+    public int getPassiveJump() {
+        return passiveJump;
+    }
+
+    public void setPassiveJump(int passiveJump) {
+        this.passiveJump = passiveJump;
     }
 
     public List<BuybackEntry> getBuybackItems() {

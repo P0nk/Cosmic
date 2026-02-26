@@ -700,6 +700,10 @@ public class MapleMap {
                             mesos = (int) (mesos * chr.getBuffedValue(BuffStat.MESOUP).doubleValue() / 100.0);
                         }
                         mesos = (int) (mesos * chr.getMesoRate());
+                        // Subscriber bonus: 1.5x meso from monster drops
+                        if (server.subscription.SubscriptionManager.isSubscribed(chr.getId())) {
+                            mesos = (int) (mesos * 1.5);
+                        }
                         if (mesos <= 0) {
                             mesos = Integer.MAX_VALUE;
                         }
