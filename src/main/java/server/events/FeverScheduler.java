@@ -24,6 +24,11 @@ public class FeverScheduler {
     private static final int MIN_DURATION_MIN = 5;
     private static final int MAX_DURATION_MIN = 10;
 
+    // Original rates storage
+    private final java.util.Map<Integer, Double> originalDropRates = new java.util.HashMap<>();
+    private final java.util.Map<Integer, Double> originalMesoRates = new java.util.HashMap<>();
+    private final java.util.Map<Integer, Double> originalExpRates = new java.util.HashMap<>();
+
     public enum FeverType {
         DROP("Drop Rate", 2), // 2x Drop
         MESO("Meso Rate", 2), // 2x Meso
@@ -105,20 +110,28 @@ public class FeverScheduler {
 
         isFeverActive = true;
 
+        // Clear old saved rates
+        originalDropRates.clear();
+        originalMesoRates.clear();
+        originalExpRates.clear();
+
         int duration = MIN_DURATION_MIN + rand.nextInt(MAX_DURATION_MIN - MIN_DURATION_MIN + 1);
         long durationMs = duration * 60 * 1000L;
         feverEndTime = System.currentTimeMillis() + durationMs;
 
-        // Apply Boost
+        // Apply Boost and save original rates
         for (World world : Server.getInstance().getWorlds()) {
             if (world == null)
                 continue;
 
+            int worldId = world.getWorldId();
             switch (currentFever) {
                 case DROP:
+                    originalDropRates.put(worldId, world.getDropRate());
                     world.setDropRate(world.getDropRate() * currentFever.getMultiplier());
                     break;
                 case MESO:
+                    originalMesoRates.put(worldId, world.getMesoRate());
                     world.setMesoRate(world.getMesoRate() * currentFever.getMultiplier());
                     break;
                 case NX:
@@ -128,6 +141,7 @@ public class FeverScheduler {
                     world.setSpellTraceFever(true);
                     break;
                 case EXP:
+                    originalExpRates.put(worldId, world.getExpRate());
                     world.setExpRate(world.getExpRate() * currentFever.getMultiplier());
                     break;
             }
@@ -168,12 +182,17 @@ public class FeverScheduler {
 
         for (World world : Server.getInstance().getWorlds()) {
             if (world != null) {
+                int worldId = world.getWorldId();
                 switch (currentFever) {
                     case DROP:
-                        world.setDropRate(world.getDropRate() / currentFever.getMultiplier());
+                        if (originalDropRates.containsKey(worldId)) {
+                            world.setDropRate(originalDropRates.get(worldId));
+                        }
                         break;
                     case MESO:
-                        world.setMesoRate(world.getMesoRate() / currentFever.getMultiplier());
+                        if (originalMesoRates.containsKey(worldId)) {
+                            world.setMesoRate(originalMesoRates.get(worldId));
+                        }
                         break;
                     case NX:
                         world.setNxFever(false);
@@ -182,7 +201,9 @@ public class FeverScheduler {
                         world.setSpellTraceFever(false);
                         break;
                     case EXP:
-                        world.setExpRate(world.getExpRate() / currentFever.getMultiplier());
+                        if (originalExpRates.containsKey(worldId)) {
+                            world.setExpRate(originalExpRates.get(worldId));
+                        }
                         break;
                 }
                 world.broadcastPacket(PacketCreator.serverNotice(6, "[Fever] The Fever event has ended."));
@@ -193,6 +214,12 @@ public class FeverScheduler {
         isFeverActive = false;
         currentFever = null;
         feverEndTime = 0;
+
+        // Clean up memory
+        originalDropRates.clear();
+        originalMesoRates.clear();
+        originalExpRates.clear();
+
         System.out.println("[FeverScheduler] Fever ended.");
     }
 }
