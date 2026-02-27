@@ -20,7 +20,27 @@ SET s.characterid = fc.first_char_id
 WHERE s.world = 1
   AND s.characterid = 0;
 
--- Verification query (run after to confirm):
--- SELECT s.storageid, s.accountid, s.characterid, s.world
--- FROM storages s
--- WHERE s.world = 1;
+-- ============================================================
+-- PHASE 2: Cleanup bogus empty storage rows created by the routing bug.
+-- Run this AFTER deploying the code fix.
+-- These are rows that were incorrectly created as new empty storages
+-- because the routing never fired (items are in the real migrated rows).
+-- ============================================================
+
+-- Preview first (check that these are the empty bad rows):
+SELECT s.storageid, s.accountid, s.characterid, s.slots, s.meso,
+       COUNT(ii.inventoryitemid) as item_count
+FROM storages s
+LEFT JOIN inventoryitems ii ON ii.accountid = s.storageid AND ii.type = 2
+WHERE s.world = 1
+  AND s.characterid != 0
+GROUP BY s.storageid
+HAVING item_count = 0 AND s.meso = 0;
+
+-- Once confirmed safe, delete them:
+-- DELETE s FROM storages s
+-- LEFT JOIN inventoryitems ii ON ii.accountid = s.storageid AND ii.type = 2
+-- WHERE s.world = 1
+--   AND s.characterid != 0
+--   AND ii.inventoryitemid IS NULL
+--   AND s.meso = 0;

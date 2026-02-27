@@ -82,12 +82,28 @@ public class Storage {
     }
 
     private static Storage createForCharacter(int characterId, int accountId, int world) throws SQLException {
+        // Inherit slot count from the account's existing storage for this world (if
+        // any)
+        int slots = 4;
         try (Connection con = DatabaseConnection.getConnection();
                 PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO storages (accountid, characterid, world, slots, meso) VALUES (?, ?, ?, 4, 0)")) {
+                        "SELECT slots FROM storages WHERE accountid = ? AND world = ? ORDER BY slots DESC LIMIT 1")) {
+            ps.setInt(1, accountId);
+            ps.setInt(2, world);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    slots = rs.getInt("slots");
+                }
+            }
+        }
+
+        try (Connection con = DatabaseConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO storages (accountid, characterid, world, slots, meso) VALUES (?, ?, ?, ?, 0)")) {
             ps.setInt(1, accountId);
             ps.setInt(2, characterId);
             ps.setInt(3, world);
+            ps.setInt(4, slots);
             ps.executeUpdate();
         }
         return loadOrCreateForCharacterFromDB(characterId, accountId, world);

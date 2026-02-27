@@ -7896,10 +7896,20 @@ public class Character extends AbstractCharacterObject {
 
     private static void loadStorageData(Connection con, Character ret, boolean channelserver) throws SQLException {
         World wserv = Server.getInstance().getWorld(ret.world);
-        ret.storage = wserv.getAccountStorage(ret.accountid);
-        if (ret.storage == null) {
-            wserv.loadAccountStorage(ret.accountid);
+        if (ret.world == 1) {
+            // Bera: each character has their own isolated storage
+            ret.storage = wserv.getCharacterStorage(ret.id);
+            if (ret.storage == null) {
+                wserv.loadAccountStorage(ret.accountid, ret);
+                ret.storage = wserv.getCharacterStorage(ret.id);
+            }
+        } else {
+            // All other worlds: account-wide shared storage
             ret.storage = wserv.getAccountStorage(ret.accountid);
+            if (ret.storage == null) {
+                wserv.loadAccountStorage(ret.accountid);
+                ret.storage = wserv.getAccountStorage(ret.accountid);
+            }
         }
     }
 

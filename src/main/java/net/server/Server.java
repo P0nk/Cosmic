@@ -1893,7 +1893,12 @@ public class Server {
         for (Integer worldid : accWorlds) {
             if (worldid < worldList.size()) {
                 World wserv = worldList.get(worldid);
-                wserv.loadAccountStorage(accountId);
+                if (worldid == 1 && c.getPlayer() != null) {
+                    // Bera: load character-specific storage for the logging-in character
+                    wserv.loadAccountStorage(accountId, c.getPlayer());
+                } else {
+                    wserv.loadAccountStorage(accountId);
+                }
             }
         }
     }
