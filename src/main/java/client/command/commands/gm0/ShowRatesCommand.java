@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.command.Command;
 import config.YamlConfig;
+import server.events.FeverScheduler;
 
 public class ShowRatesCommand extends Command {
     {
@@ -36,16 +37,24 @@ public class ShowRatesCommand extends Command {
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
+
+        FeverScheduler fever = FeverScheduler.getInstance();
+        boolean feverActive = fever.isFeverActive();
+        String feverNote = " #r🔥 Fever Active!#k";
+
         String showMsg = "#eEXP RATE#n" + "\r\n";
-        showMsg += "World EXP Rate: #k" + c.getWorldServer().getExpRate() + "x#k" + "\r\n";
+        showMsg += "World EXP Rate: #k" + c.getWorldServer().getExpRate() + "x#k"
+                + (feverActive && fever.getCurrentFever() == FeverScheduler.FeverType.EXP ? feverNote : "") + "\r\n";
         showMsg += "Player EXP Rate: #k" + player.getRawExpRate() + "x#k" + "\r\n";
         if (player.getCouponExpRate() != 1) {
             showMsg += "Coupon EXP Rate: #k" + player.getCouponExpRate() + "x#k" + "\r\n";
         }
-        showMsg += "EXP Rate: #e#b" + player.getExpRate() + "x#k#n" + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
+        showMsg += "EXP Rate: #e#b" + player.getExpRate() + "x#k#n"
+                + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
 
         showMsg += "\r\n" + "#eMESO RATE#n" + "\r\n";
-        showMsg += "World MESO Rate: #k" + c.getWorldServer().getMesoRate() + "x#k" + "\r\n";
+        showMsg += "World MESO Rate: #k" + c.getWorldServer().getMesoRate() + "x#k"
+                + (feverActive && fever.getCurrentFever() == FeverScheduler.FeverType.MESO ? feverNote : "") + "\r\n";
         showMsg += "Player MESO Rate: #k" + player.getRawMesoRate() + "x#k" + "\r\n";
         if (player.getCouponMesoRate() != 1) {
             showMsg += "Coupon MESO Rate: #k" + player.getCouponMesoRate() + "x#k" + "\r\n";
@@ -53,7 +62,8 @@ public class ShowRatesCommand extends Command {
         showMsg += "MESO Rate: #e#b" + player.getMesoRate() + "x#k#n" + "\r\n";
 
         showMsg += "\r\n" + "#eDROP RATE#n" + "\r\n";
-        showMsg += "World DROP Rate: #k" + c.getWorldServer().getDropRate() + "x#k" + "\r\n";
+        showMsg += "World DROP Rate: #k" + c.getWorldServer().getDropRate() + "x#k"
+                + (feverActive && fever.getCurrentFever() == FeverScheduler.FeverType.DROP ? feverNote : "") + "\r\n";
         showMsg += "Player DROP Rate: #k" + player.getRawDropRate() + "x#k" + "\r\n";
         if (player.getCouponDropRate() != 1) {
             showMsg += "Coupon DROP Rate: #k" + player.getCouponDropRate() + "x#k" + "\r\n";

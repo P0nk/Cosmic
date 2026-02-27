@@ -79,7 +79,7 @@ public class FeverScheduler {
 
         System.out.println("[FeverScheduler] Next fever scheduled in " + interval + " minutes.");
 
-        feverTask = TimerManager.getInstance().register(new Runnable() {
+        feverTask = TimerManager.getInstance().schedule(new Runnable() {
             @Override
             public void run() {
                 startFever(null); // Random fever

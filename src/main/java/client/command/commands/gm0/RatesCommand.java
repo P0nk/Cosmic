@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.command.Command;
 import config.YamlConfig;
+import server.events.FeverScheduler;
 
 public class RatesCommand extends Command {
     {
@@ -37,17 +38,23 @@ public class RatesCommand extends Command {
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
 
-        // travel rates not applicable since it's intrinsically a server/environment
-        // rate rather than a character rate
         boolean isSubscribed = server.subscription.SubscriptionManager.isSubscribed(player.getId());
         String subMsg = isSubscribed ? " #r(1.5x Sub Bonus!)#k" : "";
 
+        FeverScheduler fever = FeverScheduler.getInstance();
+        boolean feverActive = fever.isFeverActive();
+        String feverNote = " #r🔥 Fever Active!#k";
+
         String showMsg_ = "#eCHARACTER RATES#n" + "\r\n\r\n";
         showMsg_ += "EXP Rate: #e#b" + (isSubscribed ? (player.getExpRate() * 1.5) : player.getExpRate()) + "x#k#n"
-                + subMsg + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
+                + subMsg
+                + (feverActive && fever.getCurrentFever() == FeverScheduler.FeverType.EXP ? feverNote : "")
+                + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
         showMsg_ += "MESO Rate: #e#b" + (isSubscribed ? (player.getMesoRate() * 1.5) : player.getMesoRate()) + "x#k#n"
-                + subMsg + "\r\n";
-        showMsg_ += "DROP Rate: #e#b" + player.getDropRate() + "x#k#n" + "\r\n";
+                + subMsg
+                + (feverActive && fever.getCurrentFever() == FeverScheduler.FeverType.MESO ? feverNote : "") + "\r\n";
+        showMsg_ += "DROP Rate: #e#b" + player.getDropRate() + "x#k#n"
+                + (feverActive && fever.getCurrentFever() == FeverScheduler.FeverType.DROP ? feverNote : "") + "\r\n";
         showMsg_ += "BOSS DROP Rate: #e#b" + player.getBossDropRate() + "x#k#n" + "\r\n";
         if (YamlConfig.config.server.USE_QUEST_RATE) {
             showMsg_ += "QUEST Rate: #e#b" + c.getWorldServer().getQuestRate() + "x#k#n" + "\r\n";
