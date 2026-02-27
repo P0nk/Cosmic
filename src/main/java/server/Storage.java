@@ -71,7 +71,8 @@ public class Storage {
 
     private static Storage create(int id, int world) throws SQLException {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("INSERT INTO storages (accountid, world, slots, meso) VALUES (?, ?, 4, 0)")) {
+                PreparedStatement ps = con
+                        .prepareStatement("INSERT INTO storages (accountid, world, slots, meso) VALUES (?, ?, 4, 0)")) {
             ps.setInt(1, id);
             ps.setInt(2, world);
             ps.executeUpdate();
@@ -80,10 +81,23 @@ public class Storage {
         return loadOrCreateFromDB(id, world);
     }
 
+    private static Storage createForCharacter(int characterId, int accountId, int world) throws SQLException {
+        try (Connection con = DatabaseConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO storages (accountid, characterid, world, slots, meso) VALUES (?, ?, ?, 4, 0)")) {
+            ps.setInt(1, accountId);
+            ps.setInt(2, characterId);
+            ps.setInt(3, world);
+            ps.executeUpdate();
+        }
+        return loadOrCreateForCharacterFromDB(characterId, accountId, world);
+    }
+
     public static Storage loadOrCreateFromDB(int id, int world) {
         Storage ret;
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT storageid, slots, meso FROM storages WHERE accountid = ? AND world = ?")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT storageid, slots, meso FROM storages WHERE accountid = ? AND world = ? AND characterid = 0")) {
             ps.setInt(1, id);
             ps.setInt(2, world);
 
@@ -99,8 +113,40 @@ public class Storage {
             }
 
             return ret;
-        } catch (SQLException ex) { // exceptions leading to deploy null storages found thanks to Jefe
-            log.error("SQL error occurred when trying to load storage for accId {}, world {}", id, GameConstants.WORLD_NAMES[world], ex);
+        } catch (SQLException ex) {
+            log.error("SQL error occurred when trying to load storage for accId {}, world {}", id,
+                    GameConstants.WORLD_NAMES[world], ex);
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Loads (or creates) a character-specific storage entry for Bera.
+     * Used when world == 1 to prevent cross-character item sharing.
+     */
+    public static Storage loadOrCreateForCharacterFromDB(int characterId, int accountId, int world) {
+        Storage ret;
+        try (Connection con = DatabaseConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT storageid, slots, meso FROM storages WHERE characterid = ? AND world = ?")) {
+            ps.setInt(1, characterId);
+            ps.setInt(2, world);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ret = new Storage(rs.getInt("storageid"), (byte) rs.getInt("slots"), rs.getInt("meso"));
+                    for (Pair<Item, InventoryType> item : ItemFactory.STORAGE.loadItems(ret.id, false)) {
+                        ret.items.add(item.getLeft());
+                    }
+                } else {
+                    ret = createForCharacter(characterId, accountId, world);
+                }
+            }
+
+            return ret;
+        } catch (SQLException ex) {
+            log.error("SQL error occurred when trying to load character storage for charId {}, world {}", characterId,
+                    GameConstants.WORLD_NAMES[world], ex);
             throw new RuntimeException(ex);
         }
     }
@@ -131,7 +177,8 @@ public class Storage {
 
     public void saveToDB(Connection con) {
         try {
-            try (PreparedStatement ps = con.prepareStatement("UPDATE storages SET slots = ?, meso = ? WHERE storageid = ?")) {
+            try (PreparedStatement ps = con
+                    .prepareStatement("UPDATE storages SET slots = ?, meso = ? WHERE storageid = ?")) {
                 ps.setInt(1, slots);
                 ps.setInt(2, meso);
                 ps.setInt(3, id);
@@ -309,7 +356,7 @@ public class Storage {
         c.sendPacket(PacketCreator.mesoStorage(slots, meso));
     }
 
-    public int getStoreFee() {  // thanks to GabrielSin
+    public int getStoreFee() { // thanks to GabrielSin
         int npcId = currentNpcid;
         Integer fee = trunkPutCache.get(npcId);
         if (fee == null) {

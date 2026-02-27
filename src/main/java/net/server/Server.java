@@ -1079,6 +1079,10 @@ public class Server {
 
         // Start Fever Scheduler
         server.events.FeverScheduler.getInstance().start();
+
+        // Start Daily Restart Scheduler (restarts at 10:00 AM SGT every day)
+        // server.events.DailyRestartScheduler.getInstance().start(); // DISABLED -
+        // uncomment to enable
     }
 
     public static void main(String[] args) {

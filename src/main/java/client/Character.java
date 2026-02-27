@@ -6369,6 +6369,16 @@ public class Character extends AbstractCharacterObject {
     }
 
     public Storage getStorage() {
+        // Bera (world 1) uses character-specific storage to prevent cross-character
+        // transfers
+        if (getWorld() == 1) {
+            net.server.world.World w = getWorldServer();
+            if (w != null) {
+                Storage charStorage = w.getCharacterStorage(getId());
+                if (charStorage != null)
+                    return charStorage;
+            }
+        }
         return storage;
     }
 

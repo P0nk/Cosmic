@@ -158,6 +158,11 @@ public class World {
 
     private final Map<Integer, SortedMap<Integer, Character>> accountChars = new HashMap<>();
     private final Map<Integer, Storage> accountStorages = new HashMap<>();
+    /**
+     * Per-character storage for Bera (world 1) — prevents cross-character item
+     * transfers
+     */
+    private final Map<Integer, Storage> characterStorages = new HashMap<>();
     private final Lock accountCharsLock = new ReentrantLock(true);
 
     private final Set<Integer> queuedGuilds = new HashSet<>();
@@ -572,6 +577,34 @@ public class World {
         }
     }
 
+    /**
+     * Loads storage for a player. In Bera (world 1), storage is character-specific.
+     * In all other worlds, storage is account-wide (legacy behaviour).
+     */
+    public void loadAccountStorage(Integer accountId, client.Character chr) {
+        if (this.id == 1) {
+            // Bera: character-specific
+            int charId = chr.getId();
+            accountCharsLock.lock();
+            try {
+                if (!characterStorages.containsKey(charId)) {
+                    Storage storage = Storage.loadOrCreateForCharacterFromDB(charId, accountId, this.id);
+                    characterStorages.put(charId, storage);
+                }
+            } finally {
+                accountCharsLock.unlock();
+            }
+        } else {
+            if (getAccountStorage(accountId) == null) {
+                registerAccountStorage(accountId);
+            }
+        }
+    }
+
+    /**
+     * @deprecated Use {@link #loadAccountStorage(Integer, client.Character)}
+     *             instead
+     */
     public void loadAccountStorage(Integer accountId) {
         if (getAccountStorage(accountId) == null) {
             registerAccountStorage(accountId);
@@ -588,6 +621,22 @@ public class World {
         }
     }
 
+    public void unregisterAccountStorage(Integer accountId, Integer charId) {
+        accountCharsLock.lock();
+        try {
+            if (this.id == 1) {
+                characterStorages.remove(charId);
+            } else {
+                accountStorages.remove(accountId);
+            }
+        } finally {
+            accountCharsLock.unlock();
+        }
+    }
+
+    /**
+     * @deprecated Use {@link #unregisterAccountStorage(Integer, Integer)} instead
+     */
     public void unregisterAccountStorage(Integer accountId) {
         accountCharsLock.lock();
         try {
@@ -599,6 +648,10 @@ public class World {
 
     public Storage getAccountStorage(Integer accountId) {
         return accountStorages.get(accountId);
+    }
+
+    public Storage getCharacterStorage(Integer charId) {
+        return characterStorages.get(charId);
     }
 
     private static List<Entry<Integer, SortedMap<Integer, Character>>> getSortedAccountCharacterView(

@@ -4,13 +4,6 @@ import client.BuffStat;
 import client.Character;
 import client.Client;
 import client.command.Command;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.ModifyInventory;
-import tools.PacketCreator;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SlowCommand extends Command {
     {
@@ -34,12 +27,8 @@ public class SlowCommand extends Command {
             player.dropMessage(5, "Slow mode DISABLED: Equipment speed/jump bonuses restored.");
         }
 
-        // Refresh equipped inventory visually so the client sees the updated speed
-        // values
-        List<ModifyInventory> mods = new ArrayList<>();
-        for (Item item : player.getInventory(InventoryType.EQUIPPED).list()) {
-            mods.add(new ModifyInventory(3, item));
-        }
-        c.sendPacket(PacketCreator.modifyInventory(false, mods, player));
+        // Recalculate stats and push updated stats packet safely (no inventory packet
+        // needed)
+        player.recalcLocalStats();
     }
 }
