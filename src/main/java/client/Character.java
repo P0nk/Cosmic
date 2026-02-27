@@ -230,6 +230,8 @@ public class Character extends AbstractCharacterObject {
     // Permanent passive stats from subscriber bonus allocations
     private int passiveStr = 0, passiveDex = 0, passiveInt = 0, passiveLuk = 0;
     private int passiveSpeed = 0, passiveJump = 0;
+    private boolean slowMode = false;
+    private boolean suppressGuildLvSpam = false;
     private FamilyEntry familyEntry;
     private int familyId;
     private int bookCover;
@@ -3469,7 +3471,7 @@ public class Character extends AbstractCharacterObject {
 
                 if (YamlConfig.config.server.USE_EXP_GAIN_LOG) {
                     ExpLogRecord expLogRecord = new ExpLogger.ExpLogRecord(
-                            getWorldServer().getExpRate(),
+                            (int) getWorldServer().getExpRate(),
                             (int) expCoupon,
                             totalExpGained,
                             exp.get(),
@@ -5397,12 +5399,12 @@ public class Character extends AbstractCharacterObject {
         }
 
         World w = getWorldServer();
-        return w.getExpRate() * w.getQuestRate();
+        return (int) (w.getExpRate() * w.getQuestRate());
     }
 
     public int getQuestMesoRate() {
         World w = getWorldServer();
-        return w.getMesoRate() * w.getQuestRate();
+        return (int) (w.getMesoRate() * w.getQuestRate());
     }
 
     public float getCardRate(int itemid) {
@@ -6887,7 +6889,11 @@ public class Character extends AbstractCharacterObject {
         silentPartyUpdate();
 
         if (this.guildid > 0) {
-            getGuild().broadcast(PacketCreator.levelUpMessage(2, level, name), this.getId());
+            Packet levelUpMsg = PacketCreator.levelUpMessage(2, level, name);
+            net.server.guild.Guild g = getGuild();
+            if (g != null) {
+                g.broadcastFiltered(levelUpMsg, this.getId());
+            }
         }
 
         // --- REBIRTH PROMPT SYSTEM ---
@@ -7348,6 +7354,7 @@ public class Character extends AbstractCharacterObject {
             loadAccountData(con, ret);
             loadInventoryData(con, ret, channelserver);
             loadSkillData(con, ret);
+            calculateBlessingOfFairy(con, ret);
 
             if (channelserver) {
                 loadQuestData(con, ret);
@@ -7656,6 +7663,55 @@ public class Character extends AbstractCharacterObject {
         }
         if (!loadedDiseases.isEmpty()) {
             Server.getInstance().getPlayerBuffStorage().addDiseasesToStorage(ret.id, loadedDiseases);
+        }
+    }
+
+    private static void calculateBlessingOfFairy(Connection con, Character ret) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT name, level, job FROM characters WHERE accountid = ? AND id != ? ORDER BY level DESC LIMIT 1")) {
+            ps.setInt(1, ret.accountid);
+            ps.setInt(2, ret.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String highestName = rs.getString("name");
+                    int highestLevel = rs.getInt("level");
+                    int highestJob = rs.getInt("job");
+
+                    int bofLevel = 0;
+                    boolean isCygnus = (highestJob / 1000 == 1); // Cygnus Knights
+                    if (isCygnus) {
+                        bofLevel = highestLevel / 5;
+                        if (bofLevel > 24)
+                            bofLevel = 24;
+                    } else {
+                        bofLevel = highestLevel / 10;
+                        if (bofLevel > 20)
+                            bofLevel = 20;
+                    }
+
+                    if (bofLevel > 0) {
+                        ret.linkedName = highestName;
+                        int skillId = ret.getBlessingSkillId();
+                        Skill bofSkill = SkillFactory.getSkill(skillId);
+                        if (bofSkill != null) {
+                            ret.skills.put(bofSkill, new SkillEntry((byte) bofLevel, bofLevel, -1));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public int getBlessingSkillId() {
+        int jobId = job.getId();
+        if (jobId >= 2200 && jobId <= 2218) {
+            return constants.skills.Evan.BLESSING_OF_THE_FAIRY;
+        } else if (jobId == 2000 || (jobId >= 2100 && jobId <= 2112)) {
+            return constants.skills.Legend.BLESSING_OF_THE_FAIRY;
+        } else if (jobId / 1000 == 1) {
+            return constants.skills.Noblesse.BLESSING_OF_THE_FAIRY;
+        } else {
+            return constants.skills.Beginner.BLESSING_OF_THE_FAIRY;
         }
     }
 
@@ -8361,7 +8417,7 @@ public class Character extends AbstractCharacterObject {
 
             // --- END STACKING LOGIC ---
 
-            Integer blessing = getSkillLevel(10000000 * getJobType() + 12);
+            Integer blessing = getSkillLevel(getBlessingSkillId());
             if (blessing > 0) {
                 localwatk += blessing;
                 localmagic += blessing * 2;
@@ -12577,6 +12633,22 @@ public class Character extends AbstractCharacterObject {
 
     public void setPassiveSpeed(int passiveSpeed) {
         this.passiveSpeed = passiveSpeed;
+    }
+
+    public boolean isSlowMode() {
+        return slowMode;
+    }
+
+    public void setSlowMode(boolean slowMode) {
+        this.slowMode = slowMode;
+    }
+
+    public boolean isSuppressGuildLvSpam() {
+        return suppressGuildLvSpam;
+    }
+
+    public void setSuppressGuildLvSpam(boolean suppress) {
+        this.suppressGuildLvSpam = suppress;
     }
 
     public int getPassiveJump() {

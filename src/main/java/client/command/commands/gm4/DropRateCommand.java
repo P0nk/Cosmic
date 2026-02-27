@@ -41,9 +41,10 @@ public class DropRateCommand extends Command {
             return;
         }
 
-        int droprate = Math.max(Integer.parseInt(params[0]), 1);
+        double droprate = Math.max(Double.parseDouble(params[0]), 1.0);
         c.getWorldServer().setDropRate(droprate);
-        c.getWorldServer().broadcastPacket(PacketCreator.serverNotice(6, "[Rate] Drop Rate has been changed to " + droprate + "x."));
+        c.getWorldServer().broadcastPacket(
+                PacketCreator.serverNotice(6, "[Rate] Drop Rate has been changed to " + droprate + "x."));
 
     }
 }

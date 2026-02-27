@@ -480,22 +480,65 @@ public class PacketCreator {
         p.writeByte(equip.getUpgradeSlots());
         p.writeByte(equip.getLevel());
 
-        // Write normal stats natively
-        p.writeShort(equip.getStr());
-        p.writeShort(equip.getDex());
-        p.writeShort(equip.getInt());
-        p.writeShort(equip.getLuk());
-        p.writeShort(equip.getHp());
-        p.writeShort(equip.getMp());
-        p.writeShort(equip.getWatk());
-        p.writeShort(equip.getMatk());
-        p.writeShort(equip.getWdef());
-        p.writeShort(equip.getMdef());
-        p.writeShort(equip.getAcc());
-        p.writeShort(equip.getAvoid());
+        // ==========================================
+        // [START] Visual Medal Stat Injection
+        // ==========================================
+        short oStr = equip.getStr();
+        short oDex = equip.getDex();
+        short oInt = equip.getInt();
+        short oLuk = equip.getLuk();
+        short oHp = equip.getHp();
+        short oMp = equip.getMp();
+        short oWatk = equip.getWatk();
+        short oMatk = equip.getMatk();
+        short oWdef = equip.getWdef();
+        short oMdef = equip.getMdef();
+        short oAcc = equip.getAcc();
+        short oAvoid = equip.getAvoid();
+        short oSpeed = equip.getSpeed();
+        short oJump = equip.getJump();
+
+        if (chr != null && equip.getPosition() == -49) {
+            oStr = (short) Math.min(oStr + chr.getPassiveStr(), Short.MAX_VALUE);
+            oDex = (short) Math.min(oDex + chr.getPassiveDex(), Short.MAX_VALUE);
+            oInt = (short) Math.min(oInt + chr.getPassiveInt(), Short.MAX_VALUE);
+            oLuk = (short) Math.min(oLuk + chr.getPassiveLuk(), Short.MAX_VALUE);
+            oWatk = (short) Math.min(oWatk + chr.getPassiveWatk(), Short.MAX_VALUE);
+            oMatk = (short) Math.min(oMatk + chr.getPassiveMatk(), Short.MAX_VALUE);
+            oWdef = (short) Math.min(oWdef + chr.getPassiveWdef(), Short.MAX_VALUE);
+            oMdef = (short) Math.min(oMdef + chr.getPassiveMdef(), Short.MAX_VALUE);
+            oAcc = (short) Math.min(oAcc + chr.getPassiveAcc(), Short.MAX_VALUE);
+            oAvoid = (short) Math.min(oAvoid + chr.getPassiveEva(), Short.MAX_VALUE);
+            oSpeed = (short) Math.min(oSpeed + chr.getPassiveSpeed(), Short.MAX_VALUE);
+            oJump = (short) Math.min(oJump + chr.getPassiveJump(), Short.MAX_VALUE);
+        }
+
+        // @slow mode: hide equipment speed/jump from the client (purely visual, no DB
+        // change)
+        if (chr != null && chr.isSlowMode()) {
+            oSpeed = 0;
+            oJump = 0;
+        }
+
+        // Write normal stats natively (or injected variables)
+        p.writeShort(oStr);
+        p.writeShort(oDex);
+        p.writeShort(oInt);
+        p.writeShort(oLuk);
+        p.writeShort(oHp);
+        p.writeShort(oMp);
+        p.writeShort(oWatk);
+        p.writeShort(oMatk);
+        p.writeShort(oWdef);
+        p.writeShort(oMdef);
+        p.writeShort(oAcc);
+        p.writeShort(oAvoid);
         p.writeShort(equip.getHands());
-        p.writeShort(equip.getSpeed());
-        p.writeShort(equip.getJump());
+        p.writeShort(oSpeed);
+        p.writeShort(oJump);
+        // ==========================================
+        // [END] Visual Medal Stat Injection
+        // ==========================================
 
         p.writeString(equip.getOwner());
         p.writeShort(equip.getFlag());

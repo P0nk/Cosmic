@@ -685,27 +685,8 @@ public class InventoryManipulator {
             // [START] Inject Passive Stats onto Medal
             // ==========================================
             if (dst == -49) {
-                System.out.println("[MedalEquip] Injecting passive stats for " + chr.getName());
-                System.out.println(" - Passive STR: " + chr.getPassiveStr());
-                System.out.println(" - Passive DEX: " + chr.getPassiveDex());
-                System.out.println(" - Passive Speed: " + chr.getPassiveSpeed());
-                System.out.println(" - Passive Jump: " + chr.getPassiveJump());
-
-                source.setStr((short) Math.min(source.getStr() + chr.getPassiveStr(), Short.MAX_VALUE));
-                source.setDex((short) Math.min(source.getDex() + chr.getPassiveDex(), Short.MAX_VALUE));
-                source.setInt((short) Math.min(source.getInt() + chr.getPassiveInt(), Short.MAX_VALUE));
-                source.setLuk((short) Math.min(source.getLuk() + chr.getPassiveLuk(), Short.MAX_VALUE));
-                source.setWatk((short) Math.min(source.getWatk() + chr.getPassiveWatk(), Short.MAX_VALUE));
-                source.setMatk((short) Math.min(source.getMatk() + chr.getPassiveMatk(), Short.MAX_VALUE));
-                source.setWdef((short) Math.min(source.getWdef() + chr.getPassiveWdef(), Short.MAX_VALUE));
-                source.setMdef((short) Math.min(source.getMdef() + chr.getPassiveMdef(), Short.MAX_VALUE));
-                source.setAcc((short) Math.min(source.getAcc() + chr.getPassiveAcc(), Short.MAX_VALUE));
-                source.setAvoid((short) Math.min(source.getAvoid() + chr.getPassiveEva(), Short.MAX_VALUE));
-                source.setSpeed((short) Math.min(source.getSpeed() + chr.getPassiveSpeed(), Short.MAX_VALUE));
-                source.setJump((short) Math.min(source.getJump() + chr.getPassiveJump(), Short.MAX_VALUE));
-
-                System.out.println("[MedalEquip] New Equip Speed: " + source.getSpeed());
-                System.out.println("[MedalEquip] New Equip Jump: " + source.getJump());
+                System.out.println("[MedalEquip] Passed equip check for " + chr.getName()
+                        + " - Stats will be injected visually via PacketCreator.");
             }
             // ==========================================
             // [END] Inject Passive Stats onto Medal
@@ -725,17 +706,12 @@ public class InventoryManipulator {
             chr.cancelBuffStats(BuffStat.BOOSTER);
         }
 
-        final List<ModifyInventory> modsList = new ArrayList<>();
-        if (itemChanged) {
-            modsList.add(new ModifyInventory(3, source));
-            modsList.add(new ModifyInventory(0, source.copy()));// to prevent crashes
-        }
+        // Inherit the earlier modifications (e.g. itemChanged untradeable flags)
+        final List<ModifyInventory> modsList = new ArrayList<>(mods);
 
         // === FIX: Force "Add" packet for Medals to trigger addItemInfo ===
         if (dst == -49) {
             // 1. Remove the item from the Source Slot (Inventory)
-            // We create a temporary copy to ensure the packet uses the correct 'src'
-            // position
             Item removeClone = source.copy();
             removeClone.setPosition(src);
             modsList.add(new ModifyInventory(3, removeClone));
@@ -798,18 +774,8 @@ public class InventoryManipulator {
         // [START] Remove Passive Stats from Medal (Keep DB clean)
         // ========================================================================
         if (src == -49) {
-            source.setStr((short) Math.max(0, source.getStr() - chr.getPassiveStr()));
-            source.setDex((short) Math.max(0, source.getDex() - chr.getPassiveDex()));
-            source.setInt((short) Math.max(0, source.getInt() - chr.getPassiveInt()));
-            source.setLuk((short) Math.max(0, source.getLuk() - chr.getPassiveLuk()));
-            source.setWatk((short) Math.max(0, source.getWatk() - chr.getPassiveWatk()));
-            source.setMatk((short) Math.max(0, source.getMatk() - chr.getPassiveMatk()));
-            source.setWdef((short) Math.max(0, source.getWdef() - chr.getPassiveWdef()));
-            source.setMdef((short) Math.max(0, source.getMdef() - chr.getPassiveMdef()));
-            source.setAcc((short) Math.max(0, source.getAcc() - chr.getPassiveAcc()));
-            source.setAvoid((short) Math.max(0, source.getAvoid() - chr.getPassiveEva()));
-            source.setSpeed((short) Math.max(0, source.getSpeed() - chr.getPassiveSpeed()));
-            source.setJump((short) Math.max(0, source.getJump() - chr.getPassiveJump()));
+            // Stats are no longer physically attached to the item in memory,
+            // so we don't need to subtract them here anymore.
         }
         // ========================================================================
         // [END] Remove Passive Stats from Medal

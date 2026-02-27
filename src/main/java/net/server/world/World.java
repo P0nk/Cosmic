@@ -120,10 +120,10 @@ public class World {
 
     private final int id;
     private int flag;
-    private int exprate;
-    private int droprate;
-    private int bossdroprate;
-    private int mesorate;
+    private double exprate;
+    private double droprate;
+    private double bossdroprate;
+    private double mesorate;
     private int questrate;
     private int travelrate;
     private int fishingrate;
@@ -216,10 +216,10 @@ public class World {
             int world,
             int flag,
             String eventmsg,
-            int exprate,
-            int droprate,
-            int bossdroprate,
-            int mesorate,
+            double exprate,
+            double droprate,
+            double bossdroprate,
+            double mesorate,
             int questrate,
             int travelrate,
             int fishingrate,
@@ -409,7 +409,7 @@ public class World {
         return eventmsg;
     }
 
-    public int getExpRate() {
+    public double getExpRate() {
         return exprate;
     }
 
@@ -429,31 +429,31 @@ public class World {
         return drop_rate_gain;
     }
 
-    public void setExpRate(int exp) {
+    public void setExpRate(double exp) {
         this.exprate = exp;
     }
 
-    public int getDropRate() {
+    public double getDropRate() {
         return droprate;
     }
 
-    public void setDropRate(int drop) {
+    public void setDropRate(double drop) {
         this.droprate = drop;
     }
 
-    public int getBossDropRate() { // boss rate concept thanks to Lapeiro
+    public double getBossDropRate() { // boss rate concept thanks to Lapeiro
         return bossdroprate;
     }
 
-    public void setBossDropRate(int bossdrop) {
+    public void setBossDropRate(double bossdrop) {
         bossdroprate = bossdrop;
     }
 
-    public int getMesoRate() {
+    public double getMesoRate() {
         return mesorate;
     }
 
-    public void setMesoRate(int meso) {
+    public void setMesoRate(double meso) {
         this.mesorate = meso;
     }
 

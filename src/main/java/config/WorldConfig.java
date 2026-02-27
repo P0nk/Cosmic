@@ -6,10 +6,10 @@ public class WorldConfig {
     public String event_message = "";
     public String why_am_i_recommended = "";
     public int channels = 1;
-    public int exp_rate = 1;
-    public int meso_rate = 1;
-    public int drop_rate = 1;
-    public int boss_drop_rate = 1;
+    public double exp_rate = 1.0;
+    public double meso_rate = 1.0;
+    public double drop_rate = 1.0;
+    public double boss_drop_rate = 1.0;
     public int quest_rate = 1;
     public int travel_rate = 1;
     public int fishing_rate = 1;

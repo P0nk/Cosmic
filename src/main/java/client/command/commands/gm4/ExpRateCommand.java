@@ -41,8 +41,9 @@ public class ExpRateCommand extends Command {
             return;
         }
 
-        int exprate = Math.max(Integer.parseInt(params[0]), 1);
+        double exprate = Math.max(Double.parseDouble(params[0]), 1.0);
         c.getWorldServer().setExpRate(exprate);
-        c.getWorldServer().broadcastPacket(PacketCreator.serverNotice(6, "[Rate] Exp Rate has been changed to " + exprate + "x."));
+        c.getWorldServer().broadcastPacket(
+                PacketCreator.serverNotice(6, "[Rate] Exp Rate has been changed to " + exprate + "x."));
     }
 }

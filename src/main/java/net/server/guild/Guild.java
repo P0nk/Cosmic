@@ -75,7 +75,7 @@ public class Guild {
 
         try (Connection con = DatabaseConnection.getConnection()) {
             try (PreparedStatement ps = con.prepareStatement("SELECT * FROM guilds WHERE guildid = " + guildid);
-                 ResultSet rs = ps.executeQuery()) {
+                    ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     id = -1;
                     return;
@@ -97,7 +97,8 @@ public class Guild {
                 allianceId = rs.getInt("allianceId");
             }
 
-            try (PreparedStatement ps = con.prepareStatement("SELECT id, name, level, job, guildrank, allianceRank FROM characters WHERE guildid = ? ORDER BY guildrank ASC, name ASC")) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT id, name, level, job, guildrank, allianceRank FROM characters WHERE guildid = ? ORDER BY guildrank ASC, name ASC")) {
                 ps.setInt(1, guildid);
 
                 try (ResultSet rs = ps.executeQuery()) {
@@ -106,7 +107,9 @@ public class Guild {
                     }
 
                     do {
-                        members.add(new GuildCharacter(null, rs.getInt("id"), rs.getInt("level"), rs.getString("name"), (byte) -1, world, rs.getInt("job"), rs.getInt("guildrank"), guildid, false, rs.getInt("allianceRank")));
+                        members.add(new GuildCharacter(null, rs.getInt("id"), rs.getInt("level"), rs.getString("name"),
+                                (byte) -1, world, rs.getInt("job"), rs.getInt("guildrank"), guildid, false,
+                                rs.getInt("allianceRank")));
                     } while (rs.next());
                 }
             }
@@ -147,7 +150,7 @@ public class Guild {
                 if (chl != null) {
                     chl.add(mgc.getId());
                 }
-                //Unable to connect to Channel... error was here
+                // Unable to connect to Channel... error was here
             }
         } finally {
             membersLock.unlock();
@@ -181,7 +184,8 @@ public class Guild {
                     ps.executeUpdate();
                 }
             } else {
-                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET guildid = 0, guildrank = 5 WHERE guildid = ?")) {
+                try (PreparedStatement ps = con
+                        .prepareStatement("UPDATE characters SET guildid = 0, guildrank = 5 WHERE guildid = ?")) {
                     ps.setInt(1, this.id);
                     ps.executeUpdate();
                 }
@@ -339,11 +343,14 @@ public class Guild {
                     for (Integer b : Server.getInstance().getOpenChannels(world)) {
                         if (notifications.get(b).size() > 0) {
                             if (bcop == BCOp.DISBAND) {
-                                Server.getInstance().getWorld(world).setGuildAndRank(notifications.get(b), 0, 5, exceptionId);
+                                Server.getInstance().getWorld(world).setGuildAndRank(notifications.get(b), 0, 5,
+                                        exceptionId);
                             } else if (bcop == BCOp.EMBLEMCHANGE) {
-                                Server.getInstance().getWorld(world).changeEmblem(this.id, notifications.get(b), new GuildSummary(this));
+                                Server.getInstance().getWorld(world).changeEmblem(this.id, notifications.get(b),
+                                        new GuildSummary(this));
                             } else {
-                                Server.getInstance().getWorld(world).sendPacket(notifications.get(b), packet, exceptionId);
+                                Server.getInstance().getWorld(world).sendPacket(notifications.get(b), packet,
+                                        exceptionId);
                             }
                         }
                     }
@@ -391,6 +398,32 @@ public class Guild {
 
     public void broadcastMessage(Packet packet) {
         Server.getInstance().guildMessage(id, packet);
+    }
+
+    /**
+     * Broadcasts a packet to all online guild members, skipping the sender and any
+     * member
+     * who has suppressGuildLvSpam enabled (e.g. via the @guildlevelspam command).
+     */
+    public void broadcastFiltered(Packet packet, int exceptId) {
+        membersLock.lock();
+        try {
+            for (GuildCharacter mgc : members) {
+                if (mgc.getId() == exceptId)
+                    continue;
+                for (net.server.channel.Channel cs : Server.getInstance().getChannelsFromWorld(world)) {
+                    Character chr = cs.getPlayerStorage().getCharacterById(mgc.getId());
+                    if (chr != null) {
+                        if (!chr.isSuppressGuildLvSpam()) {
+                            chr.sendPacket(packet);
+                        }
+                        break;
+                    }
+                }
+            }
+        } finally {
+            membersLock.unlock();
+        }
     }
 
     public final void setOnline(int cid, boolean online, int channel) {
@@ -441,7 +474,8 @@ public class Guild {
                 }
             }
 
-            try (PreparedStatement ps = con.prepareStatement("INSERT INTO guilds (`leader`, `name`, `signature`) VALUES (?, ?, ?)")) {
+            try (PreparedStatement ps = con
+                    .prepareStatement("INSERT INTO guilds (`leader`, `name`, `signature`) VALUES (?, ?, ?)")) {
                 ps.setInt(1, leaderId);
                 ps.setString(2, name);
                 ps.setInt(3, (int) System.currentTimeMillis());
@@ -519,8 +553,10 @@ public class Guild {
                         if (mgc.isOnline()) {
                             Server.getInstance().getWorld(mgc.getWorld()).setGuildAndRank(cid, 0, 5);
                         } else {
-                            noteService.sendNormal("You have been expelled from the guild.", initiator.getName(), mgc.getName());
-                            Server.getInstance().getWorld(mgc.getWorld()).setOfflineGuildStatus((short) 0, (byte) 5, cid);
+                            noteService.sendNormal("You have been expelled from the guild.", initiator.getName(),
+                                    mgc.getName());
+                            Server.getInstance().getWorld(mgc.getWorld()).setOfflineGuildStatus((short) 0, (byte) 5,
+                                    cid);
                         }
                     } catch (Exception re) {
                         re.printStackTrace();
@@ -555,7 +591,8 @@ public class Guild {
                 Server.getInstance().getWorld(mgc.getWorld()).setGuildAndRank(mgc.getId(), this.id, newRank);
                 mgc.setGuildRank(newRank);
             } else {
-                Server.getInstance().getWorld(mgc.getWorld()).setOfflineGuildStatus((short) this.id, (byte) newRank, mgc.getId());
+                Server.getInstance().getWorld(mgc.getWorld()).setOfflineGuildStatus((short) this.id, (byte) newRank,
+                        mgc.getId());
                 mgc.setOfflineGuildRank(newRank);
             }
         } catch (Exception re) {
@@ -750,7 +787,8 @@ public class Guild {
 
         MatchCheckerCoordinator mmce = guildLeader.getWorldServer().getMatchCheckerCoordinator();
         for (Character chr : guildLeader.getMap().getAllPlayers()) {
-            if (chr.getParty() == null && chr.getGuild() == null && mmce.getMatchConfirmationLeaderid(chr.getId()) == -1) {
+            if (chr.getParty() == null && chr.getGuild() == null
+                    && mmce.getMatchConfirmationLeaderid(chr.getId()) == -1) {
                 guildMembers.add(chr);
             }
         }
@@ -760,8 +798,10 @@ public class Guild {
 
     public static void displayGuildRanks(Client c, int npcid) {
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT `name`, `GP`, `logoBG`, `logoBGColor`, `logo`, `logoColor` FROM guilds ORDER BY `GP` DESC LIMIT 50", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT `name`, `GP`, `logoBG`, `logoBGColor`, `logo`, `logoColor` FROM guilds ORDER BY `GP` DESC LIMIT 50",
+                        ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                ResultSet rs = ps.executeQuery()) {
             c.sendPacket(GuildPackets.showGuildRanks(npcid, rs));
         } catch (SQLException e) {
             log.error("Failed to display guild ranks.", e);
@@ -775,7 +815,7 @@ public class Guild {
     public void setAllianceId(int aid) {
         this.allianceId = aid;
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("UPDATE guilds SET allianceId = ? WHERE guildid = ?")) {
+                PreparedStatement ps = con.prepareStatement("UPDATE guilds SET allianceId = ? WHERE guildid = ?")) {
             ps.setInt(1, aid);
             ps.setInt(2, id);
             ps.executeUpdate();
@@ -798,7 +838,8 @@ public class Guild {
             }
 
             try (Connection con = DatabaseConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement("UPDATE characters SET allianceRank = ? WHERE guildid = ?")) {
+                    PreparedStatement ps = con
+                            .prepareStatement("UPDATE characters SET allianceRank = ? WHERE guildid = ?")) {
                 ps.setInt(1, 5);
                 ps.setInt(2, id);
                 ps.executeUpdate();
@@ -809,7 +850,8 @@ public class Guild {
     }
 
     public static int getIncreaseGuildCost(int size) {
-        int cost = YamlConfig.config.server.EXPAND_GUILD_BASE_COST + Math.max(0, (size - 15) / 5) * YamlConfig.config.server.EXPAND_GUILD_TIER_COST;
+        int cost = YamlConfig.config.server.EXPAND_GUILD_BASE_COST
+                + Math.max(0, (size - 15) / 5) * YamlConfig.config.server.EXPAND_GUILD_TIER_COST;
 
         if (size > 30) {
             return Math.min(YamlConfig.config.server.EXPAND_GUILD_MAX_COST, Math.max(cost, 5000000));

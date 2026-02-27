@@ -94,19 +94,24 @@ public class MatchCheckerGuildCreation implements MatchCheckerListenerRecipe {
                     return;
                 }
                 if (leader.getMapId() != MapId.GUILD_HQ) {
-                    leader.dropMessage(1, "You cannot establish the creation of a new Guild outside of the Guild Headquarters.");
+                    leader.dropMessage(1,
+                            "You cannot establish the creation of a new Guild outside of the Guild Headquarters.");
                     broadcastGuildCreationDismiss(matchPlayers);
                     return;
                 }
                 for (Character chr : matchPlayers) {
                     if (leader.getMap().getCharacterById(chr.getId()) == null) {
-                        leader.dropMessage(1, "You cannot establish the creation of a new Guild if one of the members is not present here.");
+                        leader.dropMessage(1,
+                                "You cannot establish the creation of a new Guild if one of the members is not present here.");
                         broadcastGuildCreationDismiss(matchPlayers);
                         return;
                     }
                 }
                 if (leader.getMeso() < YamlConfig.config.server.CREATE_GUILD_COST) {
-                    leader.dropMessage(1, "You do not have " + GameConstants.numberWithCommas(YamlConfig.config.server.CREATE_GUILD_COST) + " mesos to create a Guild.");
+                    leader.dropMessage(1,
+                            "You do not have "
+                                    + GameConstants.numberWithCommas(YamlConfig.config.server.CREATE_GUILD_COST)
+                                    + " mesos to create a Guild.");
                     broadcastGuildCreationDismiss(matchPlayers);
                     return;
                 }
@@ -120,11 +125,14 @@ public class MatchCheckerGuildCreation implements MatchCheckerListenerRecipe {
                 leader.gainMeso(-YamlConfig.config.server.CREATE_GUILD_COST, true, false, true);
 
                 leader.getMGC().setGuildId(gid);
-                Guild guild = Server.getInstance().getGuild(leader.getGuildId(), leader.getWorld(), leader);  // initialize guild structure
+                Guild guild = Server.getInstance().getGuild(leader.getGuildId(), leader.getWorld(), leader); // initialize
+                                                                                                             // guild
+                                                                                                             // structure
                 Server.getInstance().changeRank(gid, leader.getId(), 1);
 
                 leader.sendPacket(GuildPackets.showGuildInfo(leader));
                 leader.dropMessage(1, "You have successfully created a Guild.");
+                leader.saveGuildStatus(); // Persist rank 1 immediately
 
                 for (Character chr : matchPlayers) {
                     boolean cofounder = chr.getPartyId() == partyid;

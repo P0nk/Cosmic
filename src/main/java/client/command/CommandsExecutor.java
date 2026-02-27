@@ -226,6 +226,8 @@ public class CommandsExecutor {
         addCommand("inactiveguildmembers", InactiveGuildMembersCommand.class);
         addCommand("bosshp", BossHpCommand.class);
         addCommand("mobhp", MobHpCommand.class);
+        addCommand("slow", SlowCommand.class);
+        addCommand("guildlevelspam", GuildLevelSpamCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }

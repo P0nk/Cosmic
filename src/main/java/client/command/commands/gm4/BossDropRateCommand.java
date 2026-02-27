@@ -40,8 +40,9 @@ public class BossDropRateCommand extends Command {
             return;
         }
 
-        int bossdroprate = Math.max(Integer.parseInt(params[0]), 1);
+        double bossdroprate = Math.max(Double.parseDouble(params[0]), 1.0);
         c.getWorldServer().setBossDropRate(bossdroprate);
-        c.getWorldServer().broadcastPacket(PacketCreator.serverNotice(6, "[Rate] Boss Drop Rate has been changed to " + bossdroprate + "x."));
+        c.getWorldServer().broadcastPacket(
+                PacketCreator.serverNotice(6, "[Rate] Boss Drop Rate has been changed to " + bossdroprate + "x."));
     }
 }

@@ -429,10 +429,10 @@ public class Server {
 
         log.info("Starting world {}", i);
 
-        int exprate = YamlConfig.config.worlds.get(i).exp_rate;
-        int mesorate = YamlConfig.config.worlds.get(i).meso_rate;
-        int droprate = YamlConfig.config.worlds.get(i).drop_rate;
-        int bossdroprate = YamlConfig.config.worlds.get(i).boss_drop_rate;
+        double exprate = YamlConfig.config.worlds.get(i).exp_rate;
+        double mesorate = YamlConfig.config.worlds.get(i).meso_rate;
+        double droprate = YamlConfig.config.worlds.get(i).drop_rate;
+        double bossdroprate = YamlConfig.config.worlds.get(i).boss_drop_rate;
         int questrate = YamlConfig.config.worlds.get(i).quest_rate;
         int travelrate = YamlConfig.config.worlds.get(i).travel_rate;
         int fishingrate = YamlConfig.config.worlds.get(i).fishing_rate;
