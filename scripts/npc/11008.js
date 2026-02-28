@@ -27,7 +27,6 @@ var nx = -1;
 // Variable to track max amount
 var balance = -1;
 
-
 var qm = Java.type("server.questboard.QuestBoardManager");
 var ItemInfoProvider = Java.type("server.ItemInformationProvider").getInstance();
 
@@ -44,10 +43,18 @@ function action(mode, type, selection) {
     status++;
 
     if (status === 0) {
-        cm.sendSimple("#eMerogie Bounty Board#n\r\nWhat would you like to do?\r\n" +
-            "#g#L0#View Available Bounties#l\r\n" +
-            "#r#L1#Create New Bounty (10M) #l\r\n" +
-            "#b#L2#Manage My Bounties#l");
+        var menu = "#eMerogie Bounty Board#n\r\nWhat would you like to do?\r\n";
+        menu += "#g#L0#View Available Bounties#l\r\n";
+
+        // Disable quest creation in Bera (World 1)
+        if (cm.getPlayer().getWorld() === 1) {
+            menu += "#d#L1#Create New Bounty (Disabled in Bera)#l\r\n";
+        } else {
+            menu += "#r#L1#Create New Bounty (10M)#l\r\n";
+        }
+
+        menu += "#b#L2#Manage My Bounties#l";
+        cm.sendSimple(menu);
     } // Menu
     else if (status === 1) {
         // re-routes selection
@@ -55,6 +62,13 @@ function action(mode, type, selection) {
             viewAvailableQuests();
             status = 10;
         } else if (selection == 1) {
+            // Backend security check to prevent packet spoofing in Bera
+            if (cm.getPlayer().getWorld() === 1) {
+                cm.sendOk("Quest creation is disabled on Bera.");
+                cm.dispose();
+                return;
+            }
+
             // ask what itemid to set for quest requirement
             beginQuestCreation();
             status = 20;
@@ -80,44 +94,31 @@ function action(mode, type, selection) {
     } // -------------------------------------------- Create New Bounty
     else if (status == 22) {
         quest_item = selection;
-        return itemQuantity()
+        return itemQuantity();
     } // ask how many of the item to submit Output -> Qty_requirement
     else if (status == 23) {
-        console.log(quest_item)
-        console.log(cm.isEquipment(quest_item))
         if (cm.isEquipment(quest_item)) {
-            console.log('test')
-            quest_qty = 1
+            quest_qty = 1;
         }
         else if (quest_qty == -1) {
-            quest_qty = Number(cm.getText())
+            quest_qty = Number(cm.getText());
         }
-        return rewardType()
+        return rewardType();
     } // ask for reward type (inventories, meso, nx)
     else if (status == 24) {
-        rewardtype = selection
-        return listInventory(rewardtype)
+        rewardtype = selection;
+        return listInventory(rewardtype);
 
     } // input reward details (search inventory and list if item)
     else if (status == 25) {
-
-        return rewardsQuantity(rewardtype, selection)
+        return rewardsQuantity(rewardtype, selection);
     } // stores the reward into rewardItem list and prompts qty
     else if (status == 26) {
         return storeQuantity(rewardtype);
 
     } // stores qty and ask if more reward.
     else if (status == 27) {
-        return secondReward(selection)
-
-        //    } // handles second reward/ posting of quest to sql
-        //    else if (status == 31) { // -------------------------------------------- Manage My Bounties
-        //        // claim all button at top
-        //        // if not, click into quest for option to withdraw if #r or if #b then option to claim.
-        //    }
-        //    else if (status == 32) {
-        //        // Handle dialogue to say item is claimed and all claimed
-
+        return secondReward(selection);
     }
     else if (status === 31) {
         // Player picked one of their quests
@@ -127,28 +128,10 @@ function action(mode, type, selection) {
         // Player chose to claim, withdraw, or go back
         return handleQuestAction(selection);
     }
-
 }
-
-//function viewAvailableQuests() {
-//    questList = qm.getOpenQuests();
-// //   console.log(questList)
-//    if (questList.length === 0) {
-//        cm.sendOk("There are no active bounties available right now.");
-//        cm.dispose();
-//        return;
-//    }
-//    var msg = "#eAvailable Bounties:#n\r\n";
-//    for (var i = 0; i < questList.length; i++) {
-//        var q = questList[i];
-//        msg += "#L" + i + "#Submit #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k for rewards\r\n";
-//    }
-//    cm.sendSimple(msg);
-//}
 
 function viewAvailableQuests() {
     questList = qm.getOpenQuests();
-    //               console.log(questList);
 
     if (questList.length === 0) {
         cm.sendOk("There are no active bounties available right now.");
@@ -159,30 +142,17 @@ function viewAvailableQuests() {
     var msg = "#eAvailable Bounties:#n\r\n";
     for (var i = 0; i < questList.length; i++) {
         var q = questList[i];
-        //           console.log(q);
-        //              var map = playerQuests.get(i);
-        //              var questId = map.get("quest_id");
-        //              var status = map.get("status");
-        //              var isClaimed = map.get("is_req_claimed");
-        //              var reqItemId = map.get("requirement_itemid");
-        //              var reqQty = map.get("requirement_quantity");
-
-
         var creatorName = q.get("creator_name");
         var qid = q.get("quest_id");
 
-        //       console.log(creatorName);
         msg += "#L" + i + "# Q_ID";
         msg += qid;
         msg += ": Help ";
         msg += "#e" + creatorName + "#n ";
         msg += "Collect #r" + cm.numberWithCommas(q.requirement_quantity) + "x #i" + q.requirement_itemid + "##k\r\n";
     }
-    //     console.log(msg);
     cm.sendSimple(msg);
 }
-
-
 
 function actionQuestDetail(index) {
     quest = questList[index];
@@ -220,7 +190,6 @@ function submitQuest(selection) {
 // ----------------- Creating new Bounties -----------------
 function beginQuestCreation() {
     cm.sendGetText("What item will you add to your collection quest?");
-
 }
 
 function listSearchName() {
@@ -233,7 +202,6 @@ function listSearchName() {
     for each(var itemPair in allItems) {
         var id = itemPair.getLeft();
         var name = itemPair.getRight();
-
 
         if (name && name.toLowerCase().includes(query) && Number(id) >= 2000000 && Number(id) != 0 && Number(id) < 5000000 && !quest_item_blocked.includes(Number(id))) {
             searchResults.push(itemPair);
@@ -260,24 +228,22 @@ function listSearchName() {
     cm.sendSimple(text);
 }
 
-//} // Status 21
-
 function itemQuantity() {
     if (cm.isEquipment(quest_item)) {
-        cm.sendGetNumber("You have selected an Equipment, the maximum amount is 1.", 1, 1, 1)
+        cm.sendGetNumber("You have selected an Equipment, the maximum amount is 1.", 1, 1, 1);
     } else {
-        cm.sendGetText("How many do you need?");  // Status 22
+        cm.sendGetText("How many do you need?");
     }
 }
 
 function rewardType() {
     if (!cm.isEquipment(quest_item)) {
         if (Number(cm.getText()) < 1) {
-            cm.sendOk("Hey! Are you trying to create a quest or test the system! As punishment, you have to repost the quest!")
+            cm.sendOk("Hey! Are you trying to create a quest or test the system! As punishment, you have to repost the quest!");
             return cm.dispose();
         }
     }
-    msg = "You are creating a quest with these requirements:\r\n" + "#i" + quest_item + "# x" + quest_qty + "\r\n"
+    msg = "You are creating a quest with these requirements:\r\n" + "#i" + quest_item + "# x" + quest_qty + "\r\n";
     if (item2Id == -1) {
         cm.sendSimple(msg + "Please select the rewards you wish to grant upon quest completion!\r\n" +
             "#b#L0#Use#l\r\n" +
@@ -285,16 +251,16 @@ function rewardType() {
             "#b#L2#Etc#l\r\n" +
             "#b#L3#Cash#l\r\n" +
             "#b#L4#Mesos#l\r\n" +
-            "#b#L5#Nx#l\r\n")
+            "#b#L5#Nx#l\r\n");
     } else {
         cm.sendSimple(msg + "Please select the rewards you wish to grant upon quest completion!\r\n" +
             "#b#L0#Mesos#l\r\n" +
-            "#b#L1#Nx#l\r\n")
+            "#b#L1#Nx#l\r\n");
     }
-} // Status 23
+}
 
 function listInventory(rewardtype) {
-    rewardtype = (item2Id == -1) ? rewardtype : rewardtype + 4
+    rewardtype = (item2Id == -1) ? rewardtype : rewardtype + 4;
     if (rewardtype <= 3) { // Items
         var inv = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
         var limit = inv.getSlotLimit();
@@ -305,10 +271,6 @@ function listInventory(rewardtype) {
 
             var itemId = item.getItemId();
 
-            // NOTE:
-            // 207xxxx (Throwing Stars) & 233xxxx (Bullets) are stack-based weapons.
-            // Allowing them as quest rewards causes duplication on withdrawal.
-            // DO NOT REMOVE THIS FILTER.
             // 🚫 Block throwing stars & bullets
             var prefix = Math.floor(itemId / 1000);
             if (prefix === 207 || prefix === 233) {
@@ -318,57 +280,48 @@ function listInventory(rewardtype) {
             // Prevent selecting same reward twice
             if (itemId === item1Id) continue;
 
-            var name = Packages.server.ItemInformationProvider
-                .getInstance().getName(item.getItemId());
-            lines.push(
-                "#L" + slot + "#"
-                + "#v" + item.getItemId() + "# "
-                + name
-                + "#l"
-            );
+            var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
+            lines.push("#L" + slot + "##v" + item.getItemId() + "# " + name + "#l");
         }
-        cm.sendSimple(
-            "Select the item you wish to give as a reward.\r\n"
-            + lines.join("\r\n")
-        );
+        cm.sendSimple("Select the item you wish to give as a reward.\r\n" + lines.join("\r\n"));
     } else if (rewardtype == 4) { // Mesos
         balance = cm.getMeso();
         cm.sendGetText("How much Mesos do you want to give? (Max " + cm.numberWithCommas(balance) + ")");
         status = 25;
     } else if (rewardtype == 5) { // NX
-        balance = cm.getCashShop().getCash(1)
+        balance = cm.getCashShop().getCash(1);
         cm.sendGetText("How much NX do you want to give? (Max " + cm.numberWithCommas(balance) + ")");
         status = 25;
     }
-} // Status 24
+}
 
 function rewardsQuantity(rewardtype, slot) {
     var inv = cm.getInventory(rewardtype + 2); // 2-USE; 3-SETUP; 4-ETC; 5-CASH
     var item = inv.getItem(slot);
-    var name = Packages.server.ItemInformationProvider
-        .getInstance().getName(item.getItemId());
-    balance = cm.getPlayer().getItemQuantity(item.getItemId(), false)
+    var name = Packages.server.ItemInformationProvider.getInstance().getName(item.getItemId());
+    balance = cm.getPlayer().getItemQuantity(item.getItemId(), false);
+
     // Store the reward to the variables
     if (item1Id == -1) {
-        item1Id = item.getItemId()
+        item1Id = item.getItemId();
     } else {
-        item2Id = item.getItemId()
+        item2Id = item.getItemId();
     }
-    cm.sendGetText("How much of #i" + item.getItemId() + "# do you want to give as a reward? (Max " + balance + ")")
-} // status 25
+    cm.sendGetText("How much of #i" + item.getItemId() + "# do you want to give as a reward? (Max " + balance + ")");
+}
 
 function storeQuantity() {
-    rewardtype = (item2Id == -1 || item2Qty == -1) ? rewardtype : rewardtype + 4
-    storedItem = (item2Id == -1) ? item1Id : item2Id
+    rewardtype = (item2Id == -1 || item2Qty == -1) ? rewardtype : rewardtype + 4;
+    storedItem = (item2Id == -1) ? item1Id : item2Id;
     if (balance < Number(cm.getText()) || Number(cm.getText()) < 1) {
-        cm.sendOk("Hey! You entered more than you have! As a punishment for being greedy, you have to repost the quest!")
-        return cm.dispose()
+        cm.sendOk("Hey! You entered more than you have! As a punishment for being greedy, you have to repost the quest!");
+        return cm.dispose();
     } else if (rewardtype < 4 && Number(cm.getText()) > 32000) {
-        cm.sendOk("Hey! You can't enter more than 32,000!")
-        return cm.dispose()
+        cm.sendOk("Hey! You can't enter more than 32,000!");
+        return cm.dispose();
     }
     if (rewardtype < 4) {
-        msg = "You have registered x" + cm.getText() + " #i" + storedItem + "# as a reward."
+        msg = "You have registered x" + cm.getText() + " #i" + storedItem + "# as a reward.";
         if (item1Qty == -1) {
             item1Qty = Number(cm.getText());
         } else {
@@ -377,18 +330,18 @@ function storeQuantity() {
     }
     else if (rewardtype === 4) {
         meso = Number(cm.getText());
-        msg = "You have registered " + cm.numberWithCommas(meso) + " mesos as a reward."
+        msg = "You have registered " + cm.numberWithCommas(meso) + " mesos as a reward.";
     } else if (rewardtype === 5) {
         nx = Number(cm.getText());
-        msg = "You have registered " + cm.numberWithCommas(nx) + " nx as a reward."
+        msg = "You have registered " + cm.numberWithCommas(nx) + " nx as a reward.";
     }
 
     cm.sendSimple("You have added these rewards to the quest\r\n" +
         checkExistingRewards() +
         "\r\nDo you wish to add more rewards?\r\n" +
         "#b#L0#Yes#l\r\n" +
-        "#b#L1#No, proceed to post quest#l\r\n")
-} // status 26
+        "#b#L1#No, proceed to post quest#l\r\n");
+}
 
 function secondReward(selection) {
     if (selection == 0) {
@@ -397,28 +350,20 @@ function secondReward(selection) {
     } else if (selection == 1) {
         balance = cm.getMeso();
         if (balance < meso + 10000000) {
-            cm.sendOk("Insufficent Funds to Pay Questboard Tax!")
-            return cm.dispose()
+            cm.sendOk("Insufficent Funds to Pay Questboard Tax!");
+            return cm.dispose();
         }
         // Post quest
-        qm.createQuest(cm.getPlayer(), quest_item, quest_qty, meso, nx, item1Id, item1Qty, item2Id, item2Qty)
-        cm.sendOk("Quest has been posted!")
-        removeRewards()
-        return cm.dispose()
+        qm.createQuest(cm.getPlayer(), quest_item, quest_qty, meso, nx, item1Id, item1Qty, item2Id, item2Qty);
+        cm.sendOk("Quest has been posted!");
+        removeRewards();
+        return cm.dispose();
     }
-} // status 27
-
-// ----------------- Manage Bounties -----------------
-//function manageCreatedQuests() {
-//    cm.sendOk("[WIP] Management of created quests will be available here.");
-//    console.log(qm.getPlayerQuests())
-//    cm.dispose();
-//}
-
+}
 
 // ----------------- Debug check -----------------
 function checkExistingRewards() {
-    rewards = []
+    rewards = [];
     if (item1Id != -1) {
         rewards.push("#i" + item1Id + "# x" + item1Qty);
     }
@@ -426,23 +371,23 @@ function checkExistingRewards() {
         rewards.push("#i" + item2Id + "# x" + item2Qty);
     }
     if (meso != -1) {
-        rewards.push(cm.numberWithCommas(meso) + " mesos")
+        rewards.push(cm.numberWithCommas(meso) + " mesos");
     }
     if (nx != -1) {
-        rewards.push(cm.numberWithCommas(nx) + " nx")
+        rewards.push(cm.numberWithCommas(nx) + " nx");
     }
-    return rewards.join("\r\n")
+    return rewards.join("\r\n");
 }
 
 function removeRewards() {
     if (item1Id != -1) {
-        cm.gainItem(item1Id, -item1Qty)
+        cm.gainItem(item1Id, -item1Qty);
     }
     if (item2Id != -1) {
-        cm.gainItem(item2Id, -item2Qty)
+        cm.gainItem(item2Id, -item2Qty);
     }
     if (meso != -1) {
-        cm.gainMeso(-meso)
+        cm.gainMeso(-meso);
     }
     if (nx != -1) {
         cm.gainCash(-nx);
@@ -457,9 +402,7 @@ var ItemInfoProvider = Java.type("server.ItemInformationProvider").getInstance()
 
 function manageCreatedQuests() {
     playerQuests = qm.getPlayerQuests(cm.getPlayer());
-    console.log(playerQuests);
     var total = playerQuests.size();
-    console.log("[ManageQuests] Retrieved " + total + " quests for player.");
 
     if (total === 0) {
         cm.sendOk("You haven't posted any bounty quests yet.");
@@ -478,7 +421,6 @@ function manageCreatedQuests() {
         var isClaimed = map.get("is_req_claimed");
         var reqItemId = map.get("requirement_itemid");
         var reqQty = map.get("requirement_quantity");
-
 
         if (status === "WITHDRAWN" || isClaimed != 0) {
             skipped++;
@@ -503,19 +445,15 @@ function manageCreatedQuests() {
         }
 
         msg += "#l\r\n";
-        // Log debug info
-        console.log("[ManageQuests] #" + questId + ": " + itemName + " x" + reqQty + " [" + status + "]");
     }
-    //console.log("[ManageQuests] Skipped " + skipped + " quests.");
+
     if (canClaim || canWithdraw) {
         cm.sendSimple(msg);
     } else {
-        cm.sendOk("You do not have any quest posted or to claim.")
-        return cm.dispose()
+        cm.sendOk("You do not have any quest posted or to claim.");
+        return cm.dispose();
     }
-
 }
-
 
 // Handles selection from player's posted quests
 function handlePlayerQuestSelection(selection) {
@@ -552,6 +490,6 @@ function handleQuestAction(selection) {
     } else if (selection === 2) {
         // Go back
         status = 30; // reload menu
-        action(1, 0, 0)
+        action(1, 0, 0);
     }
 }
