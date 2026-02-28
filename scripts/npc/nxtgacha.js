@@ -44,66 +44,66 @@ var rarityRates = {
 
 
 //// FEBUARY NX GACHA LIST ////
-var lootTable = {
-    "COMMON": [
-        [1052948, "COMMON"], // Evening Orchid
-        [1052594, "COMMON"], // Green Dinosaur Overall
-        [1004540, "COMMON"], // Evening Orchid Hat
-        [1003802, "COMMON"], // Green Dinosaur Hat
-        [1082511, "COMMON"], // Green Dinosaur Gloves
-        [1072791, "COMMON"] // Green Dinosaur Shoes
-    ],
-    "RARE": [
-        [1050381, "RARE"], // Kinesis Uniform
-        [1051544, "RARE"], // Soft Blushed
-        [1051539, "RARE"], // Crimson Fate Topcoat
-        [1053352, "RARE"], // Veritas Attire
-        [1053351, "RARE"], // Cutie Pie Coat
-        [1004003, "RARE"], // Pink Nero Hoodie
-        [1004004, "RARE"], // Grey Nero Hoodie
-        [1004167, "RARE"], // Dinosaur Snapback
-        [1004589, "RARE"], // Jay's Sterilized Kitty Eye Patch
-        [1102801, "RARE"], // Silver Wolf Coat
-        [1102820, "RARE"]  // Hazy Night Tassel
-    ],
-    "ULTRA_RARE": [
-        [1702588, "ULTRA_RARE"], // black cat plush
-        [1702718, "ULTRA_RARE"], // shadow warrior sword
-        [1702557, "ULTRA_RARE"]  // duster
-    ]
-};
-
-//// SEPTEMBER NX GACHA LIST ////
 //var lootTable = {
 //    "COMMON": [
-//        [1073476, "COMMON"], // Mad Mage Shoes
-//        [1005611, "COMMON"], // Mad Mage Hood
-//        [1053082, "COMMON"], // Oversized Beach Gown
-//        [1005263, "COMMON"], // Roar Snapback
-//        [1053301, "COMMON"], // Homeless Cat Outfit
-//        [1082750, "COMMON"], // Mad Mage Gloves
-//        [1103291, "COMMON"], // Mad Mage Cape
-//        [1053629, "COMMON"]  // Mad Mage Suit
+//        [1052948, "COMMON"], // Evening Orchid
+//        [1052594, "COMMON"], // Green Dinosaur Overall
+//        [1004540, "COMMON"], // Evening Orchid Hat
+//        [1003802, "COMMON"], // Green Dinosaur Hat
+//        [1082511, "COMMON"], // Green Dinosaur Gloves
+//        [1072791, "COMMON"] // Green Dinosaur Shoes
 //    ],
 //    "RARE": [
-//        [1005563, "RARE"], // Lily Bucket Hat
-//        [1005562, "RARE"], // Nero Bucket Hat
-//        [1053594, "RARE"], // Lily Print Overfit Outfit
-//        [1053593, "RARE"], // Nero Print Overfit Outfit
-//        [1053654, "RARE"], // My Beating Heart Outfit
-//        [1053640, "RARE"], // [BTS] Love Swan
-//        [1703033, "RARE"], // Mad Mage Staff
-//        [1005409, "RARE"], // Black Bucket Hat
-//        [1103160, "RARE"], // Plaid Pashmina (Pink)
-//        [1103161, "RARE"], // Plaid Pashmina (Purple)
-//
+//        [1050381, "RARE"], // Kinesis Uniform
+//        [1051544, "RARE"], // Soft Blushed
+//        [1051539, "RARE"], // Crimson Fate Topcoat
+//        [1053352, "RARE"], // Veritas Attire
+//        [1053351, "RARE"], // Cutie Pie Coat
+//        [1004003, "RARE"], // Pink Nero Hoodie
+//        [1004004, "RARE"], // Grey Nero Hoodie
+//        [1004167, "RARE"], // Dinosaur Snapback
+//        [1004589, "RARE"], // Jay's Sterilized Kitty Eye Patch
+//        [1102801, "RARE"], // Silver Wolf Coat
+//        [1102820, "RARE"]  // Hazy Night Tassel
 //    ],
 //    "ULTRA_RARE": [
-//        [1703534, "ULTRA_RARE"], // Savage Fang Sword
-//        [1703238, "ULTRA_RARE"], // Scar of Darkness
-//        [1702903, "ULTRA_RARE"]  // Sunny Songbird Weapon
+//        [1702588, "ULTRA_RARE"], // black cat plush
+//        [1702718, "ULTRA_RARE"], // shadow warrior sword
+//        [1702557, "ULTRA_RARE"]  // duster
 //    ]
 //};
+
+//// MARCH NX GACHA LIST ////
+var lootTable = {
+    "COMMON": [
+        [1073476, "COMMON"], // Mad Mage Shoes
+        [1005611, "COMMON"], // Mad Mage Hood
+        [1053082, "COMMON"], // Oversized Beach Gown
+        [1005263, "COMMON"], // Roar Snapback
+        [1053301, "COMMON"], // Homeless Cat Outfit
+        [1082750, "COMMON"], // Mad Mage Gloves
+        [1103291, "COMMON"], // Mad Mage Cape
+        [1053629, "COMMON"]  // Mad Mage Suit
+    ],
+    "RARE": [
+        [1005563, "RARE"], // Lily Bucket Hat
+        [1005562, "RARE"], // Nero Bucket Hat
+        [1053594, "RARE"], // Lily Print Overfit Outfit
+        [1053593, "RARE"], // Nero Print Overfit Outfit
+        [1053654, "RARE"], // My Beating Heart Outfit
+        [1053640, "RARE"], // [BTS] Love Swan
+        [1703033, "RARE"], // Mad Mage Staff
+        [1005409, "RARE"], // Black Bucket Hat
+        [1103160, "RARE"], // Plaid Pashmina (Pink)
+        [1103161, "RARE"], // Plaid Pashmina (Purple)
+
+    ],
+    "ULTRA_RARE": [
+        [1703534, "ULTRA_RARE"], // Savage Fang Sword
+        [1703238, "ULTRA_RARE"], // Scar of Darkness
+        [1702903, "ULTRA_RARE"]  // Sunny Songbird Weapon
+    ]
+};
 
 //// OCTOBER NX GACHA LIST ////
 //var lootTable = {
