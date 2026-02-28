@@ -33,7 +33,7 @@ var customItems = [
         name: "Maple Leaves", // Icon #i4001126# will be added automatically in code
         itemid: 4001126,
         qty: 5000,       // 1 Bundle = 1000
-        priceCents: 350, // 1 DC
+        priceCents: 100, // 1 DC
         category: "Special",
         desc: "Get 1000 Maple Leaves instantly."
     },
@@ -43,7 +43,7 @@ var customItems = [
         name: "Activate World Buff", // Icon #i2022179# will be added automatically in code
         itemid: 2022179, // Onyx Apple Icon
         qty: 1,
-        priceCents: 350, // 5 DC
+        priceCents: 100, // 5 DC
         category: "Special",
         desc: "Cast GM Buffs on everyone & announce name!"
     }
