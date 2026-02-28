@@ -74,6 +74,9 @@ var wrongExplanation = "";
 var wrongCorrectAnswer = 0;
 var consecutiveWrong = 0;  // track consecutive wrong answers this session
 
+// Persistence for the explanation page (last failed question operands)
+var prevOp1 = 0, prevOp2 = 0, prevOp3 = 0, prevType = 0;
+
 function getState(slot) {
     var rec = cm.getQuestRecord(QUEST_ID);
     if (rec == null) return 0;
@@ -110,7 +113,6 @@ function nextMilestone(count) {
     for (var i = 0; i < milestones.length; i++) {
         if (milestones[i] > count) return milestones[i];
     }
-    // beyond 200, next milestone at next multiple of 25
     return Math.ceil((count + 1) / 25) * 25;
 }
 
@@ -122,62 +124,61 @@ function isMilestone(count) {
 
 function getMilestoneExp(count) {
     if (MILESTONE_EXP[count] != null) return MILESTONE_EXP[count];
-    return 500000; // capped for 125+
+    return 500000;
 }
 
+/**
+ * Generates a new mathematical question based on the player's current Difficulty Grade.
+ */
 function generateQuestion(grade) {
     var r = Math.random();
+
     if (grade <= 3) {
-        // Simple addition
-        questionType = 0;
+        questionType = 0; // Addition
         op1 = Math.floor(Math.random() * 51);
         op2 = Math.floor(Math.random() * 51);
         answer = op1 + op2;
         questionText = op1 + " + " + op2;
     } else if (grade <= 5) {
-        // Addition or subtraction with larger numbers
         op1 = Math.floor(Math.random() * 201);
         op2 = Math.floor(Math.random() * (op1 + 1));
         if (r < 0.5) {
-            questionType = 0;
+            questionType = 0; // Addition
             answer = op1 + op2;
             questionText = op1 + " + " + op2;
         } else {
-            questionType = 1;
+            questionType = 1; // Subtraction
             answer = op1 - op2;
             questionText = op1 + " - " + op2;
         }
     } else if (grade <= 7) {
-        // Multiplication
-        questionType = 2;
+        questionType = 2; // Multiplication
         op1 = Math.floor(Math.random() * 11) + 2;
         op2 = Math.floor(Math.random() * 11) + 2;
         answer = op1 * op2;
-        questionText = op1 + " × " + op2;
+        questionText = op1 + " * " + op2; // Changed ASCII '*'
     } else if (grade <= 9) {
-        // Two-step: (A × B) + C
-        questionType = 3;
+        questionType = 3; // Mixed
         op1 = Math.floor(Math.random() * 9) + 2;
         op2 = Math.floor(Math.random() * 9) + 2;
         op3 = Math.floor(Math.random() * 51);
         answer = (op1 * op2) + op3;
-        questionText = "(" + op1 + " × " + op2 + ") + " + op3;
+        questionText = "(" + op1 + " * " + op2 + ") + " + op3;
     } else {
-        // Grade 10: mix everything
         var pick = Math.floor(Math.random() * 3);
         if (pick == 0) {
             questionType = 2;
             op1 = Math.floor(Math.random() * 11) + 2;
             op2 = Math.floor(Math.random() * 11) + 2;
             answer = op1 * op2;
-            questionText = op1 + " × " + op2;
+            questionText = op1 + " * " + op2;
         } else if (pick == 1) {
             questionType = 3;
             op1 = Math.floor(Math.random() * 9) + 2;
             op2 = Math.floor(Math.random() * 9) + 2;
             op3 = Math.floor(Math.random() * 51);
             answer = (op1 * op2) + op3;
-            questionText = "(" + op1 + " × " + op2 + ") + " + op3;
+            questionText = "(" + op1 + " * " + op2 + ") + " + op3;
         } else {
             questionType = 1;
             op1 = Math.floor(Math.random() * 301) + 50;
@@ -186,17 +187,26 @@ function generateQuestion(grade) {
             questionText = op1 + " - " + op2;
         }
     }
+
+    // Debug Logging
+    console.log("[BotCheck] New Question Generated: Type=" + questionType + ", Grade=" + grade);
+    console.log("[BotCheck] Operands: op1=" + op1 + ", op2=" + op2 + ", op3=" + op3);
+    console.log("[BotCheck] Expected Answer: " + answer);
 }
 
+/**
+ * Provides a text-based explanation of the solution for the last question.
+ */
 function getExplanation() {
-    if (questionType == 0) {
-        return op1 + " + " + op2 + " = " + wrongCorrectAnswer + ". Adding the two numbers gives " + wrongCorrectAnswer + ".";
-    } else if (questionType == 1) {
-        return op1 + " - " + op2 + " = " + wrongCorrectAnswer + ". Subtracting " + op2 + " from " + op1 + " gives " + wrongCorrectAnswer + ".";
-    } else if (questionType == 2) {
-        return op1 + " × " + op2 + " = " + wrongCorrectAnswer + ". " + op1 + " groups of " + op2 + " = " + wrongCorrectAnswer + ".";
+    // Uses "prev" variables to ensure it explains the question the user just failed
+    if (prevType == 0) {
+        return prevOp1 + " + " + prevOp2 + " = " + wrongCorrectAnswer + ". Adding the two numbers gives " + wrongCorrectAnswer + ".";
+    } else if (prevType == 1) {
+        return prevOp1 + " - " + prevOp2 + " = " + wrongCorrectAnswer + ". Subtracting " + prevOp2 + " from " + prevOp1 + " gives " + wrongCorrectAnswer + ".";
+    } else if (prevType == 2) {
+        return prevOp1 + " * " + prevOp2 + " = " + wrongCorrectAnswer + ". " + prevOp1 + " groups of " + prevOp2 + " = " + wrongCorrectAnswer + ".";
     } else {
-        return "(" + op1 + " × " + op2 + ") + " + op3 + " = " + wrongCorrectAnswer + ". First multiply: " + op1 + " × " + op2 + " = " + (op1 * op2) + ", then add " + op3 + " = " + wrongCorrectAnswer + ".";
+        return "(" + prevOp1 + " * " + prevOp2 + ") + " + prevOp3 + " = " + wrongCorrectAnswer + ". First multiply: " + prevOp1 + " * " + prevOp2 + " = " + (prevOp1 * prevOp2) + ", then add " + prevOp3 + " = " + wrongCorrectAnswer + ".";
     }
 }
 
@@ -204,6 +214,8 @@ function start() {
     lastWasWrong = false;
     var grade = getState(SLOT_GRADE);
     if (grade < 1) grade = 1;
+
+    console.log("[BotCheck] Starting session... Grade=" + grade);
     generateQuestion(grade);
     questionStartTime = Date.now();
     action(1, 0, 0);
@@ -212,16 +224,16 @@ function start() {
 function action(mode, type, selection) {
     if (mode != 1) {
         status = -1;
-        cm.sendNext("#r⚠ Security Verification Required.#k\r\nYou cannot close this window until you answer the question correctly.");
+        cm.sendNext("#r! Security Verification Required.!#k\r\nYou cannot close this window until you answer the question correctly.");
         return;
     }
 
     status++;
 
-    // --- PAGE 0: Show wrong-answer explanation (only if last was wrong) ---
+    // --- PAGE 0: Show wrong-answer explanation ---
     if (status == 0 && lastWasWrong) {
         var expl = getExplanation();
-        cm.sendNext("#r✗ Incorrect!#k\r\n\r\n" +
+        cm.sendNext("#rX Incorrect!#k\r\n\r\n" +
             "The correct answer was #b" + wrongCorrectAnswer + "#k.\r\n\r\n" +
             "#e" + expl + "#n\r\n\r\n" +
             "Study this and try a new question!");
@@ -237,7 +249,7 @@ function action(mode, type, selection) {
         var streak = getState(SLOT_STREAK);
         var next = nextMilestone(count);
 
-        var streakLine = streak >= 3 ? "\r\n🔥 Streak: #r" + streak + " correct in a row!#k" : "";
+        var streakLine = streak >= 3 ? "\r\n+ Streak: #r" + streak + " correct in a row!#k" : "";
 
         cm.sendGetNumber(
             "#e[ Security Verification ]#n\r\n" +
@@ -253,27 +265,26 @@ function action(mode, type, selection) {
     }
 
     // --- EVALUATE ANSWER ---
-    var elapsed = (Date.now() - questionStartTime) / 1000; // seconds
+    var elapsed = (Date.now() - questionStartTime) / 1000;
 
-    // Load persistent state
     var count = getState(SLOT_COUNT);
     var grade = getState(SLOT_GRADE); if (grade < 1) grade = 1;
     var streak = getState(SLOT_STREAK);
     var score = getState(SLOT_SCORE);
 
-    if (selection == answer) {
-        // ✅ Correct
-        consecutiveWrong = 0;
+    console.log("[BotCheck] Evaluating Answer: Selection=" + selection + ", Correct=" + answer + ", Elapsed=" + elapsed + "s");
 
-        // Score calculation
+    if (selection == answer) {
+        consecutiveWrong = 0;
         var pts = 10;
         var speedMsg = "";
+
         if (elapsed < 5) {
             pts += 10;
-            speedMsg = " ⚡ Speed bonus: +10 pts!";
+            speedMsg = " >> Speed bonus: +10 pts!";
         } else if (elapsed < 10) {
             pts += 5;
-            speedMsg = " ✨ Speed bonus: +5 pts!";
+            speedMsg = " >> Speed bonus: +5 pts!";
         }
 
         streak++;
@@ -288,71 +299,72 @@ function action(mode, type, selection) {
         var newGrade = recalcGrade(score);
         var gradeUp = newGrade > grade;
 
-        // Save state
         setState(SLOT_COUNT, count);
         setState(SLOT_GRADE, newGrade);
         setState(SLOT_STREAK, streak);
         setState(SLOT_SCORE, score);
 
-        // Build result message
-        var msg = "#g✓ Correct!#k Verification passed.\r\n\r\n";
+        var msg = "#g[OK] Correct!#k Verification passed.\r\n\r\n";
 
         if (gradeUp) {
-            msg += "#e🎉 Grade Up! You are now #g" + getGradeLabel(newGrade) + "#k#n\r\n";
+            msg += "#e[Grade Up] You are now #g" + getGradeLabel(newGrade) + "#k#n\r\n";
         }
 
         msg += "Score: +" + pts + " pts (Total: " + score + ")\r\n";
         if (speedMsg != "") msg += speedMsg + "\r\n";
-        if (streakBonus > 0) msg += " 🔥 Streak bonus: +" + streakBonus + " pts! (" + streak + " streak)\r\n";
+        if (streakBonus > 0) msg += " + Streak bonus: +" + streakBonus + " pts! (" + streak + " streak)\r\n";
         msg += "Streak: " + streak + " | Grade: " + getGradeLabel(newGrade) + "\r\n";
 
-        // Milestone reward
         if (isMilestone(count)) {
             var exp = getMilestoneExp(count);
             var tier = getBuffTier(newGrade);
             var buffId = BUFF_ITEMS[tier];
             cm.gainExp(exp);
             cm.useItem(buffId);
-            msg += "\r\n#e🎁 Milestone Bonus — Check " + count + "!#n\r\n";
+            msg += "\r\n#e[Bonus] Milestone Reached — Check " + count + "!#n\r\n";
             msg += "  +" + exp.toLocaleString() + " EXP\r\n";
             msg += "  GM Buff applied for 10 minutes! (Tier " + (tier + 1) + ")";
         } else {
-            // Always give a buff on correct answer (scaled by grade)
             var tier = getBuffTier(newGrade);
             cm.useItem(BUFF_ITEMS[tier]);
             msg += "\r\n#bGM Buff applied! (Grade " + getGradeLabel(newGrade) + " tier, 10 minutes)#k";
         }
 
+        console.log("[BotCheck] Correct! New Score=" + score + ", Grade=" + newGrade);
         cm.sendOk(msg);
         cm.dispose();
 
     } else {
-        // ✗ Wrong
+        // --- WRONG ANSWER HANDLING ---
+        console.log("[BotCheck] Wrong Answer! Correct was " + answer);
+
+        // PERSIST current failed state for the explanation page
+        prevOp1 = op1;
+        prevOp2 = op2;
+        prevOp3 = op3;
+        prevType = questionType;
+        wrongCorrectAnswer = answer;
+
         streak = 0;
         consecutiveWrong++;
 
-        // Grade penalty after 2+ consecutive wrong
         if (consecutiveWrong >= 2 && grade > 1) {
             grade--;
             setState(SLOT_GRADE, grade);
+            console.log("[BotCheck] Grade decreased to " + grade);
         }
 
         setState(SLOT_STREAK, 0);
-
-        // Save wrong answer info for explanation page
         lastWasWrong = true;
-        wrongCorrectAnswer = answer;
 
-        // Generate new question for after explanation
+        // Generate NEXT question (will NOT overwrite prevOp vars used for explanation)
         generateQuestion(grade);
 
-        // Reset status so next click shows explanation (status 0 with lastWasWrong=true)
         status = -1;
         cm.sendNext(
-            "#r✗ Wrong answer!#k The window will now explain the correct solution.\r\n\r\n" +
+            "#r[X] Wrong answer!#k The window will now explain the correct solution.\r\n\r\n" +
             "Grade: " + getGradeLabel(grade) +
-            (consecutiveWrong >= 2 && grade < getState(SLOT_GRADE) + 1 ?
-                "\r\n#rGrade decreased due to consecutive wrong answers.#k" : "")
+            (consecutiveWrong >= 2 ? "\r\n#rGrade decreased due to consecutive wrong answers.#k" : "")
         );
     }
 }
