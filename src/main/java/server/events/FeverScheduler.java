@@ -19,8 +19,8 @@ public class FeverScheduler {
     private long feverEndTime = 0;
 
     // Configuration
-    private static final int MIN_INTERVAL_MIN = 20;
-    private static final int MAX_INTERVAL_MIN = 45;
+    private static final int MIN_INTERVAL_MIN = 0;
+    private static final int MAX_INTERVAL_MIN = 10;
     private static final int MIN_DURATION_MIN = 5;
     private static final int MAX_DURATION_MIN = 10;
 
