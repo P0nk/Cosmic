@@ -1,7 +1,7 @@
 /*
  * donorreward.js — Donor Rewards UI (Dashboard + Flat Shop + History)
  * v83 safe: no emoji/bullets that become '?'
- * Updated to support Item Duration, Maple Leaves Bundles, World Buff, and Icons
+ * Updated to support Item Duration, Maple Leaves Bundles, World Buff, Icons, and Stat Previews!
  */
 
 var DonorCreditManager = Java.type("server.donor.DonorCreditManager");
@@ -133,11 +133,20 @@ function itemLine(itemId) {
 function homeFlow(sel) {
     if (status == 0) {
         var st = getStatusObj();
+        var chr = cm.getPlayer();
+        var subInfo = SubscriptionManager.getInfo(chr.getId());
+        var unspentPoints = (subInfo != null) ? Number(subInfo.get("unspentPoints")) : 0;
+
         var txt = "#e[ Donor Rewards ]#n\r\n\r\n";
         txt += "Donor Credits (DC): #b" + fmtCents(st.get("balanceCents")) + "#k\r\n";
         txt += "Lifetime Donated: #b$" + fmtCents(st.get("lifetimeCents")) + " SGD#k\r\n";
         txt += "Total Earned: #b" + fmtCents(st.get("earnedCents")) + " DC#k\r\n";
         txt += "Total Spent: #b" + fmtCents(st.get("spentCents")) + " DC#k\r\n\r\n";
+
+        // Highlight Unspent Points
+        if (unspentPoints > 0) {
+            txt += "#e#r>>> YOU HAVE " + unspentPoints + " UNSPENT STAT POINTS! <<<#n#k\r\n\r\n";
+        }
 
         txt += "#eMilestones#n\r\n";
         txt += "Achieved: #b" + st.get("milestones") + "#k\r\n";
@@ -156,7 +165,14 @@ function homeFlow(sel) {
         txt += "\r\n#L0#Donor Shop#l\r\n";
         txt += "#L1#Transaction History#l\r\n";
         txt += "#L2#Subscription Benefits#l\r\n";
-        txt += "#L3#Stat Allocation#l\r\n";
+
+        // Highlight the Menu Option too
+        if (unspentPoints > 0) {
+            txt += "#L3##e#rStat Allocation (" + unspentPoints + " points waiting!)#k#n#l\r\n";
+        } else {
+            txt += "#L3#Stat Allocation#l\r\n";
+        }
+
         txt += "#L4#Exit#l\r\n";
 
         cm.sendSimple(txt);
@@ -240,7 +256,6 @@ function shopFlow(sel) {
             var dName = "";
             if (r.isCustom) {
                 // Manually add Icon + Custom Name
-                // e.g. #i4001126# 1000 Maple Leaves
                 dName = "#i" + r.itemid + "# " + r.name;
             } else {
                 // Standard: Icon + WZ Name
@@ -531,7 +546,20 @@ function statAllocFlow(sel) {
             return;
         }
 
+        // Fetch current allocated stats to show the player
+        var currStr = info.get("str") != null ? Number(info.get("str")) : 0;
+        var currDex = info.get("dex") != null ? Number(info.get("dex")) : 0;
+        var currInt = info.get("int") != null ? Number(info.get("int")) : 0;
+        var currLuk = info.get("luk") != null ? Number(info.get("luk")) : 0;
+        var currSpd = info.get("speed") != null ? Number(info.get("speed")) : 0;
+        var currJmp = info.get("jump") != null ? Number(info.get("jump")) : 0;
+
         var txt = "#e[ Allocate Subscriber Stat (" + available + " left) ]#n\r\n\r\n";
+
+        txt += "#dCurrent Allocation:#k\r\n";
+        txt += "STR: +" + currStr + "  |  DEX: +" + currDex + "  |  INT: +" + currInt + "\r\n";
+        txt += "LUK: +" + currLuk + "  |  SPD: +" + currSpd + "  |  JMP: +" + currJmp + "\r\n\r\n";
+
         txt += "Choose a stat to increase:\r\n\r\n";
         txt += "#L0#STR#l\r\n";
         txt += "#L1#DEX#l\r\n";
