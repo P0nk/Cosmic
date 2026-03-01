@@ -42,5 +42,24 @@ public class BuffMapCommand extends Command {
         SkillFactory.getSkill(9101008).getEffect(SkillFactory.getSkill(9101008).getMaxLevel()).applyTo(player, true);
         SkillFactory.getSkill(1005).getEffect(SkillFactory.getSkill(1005).getMaxLevel()).applyTo(player, true);
 
+        // the original code only applied to the player themselves, let's fix it to
+        // apply to everyone in the map
+        for (Character chr : player.getMap().getCharacters()) {
+            if (chr != player) {
+                SkillFactory.getSkill(9101001).getEffect(SkillFactory.getSkill(9101001).getMaxLevel()).applyTo(chr,
+                        true);
+                SkillFactory.getSkill(9101002).getEffect(SkillFactory.getSkill(9101002).getMaxLevel()).applyTo(chr,
+                        true);
+                SkillFactory.getSkill(9101003).getEffect(SkillFactory.getSkill(9101003).getMaxLevel()).applyTo(chr,
+                        true);
+                SkillFactory.getSkill(9101008).getEffect(SkillFactory.getSkill(9101008).getMaxLevel()).applyTo(chr,
+                        true);
+                SkillFactory.getSkill(1005).getEffect(SkillFactory.getSkill(1005).getMaxLevel()).applyTo(chr, true);
+            }
+        }
+
+        // Send a notice to everyone in the map
+        player.getMap().broadcastMessage(tools.PacketCreator.serverNotice(6,
+                "[Notice] " + player.getName() + " has blessed the map with buffs!"));
     }
 }
