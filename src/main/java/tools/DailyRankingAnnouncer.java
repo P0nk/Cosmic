@@ -12,6 +12,15 @@ import java.sql.SQLException;
 public class DailyRankingAnnouncer implements Runnable {
 
     private final String webhookUrl = EnvLoader.get("DISCORD_ANNOUNCEMENT_WEBHOOK");
+    private final String worldName;
+    private final int worldId;
+
+    // Constructor to handle the specific world
+    public DailyRankingAnnouncer(String worldName) {
+        this.worldName = worldName;
+        // Map names to IDs (Bera = 0, Scania = 1 is standard for many v83+ sources)
+        this.worldId = worldName.equalsIgnoreCase("Scania") ? 1 : 0;
+    }
 
     @Override
     public void run() {
@@ -23,23 +32,19 @@ public class DailyRankingAnnouncer implements Runnable {
         try {
             StringBuilder json = new StringBuilder();
             json.append("{");
-            json.append("\"username\": \"Maple Rankings\",");
+            json.append("\"username\": \"").append(worldName).append(" Rankings\",");
             json.append("\"embeds\": [{");
-            json.append("\"title\": \"\uD83D\uDCCA Daily Server Leaderboards\",");
-            json.append("\"color\": 16763904,");
+            json.append("\"title\": \"\uD83D\uDCCA Daily Leaderboards - ").append(worldName).append("\",");
+            json.append("\"color\": ").append(worldName.equalsIgnoreCase("Scania") ? 3447003 : 16763904).append(","); // Blue for Scania, Gold for Bera
             json.append("\"fields\": [");
 
-            // --- DATA SECTIONS (Now Filtered for Banned = 0) ---
-
-            // 1. Top Overall
+            // --- DATA SECTIONS ---
             appendField(json, "🏆 Top Overall", getTopPlayersQuery(3), false, false);
             json.append(",");
 
-            // 2. Top Rebirths (New)
             appendField(json, "⭐ Top Rebirths", getTopRebirthsQuery(3), false, false);
             json.append(",");
 
-            // 3. Job Classes
             appendField(json, "⚔️ Top Warriors", getJobQuery(100, 3), true, false);
             json.append(",");
 
@@ -52,27 +57,23 @@ public class DailyRankingAnnouncer implements Runnable {
             appendField(json, "🗡️ Top Thieves", getJobQuery(400, 3), true, false);
             json.append(",");
 
-            appendField(json, "🏴‍☠️ Top Pirates", getJobQuery(500, 3), true, false);
+            appendField(json, "🏴\u200D☠️ Top Pirates", getJobQuery(500, 3), true, false);
             json.append(",");
 
-            // 4. Guilds & Quests
             appendField(json, "🛡️ Top Guilds", getTopGuildsQuery(3), true, false);
             json.append(",");
 
             appendField(json, "📜 Quest Masters", getTopQuestersQuery(3), true, false);
             json.append(",");
 
-            // 5. Playtime (Updated Logic)
             appendField(json, "⏳ Most Played Today", getMostPlayedQuery(3), false, true);
 
-            // --- END DATA SECTIONS ---
-
             json.append("],");
-            json.append("\"footer\": {\"text\": \"Stats are reset daily at midnight server time. Banned players excluded.\"}");
+            json.append("\"footer\": {\"text\": \"Stats reset daily. World: ").append(worldName).append(" | Banned players excluded.\"}");
             json.append("}]}");
 
             DiscordWebhook.sendEmbedAsync(webhookUrl, json.toString());
-            System.out.println("[DailyRanking] Leaderboards sent to Discord.");
+            System.out.println("[DailyRanking] " + worldName + " leaderboards sent to Discord.");
 
             resetDailyStats();
 
@@ -81,10 +82,6 @@ public class DailyRankingAnnouncer implements Runnable {
         }
     }
 
-    /**
-     * Appends a JSON field object to the string builder.
-     * @param isPlaytime If true, formats the integer value as Hours/Minutes.
-     */
     private void appendField(StringBuilder sb, String title, String query, boolean inline, boolean isPlaytime) {
         sb.append("{");
         sb.append("\"name\": \"").append(title).append("\",");
@@ -97,37 +94,32 @@ public class DailyRankingAnnouncer implements Runnable {
 
     private String fetchData(String query, boolean isPlaytime) {
         StringBuilder sb = new StringBuilder();
-
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = con.prepareStatement(query)) {
 
-            int rank = 1;
-            while (rs.next()) {
-                String name = rs.getString(1);
-                int score = rs.getInt(2);
-                String displayScore;
+            // Set worldId for every query since they all now use it
+            ps.setInt(1, worldId);
 
-                if (isPlaytime) {
-                    // Assuming dailyPlaytime is stored in MINUTES in the DB
-                    int hours = score / 60;
-                    int minutes = score % 60;
-                    if (hours > 0) {
-                        displayScore = String.format("%dh %dm", hours, minutes);
+            try (ResultSet rs = ps.executeQuery()) {
+                int rank = 1;
+                while (rs.next()) {
+                    String name = rs.getString(1);
+                    int score = rs.getInt(2);
+                    String displayScore;
+
+                    if (isPlaytime) {
+                        int hours = score / 60;
+                        int minutes = score % 60;
+                        displayScore = hours > 0 ? String.format("%dh %dm", hours, minutes) : String.format("%dm", minutes);
                     } else {
-                        displayScore = String.format("%dm", minutes);
+                        displayScore = String.valueOf(score);
                     }
-                } else {
-                    displayScore = String.valueOf(score); // Levels, Rebirths, GP, etc.
+
+                    sb.append(rank).append(". **").append(name).append("** (").append(displayScore).append(")\n");
+                    rank++;
                 }
-
-                sb.append(rank).append(". **").append(name).append("** (")
-                        .append(displayScore).append(")\n");
-                rank++;
             }
-
             if (sb.length() == 0) return "No data yet.";
-
         } catch (SQLException e) {
             System.err.println("[DailyRanking] SQL Error: " + e.getMessage());
             return "Error fetching data.";
@@ -136,68 +128,49 @@ public class DailyRankingAnnouncer implements Runnable {
     }
 
     private void resetDailyStats() {
-        // Important: Ensure this runs AFTER the announcement is sent, otherwise the Most Played board will always be empty!
-        String query = "UPDATE characters SET dailyPlaytime = 0";
+        // We only reset playtime for characters in THIS world
+        String query = "UPDATE characters SET dailyPlaytime = 0 WHERE world = ?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setInt(1, worldId);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // --- SQL QUERIES ---
+    // --- SQL QUERIES (Updated to use 'world = ?') ---
 
     private String getTopPlayersQuery(int limit) {
-        return "SELECT c.name, c.level " +
-                "FROM characters c " +
-                "JOIN accounts a ON c.accountid = a.id " +
-                "WHERE c.gm = 0 AND a.banned = 0 " +
-                "ORDER BY c.level DESC, c.exp DESC LIMIT " + limit;
+        return "SELECT c.name, c.level FROM characters c JOIN accounts a ON c.accountid = a.id " +
+                "WHERE c.world = ? AND c.gm = 0 AND a.banned = 0 ORDER BY c.level DESC, c.exp DESC LIMIT " + limit;
     }
 
     private String getTopRebirthsQuery(int limit) {
-        return "SELECT c.name, c.reborns " +
-                "FROM characters c " +
-                "JOIN accounts a ON c.accountid = a.id " +
-                "WHERE c.gm = 0 AND a.banned = 0 AND c.reborns > 0 " +
-                "ORDER BY c.reborns DESC, c.level DESC LIMIT " + limit;
+        return "SELECT c.name, c.reborns FROM characters c JOIN accounts a ON c.accountid = a.id " +
+                "WHERE c.world = ? AND c.gm = 0 AND a.banned = 0 AND c.reborns > 0 ORDER BY c.reborns DESC, c.level DESC LIMIT " + limit;
     }
 
     private String getJobQuery(int jobID, int limit) {
-        return "SELECT c.name, c.level " +
-                "FROM characters c " +
-                "JOIN accounts a ON c.accountid = a.id " +
-                "WHERE c.gm = 0 AND a.banned = 0 " +
-                "AND c.job >= " + jobID + " AND c.job < " + (jobID + 100) + " " +
-                "ORDER BY c.level DESC, c.exp DESC LIMIT " + limit;
+        return "SELECT c.name, c.level FROM characters c JOIN accounts a ON c.accountid = a.id " +
+                "WHERE c.world = ? AND c.gm = 0 AND a.banned = 0 AND c.job >= " + jobID + " AND c.job < " + (jobID + 100) +
+                " ORDER BY c.level DESC, c.exp DESC LIMIT " + limit;
     }
 
     private String getTopGuildsQuery(int limit) {
-        return "SELECT g.name, g.GP " +
-                "FROM guilds g " +
-                "JOIN characters c ON g.leader = c.id " +
-                "JOIN accounts a ON c.accountid = a.id " +
-                "WHERE a.banned = 0 " +
-                "ORDER BY g.GP DESC LIMIT " + limit;
+        // Assuming guilds table has a world column. If not, we filter by the leader's world.
+        return "SELECT g.name, g.GP FROM guilds g JOIN characters c ON g.leader = c.id " +
+                "JOIN accounts a ON c.accountid = a.id WHERE c.world = ? AND a.banned = 0 ORDER BY g.GP DESC LIMIT " + limit;
     }
 
     private String getTopQuestersQuery(int limit) {
-        return "SELECT c.name, COUNT(q.quest) as total_quests " +
-                "FROM characters c " +
-                "JOIN accounts a ON c.accountid = a.id " +
-                "JOIN queststatus q ON c.id = q.characterid " +
-                "WHERE q.status = 2 AND c.gm = 0 AND a.banned = 0 " +
-                "GROUP BY c.id " +
-                "ORDER BY total_quests DESC " +
-                "LIMIT " + limit;
+        return "SELECT c.name, COUNT(q.quest) as total_quests FROM characters c " +
+                "JOIN accounts a ON c.accountid = a.id JOIN queststatus q ON c.id = q.characterid " +
+                "WHERE c.world = ? AND q.status = 2 AND c.gm = 0 AND a.banned = 0 GROUP BY c.id ORDER BY total_quests DESC LIMIT " + limit;
     }
 
     private String getMostPlayedQuery(int limit) {
-        return "SELECT c.name, c.dailyPlaytime " +
-                "FROM characters c " +
-                "JOIN accounts a ON c.accountid = a.id " +
-                "WHERE c.gm = 0 AND a.banned = 0 AND c.dailyPlaytime > 0 " +
-                "ORDER BY c.dailyPlaytime DESC LIMIT " + limit;
+        return "SELECT c.name, c.dailyPlaytime FROM characters c JOIN accounts a ON c.accountid = a.id " +
+                "WHERE c.world = ? AND c.gm = 0 AND a.banned = 0 AND c.dailyPlaytime > 0 ORDER BY c.dailyPlaytime DESC LIMIT " + limit;
     }
 }

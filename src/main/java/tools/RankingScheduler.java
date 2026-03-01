@@ -8,23 +8,32 @@ import java.util.Calendar;
 public class RankingScheduler {
 
     public static void start() {
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        // Using a pool of 2 to allow both tasks to potentially overlap if needed,
+        // though 1 would work since they are offset by a minute.
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
         long initialDelay = computeNextMidnightDelay();
-
-//         long initialDelay = computeNextMidnightDelay();
-//        long initialDelay = 1000 * 10; // Run 10 seconds after server start
         long period = 24 * 60 * 60 * 1000; // 24 hours
+        long oneMinuteOffset = 60 * 1000;
 
-        // The Announcer grabs the URL from EnvLoader internally now
+        // 1. Schedule Scania to run at Midnight
         scheduler.scheduleAtFixedRate(
-                new DailyRankingAnnouncer(),
+                new DailyRankingAnnouncer("Scania"),
                 initialDelay,
                 period,
                 TimeUnit.MILLISECONDS
         );
 
-        System.out.println("[RankingScheduler] Leaderboards scheduled in " + (initialDelay / 1000 / 60) + " minutes.");
+        // 2. Schedule Bera to run 1 minute after Scania
+        scheduler.scheduleAtFixedRate(
+                new DailyRankingAnnouncer("Bera"),
+                initialDelay + oneMinuteOffset,
+                period,
+                TimeUnit.MILLISECONDS
+        );
+
+        System.out.println("[RankingScheduler] Scania scheduled in " + (initialDelay / 1000 / 60) + " minutes.");
+        System.out.println("[RankingScheduler] Bera scheduled 1 minute after Scania.");
     }
 
     private static long computeNextMidnightDelay() {
