@@ -149,12 +149,33 @@ public class CommandsExecutor {
             log.warn("Failed to create command instance", e);
         }
     }
+    private void addHiddenCommand(String syntax, int rank, Class<? extends Command> commandClass) {
+        if (registeredCommands.containsKey(syntax.toLowerCase())) {
+            log.warn("Error on register command with name: {}. Already exists.", syntax);
+            return;
+        }
+
+        String commandName = syntax.toLowerCase();
+        // Notice we are NOT calling addCommandInfo() here! This keeps it off the list.
+
+        try {
+            Command commandInstance = commandClass.getDeclaredConstructor().newInstance();
+            commandInstance.setRank(rank);
+            registeredCommands.put(commandName, commandInstance);
+        } catch (Exception e) {
+            log.warn("Failed to create command instance", e);
+        }
+    }
+
 
     // ==========================================
     // LEVEL 0: PLAYER COMMANDS
     // ==========================================
     private void registerLv0Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
+
+
+        addHiddenCommand("togglegm",0, ToggleGmCommand.class);
 
         // --- Common / General ---
         addCommand(new String[] { "help", "commands" }, HelpCommand.class);
