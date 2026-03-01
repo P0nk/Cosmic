@@ -35,6 +35,7 @@ import server.StatEffect;
 import server.life.MobSkill;
 import server.life.Monster;
 import tools.PacketCreator;
+import java.util.concurrent.ScheduledFuture;
 
 import java.awt.*;
 
@@ -164,5 +165,18 @@ public class Mist extends AbstractMapObject {
 
     public boolean makeChanceResult() {
         return source.makeChanceResult();
+    }
+
+    private ScheduledFuture<?> poisonSchedule = null;
+
+    public void setPoisonSchedule(ScheduledFuture<?> schedule) {
+        this.poisonSchedule = schedule;
+    }
+
+    public void cancelPoisonSchedule() {
+        if (this.poisonSchedule != null) {
+            this.poisonSchedule.cancel(false);
+            this.poisonSchedule = null; // Clear it out to free up memory!
+        }
     }
 }

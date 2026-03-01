@@ -2276,6 +2276,7 @@ public class MapleMap {
                 }
             };
             poisonSchedule = tMan.register(poisonTask, 2000, 2500);
+            mist.setPoisonSchedule(poisonSchedule);
         } else if (recovery) {
             Runnable poisonTask = () -> {
                 List<MapObject> players = getMapObjectsInBox(mist.getBox(),
@@ -2292,6 +2293,7 @@ public class MapleMap {
                 }
             };
             poisonSchedule = tMan.register(poisonTask, 2000, 2500);
+            mist.setPoisonSchedule(poisonSchedule); // <-- Securely tracks recovery mist timers too!
         } else {
             poisonSchedule = null;
         }
@@ -2864,6 +2866,7 @@ public class MapleMap {
 
         chr.leaveMap();
 
+        // Clean up summons
         for (Summon summon : new ArrayList<>(chr.getSummonsValues())) {
             if (summon.isStationary()) {
                 chr.cancelEffectFromBuffStat(BuffStat.PUPPET);
@@ -2872,6 +2875,26 @@ public class MapleMap {
             }
         }
 
+        // Clean up the player's mists securely
+        List<MapObject> mistsToRemove = new ArrayList<>();
+        for (MapObject mo : getMapObjects()) {
+            if (mo.getType() == MapObjectType.MIST) {
+                Mist mist = (Mist) mo;
+                // Safely check that the owner isn't null (to protect against mob-spawned mists)
+                if (mist.getOwner() != null && mist.getOwner().getId() == chr.getId()) {
+                    mistsToRemove.add(mist);
+                }
+            }
+        }
+
+        for (MapObject mo : mistsToRemove) {
+            Mist mistToDestroy = (Mist) mo;
+            mistToDestroy.cancelPoisonSchedule(); // Stops the background damage ticks instantly!
+            removeMapObject(mistToDestroy);
+            broadcastMessage(mistToDestroy.makeDestroyData());
+        }
+
+        // Clean up dragons (Evan)
         if (chr.getDragon() != null) {
             removeMapObject(chr.getDragon());
             if (chr.isHidden()) {
