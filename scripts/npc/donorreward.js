@@ -594,7 +594,7 @@ function statAllocFlow(sel) {
 
         var result = SubscriptionManager.allocateStat(chr, statAllocChoice, amountRaw);
         if (result.success) {
-            cm.sendNext("#eApplied!#n\r\n" + result.message + "\r\n\r\nNote: Re-equip your Medal to see the stats update immediately!");
+            cm.sendNext("#eApplied!#n\r\n" + result.message);
             pendingJump = "STAT_ALLOC";
         } else {
             cm.sendOk("#eFailed:#n " + result.message);

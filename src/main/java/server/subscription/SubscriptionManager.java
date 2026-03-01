@@ -242,6 +242,9 @@ public final class SubscriptionManager {
                         break;
                 }
 
+                // force the server to recalculate and send the new stats to the client
+                chr.equipChanged();
+
                 con.commit();
 
                 String remaining = String.valueOf(available - amount);

@@ -5,7 +5,7 @@
 // POLYFILL: Fallback for servers without native console.log
 if (typeof console === 'undefined') {
     var console = {};
-    console.log = function(msg) {
+    console.log = function (msg) {
         java.lang.System.out.println(msg);
     };
 }
@@ -111,19 +111,19 @@ function action(mode, type, selection) {
     } else if (status == 2) {
         // --- STEP 3: SELECT QUANTITY ---
         if (selection == 0) {
-             selectedTierIsSpecial = false; // Normal
+            selectedTierIsSpecial = false; // Normal
         } else if (selection == 1) {
-             selectedTierIsSpecial = true; // Boss
+            selectedTierIsSpecial = true; // Boss
         } else {
-             cm.dispose();
-             return;
+            cm.dispose();
+            return;
         }
 
         var maxAvailable = selectedTierIsSpecial ? validBossQty : validNormalQty;
 
         if (maxAvailable <= 0) {
-             cm.dispose();
-             return;
+            cm.dispose();
+            return;
         }
 
         var text = "How many " + (selectedTierIsSpecial ? "Boss" : "Normal") + " cards would you like to redeem? (Max: " + maxAvailable + ")";
@@ -148,6 +148,7 @@ function action(mode, type, selection) {
         console.log("[MB-Redeem] Player: " + player.getName() + " | StatID: " + selectedStat + " | BossTier: " + selectedTierIsSpecial + " | Qty: " + quantityToRedeem + " | Success: " + success);
 
         if (success) {
+            player.equipChanged();
             cm.sendOk("Success! Redeemed " + quantityToRedeem + " cards. Stats have been updated permanently.");
         } else {
             cm.sendOk("Transaction failed. An error occurred in the backend.");
