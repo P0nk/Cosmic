@@ -1,7 +1,7 @@
 /* NPC: Maple Leaf Event Manager
-   Logic: Accepts donations into a queue (Max 40k).
-   10k leaves = 1 Hour boost.
-   Automatically chains hours if leaves remain in queue.
+   Logic: Accepts donations into a queue (Max 20k).
+   Automatically consumes ~84 leaves per minute to maintain buffs.
+   Minimizes loss on server restart!
 */
 
 var status = -1;
@@ -27,16 +27,12 @@ function action(mode, type, selection) {
 
     // --- Status 0: Dashboard ---
     if (status === 0) {
-        // 1. Get Queued Leaves (Bank)
         var queued = MapleLeafWorldBuffManager.getQueuedLeaves();
         var maxCap = MapleLeafWorldBuffManager.getMaxCap();
-
-        // 2. Get Total Time Remaining (Active + Queue)
         var timeRemaining = MapleLeafWorldBuffManager.getTotalTimeRemaining();
 
         var msg = "#b[World Spawn Event]#k\r\n";
 
-        // Display Time Logic
         if (timeRemaining > 0) {
             var totalSeconds = Math.floor(timeRemaining / 1000);
             var hours = Math.floor(totalSeconds / 3600);
@@ -49,11 +45,10 @@ function action(mode, type, selection) {
         }
 
         msg += "\r\nLeaves stored: " + queued + " / " + maxCap + "\r\n";
-        msg += "(Every 5,000 leaves extends the event by 1 hour)\r\n\r\n";
+        msg += "(Roughly 84 leaves are consumed per minute of the event)\r\n\r\n";
 
-        // Check if full
         if (queued >= maxCap) {
-            msg += "#rThe storage is full (20,000)! Please wait for the current leaves to be consumed.#k";
+            msg += "#rThe storage is full! Please wait for the current leaves to be consumed.#k";
             cm.sendOk(msg);
             cm.dispose();
         } else {
@@ -90,7 +85,6 @@ function action(mode, type, selection) {
             return;
         }
 
-        // Check overflow protection again
         if (!MapleLeafWorldBuffManager.canDonate(donationAmount)) {
             var space = MapleLeafWorldBuffManager.getMaxCap() - MapleLeafWorldBuffManager.getQueuedLeaves();
             cm.sendOk("That amount exceeds the limit! You can only donate " + space + " more leaves.");
@@ -102,7 +96,7 @@ function action(mode, type, selection) {
         cm.gainItem(leafItemId, -donationAmount);
         MapleLeafWorldBuffManager.handleDonation(donationAmount);
 
-        cm.sendOk("Donation successful! If the pool hit 5k, the timer has been extended.");
+        cm.sendOk("Donation successful! If the pool has at least 84 leaves, the timer will be extended.");
         cm.dispose();
     }
 }
