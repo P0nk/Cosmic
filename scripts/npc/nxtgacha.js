@@ -105,7 +105,7 @@ var lootTable = {
     ]
 };
 
-//// OCTOBER NX GACHA LIST ////
+//// APRIL NX GACHA LIST ////
 //var lootTable = {
 //    "COMMON": [
 //        [1102819, "COMMON"], // Naughty Boy Backpack
@@ -143,6 +143,43 @@ var lootTable = {
 //        [5002061, "ULTRA_RARE"], // Baby Xolo
 //        [5002062, "ULTRA_RARE"]  // Baby Lotl
 //    ]
+//};
+
+//// MAY NX GACHA LIST ////
+//var lootTable = {
+//  "COMMON": [
+//    [1022184, "COMMON"], // Frozen Eye
+//    [1002771, "COMMON"], // Tiger Cub Hat
+//    [1004136, "COMMON"], // Nurse Cap
+//    [1071004, "COMMON"], // Pink Nurse Shoes
+//    [1071074, "COMMON"], // Shadow Garter
+//    [1103007, "COMMON"]  // Demon Bag
+//  ],
+//  "RARE": [
+//    [1012462, "RARE"], // Ghost Bride's Shining Dark Eyes
+//    [1052749, "RARE"], // Nurse Dress
+//    [1072924, "RARE"], // Nurse Boots
+//    [1052154, "RARE"], // Tiger Cub Costume
+//    [1053515, "RARE"], // Red Warrior Outfit
+//    [1005457, "RARE"], // Red Warrior Hat
+//    [1702685, "RARE"], // Red Phoenix Weapon
+//    [1004759, "RARE"], // Red Flame Phoenix Plume
+//    [1102982, "RARE"], // Phoenix Wing Cape
+//    [1102939, "RARE"], // Red Cloud Cape
+//    [1053787, "RARE"], // Noble Rosy Suit
+//    [1702684, "RARE"], // Blue Phoenix Weapon
+//    [1053041, "RARE"], // Blue Phoenix Toga
+//    [1103231, "RARE"], // Red Warrior Cape
+//    [1702969, "RARE"], // Red Warrior Katana
+//    [1115091, "RARE"], // Red Warrior Chat Ring
+//    [1115180, "RARE"]  // Red Warrior Label Ring
+//  ],
+//  "ULTRA_RARE": [
+//    [1102682, "ULTRA_RARE"], // Nurse Syringe
+//    [1005164, "ULTRA_RARE"], // Witchy Spring
+//    [2631710, "ULTRA_RARE"], // Permanent Thunder Horse Mount Coupon
+//    [2433097, "ULTRA_RARE"]  // Permanent Crimson Nightmare Mount Coupon
+//  ]
 //};
 
 
