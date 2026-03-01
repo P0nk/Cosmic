@@ -18,8 +18,8 @@ function cancelSchedule() {
 
 function start() {
     var leviathansCanyon = em.getChannelServer().getMapFactory().getMap(240040401);
-    var leviathan = LifeFactory.getMonster(8220003);
-    if (leviathansCanyon.getMonsterById(8220003) != null) {
+    var leviathan = LifeFactory.getMonster(9500333);
+    if (leviathansCanyon.getMonsterById(9500333) != null) {
         em.schedule("start", 3 * 60 * 60 * 1000);
         return;
     }

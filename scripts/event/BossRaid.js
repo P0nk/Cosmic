@@ -18,7 +18,7 @@ var raidBosses = [
     { name: "Manon", mobId: 8180000, mapId: 240020401 },
     { name: "Giant Centipede", mobId: 5220004, mapId: 251010102 },
     { name: "Seruf", mobId: 4220001, mapId: 230020100 },
-    { name: "Leviathan", mobId: 8220003, mapId: 240040401 },
+    { name: "Leviathan", mobId: 9500333, mapId: 240040401 },
     { name: "Tae Roon", mobId: 7220000, mapId: 250010304 },
     { name: "King Sage Cat", mobId: 7220002, mapId: 250010504 },
     { name: "Stumpy", mobId: 3220000, mapId: 101030404 },
