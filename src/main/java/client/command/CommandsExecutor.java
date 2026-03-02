@@ -12,6 +12,7 @@ import client.command.commands.gm3.*;
 import client.command.commands.gm4.*;
 import client.command.commands.gm5.*;
 import client.command.commands.gm6.*;
+import client.command.commands.player.*;
 
 import constants.id.MapId;
 import org.slf4j.Logger;
@@ -149,6 +150,7 @@ public class CommandsExecutor {
             log.warn("Failed to create command instance", e);
         }
     }
+
     private void addHiddenCommand(String syntax, int rank, Class<? extends Command> commandClass) {
         if (registeredCommands.containsKey(syntax.toLowerCase())) {
             log.warn("Error on register command with name: {}. Already exists.", syntax);
@@ -167,15 +169,13 @@ public class CommandsExecutor {
         }
     }
 
-
     // ==========================================
     // LEVEL 0: PLAYER COMMANDS
     // ==========================================
     private void registerLv0Commands() {
         levelCommandsCursor = new Pair<>(new ArrayList<String>(), new ArrayList<String>());
 
-
-        addHiddenCommand("togglegm",0, ToggleGmCommand.class);
+        addHiddenCommand("togglegm", 0, ToggleGmCommand.class);
 
         // --- Common / General ---
         addCommand(new String[] { "help", "commands" }, HelpCommand.class);
@@ -211,6 +211,7 @@ public class CommandsExecutor {
         addCommand("luk", StatLukCommand.class);
         addCommand("stats", CheckMyDmgCommand.class);
         addCommand("powerup", UnlockedBuffsCommand.class);
+        addCommand("learnskills", LearnSkillsCommand.class);
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
         // addCommand("toggleexp", 0, ToggleExpCommand.class); // Note: Moved from GM1
         // as per your list
