@@ -40,7 +40,7 @@ public class ShowRatesCommand extends Command {
 
         FeverScheduler fever = FeverScheduler.getInstance();
         boolean feverActive = fever.isFeverActive();
-        String feverNote = " #r🔥 Fever Active!#k";
+        String feverNote = " #r(Fever Active!)#k";
 
         String showMsg = "#eEXP RATE#n" + "\r\n";
         showMsg += "World EXP Rate: #k" + c.getWorldServer().getExpRate() + "x#k"
