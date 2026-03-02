@@ -43,7 +43,7 @@ public class RatesCommand extends Command {
 
         FeverScheduler fever = FeverScheduler.getInstance();
         boolean feverActive = fever.isFeverActive();
-        String feverNote = " #r🔥 Fever Active!#k";
+        String feverNote = " #r(Fever Active!)#k";
 
         String showMsg_ = "#eCHARACTER RATES#n" + "\r\n\r\n";
         showMsg_ += "EXP Rate: #e#b" + (isSubscribed ? (player.getExpRate() * 1.5) : player.getExpRate()) + "x#k#n"
