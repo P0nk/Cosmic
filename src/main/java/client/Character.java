@@ -255,6 +255,7 @@ public class Character extends AbstractCharacterObject {
     private boolean hidden, equipchanged = true, berserk, hasMerchant, hasSandboxItem = false, whiteChat = false,
             canRecvPartySearchInvite = true;
     private boolean equippedMesoMagnet = false, equippedItemPouch = false, equippedPetItemIgnore = false;
+    private boolean autoAssignAp = false;
     private boolean usedSafetyCharm = false;
     private float autopotHpAlert, autopotMpAlert;
     private int linkedLevel = 0;
@@ -6608,6 +6609,37 @@ public class Character extends AbstractCharacterObject {
         return job.getId() >= 2000 && job.getId() <= 2112;
     }
 
+    // =================== NEW ADDITION FOR AUTO AP ALLOCATION ================
+    public boolean isAutoAssignAp() {
+        return autoAssignAp;
+    }
+
+    public void setAutoAssignAp(boolean autoAssignAp) {
+        this.autoAssignAp = autoAssignAp;
+    }
+
+    private boolean isEvan() {
+        return (job.getId() >= 2200 && job.getId() <= 2218) || job.getId() == 2001; // EVAN base is 2001
+    }
+
+    private boolean isAdventurerWarrior() {
+        return job.getId() >= 100 && job.getId() <= 132;
+    }
+
+    private boolean isAdventurerMagician() {
+        return job.getId() >= 200 && job.getId() <= 232;
+    }
+
+    private boolean isAdventurerBowman() {
+        return job.getId() >= 300 && job.getId() <= 322;
+    }
+
+    private boolean isAdventurerThief() {
+        return job.getId() >= 400 && job.getId() <= 422;
+    }
+
+    // =================== IMPLEMENTATION END ==================
+
     public boolean isBeginnerJob() {
         return (job.getId() == 0 || job.getId() == 1000 || job.getId() == 2000);
     }
@@ -6770,6 +6802,47 @@ public class Character extends AbstractCharacterObject {
                     dex += 1;
                 }
                 assignStrDexIntLuk(str, dex, 0, 0);
+            } finally {
+                statWlock.unlock();
+                effLock.unlock();
+            }
+        } else if (autoAssignAp && level > 10) {
+            int apToGain = 5 + bonusAp;
+
+            if (isCygnus()) {
+                if (level > 10) {
+                    if (level <= 17) {
+                        apToGain += 2;
+                    } else if (level < 77) {
+                        apToGain++;
+                    }
+                }
+            }
+
+            effLock.lock();
+            statWlock.lock();
+            try {
+                int addStr = 0, addDex = 0, addInt = 0, addLuk = 0;
+                if (isAdventurerWarrior() || isAran() || job.isA(Job.DAWNWARRIOR1) || job.isA(Job.BRAWLER)
+                        || job.isA(Job.THUNDERBREAKER1)) {
+                    addStr = apToGain;
+                } else if (isAdventurerMagician() || isEvan() || job.isA(Job.BLAZEWIZARD1)) {
+                    addInt = apToGain;
+                } else if (isAdventurerBowman() || job.isA(Job.WINDARCHER1) || job.isA(Job.GUNSLINGER)) {
+                    addDex = apToGain;
+                } else if (isAdventurerThief() || job.isA(Job.NIGHTWALKER1)) {
+                    addLuk = apToGain;
+                } else if (job.isA(Job.PIRATE)) {
+                    addStr = apToGain;
+                } else {
+                    gainAp(apToGain, true);
+                }
+
+                if (addStr > 0 || addDex > 0 || addInt > 0 || addLuk > 0) {
+                    gainAp(addStr + addDex + addInt + addLuk, true); // Add to AP pool first
+                    assignStrDexIntLuk(addStr, addDex, addInt, addLuk); // Will apply to stat and remove from AP pool
+                                                                        // silently
+                }
             } finally {
                 statWlock.unlock();
                 effLock.unlock();
@@ -7418,6 +7491,7 @@ public class Character extends AbstractCharacterObject {
                 ret.hpMpApUsed = rs.getInt("hpMpUsed");
                 ret.hasMerchant = rs.getInt("HasMerchant") == 1;
                 ret.remainingAp = rs.getInt("ap");
+                ret.autoAssignAp = rs.getInt("autoAssignAp") == 1;
                 ret.loadCharSkillPoints(rs.getString("sp").split(","));
                 ret.meso.set(rs.getInt("meso"));
                 ret.merchantmeso = rs.getInt("MerchantMesos");
@@ -9077,7 +9151,7 @@ public class Character extends AbstractCharacterObject {
                 " passive_mdef = ?, passive_acc = ?, passive_eva = ?," +
                 " passive_str = ?, passive_dex = ?, passive_int = ?, passive_luk = ?, passive_speed = ?, passive_jump = ?,"
                 +
-                " dailyPlaytime = ?, reborns = ?, sell_untradables = ?, sell_rebirths = ?, sell_exclusions = ? WHERE id = ?",
+                " dailyPlaytime = ?, reborns = ?, sell_untradables = ?, sell_rebirths = ?, sell_exclusions = ?, autoAssignAp = ? WHERE id = ?",
                 Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, level);
@@ -9220,7 +9294,8 @@ public class Character extends AbstractCharacterObject {
                 sb.setLength(sb.length() - 1);
             }
             ps.setString(73, sb.toString());
-            ps.setInt(74, id);
+            ps.setInt(74, autoAssignAp ? 1 : 0);
+            ps.setInt(75, id);
 
             int updateRows = ps.executeUpdate();
             if (updateRows < 1) {

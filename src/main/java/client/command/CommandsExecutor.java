@@ -212,6 +212,7 @@ public class CommandsExecutor {
         addCommand("stats", CheckMyDmgCommand.class);
         addCommand("powerup", UnlockedBuffsCommand.class);
         addCommand("learnskills", LearnSkillsCommand.class);
+        addCommand("autoap", AutoApCommand.class);
         addCommand("toggleautopot", ToggleAutoPotCommand.class);
         // addCommand("toggleexp", 0, ToggleExpCommand.class); // Note: Moved from GM1
         // as per your list
