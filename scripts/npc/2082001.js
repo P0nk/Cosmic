@@ -53,7 +53,7 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            cm.sendNext("Welcome to the Leafre Station. We have flights departing for Orbis every 15 minutes, starting at 7 minutes past the hour.\r\n(XX:07, XX:22, XX:37, XX:52)");
+            cm.sendNext("Welcome to the Leafre Station. We have flights departing for Orbis every 15 minutes, with boarding starting at 7 minutes past the hour.\r\n(XX:07, XX:22, XX:37, XX:52)");
         } else if (status == 1) {
             cm.sendYesNo("The ship is currently boarding. The ride takes #b5 minutes#k. Would you like to head to the dock?");
         } else if (status == 2) {

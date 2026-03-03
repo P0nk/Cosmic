@@ -18,8 +18,8 @@ public class DailyRankingAnnouncer implements Runnable {
     // Constructor to handle the specific world
     public DailyRankingAnnouncer(String worldName) {
         this.worldName = worldName;
-        // Map names to IDs (Bera = 1, Scania = 0)
-        this.worldId = worldName.equalsIgnoreCase("Scania") ? 0 : 1;
+        // Map names to IDs (Bera = 0, Scania = 1 based on actual DB despite config)
+        this.worldId = worldName.equalsIgnoreCase("Scania") ? 1 : 0;
     }
 
     @Override
