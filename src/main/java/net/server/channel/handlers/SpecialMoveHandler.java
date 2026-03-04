@@ -51,8 +51,14 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
         Character chr = c.getPlayer();
         p.readInt();
         int skillid = p.readInt();
+
         // Increased threshold to 40 and added debug info
-        chr.getAutobanManager().setTimestamp(4, Server.getInstance().getCurrentTimestamp(), 40, "SkillID: " + skillid);
+        // Whitelist Flash Jump (4111006) as it has no cooldown and triggers false
+        // positives
+        if (skillid != 4111006) {
+            chr.getAutobanManager().setTimestamp(4, Server.getInstance().getCurrentTimestamp(), 40,
+                    "SkillID: " + skillid);
+        }
 
         /*
          * if ((!GameConstants.isPqSkillMap(chr.getMapId()) &&

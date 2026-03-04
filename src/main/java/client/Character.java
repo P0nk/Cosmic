@@ -6769,6 +6769,94 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    private Stat[] getStatPriorityForJob(Job job) {
+        if (job.isA(Job.WARRIOR) || job.isA(Job.DAWNWARRIOR1) || job.isA(Job.ARAN1) || job.isA(Job.THUNDERBREAKER1)
+                || job.isA(Job.BRAWLER)) {
+            return new Stat[] { Stat.STR, Stat.DEX, Stat.INT, Stat.LUK };
+        } else if (job.isA(Job.MAGICIAN) || job.isA(Job.BLAZEWIZARD1) || job.isA(Job.EVAN1)) {
+            return new Stat[] { Stat.INT, Stat.LUK, Stat.STR, Stat.DEX };
+        } else if (job.isA(Job.BOWMAN) || job.isA(Job.WINDARCHER1)) {
+            return new Stat[] { Stat.DEX, Stat.STR, Stat.INT, Stat.LUK };
+        } else if (job.isA(Job.THIEF) || job.isA(Job.NIGHTWALKER1)) {
+            return new Stat[] { Stat.LUK, Stat.DEX, Stat.STR, Stat.INT };
+        } else if (job.isA(Job.PIRATE)) {
+            return new Stat[] { Stat.DEX, Stat.STR, Stat.INT, Stat.LUK };
+        } else {
+            return new Stat[] { Stat.STR, Stat.DEX, Stat.INT, Stat.LUK };
+        }
+    }
+
+    private void cascadeAp(int availableAp, Stat[] priority) {
+        if (availableAp <= 0)
+            return;
+
+        int addStr = 0, addDex = 0, addInt = 0, addLuk = 0;
+        int maxAp = YamlConfig.config.server.MAX_AP;
+
+        effLock.lock();
+        statWlock.lock();
+        try {
+            int currentStr = getStr();
+            int currentDex = getDex();
+            int currentInt = getInt();
+            int currentLuk = getLuk();
+
+            int[] currentStats = new int[4];
+            for (int i = 0; i < 4; i++) {
+                if (priority[i] == Stat.STR)
+                    currentStats[i] = currentStr;
+                else if (priority[i] == Stat.DEX)
+                    currentStats[i] = currentDex;
+                else if (priority[i] == Stat.INT)
+                    currentStats[i] = currentInt;
+                else if (priority[i] == Stat.LUK)
+                    currentStats[i] = currentLuk;
+            }
+
+            int mainSpace = Math.max(0, maxAp - currentStats[0]);
+            int toMain = Math.min(availableAp, mainSpace);
+            availableAp -= toMain;
+
+            int subSpace = Math.max(0, maxAp - currentStats[1]);
+            int toSub = Math.min(availableAp, subSpace);
+            availableAp -= toSub;
+
+            int toRest1 = 0;
+            int toRest2 = 0;
+            if (availableAp > 0) {
+                int half = availableAp / 2;
+                int remain = availableAp % 2;
+
+                int rest1Space = Math.max(0, maxAp - currentStats[2]);
+                int rest2Space = Math.max(0, maxAp - currentStats[3]);
+
+                toRest1 = Math.min(half + remain, rest1Space);
+                availableAp -= toRest1;
+
+                toRest2 = Math.min(availableAp, rest2Space);
+            }
+
+            int[] finalAdditions = new int[] { toMain, toSub, toRest1, toRest2 };
+            for (int i = 0; i < 4; i++) {
+                if (priority[i] == Stat.STR)
+                    addStr = finalAdditions[i];
+                else if (priority[i] == Stat.DEX)
+                    addDex = finalAdditions[i];
+                else if (priority[i] == Stat.INT)
+                    addInt = finalAdditions[i];
+                else if (priority[i] == Stat.LUK)
+                    addLuk = finalAdditions[i];
+            }
+
+            if (addStr > 0 || addDex > 0 || addInt > 0 || addLuk > 0) {
+                assignStrDexIntLuk(addStr, addDex, addInt, addLuk);
+            }
+        } finally {
+            statWlock.unlock();
+            effLock.unlock();
+        }
+    }
+
     public synchronized void levelUp(boolean takeexp) {
         Skill improvingMaxHP = null;
         Skill improvingMaxMP = null;
@@ -6779,88 +6867,21 @@ public class Character extends AbstractCharacterObject {
         // 1. CALCULATE BONUS AP (5 * Reborns) [LOGIC IS CORRECT]
         // ---------------------------------------------------------
         int bonusAp = this.reborns * 5;
-
         boolean isBeginner = isBeginnerJob();
 
-        // Logic: Give standard 5 AP + Rebirth AP to everyone.
-        // If they are a starter, we auto-assign the 5, leaving the Bonus AP in the
-        // pool.
-        if (YamlConfig.config.server.USE_AUTOASSIGN_STARTERS_AP && isBeginner && level < 11) {
-            effLock.lock();
-            statWlock.lock();
-            try {
-                // Add Total AP (5 + Bonus)
-                gainAp(5 + bonusAp, true);
+        int apToGain = 5 + bonusAp;
+        if (isCygnus() && level > 10) {
+            if (level <= 17)
+                apToGain += 2;
+            else if (level < 77)
+                apToGain++;
+        }
 
-                // Auto-assign the standard 5 (or 4+1)
-                // This consumes 5 AP, leaving 'bonusAp' in the pool.
-                int str = 0, dex = 0;
-                if (level < 6) {
-                    str += 5;
-                } else {
-                    str += 4;
-                    dex += 1;
-                }
-                assignStrDexIntLuk(str, dex, 0, 0);
-            } finally {
-                statWlock.unlock();
-                effLock.unlock();
-            }
-        } else if (autoAssignAp && level > 10) {
-            int apToGain = 5 + bonusAp;
-
-            if (isCygnus()) {
-                if (level > 10) {
-                    if (level <= 17) {
-                        apToGain += 2;
-                    } else if (level < 77) {
-                        apToGain++;
-                    }
-                }
-            }
-
-            effLock.lock();
-            statWlock.lock();
-            try {
-                int addStr = 0, addDex = 0, addInt = 0, addLuk = 0;
-                if (isAdventurerWarrior() || isAran() || job.isA(Job.DAWNWARRIOR1) || job.isA(Job.BRAWLER)
-                        || job.isA(Job.THUNDERBREAKER1)) {
-                    addStr = apToGain;
-                } else if (isAdventurerMagician() || isEvan() || job.isA(Job.BLAZEWIZARD1)) {
-                    addInt = apToGain;
-                } else if (isAdventurerBowman() || job.isA(Job.WINDARCHER1) || job.isA(Job.GUNSLINGER)) {
-                    addDex = apToGain;
-                } else if (isAdventurerThief() || job.isA(Job.NIGHTWALKER1)) {
-                    addLuk = apToGain;
-                } else if (job.isA(Job.PIRATE)) {
-                    addStr = apToGain;
-                } else {
-                    gainAp(apToGain, true);
-                }
-
-                if (addStr > 0 || addDex > 0 || addInt > 0 || addLuk > 0) {
-                    gainAp(addStr + addDex + addInt + addLuk, true); // Add to AP pool first
-                    assignStrDexIntLuk(addStr, addDex, addInt, addLuk); // Will apply to stat and remove from AP pool
-                                                                        // silently
-                }
-            } finally {
-                statWlock.unlock();
-                effLock.unlock();
-            }
+        if (autoAssignAp) {
+            gainAp(apToGain, true);
+            Stat[] priority = getStatPriorityForJob(job);
+            cascadeAp(apToGain, priority);
         } else {
-            // Standard Level Up
-            int apToGain = 5 + bonusAp;
-
-            if (isCygnus()) {
-                if (level > 10) {
-                    if (level <= 17) {
-                        apToGain += 2;
-                    } else if (level < 77) {
-                        apToGain++;
-                    }
-                }
-            }
-
             gainAp(apToGain, true);
         }
 
