@@ -10,8 +10,16 @@ function start() {
         msg += "We are currently #bboarding#k for Ellinia!\r\nThe ship will take off at " + (40 - minutes) + " mins past the hour.\r\n";
     } else {
         msg += "We are currently #rnot boarding#k.\r\n";
-        msg += "Next Boarding Time: #bXX:30#k\r\n";
-        msg += "Next Take Off Time: #bXX:40#k\r\n";
+
+        var nextHour = now.getHours();
+        if (minutes >= 40) { // Missed the :30 boarding
+            nextHour = (nextHour + 1) % 24;
+        }
+        var hrStr = nextHour < 10 ? "0" + nextHour : nextHour;
+
+        msg += "Next Boarding Time: #b#e" + hrStr + ":30#k#n\r\n";
+        msg += "Next Take Off Time: #b#e" + hrStr + ":40#k#n\r\n";
+        msg += "The ship to Ellinia exclusively boards at half-past the hour.\r\n";
     }
 
     msg += "Do you want to go to Ellinia?";

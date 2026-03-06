@@ -1001,15 +1001,15 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         long snipeBase = chr.calculateMaxBaseDamage(chr.getTotalWatk());
                         int snipeLevel = chr.getSkillLevel(Marksman.SNIPE);
 
-                        // Skill level mult: Lv1 = 8.5x, Lv30 = 23x
-                        double skillMult = 8.0 + (snipeLevel * 0.5);
+                        // Skill level mult: Lv1 = 4.25x, Lv30 = 11.5x
+                        double skillMult = 4.0 + (snipeLevel * 0.25);
 
-                        // Distance mult: 1.0x at melee, caps at 3.0x beyond ~1200px
+                        // Distance mult: 0.2x at melee (point blank), caps at 4.0x beyond ~450px
                         double distPx = Math.abs(chrPos.getX() - mobPos.getX());
-                        double distMult = Math.min(1.0 + (distPx / 400.0), 3.0);
+                        double distMult = 0.2 + (Math.min(distPx / 450.0, 1.0) * 3.8);
 
-                        // Rebirth mult: +10% per rebirth, uncapped
-                        double rebornMult = 1.0 + (chr.getReborns() * 0.10);
+                        // Rebirth mult: +4% per rebirth, uncapped
+                        double rebornMult = 1.0 + (chr.getReborns() * 0.04);
 
                         long snipeDmg = (long) (snipeBase * skillMult * distMult * rebornMult);
 
@@ -1093,7 +1093,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         maxattack = 4; // Allow up to 4 lines (2 stars * 2 SP)
                     }
                     if (ret.skill == Assassin.DRAIN || ret.skill == NightWalker.VAMPIRE) {
-                        maxattack = 3; // Allow up to 3 lines (Custom 2 lines * SP + safety)
+                        maxattack = 5; // Allow up to 5 lines (Custom 2 lines * SP + safety)
                     }
                     if (ret.skill == Rogue.LUCKY_SEVEN || ret.skill == NightWalker.LUCKY_SEVEN) {
                         maxattack = 4; // Allow up to 4 lines (Custom 2 lines * SP)

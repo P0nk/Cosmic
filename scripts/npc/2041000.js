@@ -3,33 +3,49 @@ function start() {
     var now = new Date();
     var minutes = now.getMinutes();
     var seconds = now.getSeconds();
-    var totalSeconds = minutes * 60 + seconds;
-    var cycleTime = (totalSeconds % 900); // 15 mins
 
-    // Ludi Boarding: 7.5 - 10 mins (450s - 600s)
+    // Ludi Boarding: 7.5 - 10 mins into the 15-min cycle
+    // (We use exact server time checks rather than relative cycle time as much as possible for display)
 
-    var msg = "";
+    var msg = "All aboard the Ludibrium Express! Make sure your toys are stowed safely.\r\n";
     if (em.getProperty("entry") == "true") {
-        msg = "We are currently #bboarding#k for Orbis!\r\n";
-        // Boarding ends at 600s check relative to cycle
-        var timeLeft = 600 - cycleTime;
-        var minLeft = Math.ceil(timeLeft / 60);
-        msg += "The train will leave in #b" + minLeft + " minutes#k.\r\n";
-    } else {
-        msg = "The train to Orbis is already travelling.\r\n";
-        // Next boarding starts at 7.5 mins into next cycle? No, 7.5 mins into CURRENT cycle if < 7.5 
-        // If minutes % 15 is < 7.5, wait is 7.5 - current
-        // If minutes % 15 is > 10, wait is (15-current) + 7.5
+        msg += "We are currently #bboarding#k for Orbis!\r\n";
 
-        var minIntoCycle = (minutes + (seconds / 60)) % 15;
-        var waitTime = 0;
-        if (minIntoCycle < 7.5) {
-            waitTime = 7.5 - minIntoCycle;
-        } else {
-            waitTime = (15 - minIntoCycle) + 7.5;
+        // Find next :10, :25, :40, :55 takeoff time
+        var nextHour = now.getHours();
+        var nextMin = 10;
+        if (minutes < 10) nextMin = 10;
+        else if (minutes < 25) nextMin = 25;
+        else if (minutes < 40) nextMin = 40;
+        else if (minutes < 55) nextMin = 55;
+        else {
+            nextMin = 10;
+            nextHour = (nextHour + 1) % 24;
         }
-        var waitMin = Math.ceil(waitTime);
-        msg += "The next train will board in #b" + waitMin + " minutes#k.\r\n";
+
+        var hrStr = nextHour < 10 ? "0" + nextHour : nextHour;
+        var minStr = nextMin < 10 ? "0" + nextMin : nextMin;
+
+        msg += "The train will leave at #b#e" + hrStr + ":" + minStr + "#k#n.\r\n";
+    } else {
+        msg += "The train to Orbis is already travelling.\r\n";
+
+        // Find next :07, :22, :37, :52 boarding time
+        var nextHour = now.getHours();
+        var nextMin = 7;
+        if (minutes < 7) nextMin = 7;
+        else if (minutes < 22) nextMin = 22;
+        else if (minutes < 37) nextMin = 37;
+        else if (minutes < 52) nextMin = 52;
+        else {
+            nextMin = 7;
+            nextHour = (nextHour + 1) % 24;
+        }
+
+        var hrStr = nextHour < 10 ? "0" + nextHour : nextHour;
+        var minStr = nextMin < 10 ? "0" + nextMin : nextMin;
+
+        msg += "The next train will board at #b#e" + hrStr + ":" + minStr + "#k#n.\r\n";
     }
 
     if (cm.haveItem(4031045)) {
@@ -40,7 +56,7 @@ function start() {
             cm.dispose();
         }
     } else {
-        cm.sendOk("Make sure you got a Orbis ticket to travel in this train. Check your inventory.");
+        cm.sendOk(msg + "\r\n#e(Make sure you've got an Orbis Ticket to travel on this train.)#n");
         cm.dispose();
     }
 }

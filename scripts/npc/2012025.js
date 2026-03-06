@@ -1,31 +1,66 @@
+function getNextSchedules() {
+    var now = new Date();
+    var currentHour = now.getHours();
+    var currentMin = now.getMinutes();
+
+    var schedules = [];
+    var baseIntervals = [0, 20, 40];
+
+    // Find next 2 intervals
+    var minOffset = 0;
+    while (schedules.length < 2) {
+        var checkHour = (currentHour + Math.floor((currentMin + minOffset) / 60)) % 24;
+        var checkMin = (currentMin + minOffset) % 60;
+
+        for (var i = 0; i < baseIntervals.length; i++) {
+            if (checkMin <= baseIntervals[i] && schedules.length < 2) {
+                var hrStr = checkHour < 10 ? "0" + checkHour : checkHour;
+                var minStr = baseIntervals[i] < 10 ? "0" + baseIntervals[i] : baseIntervals[i];
+                schedules.push(hrStr + ":" + minStr);
+            }
+        }
+        minOffset += 60;
+        if (schedules.length < 2) {
+            currentMin = 0;
+            minOffset = 60;
+        }
+    }
+    return schedules;
+}
+
 function start() {
     var em = cm.getEventManager("Genie");
     var now = new Date();
     var minutes = now.getMinutes();
-    var seconds = now.getSeconds();
-    var totalSeconds = minutes * 60 + seconds;
-    var cycleTime = (totalSeconds % 1200); // 20 mins (1200s)
 
-    // Orbis Boarding: 0 - 2.5 mins (0 - 150s)
-
-    var msg = "";
+    var msg = "The Genie to the sandy dunes of Ariant is ready.\r\n";
     if (em.getProperty("entry") == "true") {
-        msg = "We are currently #bboarding#k for Ariant!\r\n";
-        var timeLeft = 150 - cycleTime;
-        var minLeft = Math.ceil(timeLeft / 60);
-        msg += "The genie will leave in #b" + minLeft + " minutes#k.\r\n";
+        msg += "We are currently #bboarding#k for Ariant!\r\n";
+
+        var nextHour = now.getHours();
+        var nextMin = 2;
+        if (minutes < 2) nextMin = 2;
+        else if (minutes < 22) nextMin = 22;
+        else if (minutes < 42) nextMin = 42;
+        else {
+            nextMin = 2;
+            nextHour = (nextHour + 1) % 24;
+        }
+        var hrStr = nextHour < 10 ? "0" + nextHour : nextHour;
+        var minStr = nextMin < 10 ? "0" + nextMin : nextMin;
+
+        msg += "The genie will leave at approx #b#e" + hrStr + ":" + minStr + " and 30 secs#k#n.\r\n";
     } else {
-        msg = "The genie to Ariant is already travelling.\r\n";
-        // Next boarding at next 0, 20, 40
-        var nextBoarding = 20 - (minutes % 20);
-        msg += "The next genie will board in #b" + nextBoarding + " minutes#k.\r\n";
+        msg += "The genie to Ariant is already travelling.\r\n";
+        var schedules = getNextSchedules();
+        msg += "Our next boardings are #b#e" + schedules[0] + "#k#n and #b#e" + schedules[1] + "#k#n.\r\n";
     }
 
     if (cm.haveItem(4031576)) {
         if (em.getProperty("entry") == "true") {
-            cm.sendYesNo(msg + "This will not be a short flight, so you need to take care of some things, I suggest you do that first before getting on board. Do you still wish to board the genie?");
+            cm.sendYesNo(msg + "This will not be a short flight. Do you still wish to board the genie?");
         } else {
-            cm.sendOk(msg + "I'm sorry, but you'll have to get on the next ride. The ride schedule is available through the guide at the ticketing booth.");
+            cm.sendOk(msg + "I'm sorry, but you'll have to get on the next ride. Please check the schedule.");
             cm.dispose();
         }
     } else {

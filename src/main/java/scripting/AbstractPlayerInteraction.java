@@ -23,6 +23,8 @@ package scripting;
 
 import client.Character;
 import client.Character.DelayedQuestUpdate;
+import client.Skill;
+import client.SkillFactory;
 import client.*;
 import client.inventory.*;
 import client.inventory.manipulator.InventoryManipulator;
@@ -41,6 +43,7 @@ import server.events.EventManager;
 import scripting.npc.NPCScriptManager;
 import server.CashShop;
 import server.ItemInformationProvider;
+import server.StatEffect;
 import server.Marriage;
 import server.expeditions.Expedition;
 import server.expeditions.ExpeditionBossLog;
@@ -1029,8 +1032,26 @@ public class AbstractPlayerInteraction {
     }
 
     public void useItem(int id) {
-        ItemInformationProvider.getInstance().getItemEffect(id).applyTo(c.getPlayer());
-        c.sendPacket(PacketCreator.getItemMessage(id));// Useful shet :3
+        StatEffect effect = ItemInformationProvider.getInstance().getItemEffect(id);
+        if (effect != null) {
+            effect.applyTo(c.getPlayer());
+            c.sendPacket(PacketCreator.getItemMessage(id));// Useful shet :3
+        } else {
+            c.getPlayer().dropMessage(5, "[Error] Could not find item effect for ID: " + id);
+        }
+    }
+
+    public void giveGMBuff(int durationMs) {
+        int[] skills = { 9101001, 9101002, 9101003, 9101008, 1005, 5121009, 3121002, 4111001 };
+        for (int skillId : skills) {
+            Skill skill = SkillFactory.getSkill(skillId);
+            if (skill != null) {
+                StatEffect effect = skill.getEffect(skill.getMaxLevel());
+                if (effect != null) {
+                    effect.applyTo(c.getPlayer(), durationMs);
+                }
+            }
+        }
     }
 
     public void cancelItem(final int id) {

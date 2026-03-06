@@ -437,7 +437,8 @@ public class Character extends AbstractCharacterObject {
     private int passiveEva = 0;
 
     // Daily Playtime for Leaderboard
-    private int dailyPlaytime = 0;
+    public int dailyPlaytime = 0;
+    public transient long sessionStartTime = 0;
 
     // [ANTI-CHEAT VARIABLES]
     private boolean isPendingBotCheck = false; // Locks player during check
@@ -6791,7 +6792,7 @@ public class Character extends AbstractCharacterObject {
             return;
 
         int addStr = 0, addDex = 0, addInt = 0, addLuk = 0;
-        int maxAp = YamlConfig.config.server.MAX_AP;
+        int maxAp = 32767;
 
         effLock.lock();
         statWlock.lock();
@@ -7585,8 +7586,9 @@ public class Character extends AbstractCharacterObject {
                 ret.passiveSpeed = rs.getInt("passive_speed");
                 ret.passiveJump = rs.getInt("passive_jump");
                 ret.dailyPlaytime = rs.getInt("dailyPlaytime");
+                ret.sessionStartTime = System.currentTimeMillis();
                 ret.reborns = rs.getInt("reborns");
-
+                ret.sellUntradables = rs.getInt("sell_untradables") == 1;
                 // Store mount info temporarily in the character object to initialize later?
                 // Or just init here if you move maplemount init logic here.
                 // For now, we will handle Mount initialization in loadInventoryData since it
@@ -9127,7 +9129,6 @@ public class Character extends AbstractCharacterObject {
                 saveTeleportRocks(con);
 
                 // 6. Social & Meta (Buddies, Events, Areas)
-                saveBuddylist(con);
                 saveAreaInfo(con);
                 saveEventStats(con);
 
@@ -9303,7 +9304,13 @@ public class Character extends AbstractCharacterObject {
             ps.setInt(66, passiveLuk);
             ps.setInt(67, passiveSpeed);
             ps.setInt(68, passiveJump);
-            ps.setInt(69, dailyPlaytime);
+
+            if (this.sessionStartTime > 0) {
+                long elapsed = System.currentTimeMillis() - this.sessionStartTime;
+                this.dailyPlaytime += (int) (elapsed / 60000); // add elapsed minutes
+                this.sessionStartTime = System.currentTimeMillis(); // reset timer for next autosave cycle
+            }
+            ps.setInt(69, this.dailyPlaytime);
             ps.setInt(70, reborns);
             ps.setInt(71, sellUntradables ? 1 : 0);
             ps.setInt(72, sellRebirths ? 1 : 0);

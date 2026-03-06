@@ -9,6 +9,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import constants.id.MapId;
+import server.maps.MapleMap;
+import server.maps.Portal;
+
 /**
  * Unified Unban Command
  * Clears bans from Accounts, IP, MAC, and HWID tables.
@@ -38,7 +42,8 @@ public class UnBanCommand extends Command {
 
         try (Connection con = DatabaseConnection.getConnection()) {
             // 1. Unban Account (Set banned = 0)
-            try (PreparedStatement ps = con.prepareStatement("UPDATE accounts SET banned = 0, banreason = NULL WHERE id = ?")) {
+            try (PreparedStatement ps = con
+                    .prepareStatement("UPDATE accounts SET banned = 0, banreason = NULL WHERE id = ?")) {
                 ps.setInt(1, accId);
                 ps.executeUpdate();
             }
@@ -60,13 +65,31 @@ public class UnBanCommand extends Command {
                 ps.setInt(1, accId);
                 ps.executeUpdate();
             } catch (SQLException e) {
-                // If the hwidbans table doesn't have an 'aid' column, this might fail.
-                // However, most 'plus' sources link HWID to AID.
-                // If this fails, you might need to manually delete HWIDs by string match, 
-                // but that requires knowing the HWID string, which we don't have from just an IGN offline.
+                // Ignore if not present
             }
 
-            gm.message("Successfully unbanned " + targetName + ". All locks (Account, IP, MAC, HWID) have been cleared.");
+            // 5. Unjail Character (DB)
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE characters SET map = ?, jailexpire = 0 WHERE accountid = ? AND map = ?")) {
+                ps.setInt(1, 100000000); // Return to Henesys safely
+                ps.setInt(2, accId);
+                ps.setInt(3, MapId.JAIL);
+                ps.executeUpdate();
+            }
+
+            // 6. Unjail if Online
+            Character victim = c.getWorldServer().getPlayerStorage().getCharacterByName(targetName);
+            if (victim != null) {
+                victim.removeJailExpirationTime();
+                if (victim.getMapId() == MapId.JAIL) {
+                    MapleMap targetMap = c.getChannelServer().getMapFactory().getMap(100000000);
+                    Portal targetPortal = targetMap.getPortal(0);
+                    victim.changeMap(targetMap, targetPortal);
+                }
+            }
+
+            gm.message("Successfully unbanned/unjailed " + targetName
+                    + ". All locks (Account, IP, MAC, HWID, Jail) have been cleared.");
 
         } catch (Exception e) {
             e.printStackTrace();

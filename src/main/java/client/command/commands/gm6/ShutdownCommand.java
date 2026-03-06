@@ -29,6 +29,7 @@ import client.command.Command;
 import net.server.Server;
 import net.server.world.World;
 import server.TimerManager;
+import tools.PacketCreator;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -73,7 +74,9 @@ public class ShutdownCommand extends Command {
 
             for (World w : Server.getInstance().getWorlds()) {
                 for (Character chr : w.getPlayerStorage().getAllCharacters()) {
-                    chr.dropMessage("Server is undergoing maintenance process, and will be shutdown in " + strTime + ". Prepare yourself to quit safely in the mean time.");
+                    chr.dropMessage("Server is undergoing maintenance process, and will be shutdown in " + strTime
+                            + ". Prepare yourself to quit safely in the mean time.");
+                    chr.sendPacket(PacketCreator.getClock(time / 1000));
                 }
             }
         }

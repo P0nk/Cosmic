@@ -946,6 +946,17 @@ public class StatEffect {
         return hwResult;
     }
 
+    private static final ThreadLocal<Integer> durationOverride = new ThreadLocal<>();
+
+    public boolean applyTo(Character chr, int customDuration) {
+        durationOverride.set(customDuration);
+        try {
+            return applyTo(chr, chr, true, null, false, 1);
+        } finally {
+            durationOverride.remove();
+        }
+    }
+
     public boolean applyTo(Character chr) {
         return applyTo(chr, chr, true, null, false, 1);
     }
@@ -1274,6 +1285,10 @@ public class StatEffect {
     }
 
     public int getBuffLocalDuration() {
+        Integer override = durationOverride.get();
+        if (override != null) {
+            return override;
+        }
         return !YamlConfig.config.server.USE_BUFF_EVERLASTING ? duration : Integer.MAX_VALUE;
     }
 

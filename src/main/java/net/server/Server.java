@@ -881,30 +881,23 @@ public class Server {
 
             List<Pair<String, Integer>> rankUpdate = new ArrayList<>(0);
             try (PreparedStatement ps = con.prepareStatement(
-                    "SELECT `characters`.`name`, `characters`.`level`, `characters`.`world` FROM `characters` LEFT JOIN accounts ON accounts.id = characters.accountid WHERE `characters`.`gm` < 2 AND `accounts`.`banned` = '0'"
+                    "SELECT `characters`.`name`, `characters`.`reborns`, `characters`.`level`, `characters`.`world` FROM `characters` LEFT JOIN accounts ON accounts.id = characters.accountid WHERE `characters`.`gm` < 2 AND `accounts`.`banned` = '0'"
                             + worldQuery + " ORDER BY "
                             + (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? "world, " : "")
-                            + "level DESC, exp DESC, lastExpGainTime ASC LIMIT 50");
+                            + "reborns DESC, level DESC, exp DESC, lastExpGainTime ASC LIMIT 50");
                     ResultSet rs = ps.executeQuery()) {
 
                 if (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING) {
                     int currentWorld = -1;
                     while (rs.next()) {
-                        int rsWorld = rs.getInt("world");
-                        if (currentWorld < rsWorld) {
-                            currentWorld = rsWorld;
-                            rankUpdate = new ArrayList<>(50);
-                            rankSystem.add(new Pair<>(rsWorld, rankUpdate));
-                        }
-
-                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("level")));
+                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("reborns")));
                     }
                 } else {
                     rankUpdate = new ArrayList<>(50);
                     rankSystem.add(new Pair<>(0, rankUpdate));
 
                     while (rs.next()) {
-                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("level")));
+                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("reborns")));
                     }
                 }
             }

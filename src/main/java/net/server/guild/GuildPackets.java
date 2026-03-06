@@ -18,25 +18,25 @@ import java.util.List;
 public class GuildPackets {
     public static Packet showGuildInfo(Character chr) {
         OutPacket p = OutPacket.create(SendOpcode.GUILD_OPERATION);
-        p.writeByte(0x1A); //signature for showing guild info
-        if (chr == null) { //show empty guild (used for leaving, expelled)
+        p.writeByte(0x1A); // signature for showing guild info
+        if (chr == null) { // show empty guild (used for leaving, expelled)
             p.writeByte(0);
             return p;
         }
         Guild g = chr.getClient().getWorldServer().getGuild(chr.getMGC());
-        if (g == null) { //failed to read from DB - don't show a guild
+        if (g == null) { // failed to read from DB - don't show a guild
             p.writeByte(0);
             return p;
         }
-        p.writeByte(1); //bInGuild
+        p.writeByte(1); // bInGuild
         p.writeInt(g.getId());
         p.writeString(g.getName());
         for (int i = 1; i <= 5; i++) {
             p.writeString(g.getRankTitle(i));
         }
         Collection<GuildCharacter> members = g.getMembers();
-        p.writeByte(members.size()); //then it is the size of all the members
-        for (GuildCharacter mgc : members) {//and each of their character ids o_O
+        p.writeByte(members.size()); // then it is the size of all the members
+        for (GuildCharacter mgc : members) {// and each of their character ids o_O
             p.writeInt(mgc.getId());
         }
         for (GuildCharacter mgc : members) {
@@ -88,11 +88,18 @@ public class GuildPackets {
     /**
      * Gets a Heracle/guild message packet.
      * <p>
-     * Possible values for <code>code</code>:<br> 28: guild name already in use<br>
-     * 31: problem in locating players during agreement<br> 33/40: already joined a guild<br>
-     * 35: Cannot make guild<br> 36: problem in player agreement<br> 38: problem during forming guild<br>
-     * 41: max number of players in joining guild<br> 42: character can't be found this channel<br>
-     * 45/48: character not in guild<br> 52: problem in disbanding guild<br> 56: admin cannot make guild<br>
+     * Possible values for <code>code</code>:<br>
+     * 28: guild name already in use<br>
+     * 31: problem in locating players during agreement<br>
+     * 33/40: already joined a guild<br>
+     * 35: Cannot make guild<br>
+     * 36: problem in player agreement<br>
+     * 38: problem during forming guild<br>
+     * 41: max number of players in joining guild<br>
+     * 42: character can't be found this channel<br>
+     * 45/48: character not in guild<br>
+     * 52: problem in disbanding guild<br>
+     * 56: admin cannot make guild<br>
      * 57: problem in increasing guild size<br>
      *
      * @param code The response code.
@@ -108,7 +115,8 @@ public class GuildPackets {
      * Gets a guild message packet appended with target name.
      * <p>
      * 53: player not accepting guild invites<br>
-     * 54: player already managing an invite<br> 55: player denied an invite<br>
+     * 54: player already managing an invite<br>
+     * 55: player denied an invite<br>
      *
      * @param code       The response code.
      * @param targetName The initial player target of the invitation.
@@ -129,14 +137,14 @@ public class GuildPackets {
         p.writeFixedString(StringUtil.getRightPaddedStr(mgc.getName(), '\0', 13));
         p.writeInt(mgc.getJobId());
         p.writeInt(mgc.getLevel());
-        p.writeInt(mgc.getGuildRank()); //should be always 5 but whatevs
-        p.writeInt(mgc.isOnline() ? 1 : 0); //should always be 1 too
-        p.writeInt(1); //? could be guild signature, but doesn't seem to matter
+        p.writeInt(mgc.getGuildRank()); // should be always 5 but whatevs
+        p.writeInt(mgc.isOnline() ? 1 : 0); // should always be 1 too
+        p.writeInt(1); // ? could be guild signature, but doesn't seem to matter
         p.writeInt(3);
         return p;
     }
 
-    //someone leaving, mode == 0x2c for leaving, 0x2f for expelled
+    // someone leaving, mode == 0x2c for leaving, 0x2f for expelled
     public static Packet memberLeft(GuildCharacter mgc, boolean bExpelled) {
         OutPacket p = OutPacket.create(SendOpcode.GUILD_OPERATION);
         p.writeByte(bExpelled ? 0x2f : 0x2c);
@@ -146,7 +154,7 @@ public class GuildPackets {
         return p;
     }
 
-    //rank change
+    // rank change
     public static Packet changeRank(GuildCharacter mgc) {
         OutPacket p = OutPacket.create(SendOpcode.GUILD_OPERATION);
         p.writeByte(0x40);
@@ -238,15 +246,15 @@ public class GuildPackets {
             return p;
         }
         int threadCount = rs.getRow();
-        if (rs.getInt("localthreadid") == 0) { //has a notice
+        if (rs.getInt("localthreadid") == 0) { // has a notice
             p.writeByte(1);
             addThread(p, rs);
-            threadCount--; //one thread didn't count (because it's a notice)
+            threadCount--; // one thread didn't count (because it's a notice)
         } else {
             p.writeByte(0);
         }
-        if (!rs.absolute(start + 1)) { //seek to the thread before where we start
-            rs.first(); //uh, we're trying to start at a place past possible
+        if (!rs.absolute(start + 1)) { // seek to the thread before where we start
+            rs.first(); // uh, we're trying to start at a place past possible
             start = 0;
         }
         p.writeInt(threadCount);
@@ -258,7 +266,8 @@ public class GuildPackets {
         return p;
     }
 
-    public static Packet showThread(int localthreadid, ResultSet threadRS, ResultSet repliesRS) throws SQLException, RuntimeException {
+    public static Packet showThread(int localthreadid, ResultSet threadRS, ResultSet repliesRS)
+            throws SQLException, RuntimeException {
         OutPacket p = OutPacket.create(SendOpcode.GUILD_BBS_PACKET);
         p.writeByte(0x07);
         p.writeInt(localthreadid);
@@ -290,11 +299,11 @@ public class GuildPackets {
         OutPacket p = OutPacket.create(SendOpcode.GUILD_OPERATION);
         p.writeByte(0x49);
         p.writeInt(npcid);
-        if (!rs.last()) { //no guilds o.o
+        if (!rs.last()) { // no guilds o.o
             p.writeInt(0);
             return p;
         }
-        p.writeInt(rs.getRow()); //number of entries
+        p.writeInt(rs.getRow()); // number of entries
         rs.beforeFirst();
         while (rs.next()) {
             p.writeString(rs.getString("name"));
@@ -318,7 +327,7 @@ public class GuildPackets {
         p.writeInt(worldRanking.size());
         for (Pair<String, Integer> wr : worldRanking) {
             p.writeString(wr.getLeft());
-            p.writeInt(wr.getRight());
+            p.writeInt(wr.getRight()); // This now dynamically holds 'reborns' as passed by Server.java
             p.writeInt(0);
             p.writeInt(0);
             p.writeInt(0);
@@ -509,7 +518,7 @@ public class GuildPackets {
 
     public static Packet GuildBoss_HealerMove(short nY) {
         OutPacket p = OutPacket.create(SendOpcode.GUILD_BOSS_HEALER_MOVE);
-        p.writeShort(nY); //New Y Position
+        p.writeShort(nY); // New Y Position
         return p;
     }
 
@@ -540,7 +549,6 @@ public class GuildPackets {
         p.writeByte(guild.getLogoColor());
         return p;
     }
-
 
     public static Packet sendShowInfo(int allianceid, int playerid) {
         OutPacket p = OutPacket.create(SendOpcode.ALLIANCE_OPERATION);

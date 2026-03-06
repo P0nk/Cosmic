@@ -18,8 +18,8 @@ public class DailyRankingAnnouncer implements Runnable {
     // Constructor to handle the specific world
     public DailyRankingAnnouncer(String worldName) {
         this.worldName = worldName;
-        // Map names to IDs (Bera = 0, Scania = 1 based on actual DB despite config)
-        this.worldId = worldName.equalsIgnoreCase("Scania") ? 1 : 0;
+        // Map names to IDs (Bera = 1, Scania = 0 based on actual DB despite config)
+        this.worldId = worldName.equalsIgnoreCase("Scania") ? 0 : 1;
     }
 
     @Override
@@ -69,6 +69,9 @@ public class DailyRankingAnnouncer implements Runnable {
             json.append(",");
 
             appendField(json, "📜 Quest Masters", getTopQuestersQuery(3), true, false);
+            json.append(",");
+
+            appendField(json, "👥 Total Players Today", getTotalPlayersQuery(), true, false);
             json.append(",");
 
             appendField(json, "⏳ Most Played Today", getMostPlayedQuery(3), false, true);
@@ -186,5 +189,10 @@ public class DailyRankingAnnouncer implements Runnable {
         return "SELECT c.name, c.dailyPlaytime FROM characters c JOIN accounts a ON c.accountid = a.id " +
                 "WHERE c.world = ? AND c.gm = 0 AND a.banned = 0 AND c.dailyPlaytime > 0 ORDER BY c.dailyPlaytime DESC LIMIT "
                 + limit;
+    }
+
+    private String getTotalPlayersQuery() {
+        return "SELECT 'Players', COUNT(*) FROM characters c JOIN accounts a ON c.accountid = a.id " +
+                "WHERE c.world = ? AND c.gm = 0 AND a.banned = 0 AND c.dailyPlaytime > 0";
     }
 }

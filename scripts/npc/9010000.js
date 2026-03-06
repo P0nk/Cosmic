@@ -24,11 +24,7 @@
       10, 20, 30, 40, 50, 75, 100, 125, 150...
 
     GM Buff Items (10-min items per grade tier):
-      Tier 1 (G1-2): 2022179  - Rainbow Bagel (1.2x stat)
-      Tier 2 (G3-4): 2022430  - Hard Boiled Egg Sandwich (modest ATK/DEF buff)
-      Tier 3 (G5-6): 2022112  - Rose Scented Perfume (1.5x atk buff)
-      Tier 4 (G7-8): 2022218  - Mr. Smiles (strong all-stat)
-      Tier 5 (G9-10): 2022631 - Power Elixir+ equivalent (max-tier buff)
+      - We no longer use items; instead we cast server GM Buffs for 10 minutes (600000 ms).
     
     EXP Rewards per milestone (capped, not scaled by rate):
       Check 10: 50,000 EXP
@@ -49,8 +45,8 @@ var SLOT_SCORE = 3;
 
 var GRADE_THRESHOLDS = [0, 60, 160, 310, 520, 800, 1160, 1620, 2200, 2900];
 
-// Buff items per grade tier (grades 1-2, 3-4, 5-6, 7-8, 9-10)
-var BUFF_ITEMS = [2022179, 2022430, 2022112, 2022218, 2022631];
+// GM Buff duration in MS (10 minutes)
+var BUFF_DURATION = 600000;
 
 var MILESTONE_EXP = {
     10: 50000,
@@ -93,13 +89,7 @@ function getGradeLabel(g) {
     return "Grade " + g;
 }
 
-function getBuffTier(grade) {
-    if (grade <= 2) return 0;
-    if (grade <= 4) return 1;
-    if (grade <= 6) return 2;
-    if (grade <= 8) return 3;
-    return 4;
-}
+// Removed getBuffTier as it is no longer used for GM Buffs
 
 function recalcGrade(score) {
     for (var i = 9; i >= 0; i--) {
@@ -317,17 +307,14 @@ function action(mode, type, selection) {
 
         if (isMilestone(count)) {
             var exp = getMilestoneExp(count);
-            var tier = getBuffTier(newGrade);
-            var buffId = BUFF_ITEMS[tier];
             cm.gainExp(exp);
-            cm.useItem(buffId);
+            cm.giveGMBuff(BUFF_DURATION);
             msg += "\r\n#e[Bonus] Milestone Reached — Check " + count + "!#n\r\n";
             msg += "  +" + exp.toLocaleString() + " EXP\r\n";
-            msg += "  GM Buff applied for 10 minutes! (Tier " + (tier + 1) + ")";
+            msg += "  GM Buffs applied for 10 minutes!";
         } else {
-            var tier = getBuffTier(newGrade);
-            cm.useItem(BUFF_ITEMS[tier]);
-            msg += "\r\n#bGM Buff applied! (Grade " + getGradeLabel(newGrade) + " tier, 10 minutes)#k";
+            cm.giveGMBuff(BUFF_DURATION);
+            msg += "\r\n#bGM Buffs applied for 10 minutes!#k";
         }
 
         console.log("[BotCheck] Correct! New Score=" + score + ", Grade=" + newGrade);

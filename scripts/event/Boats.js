@@ -185,9 +185,17 @@ function setupRideToOrbis(timeLeft, offset) {
     Boat_to_Orbis.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
     Orbis_Boat_Cabin.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 
-    // Invasion Logic
-    var timeUntilInvasion = INVASION_DELAY - offset;
-    if (timeUntilInvasion > 0) {
+    // Invasion Logic - Random delay between 1 to 5 minutes
+    var randomDelay = Math.floor(Math.random() * 240000) + 60000;
+    var timeUntilInvasion = randomDelay - offset;
+
+    // Ensure we don't schedule an immediate invasion due to high offset
+    if (timeUntilInvasion < 10000) {
+        timeUntilInvasion = 10000;
+    }
+
+    // Ensure invasion happens within flight time
+    if (timeUntilInvasion < timeLeft - 60000) {
         em.schedule("runInvasionCheck", timeUntilInvasion);
     }
 }
@@ -244,9 +252,17 @@ function setupRideToEllinia(timeLeft, offset) {
     Boat_to_Ellinia.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
     Ellinia_Boat_Cabin.broadcastMessage(PacketCreator.getClock(Math.floor(timeLeft / 1000)));
 
-    // Invasion Logic
-    var timeUntilInvasion = INVASION_DELAY - offset;
-    if (timeUntilInvasion > 0) {
+    // Invasion Logic - Random delay between 1 to 5 minutes
+    var randomDelay = Math.floor(Math.random() * 240000) + 60000;
+    var timeUntilInvasion = randomDelay - offset;
+
+    // Ensure we don't schedule an immediate invasion due to high offset
+    if (timeUntilInvasion < 10000) {
+        timeUntilInvasion = 10000;
+    }
+
+    // Ensure invasion happens within flight time
+    if (timeUntilInvasion < timeLeft - 60000) {
         em.schedule("runInvasionCheck", timeUntilInvasion);
     }
 }

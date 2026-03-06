@@ -7,11 +7,17 @@ function start() {
     // Flight: :10 - :25
 
     if (minutes < 10) {
-        msg += "We are currently #bboarding#k for Orbis!\r\nThe ship will take off at the top of the hour (approx " + (10 - minutes) + " mins).\r\n";
+        msg += "We are currently #bboarding#k for Orbis!\r\nKeep a tight grip on your belongings and stay indoors if you hear the sirens! The skies can be treacherous.\r\n";
     } else {
         msg += "We are currently #rnot boarding#k.\r\n";
-        msg += "Next Boarding Time: #bXX:00#k\r\n";
-        msg += "Next Take Off Time: #bXX:10#k\r\n";
+
+        var nextHour = now.getHours();
+        var hrStr = nextHour < 10 ? "0" + nextHour : nextHour;
+        var next2Hour = (nextHour + 1) % 24;
+        var hrStr2 = next2Hour < 10 ? "0" + next2Hour : next2Hour;
+
+        msg += "Next Boarding Time: #b#e" + hrStr2 + ":00#k#n\r\n";
+        msg += "Next Take Off Time: #b#e" + hrStr2 + ":10#k#n\r\n";
     }
 
     msg += "Do you want to go to Orbis?";
