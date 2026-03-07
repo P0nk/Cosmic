@@ -54,9 +54,17 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
     @Override
     public void handlePacket(InPacket p, Client c) {
         Character player = c.getPlayer();
-        MapleMap map = player.getMap();
+        if (player == null) {
+            return;
+        }
 
-        if (player.isChangingMaps()) {  // thanks Lame for noticing mob movement shuffle (mob OID on different maps) happening on map transitions
+        MapleMap map = player.getMap();
+        if (map == null) {
+            return;
+        }
+
+        if (player.isChangingMaps()) { // thanks Lame for noticing mob movement shuffle (mob OID on different maps)
+                                       // happening on map transitions
             return;
         }
 
@@ -125,8 +133,11 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
             nextSkillLevel = skillToUse.level();
             nextUse = MobSkillFactory.getMobSkillOrThrow(skillToUse.type(), skillToUse.level());
 
-            if (!(nextUse != null && monster.canUseSkill(nextUse, false) && nextUse.getHP() >= (int) (((float) monster.getHp() / monster.getMaxHp()) * 100) && mobMp >= nextUse.getMpCon())) {
-                // thanks OishiiKawaiiDesu for noticing mobs trying to cast skills they are not supposed to be able
+            if (!(nextUse != null && monster.canUseSkill(nextUse, false)
+                    && nextUse.getHP() >= (int) (((float) monster.getHp() / monster.getMaxHp()) * 100)
+                    && mobMp >= nextUse.getMpCon())) {
+                // thanks OishiiKawaiiDesu for noticing mobs trying to cast skills they are not
+                // supposed to be able
 
                 nextSkillId = 0;
                 nextSkillLevel = 0;
@@ -147,16 +158,17 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
         }
 
         if (nextUse != null) {
-            c.sendPacket(PacketCreator.moveMonsterResponse(objectid, moveid, mobMp, aggro, nextSkillId, nextSkillLevel));
+            c.sendPacket(
+                    PacketCreator.moveMonsterResponse(objectid, moveid, mobMp, aggro, nextSkillId, nextSkillLevel));
         } else {
             c.sendPacket(PacketCreator.moveMonsterResponse(objectid, moveid, mobMp, aggro));
         }
 
-
         try {
             int movementDataStart = p.getPosition();
-            updatePosition(p, monster, -2);  // Thanks Doodle & ZERO傑洛 for noticing sponge-based bosses moving out of stage in case of no-offset applied
-            long movementDataLength = p.getPosition() - movementDataStart; //how many bytes were read by updatePosition
+            updatePosition(p, monster, -2); // Thanks Doodle & ZERO傑洛 for noticing sponge-based bosses moving out of
+                                            // stage in case of no-offset applied
+            long movementDataLength = p.getPosition() - movementDataStart; // how many bytes were read by updatePosition
             p.seek(movementDataStart);
 
             if (YamlConfig.config.server.USE_DEBUG_SHOW_RCVD_MVLIFE) {
@@ -165,8 +177,10 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
                         useSkillLevel, nextMovementCouldBeSkill, mobMp);
             }
 
-            map.broadcastMessage(player, PacketCreator.moveMonster(objectid, nextMovementCouldBeSkill, rawActivity, useSkillId, useSkillLevel, pOption, startPos, p, movementDataLength), serverStartPos);
-            //updatePosition(res, monster, -2); //does this need to be done after the packet is broadcast?
+            map.broadcastMessage(player, PacketCreator.moveMonster(objectid, nextMovementCouldBeSkill, rawActivity,
+                    useSkillId, useSkillLevel, pOption, startPos, p, movementDataLength), serverStartPos);
+            // updatePosition(res, monster, -2); //does this need to be done after the
+            // packet is broadcast?
             map.moveMonster(monster, monster.getPosition());
         } catch (EmptyMovementException e) {
         }

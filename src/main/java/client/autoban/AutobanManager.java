@@ -38,8 +38,8 @@ public class AutobanManager {
 
     // Spam Arrays
     private final long[] spam = new long[20];
-    private final int[] timestamp = new int[20];
-    private final byte[] timestampcounter = new byte[20];
+    private final long[] spamstartTime = new long[20];
+    private final int[] timestampcounter = new int[20];
 
     public AutobanManager(Character chr) {
         this.chr = chr;
@@ -240,32 +240,34 @@ public class AutobanManager {
     }
 
     public void setTimestamp(int type, int time, int times, String debugInfo) {
-        if (this.timestamp[type] == time) {
+        long currentT = System.currentTimeMillis();
+
+        if (this.spamstartTime[type] == 0) {
+            this.spamstartTime[type] = currentT;
+        }
+
+        long timeElapsed = currentT - this.spamstartTime[type];
+
+        if (timeElapsed < 10000) { // 10 second rolling window
             this.timestampcounter[type]++;
-            if (this.timestampcounter[type] >= times + 12 && times < 100) { // Safety margin for lag spikes
-                // If it exceeds way too much, jail anyway
+            // Multiply the allowed 'times' per second by 10 to fit the 10-second window
+            int limit = times * 10;
+
+            if (this.timestampcounter[type] >= limit + 30 && times < 100) {
                 jailPlayer("Packet Spamming (Type: " + type + ") " + debugInfo, 10);
                 log.info("AutoJail - Chr {} was caught spamming TYPE {} {}", chr.getName(), type, debugInfo);
-            } else if (this.timestampcounter[type] >= times) {
-                // Just log for now if it's borderline
-                log.info("AutoJail DEBUG - Chr {} potentially spamming TYPE {} count {}/{} {}",
-                        chr.getName(), type, this.timestampcounter[type], times, debugInfo);
-                // Still jail if it's way over the limit, but maybe give leeway?
-                // For now, let's just log and rely on the +12 safety margin above for the
-                // actual jail.
-                // Or we can just use the user-provided 'times' as the hard limit.
-
-                // Let's stick to the plan: Log debug info, but JAIL if it hits the limit.
-                // Wait, I should implement what I planned.
-                // Plan: "Increase the packet count threshold from 28 to 40"
-                // So I will just log here and jail if it hits 'times'.
-
+                this.spamstartTime[type] = currentT;
+                this.timestampcounter[type] = 0;
+            } else if (this.timestampcounter[type] >= limit) {
                 jailPlayer("Packet Spamming (Type: " + type + ") " + debugInfo, 15);
                 log.info("AutoJail - Chr {} was caught spamming TYPE {} {}", chr.getName(), type, debugInfo);
+                this.spamstartTime[type] = currentT;
+                this.timestampcounter[type] = 0;
             }
         } else {
-            this.timestamp[type] = time;
-            this.timestampcounter[type] = 0;
+            // Window has expired, restart the count for the next 10 seconds
+            this.spamstartTime[type] = currentT;
+            this.timestampcounter[type] = 1; // Count this exact packet as the first one
         }
     }
 }

@@ -265,10 +265,7 @@ public class CommandsExecutor {
         // addCommand("buffme", 1, BuffMeCommand.class);
         // addCommand("goto", 1, GotoCommand.class);
 
-        // Note: ToggleExpCommand moved to Lv0 per your list, but kept here if GM
-        // specific logic applies
-
-        addCommand("bossraid", BossRaidCommand.class);
+        // addCommand("bossraid", BossRaidCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
@@ -320,8 +317,8 @@ public class CommandsExecutor {
         addCommand("id", 2, IdCommand.class);
         addCommand("gachalist", GachaListCommand.class);
         addCommand("mobskill", MobSkillCommand.class);
-        addCommand("eavesdrop", 2, EavesdropCommand.class);
         addCommand("buffuniverse", 2, BuffUniverseCommand.class);
+        addCommand("bossraid", 2, BossRaidCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }
