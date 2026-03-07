@@ -432,6 +432,7 @@ public class CommandsExecutor {
         addCommand("setitemstatrefund", 4, SetItemStatRefundCommand.class);
         addCommand("giveitem", 4, GiveItemCommand.class);
         addCommand("botmonitor", 4, BotMonitorCommand.class);
+        addCommand("exchange", 4, client.command.commands.gm4.ExchangeCommand.class);
         commandsNameDesc.add(levelCommandsCursor);
     }
 

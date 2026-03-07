@@ -5339,6 +5339,13 @@ public class Character extends AbstractCharacterObject {
             int tier = Math.min(this.level / 10, 25);
             rate *= getExpRateGainFromWorld(tier);
         }
+
+        if (server.events.FeverScheduler.getInstance().isFeverActive() &&
+                server.events.FeverScheduler.getInstance()
+                        .getCurrentFever() == server.events.FeverScheduler.FeverType.EXP) {
+            rate += server.events.FeverScheduler.getInstance().getCurrentFever().getMultiplier();
+        }
+
         return rate * expCoupon;
     }
 
@@ -5352,6 +5359,13 @@ public class Character extends AbstractCharacterObject {
             int tier = Math.min(this.level / 10, 25);
             rate *= getExpRateGainFromWorld(tier);
         }
+
+        if (server.events.FeverScheduler.getInstance().isFeverActive() &&
+                server.events.FeverScheduler.getInstance()
+                        .getCurrentFever() == server.events.FeverScheduler.FeverType.EXP) {
+            rate += server.events.FeverScheduler.getInstance().getCurrentFever().getMultiplier();
+        }
+
         return rate;
     }
 

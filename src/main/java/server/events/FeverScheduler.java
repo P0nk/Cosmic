@@ -34,7 +34,7 @@ public class FeverScheduler {
         MESO("Meso Rate", 2), // 2x Meso
         NX("NX Rate", 2), // 2x NX
         SPELL_TRACE("Spell Trace", 1), // Guaranteed Spell Trace
-        EXP("Exp Rate", 2); // 2x Exp
+        EXP("Exp Rate", 3); // +3 Exp Rate
 
         private final String name;
         private final int multiplier;
@@ -141,8 +141,7 @@ public class FeverScheduler {
                     world.setSpellTraceFever(true);
                     break;
                 case EXP:
-                    originalExpRates.put(worldId, world.getExpRate());
-                    world.setExpRate(world.getExpRate() * currentFever.getMultiplier());
+                    // EXP fever is dynamically calculated in Character.java
                     break;
             }
 
@@ -201,9 +200,7 @@ public class FeverScheduler {
                         world.setSpellTraceFever(false);
                         break;
                     case EXP:
-                        if (originalExpRates.containsKey(worldId)) {
-                            world.setExpRate(originalExpRates.get(worldId));
-                        }
+                        // Nothing to reset, world rates weren't mutated
                         break;
                 }
                 world.broadcastPacket(PacketCreator.serverNotice(6, "[Fever] The Fever event has ended."));
