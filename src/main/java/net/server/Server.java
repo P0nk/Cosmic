@@ -884,20 +884,20 @@ public class Server {
                     "SELECT `characters`.`name`, `characters`.`reborns`, `characters`.`level`, `characters`.`world` FROM `characters` LEFT JOIN accounts ON accounts.id = characters.accountid WHERE `characters`.`gm` < 2 AND `accounts`.`banned` = '0'"
                             + worldQuery + " ORDER BY "
                             + (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING ? "world, " : "")
-                            + "reborns DESC, level DESC, exp DESC, lastExpGainTime ASC LIMIT 50");
+                            + "level DESC, exp DESC, lastExpGainTime ASC LIMIT 50");
                     ResultSet rs = ps.executeQuery()) {
 
                 if (!YamlConfig.config.server.USE_WHOLE_SERVER_RANKING) {
                     int currentWorld = -1;
                     while (rs.next()) {
-                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("reborns")));
+                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("level")));
                     }
                 } else {
                     rankUpdate = new ArrayList<>(50);
                     rankSystem.add(new Pair<>(0, rankUpdate));
 
                     while (rs.next()) {
-                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("reborns")));
+                        rankUpdate.add(new Pair<>(rs.getString("name"), rs.getInt("level")));
                     }
                 }
             }

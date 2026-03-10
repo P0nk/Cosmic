@@ -1054,6 +1054,24 @@ public class AbstractPlayerInteraction {
         }
     }
 
+    public void giveScalingGMBuffs(int grade, int durationMs) {
+        // Ordered roughly by importance:
+        // Haste, Bless, Holy Symbol, Hyper Body, Advanced Blessing, Speed Infusion,
+        // Sharp Eyes, Maple Warrior
+        int[] skills = { 1005, 9101001, 9101002, 9101008, 9101003, 5121009, 3121002, 4111001 };
+        int buffsToGive = Math.min(grade, skills.length); // Max out at the size of the array (8)
+
+        for (int i = 0; i < buffsToGive; i++) {
+            Skill skill = SkillFactory.getSkill(skills[i]);
+            if (skill != null) {
+                StatEffect effect = skill.getEffect(skill.getMaxLevel());
+                if (effect != null) {
+                    effect.applyTo(c.getPlayer(), durationMs);
+                }
+            }
+        }
+    }
+
     public void cancelItem(final int id) {
         getPlayer().cancelEffect(ItemInformationProvider.getInstance().getItemEffect(id), false, -1);
     }

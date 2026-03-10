@@ -3,6 +3,9 @@ package tools;
 import tools.DatabaseConnection;
 import tools.DiscordWebhook;
 import tools.EnvLoader;
+import net.server.Server;
+import net.server.channel.Channel;
+import client.Character;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -147,6 +150,14 @@ public class DailyRankingAnnouncer implements Runnable {
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+
+        // Reset live characters in memory for this world
+        for (Channel ch : Server.getInstance().getWorld(worldId).getChannels()) {
+            for (Character chr : ch.getPlayerStorage().getAllCharacters()) {
+                chr.dailyPlaytime = 0;
+                chr.sessionStartTime = System.currentTimeMillis(); // Refresh session to prevent pre-reset accumulation
+            }
         }
     }
 

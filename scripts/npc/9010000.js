@@ -308,13 +308,15 @@ function action(mode, type, selection) {
         if (isMilestone(count)) {
             var exp = getMilestoneExp(count);
             cm.gainExp(exp);
-            cm.giveGMBuff(BUFF_DURATION);
+            cm.giveScalingGMBuffs(newGrade, BUFF_DURATION);
             msg += "\r\n#e[Bonus] Milestone Reached — Check " + count + "!#n\r\n";
             msg += "  +" + exp.toLocaleString() + " EXP\r\n";
-            msg += "  GM Buffs applied for 10 minutes!";
+            var buffsGranted = Math.min(newGrade, 8);
+            msg += "  " + buffsGranted + " GM Buff(s) applied for 10 minutes!";
         } else {
-            cm.giveGMBuff(BUFF_DURATION);
-            msg += "\r\n#bGM Buffs applied for 10 minutes!#k";
+            cm.giveScalingGMBuffs(newGrade, BUFF_DURATION);
+            var buffsGranted = Math.min(newGrade, 8);
+            msg += "\r\n#b" + buffsGranted + " GM Buff(s) applied for 10 minutes!#k";
         }
 
         console.log("[BotCheck] Correct! New Score=" + score + ", Grade=" + newGrade);
