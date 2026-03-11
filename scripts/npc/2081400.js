@@ -53,59 +53,44 @@ function action(mode, type, selection) {
             } else if (!cm.isQuestCompleted(6934)) {
                 cm.sendOk("You have not yet passed my trials. I can not advance you until you do so.");
                 cm.dispose();
-            } else if (cm.getJobId() % 100 % 10 != 2) {
+            } else if (cm.getJobId() % 10 == 1) {
                 cm.sendYesNo("You did a marvellous job passing my test. Are you ready to advance to your 4th job?");
-            } else {
+            } else if (cm.getJobId() % 10 == 2) {
                 cm.sendSimple("If I must, I can teach you the art of your class.\r\n#b#L0#Teach me the skills of my class.#l");
-                //cm.dispose();
+            } else {
+                cm.sendOk("You must be a 3rd job advancement to advance to 4th job.");
+                cm.dispose();
             }
         } else if (status == 1) {
-            if (mode >= 1 && cm.getJobId() % 100 % 10 != 2) {
+            if (mode == 1 && cm.getJobId() % 10 == 1) {
                 if (cm.canHold(2280003, 1)) {
                     cm.changeJobById(cm.getJobId() + 1);
-                    if (cm.getJobId() == 412) {
-                        cm.teachSkill(4120002, 0, 10, -1);
-                        cm.teachSkill(4120005, 0, 10, -1);
-                        cm.teachSkill(4121006, 0, 10, -1);
-                    } else if (cm.getJobId() == 422) {
-                        cm.teachSkill(4220002, 0, 10, -1);
-                        cm.teachSkill(4220005, 0, 10, -1);
-                        cm.teachSkill(4221007, 0, 10, -1);
-                    }
                     cm.gainItem(2280003, 1);
+                    cm.sendOk("You have successfully advanced to 4th job. Talk to me again to learn your skills.");
                 } else {
                     cm.sendOk("Please have one slot available on #bUSE#k inventory to receive a skill book.");
                 }
-            } else if (mode >= 1 && cm.getJobId() % 100 % 10 == 2) {
+            } else if (mode == 1 && cm.getJobId() % 10 == 2) {
+                var skills = [];
+                var hwSkill = 0;
                 if (cm.getJobId() == 412) {
-                    //                    if (cm.getPlayer().getSkillLevel(4121008) == 0) {
-                    //                        cm.teachSkill(4121008, 0, 10, -1);
-                    //                    }
-                    if (cm.getPlayer().getSkillLevel(4121004) == 0) {
-                        cm.teachSkill(4121004, 0, 10, -1);
-                    }
+                    skills = [4121000, 4120002, 4121003, 4121004, 4120005, 4121006, 4121007, 4121008];
+                    hwSkill = 4121009;
                 } else if (cm.getJobId() == 422) {
-                    if (cm.getPlayer().getSkillLevel(4221004) == 0) {
-                        cm.teachSkill(4221004, 0, 10, -1);
+                    skills = [4221000, 4221001, 4220002, 4221003, 4221004, 4220005, 4221006, 4221007];
+                    hwSkill = 4221008;
+                }
+
+                for (var i = 0; i < skills.length; i++) {
+                    if (cm.getPlayer().getSkillLevel(skills[i]) <= 0) {
+                        cm.teachSkill(skills[i], 0, 10, -1);
                     }
-                    if (cm.getPlayer().getSkillLevel(4221001) == 0) {
-                        cm.teachSkill(4221001, 0, 10, -1);
-                    }
+                }
+                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
+                    cm.teachSkill(hwSkill, 1, 5, -1);
                 }
                 cm.sendOk("It is done. Leave me now.");
             }
-
-            // Hero's Will Rebirth Check
-            if (cm.getPlayer().getReborns() > 0) {
-                var hwSkill = 0;
-                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
-                    cm.teachSkill(hwSkill, 1, 5, -1);
-                    cm.sendOk("You have vast experience o great thief, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
-                    cm.dispose();
-                    return;
-                }
-            }
-
             cm.dispose();
         }
     }

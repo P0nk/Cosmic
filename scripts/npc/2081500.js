@@ -53,84 +53,44 @@ function action(mode, type, selection) {
             } else if (!cm.isQuestCompleted(6944)) {
                 cm.sendOk("You have not yet passed my trials. I can not advance you until you do so.");
                 cm.dispose();
-            } else if (cm.getJobId() % 100 % 10 != 2) {
+            } else if (cm.getJobId() % 10 == 1) {
                 cm.sendYesNo("You did a marvellous job passing my test. Are you ready to advance to your 4th job?");
-            } else {
+            } else if (cm.getJobId() % 10 == 2) {
                 cm.sendSimple("If I must, I can teach you the art of your class.\r\n#b#L0#Teach me the skills of my class.#l");
-                //cm.dispose();
+            } else {
+                cm.sendOk("You must be a 3rd job advancement to advance to 4th job.");
+                cm.dispose();
             }
         } else if (status == 1) {
-            if (mode >= 1 && cm.getJobId() % 100 % 10 != 2) {
+            if (mode == 1 && cm.getJobId() % 10 == 1) {
                 if (cm.canHold(2280003, 1)) {
                     cm.changeJobById(cm.getJobId() + 1);
-                    if (cm.getJobId() == 512) {
-                        cm.teachSkill(5121001, 0, 10, -1);
-                        cm.teachSkill(5121002, 0, 10, -1);
-                        cm.teachSkill(5121007, 0, 10, -1);
-                        cm.teachSkill(5121009, 0, 10, -1);
-                    } else if (cm.getJobId() == 522) {
-                        cm.teachSkill(5220001, 0, 10, -1);
-                        cm.teachSkill(5220002, 0, 10, -1);
-                        cm.teachSkill(5221004, 0, 10, -1);
-                        cm.teachSkill(5220011, 0, 10, -1);
-                    }
                     cm.gainItem(2280003, 1);
+                    cm.sendOk("You have successfully advanced to 4th job. Talk to me again to learn your skills.");
                 } else {
                     cm.sendOk("Please have one slot available on #bUSE#k inventory to receive a skill book.");
                 }
-            } else if (mode >= 1 && cm.getJobId() % 100 % 10 == 2) {
+            } else if (mode == 1 && cm.getJobId() % 10 == 2) {
+                var skills = [];
+                var hwSkill = 0;
                 if (cm.getJobId() == 512) {
-                    if (cm.getPlayer().getSkillLevel(5121003) == 0) {
-                        cm.teachSkill(5121003, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(5121004) == 0) {
-                        cm.teachSkill(5121004, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(5121005) == 0) {
-                        cm.teachSkill(5121005, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(5121010) == 0) {
-                        cm.teachSkill(5121010, 0, 10, -1);
-                    }
+                    skills = [5121000, 5121001, 5121002, 5121003, 5121004, 5121005, 5121007, 5121009, 5121010];
+                    hwSkill = 5121008;
                 } else if (cm.getJobId() == 522) {
-                    if (cm.getPlayer().getSkillLevel(5221006) == 0) {
-                        cm.teachSkill(5221006, 0, 10, -1);
+                    skills = [5221000, 5220001, 5220002, 5221003, 5221004, 5221006, 5221007, 5221008, 5221009, 5221010, 5220011];
+                    hwSkill = 5221005;
+                }
+
+                for (var i = 0; i < skills.length; i++) {
+                    if (cm.getPlayer().getSkillLevel(skills[i]) <= 0) {
+                        cm.teachSkill(skills[i], 0, 10, -1);
                     }
-                    if (cm.getPlayer().getSkillLevel(5221007) == 0) {
-                        cm.teachSkill(5221007, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(5221008) == 0) {
-                        cm.teachSkill(5221008, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(5221009) == 0) {
-                        cm.teachSkill(5221009, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(5221003) == 0) {
-                        cm.teachSkill(5221003, 0, 10, -1);
-                    }
+                }
+                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
+                    cm.teachSkill(hwSkill, 1, 5, -1);
                 }
                 cm.sendOk("It is done. Leave me now.");
             }
-
-            // Hero's Will Rebirth Check
-            if (cm.getPlayer().getReborns() > 0) {
-                var hwSkill = 0;
-                if (cm.getJobId() == 512) {
-                    const Buccaneer = Java.type('constants.skills.Buccaneer');
-                    hwSkill = Buccaneer.PIRATES_RAGE;
-                } else if (cm.getJobId() == 522) {
-                    const Corsair = Java.type('constants.skills.Corsair');
-                    hwSkill = Corsair.PIRATES_RAGE;
-                }
-
-                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
-                    cm.teachSkill(hwSkill, 1, 5, -1);
-                    cm.sendOk("You have vast experience o great pirate, but you have forgotten something important about the #bPirate's Rage#k through your cultivation.. here let me remind you..");
-                    cm.dispose();
-                    return;
-                }
-            }
-
             cm.dispose();
         }
     }

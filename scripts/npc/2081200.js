@@ -53,85 +53,46 @@ function action(mode, type, selection) {
             } else if (!cm.isQuestCompleted(6914)) {
                 cm.sendOk("You have not yet passed my trials. I can not advance you until you do so.");
                 cm.dispose();
-            } else if (cm.getJobId() % 100 % 10 != 2) {
+            } else if (cm.getJobId() % 10 == 1) {
                 cm.sendYesNo("You did a marvellous job passing my test. Are you ready to advance to your 4th job?");
-            } else {
+            } else if (cm.getJobId() % 10 == 2) {
                 cm.sendSimple("If I must, I can teach you the art of your class.\r\n#b#L0#Teach me the skills of my class.#l");
-                //cm.dispose();
+            } else {
+                cm.sendOk("You must be a 3rd job advancement to advance to 4th job.");
+                cm.dispose();
             }
         } else if (status == 1) {
-            if (mode >= 1 && cm.getJobId() % 100 % 10 != 2) {
+            if (mode == 1 && cm.getJobId() % 10 == 1) {
                 if (cm.canHold(2280003, 1)) {
                     cm.changeJobById(cm.getJobId() + 1);
-                    if (cm.getJobId() == 212) {
-                        cm.teachSkill(2121001, 0, 10, -1);
-                        cm.teachSkill(2121002, 0, 10, -1);
-                        cm.teachSkill(2121006, 0, 10, -1);
-                    } else if (cm.getJobId() == 222) {
-                        cm.teachSkill(2221001, 0, 10, -1);
-                        cm.teachSkill(2221002, 0, 10, -1);
-                        cm.teachSkill(2221006, 0, 10, -1);
-                    } else if (cm.getJobId() == 232) {
-                        cm.teachSkill(2321001, 0, 10, -1);
-                        cm.teachSkill(2321002, 0, 10, -1);
-                        cm.teachSkill(2321005, 0, 10, -1);
-                    }
                     cm.gainItem(2280003, 1);
+                    cm.sendOk("You have successfully advanced to 4th job. Talk to me again to learn your skills.");
                 } else {
                     cm.sendOk("Please have one slot available on #bUSE#k inventory to receive a skill book.");
                 }
-            } else if (mode >= 1 && cm.getJobId() % 100 % 10 == 2) {
-                if (cm.getJobId() == 212) {
-                    if (cm.getPlayer().getSkillLevel(2121007) == 0) {
-                        cm.teachSkill(2121007, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(2121005) == 0) {
-                        cm.teachSkill(2121005, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(2121005) == 0) {
-                        cm.teachSkill(2121005, 0, 10, -1);
-                    }
-                } else if (cm.getJobId() == 222) {
-                    if (cm.getPlayer().getSkillLevel(2221007) == 0) {
-                        cm.teachSkill(2221007, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(2221005) == 0) {
-                        cm.teachSkill(2221005, 0, 10, -1);
-                    }
-                    if (cm.getPlayer().getSkillLevel(2221003) == 0) {
-                        cm.teachSkill(2221003, 0, 10, -1);
-                    }
-                } else if (cm.getJobId() == 232) {
-                    if (cm.getPlayer().getSkillLevel(2321008) < 1) {
-                        cm.teachSkill(2321008, 0, 10, -1);
-                    } // Genesis
-                    if (cm.getPlayer().getSkillLevel(2321006) < 1) {
-                        cm.teachSkill(2321006, 0, 10, -1);
-                    } // res
-                }
-                cm.sendOk("It is done. Leave me now.");
-            }
-
-            // Hero's Will Rebirth Check
-            if (cm.getPlayer().getReborns() > 0) {
+            } else if (mode == 1 && cm.getJobId() % 10 == 2) {
+                var skills = [];
                 var hwSkill = 0;
                 if (cm.getJobId() == 212) {
-                    const FPArchMage = Java.type('constants.skills.FPArchMage');
-                    hwSkill = FPArchMage.HEROS_WILL;
+                    skills = [2121000, 2121001, 2121002, 2121003, 2121004, 2121005, 2121006, 2121007];
+                    hwSkill = 2121008;
                 } else if (cm.getJobId() == 222) {
-                    const ILArchMage = Java.type('constants.skills.ILArchMage');
-                    hwSkill = ILArchMage.HEROS_WILL;
+                    skills = [2221000, 2221001, 2221002, 2221003, 2221004, 2221005, 2221006, 2221007];
+                    hwSkill = 2221008;
                 } else if (cm.getJobId() == 232) {
-                    const Bishop = Java.type('constants.skills.Bishop');
-                    hwSkill = Bishop.HEROS_WILL;
+                    skills = [2321000, 2321001, 2321002, 2321003, 2321004, 2321005, 2321006, 2321007, 2321008];
+                    hwSkill = 2321009;
                 }
 
+                for (var i = 0; i < skills.length; i++) {
+                    if (cm.getPlayer().getSkillLevel(skills[i]) <= 0) {
+                        cm.teachSkill(skills[i], 0, 10, -1);
+                    }
+                }
                 if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
                     cm.teachSkill(hwSkill, 1, 5, -1);
-                    cm.sendOk("You have vast experience o great magician, but you have forgotten something important about the undying warriors will through your cultivation.. here let me remind you..");
-                    cm.dispose();
-                    return;
                 }
+                cm.sendOk("It is done. Leave me now.");
             }
             cm.dispose();
         }
