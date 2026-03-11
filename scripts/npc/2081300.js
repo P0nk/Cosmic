@@ -73,11 +73,17 @@ function action(mode, type, selection) {
             } else if (mode == 1 && cm.getJobId() % 10 == 2) {
                 var skills = [];
                 var hwSkill = 0;
+                var isReborn = cm.getPlayer().getReborns() > 0;
+
                 if (cm.getJobId() == 312) {
-                    skills = [3121000, 3121002, 3121003, 3121004, 3120005, 3121006, 3121007, 3121008];
+                    skills = isReborn ?
+                        [3121000, 3121002, 3121003, 3121004, 3120005, 3121006, 3121007, 3121008] :
+                        [3121008, 3121006, 3121004];
                     hwSkill = 3121009;
                 } else if (cm.getJobId() == 322) {
-                    skills = [3221000, 3221001, 3221002, 3221003, 3220004, 3221005, 3221006, 3221007];
+                    skills = isReborn ?
+                        [3221000, 3221001, 3221002, 3221003, 3220004, 3221005, 3221006, 3221007] :
+                        [3221007, 3221005, 3221001];
                     hwSkill = 3221008;
                 }
 
@@ -86,8 +92,8 @@ function action(mode, type, selection) {
                         cm.teachSkill(skills[i], 0, 10, -1);
                     }
                 }
-                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
-                    cm.teachSkill(hwSkill, 1, 5, -1);
+                if (isReborn && hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
+                    cm.teachSkill(hwSkill, 0, 5, -1);
                 }
                 cm.sendOk("It is done. Leave me now.");
             }

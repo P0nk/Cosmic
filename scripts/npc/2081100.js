@@ -73,14 +73,22 @@ function action(mode, type, selection) {
             } else if (mode == 1 && cm.getJobId() % 10 == 2) {
                 var skills = [];
                 var hwSkill = 0;
+                var isReborn = cm.getPlayer().getReborns() > 0;
+
                 if (cm.getJobId() == 112) {
-                    skills = [1121000, 1121001, 1121002, 1120003, 1120004, 1120005, 1121006, 1121008, 1121010];
+                    skills = isReborn ?
+                        [1121000, 1121001, 1121002, 1120003, 1120004, 1120005, 1121006, 1121008, 1121010] :
+                        [1121010, 1120005, 1121002];
                     hwSkill = 1121011;
                 } else if (cm.getJobId() == 122) {
-                    skills = [1221000, 1221001, 1221002, 1221003, 1221004, 1220005, 1220006, 1221007, 1221009, 1220010, 1221011];
+                    skills = isReborn ?
+                        [1221000, 1221001, 1221002, 1221003, 1221004, 1220005, 1220006, 1221007, 1221009, 1220010, 1221011] :
+                        [1221002, 1221003, 1221004];
                     hwSkill = 1221012;
                 } else if (cm.getJobId() == 132) {
-                    skills = [1321000, 1321001, 1321002, 1321003, 1320005, 1320006, 1321007, 1320008, 1320009];
+                    skills = isReborn ?
+                        [1321000, 1321001, 1321002, 1321003, 1320005, 1320006, 1321007, 1320008, 1320009] :
+                        [1321002, 1320008, 1320009];
                     hwSkill = 1321010;
                 }
 
@@ -89,8 +97,8 @@ function action(mode, type, selection) {
                         cm.teachSkill(skills[i], 0, 10, -1);
                     }
                 }
-                if (hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
-                    cm.teachSkill(hwSkill, 1, 5, -1);
+                if (isReborn && hwSkill != 0 && cm.getPlayer().getSkillLevel(hwSkill) <= 0) {
+                    cm.teachSkill(hwSkill, 0, 5, -1);
                 }
                 cm.sendOk("It is done. Leave me now.");
             }
