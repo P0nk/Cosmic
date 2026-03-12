@@ -331,6 +331,8 @@ public class Server {
             hostAddress[0] = YamlConfig.config.server.LANHOST;
         }
 
+        System.out.println("[Connection] Request from " + remoteIp + " -> Sending IP: " + hostAddress[0] + ":" + hostAddress[1]);
+
         try {
             return hostAddress;
         } catch (Exception e) {
@@ -911,6 +913,7 @@ public class Server {
     public void init() {
         Instant beforeInit = Instant.now();
         log.info("Cosmic v{} starting up.", ServerConstants.VERSION);
+        log.info("Loaded Server HOST IP: {}", YamlConfig.config.server.HOST);
 
         if (YamlConfig.config.server.SHUTDOWNHOOK) {
             Runtime.getRuntime().addShutdownHook(new Thread(shutdown(false)));
