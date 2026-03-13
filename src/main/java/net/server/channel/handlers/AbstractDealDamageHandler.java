@@ -1077,37 +1077,25 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 }
 
                 if (effect != null) {
+                    // Base hit count comes from WZ data (attackCount/bulletCount default to 1 if
+                    // absent).
+                    // Shadow Partner causes the client to send exactly double the normal hit lines,
+                    // so we double maxattack when SP is active — no per-skill hardcoding needed.
                     int maxattack = Math.max(effect.getBulletCount(), effect.getAttackCount());
 
                     if (shadowPartner) {
-                        maxattack = maxattack * 3; // Standard safety buffer
+                        maxattack *= 2; // Shadow Partner doubles hit lines
                     }
 
-                    // [FIX] Exception for Custom "Penta Star" (Night Lord Triple Throw)
-                    // Skill ID 4121007 is Triple Throw.
-                    // If you use a different custom ID, add it here.
+                    // Custom penta-star Triple Throw (NL) sends 5 lines vs WZ's 3; override
+                    // explicitly.
                     if (ret.skill == NightLord.TRIPLE_THROW) {
-                        maxattack = 12; // Allow up to 12 lines (5 stars * 2 SP + safety buffer)
-                    }
-                    if (ret.skill == Hermit.AVENGER) {
-                        maxattack = 4; // Allow up to 4 lines (2 stars * 2 SP)
-                    }
-                    if (ret.skill == Assassin.DRAIN || ret.skill == NightWalker.VAMPIRE) {
-                        maxattack = 5; // Allow up to 5 lines (Custom 2 lines * SP + safety)
-                    }
-                    if (ret.skill == Rogue.LUCKY_SEVEN || ret.skill == NightWalker.LUCKY_SEVEN) {
-                        maxattack = 4; // Allow up to 4 lines (Custom 2 lines * SP)
+                        maxattack = shadowPartner ? 12 : 6;
                     }
 
                     if (ret.numDamage > maxattack) {
-                        // Changed from .addPoint to just logging for now to prevent auto-jail loops
-                        // while you test
-                        // AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), ...);
-
                         chr.dropMessage(5, "[Warning] Ignored 'Too Many Lines' check (Lines: " + ret.numDamage + "/"
                                 + maxattack + ")");
-                        // If you want to enable the ban again later, uncomment the line below and
-                        // remove the dropMessage
                         chr.getAutobanManager()
                                 .jailPlayer("Damage Line Hack (" + ret.numDamage + " lines) SID: " + ret.skill, 60);
                     }

@@ -295,6 +295,10 @@ public class LifeFactory {
             }
         }
 
+        // Allow non-boss mobs to be scaled by the evolving map system (changeLevel
+        // guard)
+        stats.setChange(!stats.isBoss());
+
         return new Pair<>(stats, attackInfos);
     }
 
