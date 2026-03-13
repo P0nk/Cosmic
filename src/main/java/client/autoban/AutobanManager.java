@@ -14,12 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.DatabaseConnection;
 
+import server.TimerManager;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author kevintjuh93
@@ -35,6 +38,11 @@ public class AutobanManager {
     // Counters
     private int consecutiveMisses = 0;
     private int fastAttackCount = 0;
+
+    // Damage-line hack suspicion counter (decays -1 per minute, jails at 15)
+    private final AtomicInteger lineHackSuspicion = new AtomicInteger(0);
+    private static final int LINE_HACK_JAIL_THRESHOLD = 15;
+    private static final long LINE_HACK_DECAY_MS = 60_000L; // 1 minute per point
 
     // Spam Arrays
     private final long[] spam = new long[20];
@@ -192,6 +200,29 @@ public class AutobanManager {
         if (this.fastAttackCount > 8) {
             jailPlayer("Unlimited Attack / No Delay", 60);
             this.fastAttackCount = 0;
+        }
+    }
+
+    // --- [ANTI-HACK] 4. Damage Line Hack Suspicion Counter ---
+    // Each bad-line detection adds 1 point; each point decays -1 after 1 minute.
+    // Jail only fires when 15 points accumulate simultaneously.
+    public void addLineHackSuspicion(String reason) {
+        if (chr.isGM() || chr.isBanned()) {
+            return;
+        }
+
+        int current = lineHackSuspicion.incrementAndGet();
+
+        // Schedule decay: remove this point after 1 minute
+        TimerManager.getInstance().schedule(lineHackSuspicion::decrementAndGet, LINE_HACK_DECAY_MS);
+
+        if (current >= LINE_HACK_JAIL_THRESHOLD) {
+            lineHackSuspicion.set(0); // reset before jail so re-triggers don't stack
+            jailPlayer("Damage Line Hack (" + reason + ") [" + current + " suspicion points]", 60);
+        } else {
+            // Warn the player silently (no UI popup; just a soft server-side note)
+            chr.dropMessage(5, "[AntiHack] Suspicious damage lines detected (" + current + "/"
+                    + LINE_HACK_JAIL_THRESHOLD + ").");
         }
     }
 

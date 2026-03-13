@@ -897,10 +897,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             calcDmgMax *= 1.4;
         }
 
-        // Belt-and-suspenders SP detection: check both the effects map (getBuffEffect)
-        // AND the buffEffects registry (hasBuffFromSourceid), which is always populated
-        // by registerEffect regardless of isActive(). Covers cases where NightWalker's
-        // SHADOW_PARTNER (14111000) may not propagate to the effects map correctly.
+        // Shadow Partner detection: check both the effects map (getBuffEffect) AND the
+        // buffEffects registry (hasBuffFromSourceid), which is always populated by
+        // registerEffect regardless of isActive(). Covers NightWalker's SHADOW_PARTNER
+        // (14111000) which may not propagate to the effects map correctly.
         boolean shadowPartner = chr.getBuffEffect(BuffStat.SHADOWPARTNER) != null
                 || chr.hasBuffFromSourceid(Hermit.SHADOW_PARTNER)
                 || chr.hasBuffFromSourceid(NightWalker.SHADOW_PARTNER);
@@ -1082,9 +1082,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 if (ret.skill == Marksman.SNIPE || (canCrit && damage > hitDmgMax)) {
                 }
 
-                if (effect != null) {
+                if (effect != null && j == 0) {
                     // Base hit count comes from WZ data (attackCount/bulletCount default to 1 if
-                    // absent).
+                    // absent). Checked once per monster (j == 0) to avoid stacking jails.
                     // Shadow Partner causes the client to send exactly double the normal hit lines,
                     // so we double maxattack when SP is active — no per-skill hardcoding needed.
                     int maxattack = Math.max(effect.getBulletCount(), effect.getAttackCount());
@@ -1100,10 +1100,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     }
 
                     if (ret.numDamage > maxattack) {
-                        chr.dropMessage(5, "[Warning] Ignored 'Too Many Lines' check (Lines: " + ret.numDamage + "/"
-                                + maxattack + ")");
-                        chr.getAutobanManager()
-                                .jailPlayer("Damage Line Hack (" + ret.numDamage + " lines) SID: " + ret.skill, 60);
+                        chr.getAutobanManager().addLineHackSuspicion(
+                                ret.numDamage + " lines / max " + maxattack + " | SID: " + ret.skill
+                                        + " | SP=" + shadowPartner);
                     }
                 }
 
