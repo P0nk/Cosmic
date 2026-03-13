@@ -897,7 +897,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             calcDmgMax *= 1.4;
         }
 
-        boolean shadowPartner = chr.getBuffEffect(BuffStat.SHADOWPARTNER) != null;
+        // Belt-and-suspenders SP detection: check both the effects map (getBuffEffect)
+        // AND the buffEffects registry (hasBuffFromSourceid), which is always populated
+        // by registerEffect regardless of isActive(). Covers cases where NightWalker's
+        // SHADOW_PARTNER (14111000) may not propagate to the effects map correctly.
+        boolean shadowPartner = chr.getBuffEffect(BuffStat.SHADOWPARTNER) != null
+                || chr.hasBuffFromSourceid(Hermit.SHADOW_PARTNER)
+                || chr.hasBuffFromSourceid(NightWalker.SHADOW_PARTNER);
 
         if (ret.skill != 0) {
             int fixed = ret.getAttackEffect(chr, SkillFactory.getSkill(ret.skill)).getFixDamage();
