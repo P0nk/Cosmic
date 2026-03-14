@@ -903,7 +903,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         // (14111000) which may not propagate to the effects map correctly.
         boolean shadowPartner = chr.getBuffEffect(BuffStat.SHADOWPARTNER) != null
                 || chr.hasBuffFromSourceid(Hermit.SHADOW_PARTNER)
-                || chr.hasBuffFromSourceid(NightWalker.SHADOW_PARTNER);
+                || chr.hasBuffFromSourceid(NightWalker.SHADOW_PARTNER)
+                || (System.currentTimeMillis() - chr.getLastShadowPartnerEndTime() < 2000);
 
         if (ret.skill != 0) {
             int fixed = ret.getAttackEffect(chr, SkillFactory.getSkill(ret.skill)).getFixDamage();

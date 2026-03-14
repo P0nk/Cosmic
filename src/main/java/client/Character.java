@@ -247,7 +247,8 @@ public class Character extends AbstractCharacterObject {
     private double dropCoupon = 1.0;
     private int omokwins, omokties, omoklosses, matchcardwins, matchcardties, matchcardlosses;
     private int owlSearch;
-    private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastDeathtime, jailExpiration = -1;
+    private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastDeathtime, jailExpiration = -1,
+            lastShadowPartnerEndTime = 0;
     private transient int localstr, localdex, localluk, localint_, localmagic, localwatk;
     private transient int equipmaxhp, equipmaxmp, equipstr, equipdex, equipluk, equipint_, equipmagic, equipwatk,
             localchairhp, localchairmp;
@@ -4095,7 +4096,9 @@ public class Character extends AbstractCharacterObject {
                     mbsvh.bestApplied = true;
                     effects.remove(mbs);
 
-                    if (mbs == BuffStat.RECOVERY) {
+                    if (mbs == BuffStat.SHADOWPARTNER) {
+                        lastShadowPartnerEndTime = System.currentTimeMillis();
+                    } else if (mbs == BuffStat.RECOVERY) {
                         if (recoveryTask != null) {
                             recoveryTask.cancel(false);
                             recoveryTask = null;
@@ -4154,6 +4157,10 @@ public class Character extends AbstractCharacterObject {
     public void cancelEffect(int itemId) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         cancelEffect(ii.getItemEffect(itemId), false, -1);
+    }
+
+    public long getLastShadowPartnerEndTime() {
+        return lastShadowPartnerEndTime;
     }
 
     public boolean cancelEffect(StatEffect effect, boolean overwrite, long startTime) {
