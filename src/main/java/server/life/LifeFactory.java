@@ -119,48 +119,38 @@ public class LifeFactory {
         }
         int monsterLevel = DataTool.getIntConvert("level", monsterInfoData);
         int maxHp = DataTool.getIntConvert("maxHP", monsterInfoData);
-        // Modify the experience and maxHP based on the monster's level
-        // if (monsterLevel >= 160 && maxHp > 30000000 && !stats.isBoss()) {
-        // stats.setHp(maxHp / 5);
-        // }
+
+        // --- EVOLVING MAP FIX: Track manual HP overrides ---
+        boolean isHardcodedOverride = false;
+
         if (mid == 8840000) { // Von Leon
             stats.setHp(75_000_000_000L);
+            isHardcodedOverride = true;
         } else if (mid == 8850011) { // Cygnus
             stats.setHp(150_000_000_000L);
+            isHardcodedOverride = true;
         } else if (mid == 9400408) { // Castellan B1
             stats.setHp(100_000_000_000L);
+            isHardcodedOverride = true;
         } else if (mid == 9400409) { // Castellan B2
             stats.setHp(150_000_000_000L);
+            isHardcodedOverride = true;
         } else if (mid == 8880302 || mid == 8880301) { // Will
             stats.setHp(300_000_000_000L);
+            isHardcodedOverride = true;
         } else if (mid == 8645009) { // Darknell
             stats.setHp(450_000_000_000L);
+            isHardcodedOverride = true;
         } else if (mid == 8880415) { // Verus
             stats.setHp(700_000_000_000L);
-        } else if (mid == 9001007) {
+            isHardcodedOverride = true;
+        } else if (mid == 9001007) { // DPS Dummy
             stats.setHp(999_999_999_999_999L);
-        }
-        // else if (mid == 8850011 || mid == 8850012) {
-        // stats.setHp(3_000_000_000L);
-        // } else if (mid == 9001007) {
-        // stats.setHp(100_000_000_000_000_000L);
-        // } else if (mid >= 8850000 && mid <= 8850004) {
-        // stats.setHp(600_000_000);
-        // } else if(mid == 8880000) {
-        // stats.setHp(6_000_000_000L);
-        // } else if (mid == 8880002) {
-        // stats.setHp(10_000_000_000L);
-        // } else if (mid == 8880010) {
-        // stats.setHp(20_000_000_000L);
-        // } else if (mid == 8240098) {
-        // stats.setHp(10_000_000_000L);
-        // } else if (mid == 8240099) {
-        // stats.setHp(15_000_000_000L);
-        // }
-        else {
+            isHardcodedOverride = true;
+        } else {
             stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
         }
-        // stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
+
         stats.setFriendly(DataTool.getIntConvert("damagedByMob", monsterInfoData, stats.isFriendly() ? 1 : 0) == 1);
         stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData, 0));
         stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData, 0));
@@ -294,6 +284,10 @@ public class LifeFactory {
                 stats.setFixedStance(origin.getX() < 1 ? 5 : 4); // fixed left/right
             }
         }
+
+        // Allow non-boss mobs to be scaled by the evolving map system (changeLevel guard)
+        // MEROGIE OVERRIDE: Protect our hardcoded high-HP mobs from being overwritten!
+        stats.setChange(!stats.isBoss() && !isHardcodedOverride);
 
         return new Pair<>(stats, attackInfos);
     }

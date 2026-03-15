@@ -2128,14 +2128,12 @@ public class MapleMap {
         if (this.evolveTier > 0 && !monster.isBoss()) {
             try {
                 // 1. Calculate New Level
-                // [UPDATED] Cap raised to 255 (Safe client limit).
-                // If your client supports short/int levels, you can change 255 to 999.
+                // Cap raised to 255 (Safe client limit).
                 int currentLevel = monster.getLevel();
                 int newLevel = Math.min(255, currentLevel + this.evolveTier);
 
                 if (newLevel > currentLevel) {
                     // A. Update Level
-                    // (This relies on your ChangeableStats being fixed to not use lookup tables)
                     monster.changeLevel(newLevel);
 
                     // B. Get the NEW base HP calculated by changeLevel
@@ -2148,13 +2146,11 @@ public class MapleMap {
                     double multiplier = 1.0 + (this.evolveTier * 0.10);
                     long finalHp = (long) (baseHpForNewLevel * multiplier);
 
-                    // [FIX] Cap HP at Integer.MAX_VALUE (2.1 Billion)
+                    // Prevent it from dropping to 0 or negative. Let it scale infinitely upwards!
                     if (finalHp < 1)
                         finalHp = 100;
-                    if (finalHp > 2100000000)
-                        finalHp = 2100000000;
 
-                    // D. Apply Final HP
+                    // D. Apply Final HP (Integer cap and cast removed!)
                     monster.setStartingHp(finalHp);
                 }
             } catch (Exception e) {
@@ -2168,11 +2164,10 @@ public class MapleMap {
             getEventInstance().registerMonster(monster);
         }
 
-        // ... (The rest of your method remains the same)
         spawnAndAddRangedMapObject(monster, c -> c.sendPacket(PacketCreator.spawnMonster(monster, true)), null);
         monster.aggroUpdateController();
         updateBossSpawn(monster);
-        // ...
+
         spawnedMonstersOnMap.incrementAndGet();
         addSelfDestructive(monster);
         applyRemoveAfter(monster);
@@ -4838,41 +4833,46 @@ public class MapleMap {
     }
 
     /**
-     * Spawns an "Elite" version of a map mob using existing methods.
+     * Spawns an "Elite" version of a map mob using a predefined list of Boss IDs.
      */
     private void spawnEliteBoss(Character triggerPlayer) {
-        // 1. Pick a random mob ID from the map's spawn points
-        int mobIdToSpawn = 100100; // Default Snail
-        List<SpawnPoint> spawns = getMonsterSpawn();
-        if (!spawns.isEmpty()) {
-            mobIdToSpawn = spawns.get(Randomizer.nextInt(spawns.size())).getMonsterId();
-        }
+        // 1. Define a roster of cool "Elite" Boss IDs!
+        // You can change these to any imposing mobs in your WZ files.
+        // E.g., 9300003 (King Slime), 9300012 (Faust), 9300119 (Lord Pirate), 9300152 (Angry Franken)
+        int[] eliteBossPool = {9300003, 9300012, 9300119, 9300152, 8220000, 8220001};
+
+        // Pick a random boss from our pool
+        int mobIdToSpawn = eliteBossPool[Randomizer.nextInt(eliteBossPool.length)];
 
         // 2. Create the Monster
         Monster elite = LifeFactory.getMonster(mobIdToSpawn);
         if (elite != null) {
-            // 3. SCALE IT (Using existing methods)
-
-            // A. Turn on Boss HP Bar
+            // 3. SCALE IT
             elite.setBoss(true);
 
-            // B. Scale Level (+20 Levels)
-            // This recalculates Damage, Accuracy, and EXP automatically via ChangeableStats
-            elite.changeLevel(elite.getLevel() + 20);
+            // B. Scale Level to the Player!
+            // Instead of adding 20 to the boss's base level (which might make a King Slime too weak for a lvl 150 player),
+            // we scale it based on the player who triggered it!
+            int newLevel = Math.min(255, triggerPlayer.getLevel() + 20);
+            elite.changeLevel(newLevel);
 
-            // C. Force HP Multiplier (100x HP)
-            // We must do this AFTER changeLevel, because changeLevel resets HP.
-            long targetHp = elite.getMaxHp() * 100;
+            // C. Force HP Multiplier
+            // Because we changed the level to match the player, the base HP will already be high.
+            // Let's multiply it by 50L to make it a true Elite sponge!
+            long targetHp = elite.getMaxHp() * 50L;
 
-            // Cap at Integer.MAX_VALUE (2.1 billion) because setStartingHp takes an int
-            if (targetHp > Integer.MAX_VALUE)
-                targetHp = Integer.MAX_VALUE;
+            if (targetHp < 1) targetHp = 100;
 
-            elite.setStartingHp((int) targetHp);
+            // D. Apply Final HP
+            elite.setStartingHp(targetHp);
 
-            // 4. Spawn it
+            // 4. Spawn it on the player
             spawnMonsterOnGroundBelow(elite, triggerPlayer.getPosition());
-            broadcastMessage(PacketCreator.serverNotice(5, "[WARNING] An Elite Monster has appeared!"));
+
+            // 5. Add some flair!
+            broadcastMessage(PacketCreator.serverNotice(5, "[WARNING] A dark energy gathers... An Elite Boss has appeared!"));
+            broadcastMessage(PacketCreator.showEffect("quest/party/wrong_kor")); // Red screen flash effect
+            broadcastMessage(PacketCreator.playSound("Party1/Failed")); // Ominous sound
         }
     }
 
