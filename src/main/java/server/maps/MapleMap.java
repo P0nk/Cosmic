@@ -2124,35 +2124,47 @@ public class MapleMap {
 
         monster.changeDifficulty(difficulty, isPq);
 
-        // --- [EVOLVING MAP INTEGRATION] ---
-        if (this.evolveTier > 0 && !monster.isBoss()) {
+// --- [EVOLVING MAP INTEGRATION] ---
+        if (this.evolveTier > 0 && monster.getStats().isChangeable()) {
             try {
-                // 1. Calculate New Level
-                // Cap raised to 255 (Safe client limit).
+                // 1. Visual Level Cap (Client Safety)
                 int currentLevel = monster.getLevel();
-                int newLevel = Math.min(255, currentLevel + this.evolveTier);
+                int newLevel = currentLevel + this.evolveTier;
 
-                if (newLevel > currentLevel) {
-                    // A. Update Level
-                    monster.changeLevel(newLevel);
-
-                    // B. Get the NEW base HP calculated by changeLevel
-                    long baseHpForNewLevel = monster.getHp();
-
-                    if (baseHpForNewLevel <= 0)
-                        baseHpForNewLevel = 100;
-
-                    // C. Apply Tier Multiplier
-                    double multiplier = 1.0 + (this.evolveTier * 0.10);
-                    long finalHp = (long) (baseHpForNewLevel * multiplier);
-
-                    // Prevent it from dropping to 0 or negative. Let it scale infinitely upwards!
-                    if (finalHp < 1)
-                        finalHp = 100;
-
-                    // D. Apply Final HP (Integer cap and cast removed!)
-                    monster.setStartingHp(finalHp);
+                if (currentLevel < 255) {
+                    monster.changeLevel(Math.min(255, newLevel));
                 }
+
+                // 2. Ghost Scaling: Infinite Multipliers!
+                double multiplier = 1.0 + (this.evolveTier * 0.10); // +10% stats per tier
+
+                // A. Scale HP (Uncapped Long)
+                long baseHp = monster.getHp();
+                if (baseHp <= 0) baseHp = 100;
+                long finalHp = (long) (baseHp * multiplier);
+                if (finalHp < 1) finalHp = 100; // Prevent underflow
+                monster.setStartingHp(finalHp);
+
+                // B. Scale EXP (Capped at Integer.MAX_VALUE to prevent rollover)
+                long baseExp = monster.getExp();
+                long finalExp = (long) (baseExp * multiplier);
+                if (finalExp > Integer.MAX_VALUE) finalExp = Integer.MAX_VALUE;
+                monster.getStats().setExp((int) finalExp);
+
+                // C. Scale Attack Damage
+                int basePADamage = monster.getStats().getPADamage();
+                int baseMADamage = monster.getStats().getMADamage();
+
+                long finalPADamage = (long) (basePADamage * multiplier);
+                long finalMADamage = (long) (baseMADamage * multiplier);
+
+                // Cap damage at 32-bit integer max just in case
+                if (finalPADamage > Integer.MAX_VALUE) finalPADamage = Integer.MAX_VALUE;
+                if (finalMADamage > Integer.MAX_VALUE) finalMADamage = Integer.MAX_VALUE;
+
+                monster.getStats().setPADamage((int) finalPADamage);
+                monster.getStats().setMADamage((int) finalMADamage);
+
             } catch (Exception e) {
                 System.err.println("[Evolving] Failed to evolve mob " + monster.getId() + ": " + e.getMessage());
             }
