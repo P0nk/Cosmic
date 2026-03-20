@@ -1,9 +1,9 @@
-version: '3'
 services:
   maplestory:
     build: .
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       # Login server
       - "8484:8484"
@@ -19,7 +19,7 @@ services:
       - ./wz:/opt/server/wz
     environment:
       DB_HOST: "db" ## Remember if this is present it will OVERRIDE the host in the config.yaml, if you put here anything other than db, you'll need to change the config.yaml jdbc string to port 3307, and not port 3306
-    
+
   db:
     image: mysql:8.4.0
     environment:
@@ -29,4 +29,30 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - ./database/docker-db-data:/var/lib/mysql
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+
+  db-backup:
+    image: percona/percona-xtrabackup:8.4
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./docker/db-backup/scripts:/scripts
+      - db-data:/var/lib/mysql:ro
+      - ./database/backups:/backup
+    user: root
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD:
+    command:
+      - /scripts/auto_backup
+
+volumes:
+  db-data:

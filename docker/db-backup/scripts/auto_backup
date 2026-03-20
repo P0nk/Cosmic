@@ -1,0 +1,21 @@
+#!/bin/bash
+
+while true; do
+  echo "$(date +'%F %T.%3N') Starting backup process..."
+
+  xtrabackup --backup --compress --compress-threads=4 \
+    --host="${DB_HOST}" --user="${DB_USER}" --password="${DB_PASSWORD}" \
+    --target-dir="/backup/$(date +%Y%m%d%H%M)"
+
+  if [[ $? == 0 ]]; then
+    echo "$(date +'%F %T.%3N') Backup completed successfully."
+
+    echo "$(date +'%F %T.%3N') Removing backups older than 7 days..."
+    find "/backup" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} +
+  else
+    echo "$(date +'%F %T.%3N') ERROR: Backup failed! Cleanup is skipped." >&2
+  fi
+
+  echo "$(date +'%F %T.%3N') Sleeping for 1 hour..."
+  sleep 1h
+done

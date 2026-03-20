@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+if [[ -z "$1" ]]; then
+  echo "Usage: $0 <path_to_backup>"
+  exit 1
+fi
+
+read -p "This will stop all services and overwrite the current database. \
+Continue? (y/n) " -n 1 -r
+echo
+if [[ ! "$REPLY" == "y" ]]; then
+    echo "Restoration is cancelled."
+    exit 1
+fi
+
+echo "Stopping all services..."
+docker compose down
+
+docker compose run --no-deps -it --rm -v db-data:/var/lib/mysql \
+  -v $(realpath $1):/to_restore db-backup /scripts/restore /to_restore

@@ -48,15 +48,74 @@ The project follows the [semantic versioning](https://semver.org/) scheme using 
 * *General changes or improvements* are treated as MINOR: 1.__2__.3 -> 1.__3.0__
 * *Major changes* are treated as MAJOR: __1__.2.3 -> __2.0.0__
 
-## Getting started
-Follow along as I go through the steps to play the game on your local computer from start to finish. I won't go into extreme detail, so if you don't have prior experience with Java or git, you might struggle.
+## Quick start
+
+### Prerequisite
+
+1.  [Docker](https://www.docker.com)
+2.  [Docker Compose](https://docs.docker.com/compose/install)
+
+### Start services
+
+To start all services, run:
+
+```bash
+docker compose up -d
+```
+
+It starts the following services:
+
+*   **maplestory**: The main part of Cosmic server.
+*   **db**: The database for Cosmic server.
+*   **db-backup**: Database backup service.
+    *   Performs an initial database backup on startup, followed by hourly backups.
+    *   Backups older than 7 days are removed automatically.
+    *   You can find the backups in [database/backups](./database/backup).
+
+Then you can use
+
+```bash
+docker compose logs -f maplestory
+```
+
+to check the logs of Cosmic server.
+
+Once the server is ready, you will see a message like:
+
+```log
+07:24:20.269 [main] INFO  server.Server - Cosmic is now online after 14547 ms.
+```
+
+### Stop services
+
+```bash
+docker compose down
+```
+
+### Restore database
+
+To restore the database using a backup, run:
+
+```bash
+./tools/restore_db <path_to_backup>
+```
+
+### Rebuild
+
+You must rebuild images after any code changes:
+
+```bash
+docker compose build
+```
+
+## Local setup
+You can also run Cosmic on your actual machine.
 
 We will set up the following:
 - Database - the database is used by the server to store game data such as accounts, characters and inventory items.
 - Server - the server is the "brain" and routes network traffic between the clients.
-- Client - the client is the application used to _play the game_, i.e. MapleStory.exe.
 
-### 1 - Database 
+### 1 - Database
 You will start by installing the database server and database client. Then you will connect to the server with the client to create a new database schema.
 
 #### Steps
@@ -88,11 +147,6 @@ You will start by cloning the repository, then configure the database properties
 
 Below, I list other ways of running the server which are completely optional.
 
-#### Docker
-Support for Docker is also provided out of the box, as an alternative to running straight in the IDE. If you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed it's as easy as running `docker compose up`.
-
-Making changes becomes a bit more tedious though as you have to rebuild the server image via `docker compose up --build`.
-
 #### Jar
 Another option is to start the server from a terminal by running a jar file. You first need to build the jar file from source which requires [Maven](https://maven.apache.org/). Fortunately, [Maven Wrapper](https://maven.apache.org/wrapper/) is provided so you don't have to install Maven separately.
 
@@ -102,15 +156,17 @@ To run the jar, a ``launch.bat`` file is provided for convenience. Simply double
 
 Alternatively, run the jar file from the terminal. Just remember to provide the `wz-path` system property pointing to your wz directory.
 
-### 3 - Client
-The client files are located in a separate repository: https://github.com/P0nk/Cosmic-client
+## Client
+Client is the application used to _play the game_, i.e. MapleStory.exe.
+
+The files are located in a separate repository: https://github.com/P0nk/Cosmic-client
 
 Follow the installation guide in the README.
 
-### 4 - Getting into the game
-You have successfully started the client, and you're looking at the login screen. 
+## Getting into the game
+You have successfully started the client, and you're looking at the login screen.
 
-#### Logging in
+### Logging in
 At this point, you can log in to the admin account using the following credentials:
 * Username: "admin"
 * Password: "admin"
@@ -119,7 +175,7 @@ At this point, you can log in to the admin account using the following credentia
 
 You can also create a new regular account by typing in your desired username & password and attempting to log in. This "automatic registration" feature lets you create new accounts to play around with. It is enabled by default (see _config.yaml_).
 
-#### Entering the game
+### Entering the game
 Create a new character as you normally would, and then select it to enter the game. Hooray, finally we're in!
 
 If you log in to the "Admin" character, you'll notice that the character looks almost invisible. This is hide mode, which is enabled by default when you log in to a GM character. You won't be visible to normal players and no mobs will move if you're alone on the map. Toggle hide mode on or off by typing "@hide" in the in-game chat.

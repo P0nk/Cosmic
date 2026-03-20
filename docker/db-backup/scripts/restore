@@ -1,0 +1,52 @@
+#!/bin/bash
+
+readonly TARGET_DIR="/tmp/db_backup"
+readonly DATA_DIR="/var/lib/mysql"
+
+validate_args() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: $0 <path_to_backup>"
+    exit 1
+  fi
+}
+
+assert_dir() {
+  if [[ ! -d "$1" ]]; then
+    echo "Error: Directory '$1' does not exist."
+    exit 1
+  fi
+}
+
+main() {
+  set -e
+
+  validate_args "$@"
+
+  backup_dir="$1"
+  assert_dir "${backup_dir}"
+
+  echo "Restoring database using ${backup_dir}..."
+
+  echo "Removing existing database data..."
+  rm -rf ${DATA_DIR}/*
+
+  # The backup might become unusable if the preparation is interrupted.
+  # So we use a copy instead of original backup to recover the database.
+  cp -R ${backup_dir} ${TARGET_DIR}
+
+  echo "Decompressing the backup..."
+  xtrabackup --decompress --target-dir="${TARGET_DIR}"
+
+  echo "Preparing the backup..."
+  xtrabackup --prepare --target-dir="${TARGET_DIR}"
+
+  echo "Moving files..."
+  xtrabackup --move-back --target-dir="${TARGET_DIR}" --datadir="${DATA_DIR}"
+
+  echo "Changing the ownership of database files..."
+  chown -R mysql:mysql ${DATA_DIR}
+
+  echo "Restoration completed successfully."
+}
+
+main "$@"
