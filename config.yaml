@@ -181,8 +181,8 @@ server:
   #Database Configuration
   DB_URL_FORMAT: "jdbc:mysql://localhost:3306/cosmic?characterEncoding=latin1" # If the docker ENV for DB_HOST is anything but "db", this string format should be changed from 3306 to 3307 (or whichever port it was changed to in docker)
   DB_HOST: "localhost"
-  DB_USER: ""
-  DB_PASS: ""
+  DB_USER: "root"
+  DB_PASS: "root"
   INIT_CONNECTION_POOL_TIMEOUT: 180    # Seconds
 
   #Login Configuration
