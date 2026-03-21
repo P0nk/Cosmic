@@ -61,6 +61,8 @@ import server.expeditions.ExpeditionType;
 import server.gachapon.Gachapon;
 import server.gachapon.Gachapon.GachaponItem;
 import server.life.LifeFactory;
+import server.life.Monster;
+import server.life.NPC;
 import server.life.PlayerNPC;
 import server.maps.MapManager;
 import server.maps.MapObject;
@@ -1710,4 +1712,24 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return (item.getFlag() & karmaFlag) == karmaFlag;
     }
 
+    public void summonMob(int mobid) {
+        Monster mob = LifeFactory.getMonster(mobid);
+        getPlayer().getMap().spawnMonsterOnGroundBelow(mob, getPlayer().getPosition());
+    }
+
+    public void makeNpc(int npcid, int x, int y) { // npception ecksdee
+        Point p = new Point(x, y);
+        NPC npc = LifeFactory.getNPC(npcid);
+        npc.setPosition(p);
+        npc.setCy(p.y);
+        npc.setRx0(p.x + 50);
+        npc.setRx1(p.x - 50);
+        npc.setFh(getPlayer().getMap().getFootholds().findBelow(p).getId());
+        getPlayer().getMap().addMapObject(npc);
+        getPlayer().getMap().broadcastMessage(PacketCreator.spawnNPC(npc));
+    }
+
+    public void makeNpc(int npcid) {
+        makeNpc(npcid, getPlayer().getPosition().x, getPlayer().getPosition().y);
+    }
 }

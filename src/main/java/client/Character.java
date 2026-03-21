@@ -268,6 +268,9 @@ public class Character extends AbstractCharacterObject {
     private String commandtext;
     private String dataString;
     private String search = null;
+    private String dataSearch;
+    private ArrayList<Integer> dataSearchArr;
+    private String dataSearchType;
     private final AtomicBoolean mapTransitioning = new AtomicBoolean(true); // player client is currently trying to
                                                                             // change maps or log in the game map
     private final AtomicBoolean awayFromWorld = new AtomicBoolean(true); // player is online, but on cash shop or mts
@@ -699,15 +702,11 @@ public class Character extends AbstractCharacterObject {
             ret.keymap.put(selectedKey[i], new KeyBinding(selectedType[i], selectedAction[i]));
         }
 
-        // to fix the map 0 lol
-        // for (int i = 0; i < 5; i++) { // original
-        for (int i = 0; i < 10; i++) { // merogie - trock increase
-
+        for (int i = 0; i < 50; i++) { // merogie - trock increase
             ret.trockmaps.add(MapId.NONE);
         }
 
-        // for (int i = 0; i < 10; i++) { // original
-        for (int i = 0; i < 20; i++) { // merogie - trock increase
+        for (int i = 0; i < 100; i++) { // merogie - trock increase
             ret.viptrockmaps.add(MapId.NONE);
         }
 
@@ -7987,7 +7986,7 @@ public class Character extends AbstractCharacterObject {
 
         // Teleport Rocks
         try (PreparedStatement ps = con
-                .prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 90")) {
+                .prepareStatement("SELECT mapid,vip FROM trocklocations WHERE characterid = ? LIMIT 150")) {
             ps.setInt(1, ret.id);
             try (ResultSet rs = ps.executeQuery()) {
                 int vip = 0, reg = 0;
@@ -8000,11 +7999,11 @@ public class Character extends AbstractCharacterObject {
                         reg++;
                     }
                 }
-                while (vip < 20) {
+                while (vip < 100) {
                     ret.viptrockmaps.add(MapId.NONE);
                     vip++;
                 }
-                while (reg < 10) {
+                while (reg < 50) {
                     ret.trockmaps.add(MapId.NONE);
                     reg++;
                 }
@@ -11441,7 +11440,7 @@ public class Character extends AbstractCharacterObject {
         int ret = trockmaps.indexOf(MapId.NONE);
         if (ret == -1) {
             // ret = 5; //original
-            ret = 10; // merogie - trock increase
+            ret = 50; // merogie - trock increase
         }
 
         return ret;
@@ -11449,7 +11448,7 @@ public class Character extends AbstractCharacterObject {
 
     public void deleteFromTrocks(int map) {
         trockmaps.remove(Integer.valueOf(map));
-        while (trockmaps.size() < 10) {
+        while (trockmaps.size() < 50) {
             trockmaps.add(MapId.NONE);
         }
     }
@@ -11471,7 +11470,7 @@ public class Character extends AbstractCharacterObject {
 
         if (ret == -1) {
             // ret = 10; // original
-            ret = 20; // merogie - teleport rock increase
+            ret = 100; // merogie - teleport rock increase
         }
 
         return ret;
@@ -11480,7 +11479,7 @@ public class Character extends AbstractCharacterObject {
     public void deleteFromVipTrocks(int map) {
         viptrockmaps.remove(Integer.valueOf(map));
         // while (viptrockmaps.size() < 10) { // original
-        while (viptrockmaps.size() < 20) { // merogie - trock increase
+        while (viptrockmaps.size() < 100) { // merogie - trock increase
             viptrockmaps.add(MapId.NONE);
         }
     }
@@ -12559,6 +12558,30 @@ public class Character extends AbstractCharacterObject {
 
     public void setChasing(boolean chasing) {
         this.chasing = chasing;
+    }
+
+    public String getDataSearch() {
+        return dataSearch;
+    }
+
+    public void setDataSearch(String result) {
+        dataSearch = result;
+    }
+
+    public ArrayList<Integer> getDataSearchArr() {
+        return dataSearchArr;
+    }
+
+    public void setDataSearchArr(ArrayList<Integer> arr) {
+        dataSearchArr = arr;
+    }
+
+    public String getDataSearchType() {
+        return dataSearchType;
+    }
+
+    public void setDataSearchType(String dataSearchType) {
+        this.dataSearchType = dataSearchType;
     }
 
     public void startExpTracking() {

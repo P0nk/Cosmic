@@ -26,15 +26,18 @@ package client.command.commands.gm2;
 import client.Character;
 import client.Client;
 import client.command.Command;
-import constants.id.NpcId;
 import provider.Data;
 import provider.DataProvider;
 import provider.DataProviderFactory;
 import provider.DataTool;
 import provider.wz.WZFiles;
+import scripting.npc.NPCScriptManager;
 import server.ItemInformationProvider;
 import server.quest.Quest;
+import tools.PacketCreator;
 import tools.Pair;
+
+import java.util.ArrayList;
 
 public class SearchCommand extends Command {
     private static Data npcStringData;
@@ -61,6 +64,11 @@ public class SearchCommand extends Command {
         }
         StringBuilder sb = new StringBuilder();
 
+        boolean item = false;
+        boolean mob = false;
+        boolean npc = false;
+        ArrayList<Integer> searchdata = new ArrayList<>();
+
         String search = joinStringFrom(params, 1);
         long start = System.currentTimeMillis();//for the lulz
         Data data = null;
@@ -86,10 +94,18 @@ public class SearchCommand extends Command {
                 String name;
 
                 if (searchType == 0) {
+                    int counter = -1;
                     for (Data searchData : data.getChildren()) {
                         name = DataTool.getString(searchData.getChildByPath("name"), "NO-NAME");
                         if (name.toLowerCase().contains(search.toLowerCase())) {
-                            sb.append("#b").append(Integer.parseInt(searchData.getName())).append("#k - #r").append(name).append("\r\n");
+                            counter++;
+                            sb.append("#L").append(counter).append("##b").append(Integer.parseInt(searchData.getName())).append("#k - #r").append(name).append("#l\r\n");
+                            searchdata.add(Integer.parseInt(searchData.getName()));
+                            if (params[0].equalsIgnoreCase("MOB") || params[0].equalsIgnoreCase("MONSTER")) {
+                                mob = true;
+                            } else if (params[0].equalsIgnoreCase("NPC")) {
+                                npc = true;
+                            }
                         }
                     }
                 } else if (searchType == 1) {
@@ -118,10 +134,14 @@ public class SearchCommand extends Command {
                 }
             }
         } else {
+            int counter = -1;
             for (Pair<Integer, String> itemPair : ItemInformationProvider.getInstance().getAllItems()) {
                 if (sb.length() < 32654) {//ohlol
                     if (itemPair.getRight().toLowerCase().contains(search.toLowerCase())) {
-                        sb.append("#b").append(itemPair.getLeft()).append("#k - #r").append(itemPair.getRight()).append("\r\n");
+                        counter++;
+                        sb.append("#L").append(counter).append("##b").append(itemPair.getLeft()).append("#k - #r#z").append(itemPair.getLeft()).append("##l\r\n");
+                        searchdata.add(itemPair.getLeft());
+                        item = true;
                     }
                 } else {
                     sb.append("#bCouldn't load all items, there are too many results.\r\n");
@@ -134,6 +154,13 @@ public class SearchCommand extends Command {
         }
         sb.append("\r\n#kLoaded within ").append((double) (System.currentTimeMillis() - start) / 1000).append(" seconds.");//because I can, and it's free
 
-        c.getAbstractPlayerInteraction().npcTalk(NpcId.MAPLE_ADMINISTRATOR, sb.toString());
+        if (!item && !mob && !npc) {
+            c.sendPacket(PacketCreator.getNPCTalk(9010000, (byte) 0, sb.toString(), "00 00", (byte) 0));
+        } else {
+            c.getPlayer().setDataSearch(sb.toString());
+            c.getPlayer().setDataSearchArr(searchdata);
+            c.getPlayer().setDataSearchType(item ? "item" : (mob ? "mob" : "npc"));
+            NPCScriptManager.getInstance().start(c, 1032009, "search", c.getPlayer());
+        }
     }
 }

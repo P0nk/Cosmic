@@ -274,12 +274,10 @@ public class PacketCreator {
     private static void addTeleportInfo(OutPacket p, Character chr) {
         final List<Integer> tele = chr.getTrockMaps();
         final List<Integer> viptele = chr.getVipTrockMaps();
-        // for (int i = 0; i < 5; i++) { // original
-        for (int i = 0; i < 10; i++) { // merogie - trock increase
+        for (int i = 0; i < 50; i++) { // merogie - trock increase
             p.writeInt(tele.get(i));
         }
-        // for (int i = 0; i < 10; i++) { // original
-        for (int i = 0; i < 20; i++) { // merogie - trock increase
+        for (int i = 0; i < 100; i++) { // merogie - trock increase
             p.writeInt(viptele.get(i));
         }
     }
@@ -5788,15 +5786,13 @@ public class PacketCreator {
         if (vip) {
             p.writeByte(1);
             List<Integer> map = chr.getVipTrockMaps();
-            // for (int i = 0; i < 10; i++) { // original
-            for (int i = 0; i < 20; i++) { // merogie - trock increase
+            for (int i = 0; i < 100; i++) { // merogie - trock increase
                 p.writeInt(map.get(i));
             }
         } else {
             p.writeByte(0);
             List<Integer> map = chr.getTrockMaps();
-            // for (int i = 0; i < 5; i++) { // original
-            for (int i = 0; i < 10; i++) { // merogie - trock increase
+            for (int i = 0; i < 50; i++) { // merogie - trock increase
                 p.writeInt(map.get(i));
             }
         }
