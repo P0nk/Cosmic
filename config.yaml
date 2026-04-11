@@ -159,10 +159,11 @@ worlds:
 
 server:
     #Database Configuration
-    DB_URL_FORMAT: "jdbc:mysql://%s:3306/cosmic" # If the docker ENV for DB_HOST is anything but "db", this string format should be changed from 3306 to 3307 (or whichever port it was changed to in docker) 
-    DB_HOST: "localhost" 
-    DB_USER: "root"
-    DB_PASS: ""
+    DB_HOST: "${DB_HOST:db}"
+    DB_PORT: "${DB_PORT:3306}"
+    DB_NAME: "${DB_NAME:cosmic}"
+    DB_USER: "${DB_USER:root}"
+    DB_PASS: "${DB_PASS:}"
     INIT_CONNECTION_POOL_TIMEOUT: 90    # Seconds
 
     #Login Configuration

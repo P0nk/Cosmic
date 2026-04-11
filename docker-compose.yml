@@ -17,16 +17,16 @@ services:
       - ./config.yaml:/opt/server/config.yaml
       - ./scripts:/opt/server/scripts
       - ./wz:/opt/server/wz
-    environment:
-      DB_HOST: "db" ## Remember if this is present it will OVERRIDE the host in the config.yaml, if you put here anything other than db, you'll need to change the config.yaml jdbc string to port 3307, and not port 3306
-    
+    env_file:
+      - ./.env
+
   db:
     image: mysql:8.4.0
     environment:
-      MYSQL_DATABASE: "cosmic"
-      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_DATABASE: "${DB_NAME}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASS}"
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
     ports:
-      - "3307:3306"
+      - "${DB_PORT}:3306"
     volumes:
       - ./database/docker-db-data:/var/lib/mysql

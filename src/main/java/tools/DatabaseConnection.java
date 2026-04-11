@@ -44,12 +44,12 @@ public class DatabaseConnection {
     }
 
     private static String getDbUrl() {
-        // Environment variables override what's defined in the config file
-        // This feature is used for the Docker support
-        String hostOverride = System.getenv("DB_HOST");
-        String host = hostOverride != null ? hostOverride : YamlConfig.config.server.DB_HOST;
-        String dbUrl = String.format(YamlConfig.config.server.DB_URL_FORMAT, host);
-        return dbUrl;
+        return String.format(
+            "jdbc:mysql://%s:%d/%s",
+            YamlConfig.config.server.DB_HOST,
+            YamlConfig.config.server.DB_PORT,
+            YamlConfig.config.server.DB_NAME
+        );
     }
 
     private static HikariConfig getConfig() {
