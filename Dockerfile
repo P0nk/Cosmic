@@ -1,10 +1,12 @@
 # Initial Docker support thanks to xinyifly
 # Optimisation performed by wejrox
 
+FROM maven:3.9.14-amazoncorretto-21-al2023 AS dev
+
 #
 # Cosmic JAR creation stage
 #
-FROM maven:3.9.6-amazoncorretto-21 AS jar
+FROM dev AS jar
 
 # Build in a separated location which won't have permissions issues.
 WORKDIR /opt/cosmic
@@ -44,5 +46,3 @@ COPY config.yaml ./
 # Format for channels: WWCC, where WW is 75 plus the world number and CC is 75 plus the channel number (both zero indexed).
 EXPOSE 8484 7575 7576 7577
 ENTRYPOINT ["java", "-jar", "./Server.jar"]
-
-
