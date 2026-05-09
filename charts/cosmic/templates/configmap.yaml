@@ -1,0 +1,11 @@
+{{- if .Values.cosmic.configuration -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cosmic.fullname" . }}
+  labels:
+    {{- include "cosmic.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    {{ .Values.cosmic.configuration | nindent 4 }}
+{{- end -}}

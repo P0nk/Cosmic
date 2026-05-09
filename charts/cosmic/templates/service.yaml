@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cosmic.fullname" . }}
+  labels:
+    {{- include "cosmic.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.ports.login }}
+      targetPort: login
+      protocol: TCP
+      name: login
+    {{- range .Values.cosmic.containerPorts.channels }}
+    {{- range $i := untilStep (int .start) (int .end) 1 }}
+    - port: {{ $i }}
+      targetPort: channel-{{ $i }}
+      protocol: TCP
+      name: channel-{{ $i }}
+    {{- end }}
+    {{- end }}
+  selector:
+    {{- include "cosmic.selectorLabels" . | nindent 4 }}

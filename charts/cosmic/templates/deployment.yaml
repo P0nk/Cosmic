@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cosmic.fullname" . }}
+  labels:
+    {{- include "cosmic.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "cosmic.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cosmic.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "cosmic.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: login
+              containerPort: {{ .Values.cosmic.containerPorts.login }}
+              protocol: TCP
+            {{- range .Values.cosmic.containerPorts.channels }}
+            {{- range $i := untilStep (int .start) (int .end) 1 }}
+            - name: channel-{{ $i }}
+              containerPort: {{ $i }}
+              protocol: TCP
+            {{- end }}
+            {{- end }}
+          env:
+            - name: DB_HOST
+              value: {{ include "mysql.primary.fullname" .Subcharts.mysql }}
+            - name: DB_PORT
+              value: {{ .Values.mysql.primary.service.ports.mysql | quote }}
+            - name: DB_NAME
+              value: {{ .Values.mysql.auth.database | quote }}
+            - name: DB_USER
+              value: {{ .Values.mysql.auth.username | quote }}
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mysql.secretName" .Subcharts.mysql }}
+                  key: mysql-password
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            tcpSocket:
+              port: login
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            periodSeconds: {{ .periodSeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            successThreshold: {{ .successThreshold }}
+            failureThreshold: {{ .failureThreshold }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            tcpSocket:
+              port: login
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            periodSeconds: {{ .periodSeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            successThreshold: {{ .successThreshold }}
+            failureThreshold: {{ .failureThreshold }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              subPath: config.yaml
+              mountPath: /opt/server/config.yaml
+      initContainers:
+        - name: mysql-isalive
+          image: {{ include "mysql.image" .Subcharts.mysql }}
+          env:
+            - name: DB_HOST
+              value: {{ include "mysql.primary.fullname" .Subcharts.mysql }}
+            - name: DB_PORT
+              value: {{ .Values.mysql.primary.service.ports.mysql | quote }}
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.auth.username | quote }}
+            {{- if .Values.mysql.auth.usePasswordFiles }}
+            - name: MYSQL_PASSWORD_FILE
+              value: {{ default "/opt/bitnami/mysql/secrets/mysql-password" .Values.mysql.auth.customPasswordFiles.user }}
+            {{- else }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mysql.secretName" .Subcharts.mysql }}
+                  key: mysql-password
+            {{- end }}
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              password_aux="${MYSQL_PASSWORD:-}"
+              if [[ -f "${MYSQL_PASSWORD_FILE:-}" ]]; then
+                  password_aux=$(cat "${MYSQL_PASSWORD_FILE}")
+              fi
+              mysqladmin ping -h ${DB_HOST} -P ${DB_PORT} -u"${MYSQL_USER}" -p"${password_aux}" | grep "mysqld is alive"
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "cosmic.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

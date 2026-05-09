@@ -1,0 +1,111 @@
+# Ref: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: P0nk/cosmic
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# This is for the secrets for pulling an image from a private repository.
+# Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# Ref: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created.
+  create: false
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: false
+  # Annotations to add to the service account.
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+
+# Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Ref: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # Ref: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: LoadBalancer
+  ports:
+    login: 8484
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+nodeSelector: {}
+
+affinity: {}
+
+tolerations: []
+
+cosmic:
+  # Contents for custom config file.
+  configuration: ""
+  containerPorts:
+    login: 8484
+    # Channels are exclusive of "end" values.
+    channels:
+      - start: 7575
+        end: 7578
+
+mysql:
+  # Ref: https://github.com/bitnami/charts/blob/48dbb30c/bitnami/mysql/values.yaml#L122
+  image:
+    registry: public.ecr.aws
+    repository: bitnami/mysql
+  auth:
+    database: cosmic
+    rootPassword: changeme
+    username: cosmic
+    password: changeme
+    existingSecret: ""
+  primary:
+    startupProbe:
+      # If the MySQL subchart fall into a restart loop due to low storage
+      # performance, increase the `failureThreshold` might help.
+      failureThreshold: 10
+    persistence:
+      existingClaim: ""
+      size: 8Gi
