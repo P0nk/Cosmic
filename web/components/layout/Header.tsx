@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -96,13 +95,12 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-4 h-[52px]">
         {/* Brand */}
         <Link href="/" className="shrink-0 flex items-center gap-2 no-underline">
-          <Image
-            src="/maple/items/maple-leaf.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/maple/avatars/hero.png"
             alt=""
-            width={28}
-            height={28}
             className="sprite-grounded"
-            style={{ imageRendering: 'pixelated' }}
+            style={{ height: 40, width: 'auto', imageRendering: 'pixelated' }}
           />
           <span
             style={{

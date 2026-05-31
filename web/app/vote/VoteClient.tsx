@@ -233,8 +233,8 @@ export default function VoteClient({
     <div className="relative overflow-hidden">
       {/* Floating sprite decorations */}
       <div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
-        <div className="absolute" style={{ top: 30, left: '6%' }}>
-          <Sprite src="/maple/items/maple-leaf.png" alt="" height={56} anim="bob" grounded={false} />
+        <div className="absolute" style={{ top: 10, left: '6%' }}>
+          <Sprite src="/maple/avatars/nightlord.png" alt="" height={72} anim="bob" grounded={false} />
         </div>
         <div className="absolute" style={{ top: 90, right: '8%' }}>
           <Sprite

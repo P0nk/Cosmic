@@ -293,7 +293,7 @@ export default async function HomePage() {
             </p>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {['Classic v83 maps, jobs and monsters', 'Pixel-perfect sprites and original UI', 'Smooth, lag-free play right in the tab'].map((line) => (
-                <li key={line} style={{ fontFamily: 'var(--ms-font-b)', fontSize: 20, color: 'var(--ms-text)', display: 'flex', gap: 10, alignItems: 'center' }}>
+                <li key={line} style={{ fontFamily: 'var(--font-fredoka), system-ui, sans-serif', fontSize: 16, fontWeight: 400, color: 'var(--ms-text)', display: 'flex', gap: 10, alignItems: 'center' }}>
                   <span style={{ color: '#4caf30', fontFamily: 'var(--ms-font-d)', fontSize: 10 }}>✓</span>
                   {line}
                 </li>
@@ -418,7 +418,7 @@ export default async function HomePage() {
                 style={{ padding: '10px 12px' }}
               >
                 <div style={{ fontFamily: 'var(--ms-font-d)', fontSize: 9, color: '#c64b1b', marginBottom: 4, letterSpacing: 1 }}>{title}</div>
-                <div style={{ fontFamily: 'var(--ms-font-b)', fontSize: 16, color: '#4a3220' }}>{desc}</div>
+                <div style={{ fontFamily: 'var(--font-fredoka), system-ui, sans-serif', fontSize: 14, fontWeight: 400, color: '#4a3220', lineHeight: 1.4 }}>{desc}</div>
               </div>
             ))}
           </div>
@@ -474,7 +474,7 @@ export default async function HomePage() {
               <div className="ms-testimony-tag">REVIEW</div>
               <blockquote className="ms-testimony-body">&ldquo;{quote}&rdquo;</blockquote>
               <figcaption className="ms-testimony-who">
-                <CharAvatar cls={cls} size={44} showLabel={false} />
+                <CharAvatar cls={cls} size={52} showLabel={false} />
                 <div>
                   <div className="ms-testimony-name">{name}</div>
                   <div className="ms-testimony-meta">{detail}</div>

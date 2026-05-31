@@ -21,6 +21,10 @@ const THEMES: Record<string, { color: string; shade: string; glyph: string; name
   cygnus:    { color: '#88a0e2', shade: '#3a4a8a', glyph: '👸', name: 'Cygnus'      },
 }
 
+const AVATAR_IMAGES: Record<string, string> = {
+  gm: '/maple/npcs/maple-admin.gif',
+}
+
 export function charForJob(job: string): string {
   const j = job.toLowerCase()
   if (j.includes('hero') || j.includes('warrior')) return 'hero'
@@ -56,6 +60,7 @@ export default function CharAvatar({
   label?: string | false
 }) {
   const t = THEMES[cls] ?? THEMES.hero
+  const imgSrc = AVATAR_IMAGES[cls]
   const glyphSize = Math.round(size * 0.45)
   const labelSize = Math.max(7, Math.round(size * 0.11))
   const labelTop = Math.round(size * 0.06)
@@ -69,7 +74,7 @@ export default function CharAvatar({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: imgSrc ? 'flex-end' : 'center',
         background: `linear-gradient(180deg, ${t.color} 0%, ${t.shade} 100%)`,
         border: '3px solid #1a0a04',
         boxShadow:
@@ -81,22 +86,50 @@ export default function CharAvatar({
       }}
       title={typeof label === 'string' ? label : t.name}
     >
-      <div style={{ fontSize: glyphSize, lineHeight: 1, textShadow: '0 2px 0 rgba(0,0,0,0.35)' }}>
-        {t.glyph}
-      </div>
+      {imgSrc ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imgSrc}
+          alt=""
+          style={{
+            height: showLabel ? Math.round(size * 0.80) : Math.round(size * 0.92),
+            width: 'auto',
+            imageRendering: 'pixelated',
+            display: 'block',
+            flexShrink: 0,
+          }}
+        />
+      ) : (
+        <div style={{ fontSize: glyphSize, lineHeight: 1, textShadow: '0 2px 0 rgba(0,0,0,0.35)' }}>
+          {t.glyph}
+        </div>
+      )}
+
       {label !== false && showLabel && (
         <div
           style={{
             fontSize: labelSize,
             letterSpacing: 1,
-            marginTop: labelTop,
+            marginTop: imgSrc ? 0 : labelTop,
             textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
             textTransform: 'uppercase',
+            ...(imgSrc
+              ? {
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  textAlign: 'center',
+                  background: 'rgba(0,0,0,0.55)',
+                  padding: '2px 0',
+                }
+              : {}),
           }}
         >
           {typeof label === 'string' ? label : t.name}
         </div>
       )}
+
       <span
         style={{
           position: 'absolute',

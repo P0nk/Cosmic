@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { getSocialLinks } from '@/lib/settings'
 
 const FOOTER_NAV_BASE = [
@@ -35,10 +34,12 @@ function FooterLink({ href, label, external }: { href: string; label: string; ex
   const style = {
     color: '#d8c08c',
     textDecoration: 'none',
-    fontFamily: 'var(--ms-font-b)',
-    fontSize: 20,
+    fontFamily: 'var(--font-fredoka), system-ui, sans-serif',
+    fontSize: 15,
+    fontWeight: 400,
     display: 'block',
     padding: '2px 0',
+    lineHeight: 1.6,
   } as React.CSSProperties
 
   return external ? (
@@ -93,34 +94,32 @@ export default async function Footer() {
         >
           {/* Brand */}
           <div className="col-span-full sm:col-span-2">
-            <h4
-              style={{
-                fontFamily: 'var(--ms-font-d)',
-                fontSize: 11,
-                color: '#f8c34a',
-                letterSpacing: 1,
-                margin: '0 0 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Image
-                src="/maple/items/maple-leaf.png"
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, margin: '0 0 12px' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/maple/avatars/hero.png"
                 alt=""
-                width={18}
-                height={18}
-                className="inline-block"
-                style={{ imageRendering: 'pixelated' }}
+                style={{ height: 52, width: 'auto', imageRendering: 'pixelated', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }}
               />
-              SHINYMS
-            </h4>
+              <h4
+                style={{
+                  fontFamily: 'var(--ms-font-d)',
+                  fontSize: 11,
+                  color: '#f8c34a',
+                  letterSpacing: 1,
+                  margin: 0,
+                }}
+              >
+                SHINYMS
+              </h4>
+            </div>
             <p
               style={{
-                fontFamily: 'var(--ms-font-b)',
-                fontSize: 19,
+                fontFamily: 'var(--font-fredoka), system-ui, sans-serif',
+                fontSize: 15,
+                fontWeight: 400,
                 color: '#d8c08c',
-                lineHeight: 1.3,
+                lineHeight: 1.6,
                 margin: '0 0 12px',
               }}
             >
@@ -160,8 +159,9 @@ export default async function Footer() {
           className="mt-6 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2"
           style={{
             borderTop: '2px dashed #4a3220',
-            fontFamily: 'var(--ms-font-b)',
-            fontSize: 18,
+            fontFamily: 'var(--font-fredoka), system-ui, sans-serif',
+            fontSize: 14,
+            fontWeight: 400,
             color: '#a89060',
           }}
         >
