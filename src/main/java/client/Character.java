@@ -8572,6 +8572,16 @@ public class Character extends AbstractCharacterObject {
                     psStatus.setInt(1, id);
 
                     for (QuestStatus qs : getQuests()) {
+                        // Don't persist pure NOT_STARTED placeholders. getQuest() inserts one into the
+                        // quest map on any lookup, so over time these accumulate and get rewritten on every
+                        // save, bloating the queststatus table. Keep rows carrying real state (forfeit count,
+                        // recorded progress, medal maps); the rest are recreated lazily on demand.
+                        if (qs.getStatus() == QuestStatus.Status.NOT_STARTED
+                                && qs.getForfeited() == 0
+                                && qs.getProgress().isEmpty()
+                                && qs.getMedalMaps().isEmpty()) {
+                            continue;
+                        }
                         psStatus.setInt(2, qs.getQuest().getId());
                         psStatus.setInt(3, qs.getStatus().getId());
                         psStatus.setInt(4, (int) (qs.getCompletionTime() / 1000));
