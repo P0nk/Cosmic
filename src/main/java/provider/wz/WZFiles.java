@@ -1,6 +1,8 @@
 package provider.wz;
 
-import java.nio.file.Files;
+import config.YamlConfig;
+
+import java.io.File;
 import java.nio.file.Path;
 
 public enum WZFiles {
@@ -23,11 +25,21 @@ public enum WZFiles {
     private final String fileName;
 
     WZFiles(String name) {
-        this.fileName = name + ".wz";
+        this.fileName = name;
     }
 
     public Path getFile() {
-        return Path.of(DIRECTORY, fileName);
+        File bare = new File(DIRECTORY, fileName);
+        if (bare.isDirectory()) {
+            return bare.toPath();
+        }
+
+        File wzDir = new File(DIRECTORY, fileName + ".wz");
+        if (wzDir.isDirectory()) {
+            return wzDir.toPath();
+        }
+
+        return bare.toPath();
     }
 
     public String getFilePath() {
@@ -35,12 +47,21 @@ public enum WZFiles {
     }
 
     private static String getWzDirectory() {
-        // Either provide a custom directory path through the "wz-path" property when launching the .jar, or don't provide one to use the default "wz" directory
-        String propertyPath = System.getProperty("wz-path");
-        if (propertyPath != null && Files.isDirectory(Path.of(propertyPath))) {
+        // Resolution order: -Ddata-path system property, then server.DATA_PATH in config.yaml, then "wz".
+        String propertyPath = System.getProperty("data-path");
+        if (propertyPath != null && new File(propertyPath).isDirectory()) {
             return propertyPath;
         }
 
-        return "wz";
+        try {
+            String configPath = YamlConfig.config.server.DATA_PATH;
+            if (configPath != null && !configPath.isBlank() && new File(configPath).isDirectory()) {
+                return configPath;
+            }
+        } catch (Throwable ignored) {
+            // Standalone tools may run without a loadable config.yaml; fall through to default.
+        }
+
+        return "data";
     }
 }

@@ -28,6 +28,8 @@ import java.util.List;
  */
 public interface DataDirectoryEntry extends DataEntry {
     List<DataDirectoryEntry> getSubdirectories();
+
     List<DataFileEntry> getFiles();
+
     DataEntry getEntry(String name);
 }

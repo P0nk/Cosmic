@@ -72,7 +72,7 @@ public class XMLWZFile implements DataProvider {
         }
         final XMLDomMapleData domMapleData;
         try (FileInputStream fis = new FileInputStream(dataFile.toString())) {
-            domMapleData = new XMLDomMapleData(fis, imageDataDir.getParent());
+            domMapleData = new XMLDomMapleData(fis, imageDataDir.getParent().toFile());
         } catch (FileNotFoundException e) {
             throw new RuntimeException("Datafile " + path + " does not exist in " + root.toAbsolutePath());
         } catch (IOException e) {
