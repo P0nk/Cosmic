@@ -25,43 +25,44 @@ import client.Character;
 import client.Client;
 import client.Skill;
 import client.SkillFactory;
+import client.status.MonsterStatus;
+import client.status.MonsterStatusEffect;
 import config.YamlConfig;
-import constants.skills.Brawler;
-import constants.skills.Corsair;
-import constants.skills.DarkKnight;
-import constants.skills.Hero;
-import constants.skills.Paladin;
-import constants.skills.Priest;
-import constants.skills.SuperGM;
+import constants.skills.*;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
 import server.StatEffect;
+import server.TimerManager;
 import server.life.Monster;
+import server.maps.MapleMap;
 import tools.PacketCreator;
 
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class SpecialMoveHandler extends AbstractPacketHandler {
 
     @Override
-    public final void handlePacket(InPacket p, Client c) {
+    public void handlePacket(InPacket p, Client c) {
         Character chr = c.getPlayer();
         p.readInt();
         chr.getAutobanManager().setTimestamp(4, Server.getInstance().getCurrentTimestamp(), 28);
         int skillid = p.readInt();
-        
-        /*
-        if ((!GameConstants.isPqSkillMap(chr.getMapId()) && GameConstants.isPqSkill(skillid)) || (!chr.isGM() && GameConstants.isGMSkills(skillid)) || (!GameConstants.isInJobTree(skillid, chr.getJob().getId()) && !chr.isGM())) {
-        	AutobanFactory.PACKET_EDIT.alert(chr, chr.getName() + " tried to packet edit skills.");
-        	FilePrinter.printError(FilePrinter.EXPLOITS + chr.getName() + ".txt", chr.getName() + " tried to use skill " + skillid + " without it being in their job.");
-    		c.disconnect(true, false);
-            return;
-        }
-        */
 
+        if (skillid == 1321016) { // za warudo
+            System.out.println("hello?");
+            MapleMap map = chr.getMap();
+            map.getAllMonsters().forEach(mob -> {
+                Map<MonsterStatus, Integer> zw = new HashMap<>();
+                zw.put(MonsterStatus.FREEZE, 1);
+                MonsterStatusEffect mse = new MonsterStatusEffect(zw, SkillFactory.getSkill(1321016), null, false);
+                mob.applyStatus(c.getPlayer(), mse, false, 8000L, false, true);
+            });
+        }
         Point pos = null;
         int __skillLevel = p.readByte();
         Skill skill = SkillFactory.getSkill(skillid);
@@ -155,8 +156,6 @@ public final class SpecialMoveHandler extends AbstractPacketHandler {
 
                 c.sendPacket(PacketCreator.enableActions());
             }
-        } else {
-            c.sendPacket(PacketCreator.enableActions());
         }
     }
 }

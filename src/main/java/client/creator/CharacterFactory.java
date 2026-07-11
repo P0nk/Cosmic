@@ -32,11 +32,16 @@ import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
 import tools.PacketCreator;
 
+import java.util.function.Consumer;
+
 /**
  * @author RonanLana
  */
 public abstract class CharacterFactory {
     private static final Logger log = LoggerFactory.getLogger(CharacterFactory.class);
+
+
+
 
     protected synchronized static int createNewCharacter(Client c, String name, int face, int hair, int skin, int gender, CharacterFactoryRecipe recipe) {
         if (YamlConfig.config.server.COLLECTIVE_CHARSLOT ? c.getAvailableCharacterSlots() <= 0 : c.getAvailableCharacterWorldSlots() <= 0) {
@@ -47,19 +52,20 @@ public abstract class CharacterFactory {
             return -1;
         }
 
-        Character newCharacter = Character.getDefault(c);
-        newCharacter.setWorld(c.getWorld());
-        newCharacter.setSkinColor(SkinColor.getById(skin));
-        newCharacter.setGender(gender);
-        newCharacter.setName(name);
-        newCharacter.setHair(hair);
-        newCharacter.setFace(face);
+        Character newchar = Character.getDefault(c);
+        newchar.setWorld(c.getWorld());
+        newchar.setSkinColor(SkinColor.getById(skin));
+        newchar.setGender(gender);
+        newchar.setName(name);
+        newchar.setHair(hair);
+        newchar.setFace(face);
 
-        newCharacter.setLevel(recipe.getLevel());
-        newCharacter.setJob(recipe.getJob());
-        newCharacter.setMapId(recipe.getMap());
+        newchar.setLevel(recipe.getLevel());
+        newchar.setJob(recipe.getJob());
+        newchar.setMapId(recipe.getMap());
 
-        Inventory equipped = newCharacter.getInventory(InventoryType.EQUIPPED);
+
+        Inventory equipped = newchar.getInventory(InventoryType.EQUIPPED);
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
 
         int top = recipe.getTop(), bottom = recipe.getBottom(), shoes = recipe.getShoes(), weapon = recipe.getWeapon();
@@ -68,6 +74,35 @@ public abstract class CharacterFactory {
             Item eq_top = ii.getEquipById(top);
             eq_top.setPosition((byte) -5);
             equipped.addItemFromDB(eq_top);
+
+            Item m_medal = ii.getEquipById(1113232);
+            m_medal.setPosition((byte) -12);
+            equipped.addItemFromDB(m_medal);
+
+
+            Item p_pet3 = ii.getEquipById(1812000);
+            p_pet3.setPosition((byte) -23);
+            equipped.addItemFromDB(p_pet3);
+
+            Item p_pet4 = ii.getEquipById(1812002);
+            p_pet4.setPosition((byte) -24);
+            equipped.addItemFromDB(p_pet4);
+
+            Item p_pet5 = ii.getEquipById(1812003);
+            p_pet5.setPosition((byte) -25);
+            equipped.addItemFromDB(p_pet5);
+
+            Item p_pet6 = ii.getEquipById(1812004);
+            p_pet6.setPosition((byte) -26);
+            equipped.addItemFromDB(p_pet6);
+
+            Item p_pet7 = ii.getEquipById(1812001);
+            p_pet7.setPosition((byte) -28);
+            equipped.addItemFromDB(p_pet7);
+
+            Item p_pet8 = ii.getEquipById(1812005);
+            p_pet8.setPosition((byte) -27);
+            equipped.addItemFromDB(p_pet8);
         }
 
         if (bottom > 0) {
@@ -88,17 +123,13 @@ public abstract class CharacterFactory {
             equipped.addItemFromDB(eq_weapon.copy());
         }
 
-        if (!MakeCharInfoValidator.isNewCharacterValid(newCharacter)) {
-            log.warn("Owner from account {} tried to packet edit in character creation", c.getAccountName());
+        if (!newchar.insertNewChar(recipe)) {
             return -2;
         }
 
-        if (!newCharacter.insertNewChar(recipe)) {
-            return -2;
-        }
-        c.sendPacket(PacketCreator.addNewCharEntry(newCharacter));
+        c.sendPacket(PacketCreator.addNewCharEntry(newchar));
 
-        Server.getInstance().createCharacterEntry(newCharacter);
+        Server.getInstance().createCharacterEntry(newchar);
         Server.getInstance().broadcastGMMessage(c.getWorld(), PacketCreator.sendYellowTip("[New Char]: " + c.getAccountName() + " has created a new character with IGN " + name));
         log.info("Account {} created chr with name {}", c.getAccountName(), name);
 

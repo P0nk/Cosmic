@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9010056.img">
+    <imgdir name="info">
+        <int name="level" value="1"/>
+        <int name="bodyAttack" value="0"/>
+        <int name="maxHP" value="1000000"/>
+        <int name="maxMP" value="0"/>
+        <int name="PADamage" value="0"/>
+        <int name="PDDamage" value="0"/>
+        <int name="PDRate" value="1"/>
+        <int name="MADamage" value="10"/>
+        <int name="MDDamage" value="10"/>
+        <int name="MDRate" value="1"/>
+        <int name="acc" value="10"/>
+        <int name="eva" value="10"/>
+        <int name="exp" value="0"/>
+        <int name="pushed" value="1"/>
+        <float name="fs" value="10.0"/>
+        <int name="summonType" value="1"/>
+        <int name="noFlip" value="1"/>
+        <int name="fixedDamage" value="1000"/>
+        <int name="ignoreFieldOut" value="1"/>
+        <string name="mobType" value="1N"/>
+        <int name="invincible" value="1"/>
+        <int name="PADamage" value="1200"/>
+        <int name="MADamage" value="1250"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="126" name="0" width="140">
+            <vector name="origin" x="68" y="126"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="180"/>
+        </canvas>
+        <canvas height="127" name="1" width="140">
+            <vector name="origin" x="68" y="127"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="180"/>
+        </canvas>
+        <canvas height="129" name="2" width="140">
+            <vector name="origin" x="68" y="129"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="180"/>
+        </canvas>
+        <canvas height="130" name="3" width="140">
+            <vector name="origin" x="68" y="130"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="180"/>
+        </canvas>
+        <uol name="4" value="2"/>
+        <uol name="5" value="1"/>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas height="126" name="0" width="140">
+            <vector name="origin" x="68" y="126"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+</imgdir>

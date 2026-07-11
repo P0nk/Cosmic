@@ -33,16 +33,23 @@ function start() {
         }
 
         cm.gainItem(4031026, 20);
-    } else {
-        const InventoryType = Java.type('client.inventory.InventoryType');
-        if (cm.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() < 1) {
-            cm.sendNext("Check for a available slot on your ETC inventory.");
-            cm.dispose();
-            return;
+    } else {        
+        const YamlConfig = Java.type('config.YamlConfig');
+        if (YamlConfig.config.server.JUMPQUEST_CUSTOM_EXP_MESOS_REWARD === 1) {            
+            cm.gainExp(YamlConfig.config.server.JUMPQUEST_BASE_EXP_REWARD * cm.getPlayer().getExpRate())
+            cm.gainMeso(YamlConfig.config.server.JUMPQUEST_BASE_MESOS_REWARD)
         }
+        else{
+            const InventoryType = Java.type('client.inventory.InventoryType');
+            if (cm.getPlayer().getInventory(InventoryType.ETC).getNumFreeSlot() < 1) {
+                cm.sendNext("Check for a available slot on your ETC inventory.");
+                cm.dispose();
+                return;
+            }
 
-        var itemPrize = repeatablePrizes[Math.floor((Math.random() * repeatablePrizes.length))];
-        cm.gainItem(itemPrize[0], itemPrize[1]);
+            var itemPrize = repeatablePrizes[Math.floor((Math.random() * repeatablePrizes.length))];
+            cm.gainItem(itemPrize[0], itemPrize[1]);
+        }
     }
 
     cm.warp(105040300, 0);

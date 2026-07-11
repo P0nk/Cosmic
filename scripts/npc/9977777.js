@@ -24,6 +24,7 @@
 
 var status;
 
+var anthemSong = "Field/anthem/brazil";     // sound src: https://c7.rbxcdn.com/f91060652a6e9fbfbf92cb1418435448
 var ambientSong = "Bgm04/Shinin'Harbor";
 
 var feature_tree = [];
@@ -216,6 +217,7 @@ function writeFeatureTab_Serverpotentials() {
     addFeature("Poison damage value visible for other players.");
     addFeature("M. book announcer displays info based on demand.");
     addFeature("Custom jail system.");
+    addFeature("Custom buyback system, uses mesos / NX, via MTS.");
     addFeature("Custom fishing system having 'seasonal' catch times.");
     addFeature("Actual fishing handling w/ F. Net - thanks Dragohe4rt!");
     addFeature("Custom map leasing system.");
@@ -258,7 +260,7 @@ function writeFeatureTab_CustomNPCs() {
 function writeFeatureTab_Localhostedits() {
     addFeature("Removed the 'n' NPC dialog issue.");
     addFeature("Removed caps for MATK, WMDEF, ACC and AVOID.");
-    addFeature("Removed MTS block.");
+    addFeature("Removed MTS block, buyback available anywhere.");
     addFeature("Removed party blocks for novices under level 10.");
     addFeature("Set a much more higher cap for SPEED.");
     addFeature("Removed AP usage block for novices.");
@@ -306,6 +308,8 @@ function writeAllFeatures() {
 }
 
 function start() {
+    const PacketCreator = Java.type('tools.PacketCreator');
+    cm.getPlayer().sendPacket(PacketCreator.musicChange(anthemSong));
     status = -1;
     writeAllFeatures();
     action(1, 0, 0);

@@ -22,22 +22,10 @@
 package net.server.channel.handlers;
 
 import client.Character;
-import client.Client;
-import client.Skill;
-import client.SkillFactory;
-import client.SkillMacro;
-import client.creator.veteran.BowmanCreator;
-import client.creator.veteran.MagicianCreator;
-import client.creator.veteran.PirateCreator;
-import client.creator.veteran.ThiefCreator;
-import client.creator.veteran.WarriorCreator;
-import client.inventory.Equip;
+import client.*;
+import client.creator.veteran.*;
+import client.inventory.*;
 import client.inventory.Equip.ScrollResult;
-import client.inventory.Inventory;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.ModifyInventory;
-import client.inventory.Pet;
 import client.inventory.manipulator.InventoryManipulator;
 import client.inventory.manipulator.KarmaManipulator;
 import client.processor.npc.DueyProcessor;
@@ -58,12 +46,7 @@ import server.ItemInformationProvider;
 import server.Shop;
 import server.ShopFactory;
 import server.TimerManager;
-import server.maps.AbstractMapObject;
-import server.maps.FieldLimit;
-import server.maps.Kite;
-import server.maps.MapleMap;
-import server.maps.MapleTVEffect;
-import server.maps.PlayerShopItem;
+import server.maps.*;
 import service.NoteService;
 import tools.PacketCreator;
 import tools.Pair;
@@ -125,16 +108,18 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             medal = "<" + ii.getName(medalItem.getItemId()) + "> ";
         }
 
-        if (itemType == 504) { // vip teleport rock
+        if (itemType == 504) { // VIP Teleport Rock
             String error1 = "Either the player could not be found or you were trying to teleport to an illegal location.";
-            boolean vip = p.readByte() == 1 && itemId / 1000 >= 5041;
-            remove(c, position, itemId);
+            boolean vip = p.readByte() == 1 && itemId / 1000 >= 5041; // Check if the rock is a VIP rock
+            remove(c, position, itemId); // Remove the teleport rock from inventory
             boolean success = false;
-            if (!vip) {
+
+            if (!vip) { // Non-VIP teleportation
                 int mapId = p.readInt();
-                if (itemId / 1000 >= 5041 || mapId / 100000000 == player.getMapId() / 100000000) { //check vip or same continent
+                if (itemId / 1000 >= 5041 || mapId / 100000000 == player.getMapId() / 100000000) { // Check VIP or same continent
                     MapleMap targetMap = c.getChannelServer().getMapFactory().getMap(mapId);
-                    if (!FieldLimit.CANNOTVIPROCK.check(targetMap.getFieldLimit()) && (targetMap.getForcedReturnId() == MapId.NONE || MapId.isMapleIsland(mapId))) {
+                    if (!FieldLimit.CANNOTVIPROCK.check(targetMap.getFieldLimit()) &&
+                            (targetMap.getForcedReturnId() == MapId.NONE || MapId.isMapleIsland(mapId))) {
                         player.forceChangeMap(targetMap, targetMap.getRandomPlayerSpawnpoint());
                         success = true;
                     } else {
@@ -144,31 +129,15 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                     player.dropMessage(1, "You cannot teleport between continents with this teleport rock.");
                 }
             } else {
-                String name = p.readString();
-                Character victim = c.getChannelServer().getPlayerStorage().getCharacterByName(name);
-
-                if (victim != null) {
-                    MapleMap targetMap = victim.getMap();
-                    if (!FieldLimit.CANNOTVIPROCK.check(targetMap.getFieldLimit()) && (targetMap.getForcedReturnId() == MapId.NONE || MapId.isMapleIsland(targetMap.getId()))) {
-                        if (!victim.isGM() || victim.gmLevel() <= player.gmLevel()) {   // thanks Yoboes for noticing non-GM's being unreachable through rocks
-                            player.forceChangeMap(targetMap, targetMap.findClosestPlayerSpawnpoint(victim.getPosition()));
-                            success = true;
-                        } else {
-                            player.dropMessage(1, error1);
-                        }
-                    } else {
-                        player.dropMessage(1, "You cannot teleport to this map.");
-                    }
-                } else {
-                    player.dropMessage(1, "Player could not be found in this channel.");
-                }
+                player.dropMessage(1, "Teleporting to other players is not allowed.");
             }
 
             if (!success) {
-                InventoryManipulator.addById(c, itemId, (short) 1);
+                InventoryManipulator.addById(c, itemId, (short) 1); // Return the teleport rock to inventory if unsuccessful
                 c.sendPacket(PacketCreator.enableActions());
             }
-        } else if (itemType == 505) { // AP/SP reset
+        }
+        else if (itemType == 505) { // AP/SP reset
             if (!player.isAlive()) {
                 c.sendPacket(PacketCreator.enableActions());
                 return;
@@ -245,10 +214,10 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                     return;
                 }
                 short flag = eq.getFlag();
-                if (eq.getExpiration() > -1 && (eq.getFlag() & ItemConstants.LOCK) != ItemConstants.LOCK) {
+                flag |= ItemConstants.LOCK;
+                if (eq.getExpiration() > -1) {
                     return; //No perma items pls
                 }
-                flag |= ItemConstants.LOCK;
                 eq.setFlag(flag);
 
                 long period = 0;
@@ -263,8 +232,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
                 }
 
                 if (period > 0) {
-                    long expiration = eq.getExpiration() > -1 ? eq.getExpiration() : currentServerTime();
-                    eq.setExpiration(expiration + DAYS.toMillis(period));
+                    eq.setExpiration(currentServerTime() + DAYS.toMillis(period));
                 }
 
                 // double-remove found thanks to BHB
@@ -599,7 +567,7 @@ public final class UseCashItemHandler extends AbstractPacketHandler {
             final int curlevel = toScroll.getLevel();
             c.sendPacket(PacketCreator.sendVegaScroll(0x40));
 
-            final Equip scrolled = (Equip) ii.scrollEquipWithId(toScroll, uitem.getItemId(), false, itemId, player.isGM());
+            final Equip scrolled = (Equip) ii.scrollEquipWithId(toScroll);
             c.sendPacket(PacketCreator.sendVegaScroll(scrolled.getLevel() > curlevel ? 0x41 : 0x43));
             //opcodes 0x42, 0x44: "this item cannot be used"; 0x39, 0x45: crashes
 

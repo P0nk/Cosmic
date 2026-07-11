@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="1002010.img">
+    <imgdir name="info">
+        <string name="info" value="투명_벚꽃잎용"/>
+        <int name="level" value="1"/>
+    </imgdir>
+    <imgdir name="0">
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="2"/>
+                <int name="state" value="0"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="1" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+        </imgdir>
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="1">
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="101"/>
+                <int name="state" value="2"/>
+            </imgdir>
+            <int name="timeOut" value="1000"/>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="1" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+        </imgdir>
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="2">
+        <uol name="0" value="../0/0"/>
+        <uol name="hit" value="../0/hit"/>
+    </imgdir>
+    <string name="action" value="tour_henesysDrop"/>
+</imgdir>

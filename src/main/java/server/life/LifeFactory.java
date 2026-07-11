@@ -33,12 +33,8 @@ import tools.Pair;
 import tools.StringUtil;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class LifeFactory {
     private static final Logger log = LoggerFactory.getLogger(LifeFactory.class);
@@ -98,11 +94,7 @@ public class LifeFactory {
 
     private static Pair<MonsterStats, List<MobAttackInfoHolder>> getMonsterStats(int mid) {
         Data monsterData = data.getData(StringUtil.getLeftPaddedStr(mid + ".img", '0', 11));
-        if (monsterData == null) {
-            return null;
-        }
         Data monsterInfoData = monsterData.getChildByPath("info");
-
         List<MobAttackInfoHolder> attackInfos = new LinkedList<>();
         MonsterStats stats = new MonsterStats();
 
@@ -112,240 +104,345 @@ public class LifeFactory {
             if (linkStats == null) {
                 return null;
             }
-
-            // thanks resinate for noticing non-propagable infos such as revives getting retrieved
             attackInfos.addAll(linkStats.getRight());
         }
-
-        stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
-        stats.setFriendly(DataTool.getIntConvert("damagedByMob", monsterInfoData, stats.isFriendly() ? 1 : 0) == 1);
-        stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData));
-        stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData));
-        stats.setMADamage(DataTool.getIntConvert("MADamage", monsterInfoData));
-        stats.setMDDamage(DataTool.getIntConvert("MDDamage", monsterInfoData));
-        stats.setMp(DataTool.getIntConvert("maxMP", monsterInfoData, stats.getMp()));
-        stats.setExp(DataTool.getIntConvert("exp", monsterInfoData, stats.getExp()));
-        stats.setLevel(DataTool.getIntConvert("level", monsterInfoData));
-        stats.setRemoveAfter(DataTool.getIntConvert("removeAfter", monsterInfoData, stats.removeAfter()));
-        stats.setBoss(DataTool.getIntConvert("boss", monsterInfoData, stats.isBoss() ? 1 : 0) > 0);
-        stats.setExplosiveReward(DataTool.getIntConvert("explosiveReward", monsterInfoData, stats.isExplosiveReward() ? 1 : 0) > 0);
-        stats.setFfaLoot(DataTool.getIntConvert("publicReward", monsterInfoData, stats.isFfaLoot() ? 1 : 0) > 0);
-        stats.setUndead(DataTool.getIntConvert("undead", monsterInfoData, stats.isUndead() ? 1 : 0) > 0);
-        stats.setName(DataTool.getString(mid + "/name", mobStringData, "MISSINGNO"));
-        stats.setBuffToGive(DataTool.getIntConvert("buff", monsterInfoData, stats.getBuffToGive()));
-        stats.setCP(DataTool.getIntConvert("getCP", monsterInfoData, stats.getCP()));
-        stats.setRemoveOnMiss(DataTool.getIntConvert("removeOnMiss", monsterInfoData, stats.removeOnMiss() ? 1 : 0) > 0);
-
-        Data special = monsterInfoData.getChildByPath("coolDamage");
-        if (special != null) {
-            int coolDmg = DataTool.getIntConvert("coolDamage", monsterInfoData);
-            int coolProb = DataTool.getIntConvert("coolDamageProb", monsterInfoData, 0);
-            stats.setCool(new Pair<>(coolDmg, coolProb));
+        int monsterLevel = DataTool.getIntConvert("level", monsterInfoData);
+        int maxHp = DataTool.getIntConvert("maxHP", monsterInfoData);
+        // Modify the experience and maxHP based on the monster's level
+        stats.setExp(DataTool.getIntConvert("exp",monsterInfoData));
+        stats.setFriendly(DataTool.getIntConvert("damagedByMob",monsterInfoData,stats.isFriendly()?1:0)==1);
+        stats.setPADamage(DataTool.getIntConvert("PADamage",monsterInfoData));
+        stats.setPDDamage(DataTool.getIntConvert("PDDamage",monsterInfoData));
+        stats.setMADamage(DataTool.getIntConvert("MADamage",monsterInfoData));
+        stats.setMDDamage(DataTool.getIntConvert("MDDamage",monsterInfoData));
+        stats.setMp(DataTool.getIntConvert("maxMP",monsterInfoData,stats.getMp()));
+        stats.setLevel(DataTool.getIntConvert("level",monsterInfoData));
+        stats.setRemoveAfter(DataTool.getIntConvert("removeAfter",monsterInfoData,stats.removeAfter()));
+        stats.setBoss(DataTool.getIntConvert("boss",monsterInfoData,stats.isBoss()?1:0)>0);
+        stats.setExplosiveReward(DataTool.getIntConvert("explosiveReward",monsterInfoData,stats.isExplosiveReward()?1:0)>0);
+        stats.setFfaLoot(DataTool.getIntConvert("publicReward",monsterInfoData,stats.isFfaLoot()?1:0)>0);
+        stats.setUndead(DataTool.getIntConvert("undead",monsterInfoData,stats.isUndead()?1:0)>0);
+        stats.setName(DataTool.getString(mid +"/name",mobStringData,"MISSINGNO"));
+        stats.setBuffToGive(DataTool.getIntConvert("buff",monsterInfoData,stats.getBuffToGive()));
+        stats.setCP(DataTool.getIntConvert("getCP",monsterInfoData,stats.getCP()));
+        stats.setRemoveOnMiss(DataTool.getIntConvert("removeOnMiss",monsterInfoData,stats.removeOnMiss()?1:0)>0);
+        if (monsterLevel >= 160  && maxHp > 30000000 && !stats.isBoss()) {
+            stats.setHp(maxHp / 2);
         }
-        special = monsterInfoData.getChildByPath("loseItem");
-        if (special != null) {
-            for (Data liData : special.getChildren()) {
-                stats.addLoseItem(new loseItem(DataTool.getInt(liData.getChildByPath("id")), (byte) DataTool.getInt(liData.getChildByPath("prop")), (byte) DataTool.getInt(liData.getChildByPath("x"))));
+        else if (mid == 8840000) {
+            stats.setHp(7_500_000_000L);
+        } else if (mid == 8850011 || mid == 8850012) {
+            stats.setHp(15_000_000_000L);
+        } else if (mid == 9001007) {
+            stats.setHp(100_000_000_000_000_000L);
+        } else if (mid >= 8850000 && mid <= 8850004) {
+            stats.setHp(600_000_000);
+
+        } else if(mid == 8880000) {
+            stats.setHp(6_000_000_000L);
+
+        } else if (mid == 8880002) {
+            stats.setHp(200_000_000_000L);
+
+        } else if (mid == 8880010) {
+            stats.setHp(20_000_000_000L);
+
+        } else if (mid == 8240098) {
+            stats.setHp(10_000_000_000L);
+
+        } else if (mid == 8240099) {
+            stats.setHp(15_000_000_000L);
+
+        } else if (mid == 8645009) {
+            stats.setHp(130_000_000_000L);
+
+        } else if (mid == 8880344) {
+            stats.setHp(25_000_000_000L);
+
+        } else if (mid == 8880301) {
+            stats.setHp(25_000_000_000L);
+
+        } else if (mid == 8880150) {
+            stats.setHp(100_000_000_000L);
+
+        } else if (mid == 8880302) {
+            stats.setHp(95_000_000_000L);
+
+        } else if (mid == 8880415) {
+            stats.setHp(175_000_000_000L);
+
+        }else if (mid == 9990301) {
+            stats.setHp(65_000_000_000L);
+
+        }else if (mid == 9995009) {
+            stats.setHp(75_000_000_000L);
+
+        }else if (mid == 9990415) {
+            stats.setHp(95_000_000_000L);
+
+        }else if (mid == 9990150) {
+            stats.setHp(50_000_000_000L);
+        } else {
+            stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
+        }
+
+    Data special = monsterInfoData.getChildByPath("coolDamage");
+        if(special !=null)
+
+    {
+        int coolDmg = DataTool.getIntConvert("coolDamage", monsterInfoData);
+        int coolProb = DataTool.getIntConvert("coolDamageProb", monsterInfoData, 0);
+        stats.setCool(new Pair<>(coolDmg, coolProb));
+    }
+
+    special =monsterInfoData.getChildByPath("loseItem");
+        if(special !=null)
+
+    {
+        for (Data liData : special.getChildren()) {
+            stats.addLoseItem(new loseItem(DataTool.getInt(liData.getChildByPath("id")), (byte) DataTool.getInt(liData.getChildByPath("prop")), (byte) DataTool.getInt(liData.getChildByPath("x"))));
+        }
+    }
+
+    special =monsterInfoData.getChildByPath("selfDestruction");
+        if(special !=null)
+
+    {
+        stats.setSelfDestruction(new selfDestruction((byte) DataTool.getInt(special.getChildByPath("action")), DataTool.getIntConvert("removeAfter", special, -1), DataTool.getIntConvert("hp", special, -1)));
+    }
+
+    Data firstAttackData = monsterInfoData.getChildByPath("firstAttack");
+    int firstAttack = 0;
+        if(firstAttackData !=null)
+
+    {
+        if (firstAttackData.getType() == DataType.FLOAT) {
+            firstAttack = Math.round(DataTool.getFloat(firstAttackData));
+        } else {
+            firstAttack = DataTool.getInt(firstAttackData);
+        }
+    }
+        stats.setFirstAttack(firstAttack >0);
+        stats.setDropPeriod(DataTool.getIntConvert("dropItemPeriod",monsterInfoData,stats.getDropPeriod()/10000)*10000);
+
+    // thanks yuxaij, Riizade, Z1peR, Anesthetic for noticing some bosses crashing players due to missing requirements
+    boolean hpbarBoss = stats.isBoss() && hpbarBosses.contains(mid);
+        stats.setTagColor(hpbarBoss ?DataTool.getIntConvert("hpTagColor",monsterInfoData,0):0);
+        stats.setTagBgColor(hpbarBoss ?DataTool.getIntConvert("hpTagBgcolor",monsterInfoData,0):0);
+
+        for(
+    Data idata :monsterData)
+
+    {
+        if (!idata.getName().equals("info")) {
+            int delay = 0;
+            for (Data pic : idata.getChildren()) {
+                delay += DataTool.getIntConvert("delay", pic, 0);
             }
+            stats.setAnimationTime(idata.getName(), delay);
         }
-        special = monsterInfoData.getChildByPath("selfDestruction");
-        if (special != null) {
-            stats.setSelfDestruction(new selfDestruction((byte) DataTool.getInt(special.getChildByPath("action")), DataTool.getIntConvert("removeAfter", special, -1), DataTool.getIntConvert("hp", special, -1)));
+    }
+
+    Data reviveInfo = monsterInfoData.getChildByPath("revive");
+        if(reviveInfo !=null)
+
+    {
+        List<Integer> revives = new LinkedList<>();
+        for (Data data_ : reviveInfo) {
+            revives.add(DataTool.getInt(data_));
         }
-        Data firstAttackData = monsterInfoData.getChildByPath("firstAttack");
-        int firstAttack = 0;
-        if (firstAttackData != null) {
-            if (firstAttackData.getType() == DataType.FLOAT) {
-                firstAttack = Math.round(DataTool.getFloat(firstAttackData));
-            } else {
-                firstAttack = DataTool.getInt(firstAttackData);
-            }
-        }
-        stats.setFirstAttack(firstAttack > 0);
-        stats.setDropPeriod(DataTool.getIntConvert("dropItemPeriod", monsterInfoData, stats.getDropPeriod() / 10000) * 10000);
+        stats.setRevives(revives);
+    }
 
-        // thanks yuxaij, Riizade, Z1peR, Anesthetic for noticing some bosses crashing players due to missing requirements
-        boolean hpbarBoss = stats.isBoss() && hpbarBosses.contains(mid);
-        stats.setTagColor(hpbarBoss ? DataTool.getIntConvert("hpTagColor", monsterInfoData, 0) : 0);
-        stats.setTagBgColor(hpbarBoss ? DataTool.getIntConvert("hpTagBgcolor", monsterInfoData, 0) : 0);
+    decodeElementalString(stats, DataTool.getString("elemAttr", monsterInfoData, ""));
 
-        for (Data idata : monsterData) {
-            if (!idata.getName().equals("info")) {
-                int delay = 0;
-                for (Data pic : idata.getChildren()) {
-                    delay += DataTool.getIntConvert("delay", pic, 0);
-                }
-                stats.setAnimationTime(idata.getName(), delay);
-            }
-        }
-        Data reviveInfo = monsterInfoData.getChildByPath("revive");
-        if (reviveInfo != null) {
-            List<Integer> revives = new LinkedList<>();
-            for (Data data_ : reviveInfo) {
-                revives.add(DataTool.getInt(data_));
-            }
-            stats.setRevives(revives);
-        }
-        decodeElementalString(stats, DataTool.getString("elemAttr", monsterInfoData, ""));
+    MonsterInformationProvider mi = MonsterInformationProvider.getInstance();
+    Data monsterSkillInfoData = monsterInfoData.getChildByPath("skill");
+        if(monsterSkillInfoData !=null)
 
-        MonsterInformationProvider mi = MonsterInformationProvider.getInstance();
-        Data monsterSkillInfoData = monsterInfoData.getChildByPath("skill");
-        if (monsterSkillInfoData != null) {
-            int i = 0;
-            Set<MobSkillId> skills = new HashSet<>();
-            while (monsterSkillInfoData.getChildByPath(Integer.toString(i)) != null) {
-                int skillId = DataTool.getInt(i + "/skill", monsterSkillInfoData, 0);
-                int skillLv = DataTool.getInt(i + "/level", monsterSkillInfoData, 0);
-                MobSkillType type = MobSkillType.from(skillId).orElseThrow();
-                skills.add(new MobSkillId(type, skillLv));
-
-                Data monsterSkillData = monsterData.getChildByPath("skill" + (i + 1));
-                if (monsterSkillData != null) {
-                    int animationTime = 0;
-                    for (Data effectEntry : monsterSkillData.getChildren()) {
-                        animationTime += DataTool.getIntConvert("delay", effectEntry, 0);
-                    }
-
-                    MobSkill skill = MobSkillFactory.getMobSkillOrThrow(type, skillLv);
-                    mi.setMobSkillAnimationTime(skill, animationTime);
-                }
-
-                i++;
-            }
-            stats.setSkills(skills);
-        }
-
+    {
         int i = 0;
-        Data monsterAttackData;
-        while ((monsterAttackData = monsterData.getChildByPath("attack" + (i + 1))) != null) {
-            int animationTime = 0;
-            for (Data effectEntry : monsterAttackData.getChildren()) {
-                animationTime += DataTool.getIntConvert("delay", effectEntry, 0);
+        Set<MobSkillId> skills = new HashSet<>();
+        while (monsterSkillInfoData.getChildByPath(Integer.toString(i)) != null) {
+            int skillId = DataTool.getInt(i + "/skill", monsterSkillInfoData, 0);
+            int skillLv = DataTool.getInt(i + "/level", monsterSkillInfoData, 0);
+            MobSkillType type = MobSkillType.from(skillId).orElseThrow();
+            skills.add(new MobSkillId(type, skillLv));
+
+            Data monsterSkillData = monsterData.getChildByPath("skill" + (i + 1));
+            if (monsterSkillData != null) {
+                int animationTime = 0;
+                for (Data effectEntry : monsterSkillData.getChildren()) {
+                    animationTime += DataTool.getIntConvert("delay", effectEntry, 0);
+                }
+
+                MobSkill skill = MobSkillFactory.getMobSkillOrThrow(type, skillLv);
+                mi.setMobSkillAnimationTime(skill, animationTime);
             }
 
-            int mpCon = DataTool.getIntConvert("info/conMP", monsterAttackData, 0);
-            int coolTime = DataTool.getIntConvert("info/attackAfter", monsterAttackData, 0);
-            attackInfos.add(new MobAttackInfoHolder(i, mpCon, coolTime, animationTime));
             i++;
         }
+        stats.setSkills(skills);
+    }
 
-        Data banishData = monsterInfoData.getChildByPath("ban");
-        if (banishData != null) {
-            int map = DataTool.getInt("banMap/0/field", banishData, -1);
-            String portal = DataTool.getString("banMap/0/portal", banishData, "sp");
-            String msg = DataTool.getString("banMsg", banishData);
-            stats.setBanishInfo(new BanishInfo(map, portal, msg));
+    int i = 0;
+    Data monsterAttackData;
+        while((monsterAttackData =monsterData.getChildByPath("attack"+(i +1)))!=null)
+    {
+        int animationTime = 0;
+        for (Data effectEntry : monsterAttackData.getChildren()) {
+            animationTime += DataTool.getIntConvert("delay", effectEntry, 0);
         }
 
-        int noFlip = DataTool.getInt("noFlip", monsterInfoData, 0);
-        if (noFlip > 0) {
-            Point origin = DataTool.getPoint("stand/0/origin", monsterData, null);
-            if (origin != null) {
-                stats.setFixedStance(origin.getX() < 1 ? 5 : 4);    // fixed left/right
+        int mpCon = DataTool.getIntConvert("info/conMP", monsterAttackData, 0);
+        int coolTime = DataTool.getIntConvert("info/attackAfter", monsterAttackData, 0);
+        attackInfos.add(new MobAttackInfoHolder(i, mpCon, coolTime, animationTime));
+        i++;
+    }
+
+    Data banishData = monsterInfoData.getChildByPath("ban");
+        if(banishData !=null)
+
+    {
+        stats.setBanishInfo(new BanishInfo(DataTool.getString("banMsg", banishData), DataTool.getInt("banMap/0/field", banishData, -1), DataTool.getString("banMap/0/portal", banishData, "sp")));
+    }
+
+    int noFlip = DataTool.getInt("noFlip", monsterInfoData, 0);
+        if(noFlip >0)
+
+    {
+        Point origin = DataTool.getPoint("stand/0/origin", monsterData, null);
+        if (origin != null) {
+            stats.setFixedStance(origin.getX() < 1 ? 5 : 4);    // fixed left/right
+        }
+    }
+
+        return new Pair<>(stats,attackInfos);
+}
+
+public static Monster getMonster(int mid) {
+    try {
+        MonsterStats stats = monsterStats.get(mid);
+        if (stats == null) {
+            Pair<MonsterStats, List<MobAttackInfoHolder>> mobStats = getMonsterStats(mid);
+            stats = mobStats.getLeft();
+            setMonsterAttackInfo(mid, mobStats.getRight());
+
+            monsterStats.put(mid, stats);
+        }
+        return new Monster(mid, stats);
+    } catch (NullPointerException npe) {
+        log.error("[SEVERE] MOB {} failed to load.", mid, npe);
+        return null;
+    }
+}
+
+public static int getMonsterLevel(int mid) {
+    try {
+        MonsterStats stats = monsterStats.get(mid);
+        if (stats == null) {
+            Data monsterData = data.getData(StringUtil.getLeftPaddedStr(mid + ".img", '0', 11));
+            if (monsterData == null) {
+                return -1;
             }
+            Data monsterInfoData = monsterData.getChildByPath("info");
+            return DataTool.getIntConvert("level", monsterInfoData);
+        } else {
+            return stats.getLevel();
         }
-
-        return new Pair<>(stats, attackInfos);
+    } catch (NullPointerException npe) {
+        log.error("[SEVERE] MOB {} failed to load.", mid, npe);
     }
 
-    public static Monster getMonster(int mid) {
-        try {
-            MonsterStats stats = monsterStats.get(mid);
-            if (stats == null) {
-                Pair<MonsterStats, List<MobAttackInfoHolder>> mobStats = getMonsterStats(mid);
-                stats = mobStats.getLeft();
-                setMonsterAttackInfo(mid, mobStats.getRight());
+    return -1;
+}
 
-                monsterStats.put(mid, stats);
-            }
-            return new Monster(mid, stats);
-        } catch (NullPointerException npe) {
-            log.error("[SEVERE] MOB {} failed to load.", mid, npe);
-            return null;
-        }
+private static void decodeElementalString(MonsterStats stats, String elemAttr) {
+    for (int i = 0; i < elemAttr.length(); i += 2) {
+        stats.setEffectiveness(Element.getFromChar(elemAttr.charAt(i)), ElementalEffectiveness.getByNumber(Integer.parseInt(String.valueOf(elemAttr.charAt(i + 1)))));
+    }
+}
+
+public static NPC getNPC(int nid) {
+    return new NPC(nid, new NPCStats(DataTool.getString(nid + "/name", npcStringData, "MISSINGNO")));
+}
+
+public static String getNPCDefaultTalk(int nid) {
+    return DataTool.getString(nid + "/d0", npcStringData, "(...)");
+}
+
+public static class BanishInfo {
+
+    private final int map;
+    private final String portal;
+    private final String msg;
+
+    public BanishInfo(String msg, int map, String portal) {
+        this.msg = msg;
+        this.map = map;
+        this.portal = portal;
     }
 
-    public static int getMonsterLevel(int mid) {
-        try {
-            MonsterStats stats = monsterStats.get(mid);
-            if (stats == null) {
-                Data monsterData = data.getData(StringUtil.getLeftPaddedStr(mid + ".img", '0', 11));
-                if (monsterData == null) {
-                    return -1;
-                }
-                Data monsterInfoData = monsterData.getChildByPath("info");
-                return DataTool.getIntConvert("level", monsterInfoData);
-            } else {
-                return stats.getLevel();
-            }
-        } catch (NullPointerException npe) {
-            log.error("[SEVERE] MOB {} failed to load.", mid, npe);
-        }
-
-        return -1;
+    public int getMap() {
+        return map;
     }
 
-    private static void decodeElementalString(MonsterStats stats, String elemAttr) {
-        for (int i = 0; i < elemAttr.length(); i += 2) {
-            stats.setEffectiveness(Element.getFromChar(elemAttr.charAt(i)), ElementalEffectiveness.getByNumber(Integer.parseInt(String.valueOf(elemAttr.charAt(i + 1)))));
-        }
+    public String getPortal() {
+        return portal;
     }
 
-    public static NPC getNPC(int nid) {
-        return new NPC(nid, new NPCStats(DataTool.getString(nid + "/name", npcStringData, "MISSINGNO")));
+    public String getMsg() {
+        return msg;
+    }
+}
+
+public static class loseItem {
+
+    private final int id;
+    private final byte chance;
+    private final byte x;
+
+    public loseItem(int id, byte chance, byte x) {
+        this.id = id;
+        this.chance = chance;
+        this.x = x;
     }
 
-    public static String getNPCDefaultTalk(int nid) {
-        return DataTool.getString(nid + "/d0", npcStringData, "(...)");
+    public int getId() {
+        return id;
     }
 
-    public static class loseItem {
-
-        private final int id;
-        private final byte chance;
-        private final byte x;
-
-        public loseItem(int id, byte chance, byte x) {
-            this.id = id;
-            this.chance = chance;
-            this.x = x;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public byte getChance() {
-            return chance;
-        }
-
-        public byte getX() {
-            return x;
-        }
+    public byte getChance() {
+        return chance;
     }
 
-    public static class selfDestruction {
-
-        private final byte action;
-        private final int removeAfter;
-        private final int hp;
-
-        public selfDestruction(byte action, int removeAfter, int hp) {
-            this.action = action;
-            this.removeAfter = removeAfter;
-            this.hp = hp;
-        }
-
-        public int getHp() {
-            return hp;
-        }
-
-        public byte getAction() {
-            return action;
-        }
-
-        public int removeAfter() {
-            return removeAfter;
-        }
+    public byte getX() {
+        return x;
     }
+}
+
+public static class selfDestruction {
+
+    private final byte action;
+    private final int removeAfter;
+    private final int hp;
+
+    public selfDestruction(byte action, int removeAfter, int hp) {
+        this.action = action;
+        this.removeAfter = removeAfter;
+        this.hp = hp;
+    }
+
+    public int getHp() {
+        return hp;
+    }
+
+    public byte getAction() {
+        return action;
+    }
+
+    public int removeAfter() {
+        return removeAfter;
+    }
+}
 }

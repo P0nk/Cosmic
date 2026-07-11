@@ -23,11 +23,7 @@ package client.inventory;
 import tools.DatabaseConnection;
 import tools.Pair;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -46,7 +42,8 @@ public enum ItemFactory {
     MERCHANT(6, false),
     CASH_OVERALL(7, true),
     MARRIAGE_GIFTS(8, false),
-    DUEY(9, false);
+    DUEY(9, false),
+    OREBAG(10, true);
     private final int value;
     private final boolean account;
 
@@ -69,11 +66,9 @@ public enum ItemFactory {
     }
 
     public List<Pair<Item, InventoryType>> loadItems(int id, boolean login) throws SQLException {
-        if (value != 6) {
-            return loadItemsCommon(id, login);
-        } else {
-            return loadItemsMerchant(id, login);
-        }
+        return value != 6
+                ? loadItemsCommon(id, login)
+                : loadItemsMerchant(id, login);
     }
 
     public void saveItems(List<Pair<Item, InventoryType>> items, int id, Connection con) throws SQLException {

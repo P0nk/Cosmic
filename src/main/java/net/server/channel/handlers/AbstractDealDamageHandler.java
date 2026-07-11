@@ -21,11 +21,8 @@
  */
 package net.server.channel.handlers;
 
-import client.BuffStat;
 import client.Character;
-import client.Job;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.autoban.AutobanFactory;
 import client.status.MonsterStatus;
 import client.status.MonsterStatusEffect;
@@ -34,96 +31,37 @@ import constants.game.GameConstants;
 import constants.id.ItemId;
 import constants.id.MapId;
 import constants.id.MobId;
-import constants.skills.Aran;
-import constants.skills.Assassin;
-import constants.skills.Bandit;
-import constants.skills.Beginner;
-import constants.skills.Bishop;
-import constants.skills.BlazeWizard;
-import constants.skills.Bowmaster;
-import constants.skills.Brawler;
-import constants.skills.Buccaneer;
-import constants.skills.ChiefBandit;
-import constants.skills.Cleric;
-import constants.skills.Corsair;
-import constants.skills.Crossbowman;
-import constants.skills.Crusader;
-import constants.skills.DawnWarrior;
-import constants.skills.DragonKnight;
-import constants.skills.Evan;
-import constants.skills.FPArchMage;
-import constants.skills.FPMage;
-import constants.skills.FPWizard;
-import constants.skills.Fighter;
-import constants.skills.Gunslinger;
-import constants.skills.Hermit;
-import constants.skills.Hero;
-import constants.skills.Hunter;
-import constants.skills.ILArchMage;
-import constants.skills.ILMage;
-import constants.skills.Legend;
-import constants.skills.Marauder;
-import constants.skills.Marksman;
-import constants.skills.NightLord;
-import constants.skills.NightWalker;
-import constants.skills.Noblesse;
-import constants.skills.Outlaw;
-import constants.skills.Page;
-import constants.skills.Paladin;
-import constants.skills.Ranger;
-import constants.skills.Rogue;
-import constants.skills.Shadower;
-import constants.skills.Sniper;
-import constants.skills.Spearman;
-import constants.skills.SuperGM;
-import constants.skills.ThunderBreaker;
-import constants.skills.WhiteKnight;
-import constants.skills.WindArcher;
+import constants.skills.*;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.PlayerBuffValueHolder;
 import scripting.AbstractPlayerInteraction;
 import server.StatEffect;
 import server.TimerManager;
-import server.life.Element;
-import server.life.ElementalEffectiveness;
-import server.life.MobSkill;
-import server.life.MobSkillFactory;
-import server.life.MobSkillId;
-import server.life.MobSkillType;
-import server.life.Monster;
-import server.life.MonsterDropEntry;
-import server.life.MonsterInformationProvider;
+import server.life.*;
 import server.maps.MapItem;
 import server.maps.MapObject;
+import server.maps.MapObjectType;
 import server.maps.MapleMap;
 import tools.PacketCreator;
 import tools.Randomizer;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
-    private static final int EXPLODED_MESO_SPREAD_DELAY = 100;
-    private static final int EXPLODED_MESO_MAX_DELAY = 1000;
 
     public static class AttackInfo {
 
         public int numAttacked, numDamage, numAttackedAndDamage, skill, skilllevel, stance, direction, rangedirection, charge, display;
-        public Map<Integer, AttackTarget> targets;
+        public Map<Integer, List<Integer>> allDamage;
         public boolean ranged, magic;
         public int speed = 4;
         public Point position = new Point();
-        public List<Integer> explodedMesos;
-        public Short attackDelay;
 
         public StatEffect getAttackEffect(Character chr, Skill theSkill) {
             Skill mySkill = theSkill;
@@ -148,9 +86,6 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             return mySkill.getEffect(skillLevel);
         }
     }
-
-    // TODO: add position
-    public record AttackTarget(short delay, List<Integer> damageLines) {}
 
     protected void applyAttack(AttackInfo attack, final Character player, int attackCount) {
         final MapleMap map = player.getMap();
@@ -213,14 +148,50 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 return;
             }
 
+            //WTF IS THIS F3,1
+            /*if (attackCount != attack.numDamage && attack.skill != ChiefBandit.MESO_EXPLOSION && attack.skill != NightWalker.VAMPIRE && attack.skill != WindArcher.WIND_SHOT && attack.skill != Aran.COMBO_SMASH && attack.skill != Aran.COMBO_FENRIR && attack.skill != Aran.COMBO_TEMPEST && attack.skill != NightLord.NINJA_AMBUSH && attack.skill != Shadower.NINJA_AMBUSH) {
+                return;
+            }*/
+
             int totDamage = 0;
 
             if (attack.skill == ChiefBandit.MESO_EXPLOSION) {
-                removeExplodedMesos(map, attack);
-            }
+                int delay = 0;
+                for (Integer oned : attack.allDamage.keySet()) {
+                    MapObject mapobject = map.getMapObject(oned);
+                    if (mapobject != null && mapobject.getType() == MapObjectType.ITEM) {
+                        final MapItem mapitem = (MapItem) mapobject;
+                        if (mapitem.getMeso() == 0) { //Maybe it is possible some how?
+                            return;
+                        }
 
-            for (Map.Entry<Integer, AttackTarget> target : attack.targets.entrySet()) {
-                final Monster monster = map.getMonsterByOid(target.getKey());
+                        mapitem.lockItem();
+                        try {
+                            if (mapitem.isAlreadyPickedUp()) {
+                                return;
+                            }
+                            TimerManager.getInstance().schedule(() -> {
+                                mapitem.lockItem();
+                                try {
+                                    if (mapitem.isAlreadyPickedUp()) {
+                                        return;
+                                    }
+                                    map.pickItemDrop(PacketCreator.removeItemFromMap(mapitem.getObjectId(), 4, 0), mapitem);
+                                } finally {
+                                    mapitem.unlockItem();
+                                }
+                            }, delay);
+                            delay += 100;
+                        } finally {
+                            mapitem.unlockItem();
+                        }
+                    } else if (mapobject != null && mapobject.getType() != MapObjectType.MONSTER) {
+                        return;
+                    }
+                }
+            }
+            for (Integer oned : attack.allDamage.keySet()) {
+                final Monster monster = map.getMonsterByOid(oned);
                 if (monster != null) {
                     double distance = player.getPosition().distanceSq(monster.getPosition());
                     double distanceToDetect = 200000.0;
@@ -255,7 +226,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     }
 
                     int totDamageToOneMonster = 0;
-                    List<Integer> onedList = target.getValue().damageLines();
+                    List<Integer> onedList = attack.allDamage.get(oned);
 
                     if (attack.magic) { // thanks BHB, Alex (CanIGetaPR) for noticing no immunity status check here
                         if (monster.isBuffed(MonsterStatus.MAGIC_IMMUNITY)) {
@@ -284,6 +255,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             eachd += Integer.MAX_VALUE;
                         }
                         totDamageToOneMonster += eachd;
+                        if (totDamageToOneMonster < 0) {
+                            totDamageToOneMonster = Integer.MAX_VALUE;
+                        }
                     }
                     totDamage += totDamageToOneMonster;
                     monster.aggroMonsterDamage(player, totDamageToOneMonster);
@@ -291,7 +265,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         Skill pickpocket = SkillFactory.getSkill(ChiefBandit.PICKPOCKET);
                         int picklv = (player.isGM()) ? pickpocket.getMaxLevel() : player.getSkillLevel(pickpocket);
                         if (picklv > 0) {
-                            short delay = 0;
+                            int delay = 0;
                             final int maxmeso = player.getBuffedValue(BuffStat.PICKPOCKET);
                             for (Integer eachd : onedList) {
                                 eachd += Integer.MAX_VALUE;
@@ -304,18 +278,16 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                         eachdf = eachd;
                                     }
 
-                                    int meso = Math.min((int) Math.max(((double) eachdf / (double) 20000) * (double) maxmeso, 1), maxmeso);
-                                    Point position = new Point((int) (monster.getPosition().getX() + Randomizer.nextInt(100) - 50), (int) (monster.getPosition().getY()));
-                                    map.spawnMesoDrop(meso, position, monster, player, true, (byte) 2, delay);
+                                    TimerManager.getInstance().schedule(() -> map.spawnMesoDrop(Math.min((int) Math.max(((double) eachdf / (double) 20000) * (double) maxmeso, 1), maxmeso), new Point((int) (monster.getPosition().getX() + Randomizer.nextInt(100) - 50), (int) (monster.getPosition().getY())), monster, player, true, (byte) 2), delay);
                                     delay += 100;
                                 }
                             }
                         }
                     } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
-                        player.addHP(Math.min(monster.getMaxHp(), Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2)));
+                        player.addHP((int) Math.min(monster.getMaxHp(), Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2)));
                     } else if (attack.skill == Bandit.STEAL) {
                         Skill steal = SkillFactory.getSkill(Bandit.STEAL);
-                        if (monster.getStolen().size() < 1) { // One steal per mob <3
+                        if (monster.getStolen().size() < 1 && !monster.isBoss()) { // One steal per mob <3
                             if (steal.getEffect(player.getSkillLevel(steal)).makeChanceResult()) {
                                 monster.addStolen(0);
 
@@ -332,7 +304,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     List<MonsterDropEntry> toSteal = new ArrayList<>();
                                     toSteal.add(mi.retrieveDrop(monster.getId()).get(i));
 
-                                    map.dropItemsFromMonster(toSteal, player, monster, target.getValue().delay());
+                                    map.dropItemsFromMonster(toSteal, player, monster);
                                     monster.addStolen(toSteal.get(0).itemId);
                                 }
                             }
@@ -352,7 +324,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             if (player.getSkillLevel(type) > 0) {
                                 StatEffect DoT = type.getEffect(player.getSkillLevel(type));
                                 MonsterStatusEffect monsterStatusEffect = new MonsterStatusEffect(Collections.singletonMap(MonsterStatus.POISON, 1), type, null, false);
-                                monster.applyStatus(player, monsterStatusEffect, true, DoT.getDuration(), false);
+                                monster.applyStatus(player, monsterStatusEffect, true, DoT.getDuration(), true, false);
                             }
                         }
                     }
@@ -360,7 +332,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     if (player.isAran()) {
                         if (player.getBuffedValue(BuffStat.WK_CHARGE) != null) {
                             Skill snowCharge = SkillFactory.getSkill(Aran.SNOW_CHARGE);
-                            if (totDamageToOneMonster > 0) {
+                            if (totDamageToOneMonster > 0 && player.getSkillLevel(snowCharge) != 0) {
                                 MonsterStatusEffect monsterStatusEffect = new MonsterStatusEffect(Collections.singletonMap(MonsterStatus.SPEED, snowCharge.getEffect(player.getSkillLevel(snowCharge)).getX()), snowCharge, null, false);
                                 long duration = SECONDS.toMillis(snowCharge.getEffect(player.getSkillLevel(snowCharge)).getY());
                                 monster.applyStatus(player, monsterStatusEffect, false, duration);
@@ -391,34 +363,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             monster.applyStatus(player, monsterStatusEffect, false, duration);
                         }
                     }
-                    if (job == 121 || job == 122) {
-                        for (int charge = 1211005; charge < 1211007; charge++) {
-                            Skill chargeSkill = SkillFactory.getSkill(charge);
-                            if (player.isBuffFrom(BuffStat.WK_CHARGE, chargeSkill)) {
-                                if (totDamageToOneMonster > 0) {
-                                    if (charge == WhiteKnight.BW_ICE_CHARGE || charge == WhiteKnight.SWORD_ICE_CHARGE) {
-                                        monster.setTempEffectiveness(Element.ICE, ElementalEffectiveness.WEAK, chargeSkill.getEffect(player.getSkillLevel(chargeSkill)).getY() * 1000);
-                                        break;
-                                    }
-                                    if (charge == WhiteKnight.BW_FIRE_CHARGE || charge == WhiteKnight.SWORD_FIRE_CHARGE) {
-                                        monster.setTempEffectiveness(Element.FIRE, ElementalEffectiveness.WEAK, chargeSkill.getEffect(player.getSkillLevel(chargeSkill)).getY() * 1000);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (job == 122) {
-                            for (int charge = 1221003; charge < 1221004; charge++) {
-                                Skill chargeSkill = SkillFactory.getSkill(charge);
-                                if (player.isBuffFrom(BuffStat.WK_CHARGE, chargeSkill)) {
-                                    if (totDamageToOneMonster > 0) {
-                                        monster.setTempEffectiveness(Element.HOLY, ElementalEffectiveness.WEAK, chargeSkill.getEffect(player.getSkillLevel(chargeSkill)).getY() * 1000);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    } else if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
+                    if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                         Skill skill;
                         if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                             skill = SkillFactory.getSkill(21100005);
@@ -433,7 +378,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                     if (monster.getVenomMulti() < 3) {
                                         monster.setVenomMulti((monster.getVenomMulti() + 1));
                                         MonsterStatusEffect monsterStatusEffect = new MonsterStatusEffect(Collections.singletonMap(MonsterStatus.POISON, 1), type, null, false);
-                                        monster.applyStatus(player, monsterStatusEffect, false, venomEffect.getDuration(), true);
+                                        monster.applyStatus(player, monsterStatusEffect, false, venomEffect.getDuration());
                                     }
                                 }
                             }
@@ -452,7 +397,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                                 StatEffect mortal = mortalBlow.getEffect(skillLevel);
                                 if (monster.getHp() <= (monster.getStats().getHp() * mortal.getX()) / 100) {
                                     if (Randomizer.rand(1, 100) <= mortal.getY()) {
-                                        map.damageMonster(player, monster, Integer.MAX_VALUE, target.getValue().delay());  // thanks Conrad for noticing reduced EXP gain from skill kill
+                                        map.damageMonster(player, monster, Integer.MAX_VALUE);  // thanks Conrad for noticing reduced EXP gain from skill kill
                                     }
                                 }
                             }
@@ -500,25 +445,17 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     }
                     if (attack.skill == Paladin.HEAVENS_HAMMER) {
-                        if (!monster.isBoss()) {
-                            damageMonsterWithSkill(player, map, monster, monster.getHp() - 1, attack.skill, 1777);
-                        } else {
-                            int HHDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Paladin.HEAVENS_HAMMER).getEffect(player.getSkillLevel(SkillFactory.getSkill(Paladin.HEAVENS_HAMMER))).getDamage() / 100));
-                            damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (HHDmg / 5) + HHDmg * .8)), attack.skill, 1777);
-                        }
+                        int HHDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Paladin.HEAVENS_HAMMER).getEffect(player.getSkillLevel(SkillFactory.getSkill(Paladin.HEAVENS_HAMMER))).getDamage() / 100));
+                        damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (HHDmg / 5) + HHDmg * .8)), attack.skill, 1777);
                     } else if (attack.skill == Aran.COMBO_TEMPEST) {
-                        if (!monster.isBoss()) {
-                            damageMonsterWithSkill(player, map, monster, monster.getHp(), attack.skill, 0);
-                        } else {
-                            int TmpDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Aran.COMBO_TEMPEST).getEffect(player.getSkillLevel(SkillFactory.getSkill(Aran.COMBO_TEMPEST))).getDamage() / 100));
-                            damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (TmpDmg / 5) + TmpDmg * .8)), attack.skill, 0);
-                        }
+                        int TmpDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Aran.COMBO_TEMPEST).getEffect(player.getSkillLevel(SkillFactory.getSkill(Aran.COMBO_TEMPEST))).getDamage() / 100));
+                        damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (TmpDmg / 5) + TmpDmg * .8)), attack.skill, 0);
                     } else {
                         if (attack.skill == Aran.BODY_PRESSURE) {
                             map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), totDamageToOneMonster));
                         }
 
-                        map.damageMonster(player, monster, totDamageToOneMonster, target.getValue().delay());
+                        map.damageMonster(player, monster, totDamageToOneMonster);
                     }
                     if (monster.isBuffed(MonsterStatus.WEAPON_REFLECT) && !attack.magic) {
                         for (MobSkillId msId : monster.getSkills()) {
@@ -538,6 +475,23 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             }
                         }
                     }
+                    if (attack.skill == 5221016) {
+                        if (monster.isBoss()) {
+                            Map<MonsterStatus, Integer> zW = new HashMap<>();
+                            zW.put(MonsterStatus.STUN, 1);
+                            MonsterStatusEffect mse = new MonsterStatusEffect(zW, SkillFactory.getSkill(DragonKnight.DRAGON_ROAR), null, false);
+                            monster.applyStatus(null, mse, false, 1000L, false, true);
+                        }
+                    }
+                    if (player.damageChecks && !player.damageCheckinProgress) {
+                        player.damageTimer();
+                        return;
+                    }
+                    if (player.damageCheckinProgress) {
+                        final int finalTotDamage = totDamageToOneMonster;
+                        player.damageCheck += finalTotDamage;
+                        return;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -545,8 +499,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         }
     }
 
-    private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
-                                               final int damage, int skillid, int fixedTime) {
+    private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster, final int damage, int skillid, int fixedTime) {
         int animationTime;
 
         if (fixedTime == 0) {
@@ -573,7 +526,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         ret.numAttackedAndDamage = p.readByte();
         ret.numAttacked = (ret.numAttackedAndDamage >>> 4) & 0xF;
         ret.numDamage = ret.numAttackedAndDamage & 0xF;
-        ret.targets = new HashMap<>();
+        ret.allDamage = new HashMap<>();
         ret.skill = p.readInt();
         ret.ranged = ranged;
         ret.magic = magic;
@@ -596,9 +549,41 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         ret.direction = p.readByte();
         ret.stance = p.readByte();
         if (ret.skill == ChiefBandit.MESO_EXPLOSION) {
-            return parseMesoExplosion(p, ret);
+            if (ret.numAttackedAndDamage == 0) {
+                p.skip(10);
+                int bullets = p.readByte();
+                for (int j = 0; j < bullets; j++) {
+                    int mesoid = p.readInt();
+                    p.skip(1);
+                    ret.allDamage.put(mesoid, null);
+                }
+                return ret;
+            } else {
+                p.skip(6);
+            }
+            for (int i = 0; i < ret.numAttacked + 1; i++) {
+                int oid = p.readInt();
+                if (i < ret.numAttacked) {
+                    p.skip(12);
+                    int bullets = p.readByte();
+                    List<Integer> allDamageNumbers = new ArrayList<>();
+                    for (int j = 0; j < bullets; j++) {
+                        int damage = p.readInt();
+                        allDamageNumbers.add(damage);
+                    }
+                    ret.allDamage.put(oid, allDamageNumbers);
+                    p.skip(4);
+                } else {
+                    int bullets = p.readByte();
+                    for (int j = 0; j < bullets; j++) {
+                        int mesoid = p.readInt();
+                        p.skip(1);
+                        ret.allDamage.put(mesoid, null);
+                    }
+                }
+            }
+            return ret;
         }
-
         if (ranged) {
             p.readByte();
             ret.speed = p.readByte();
@@ -630,10 +615,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             calcDmgMax = chr.calculateMaxBaseDamage(chr.getTotalWatk());
         }
 
-        StatEffect effect = null;
         if (ret.skill != 0) {
             Skill skill = SkillFactory.getSkill(ret.skill);
-            effect = skill.getEffect(ret.skilllevel);
+            StatEffect effect = skill.getEffect(ret.skilllevel);
 
             if (magic) {
                 // Since the skill is magic based, use the magic formula
@@ -677,8 +661,8 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             }
         }
 
-        Integer comboBuff = chr.getBuffedValue(BuffStat.COMBO);
-        if (comboBuff != null && comboBuff > 0) {
+        //Integer comboBuff = chr.getBuffedValue(BuffStat.COMBO);
+        /*if (comboBuff != null && comboBuff > 0) {
             int oid = chr.isCygnus() ? DawnWarrior.COMBO : Crusader.COMBO;
             int advcomboid = chr.isCygnus() ? DawnWarrior.ADVANCED_COMBO : Hero.ADVANCED_COMBO;
 
@@ -712,7 +696,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     calcDmgMax *= 2.5;
                 }
             }
-        }
+        }*/
 
         if (chr.getEnergyBar() == 15000) {
             int energycharge = chr.isCygnus() ? ThunderBreaker.ENERGY_CHARGE : Marauder.ENERGY_CHARGE;
@@ -755,12 +739,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         }
         for (int i = 0; i < ret.numAttacked; i++) {
             int oid = p.readInt();
-            p.skip(4);
-            Point curPos = p.readPos();
-            Point nextPos = p.readPos();
-            short delay = p.readShort();
-            List<Integer> damageLines = new ArrayList<>();
-            final Monster monster = chr.getMap().getMonsterByOid(oid);
+            p.skip(14);
+            List<Integer> allDamageNumbers = new ArrayList<>();
+            Monster monster = chr.getMap().getMonsterByOid(oid);
+
             if (chr.getBuffEffect(BuffStat.WK_CHARGE) != null) {
                 // Charge, so now we need to check elemental effectiveness
                 int sourceID = chr.getBuffSource(BuffStat.WK_CHARGE);
@@ -846,13 +828,6 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     }
                 }
 
-                if (ret.skill == Marksman.SNIPE) {
-                    damage = 195000 + Randomizer.nextInt(5000);
-                    hitDmgMax = 200000;
-                } else if (ret.skill == Beginner.BAMBOO_RAIN || ret.skill == Noblesse.BAMBOO_RAIN || ret.skill == Evan.BAMBOO_THRUST || ret.skill == Legend.BAMBOO_THRUST) {
-                    hitDmgMax = 82569000; // 30% of Max HP of strongest Dojo boss
-                }
-
                 long maxWithCrit = hitDmgMax;
                 if (canCrit) // They can crit, so up the max.
                 {
@@ -869,27 +844,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                 }
 
-                if (ret.skill == Marksman.SNIPE || (canCrit && damage > hitDmgMax)) {
-                    // If the skill is a crit, inverse the damage to make it show up on clients.
-                    damage = -Integer.MAX_VALUE + damage - 1;
-                }
-
-                if(effect != null) {
-                    int maxattack = Math.max(effect.getBulletCount(), effect.getAttackCount());
-                    if (shadowPartner) {
-                        maxattack = maxattack * 2;
-                    }
-                    if (ret.numDamage > maxattack) {
-                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Too many lines: " + ret.numDamage + " Max lines: " + maxattack + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
-                    }
-                }
-
-                damageLines.add(damage);
+                allDamageNumbers.add(damage);
             }
             if (ret.skill != Corsair.RAPID_FIRE || ret.skill != Aran.HIDDEN_FULL_DOUBLE || ret.skill != Aran.HIDDEN_FULL_TRIPLE || ret.skill != Aran.HIDDEN_OVER_DOUBLE || ret.skill != Aran.HIDDEN_OVER_TRIPLE) {
                 p.skip(4);
             }
-            ret.targets.put(oid, new AttackTarget(delay, damageLines));
+            ret.allDamage.put(oid, allDamageNumbers);
         }
         if (ret.skill == NightWalker.POISON_BOMB) { // Poison Bomb
             p.skip(4);
@@ -898,67 +858,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         return ret;
     }
 
-    private AttackInfo parseMesoExplosion(InPacket p, AttackInfo attackInfo) {
-        p.skip(6);
-
-        Map<Integer, List<Integer>> targetDamage = new HashMap<>();
-        for (int i = 0; i < attackInfo.numAttacked; i++) {
-            int mobOid = p.readInt();
-            p.skip(4);
-            Point curPos = p.readPos();
-            Point nextPos = p.readPos();
-            int damageLines = p.readByte();
-            List<Integer> allDamageNumbers = new ArrayList<>();
-            for (int j = 0; j < damageLines; j++) {
-                int damage = p.readInt();
-                allDamageNumbers.add(damage);
-            }
-            p.skip(4);
-            targetDamage.put(mobOid, allDamageNumbers);
-        }
-
-        p.skip(4);
-
-        List<Integer> explodedMesos = new ArrayList<>();
-        int explodedMesoCount = p.readByte();
-        for (int j = 0; j < explodedMesoCount; j++) {
-            int mesoOid = p.readInt();
-            p.skip(1);
-            explodedMesos.add(mesoOid);
-        }
-        attackInfo.explodedMesos = explodedMesos;
-
-        final short attackDelay = p.readShort();
-        attackInfo.attackDelay = attackDelay;
-
-        Map<Integer, AttackTarget> targets = new HashMap<>();
-        targetDamage.forEach((id, damage) -> targets.put(id, new AttackTarget(attackDelay, damage)));
-        attackInfo.targets = targets;
-        return attackInfo;
-    }
-
-    private void removeExplodedMesos(MapleMap map, AttackInfo attack) {
-        int index = 0;
-        for (Integer mesoId : attack.explodedMesos) {
-            MapObject mapobject = map.getMapObject(mesoId);
-            if (!(mapobject instanceof MapItem mapItem)) {
-                return;
-            }
-            if (mapItem.getMeso() == 0) {
-                return;
-            }
-
-            mapItem.lockItem();
-            try {
-                if (mapItem.isPickedUp()) {
-                    return;
-                }
-                int delay = attack.attackDelay + (index++ % 5) * EXPLODED_MESO_SPREAD_DELAY;
-                delay = Math.min(delay, EXPLODED_MESO_MAX_DELAY);
-                map.pickItemDrop(PacketCreator.removeExplodedMesoFromMap(mapItem.getObjectId(), (short) delay), mapItem);
-            } finally {
-                mapItem.unlockItem();
-            }
-        }
+    private static int rand(int l, int u) {
+        return (int) ((Math.random() * (u - l + 1)) + l);
     }
 }

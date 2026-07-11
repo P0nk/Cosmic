@@ -26,6 +26,8 @@ import client.Skill;
 import client.SkillFactory;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
+import net.server.PlayerStorage;
+import net.server.Server;
 import net.server.coordinator.world.EventRecallCoordinator;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
@@ -38,15 +40,16 @@ import server.StatEffect;
 import server.ThreadManager;
 import server.TimerManager;
 import server.expeditions.Expedition;
-import server.life.LifeFactory;
-import server.life.Monster;
-import server.life.NPC;
+import server.expeditions.ExpeditionLeaderboard;
+import server.expeditions.ExpeditionType;
+import server.life.*;
 import server.maps.MapManager;
 import server.maps.MapleMap;
 import server.maps.Portal;
 import server.maps.Reactor;
 import tools.PacketCreator;
 import tools.Pair;
+import tools.TimeConversion;
 
 import javax.script.ScriptException;
 import java.awt.*;
@@ -57,6 +60,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.LinkedList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
+import java.text.DecimalFormat;
+import server.expeditions.ExpeditionBossLog;
+import server.expeditions.ExpeditionBossLog.BossLogEntry;
+import server.expeditions.ExpeditionType;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -101,6 +116,9 @@ public class EventInstanceManager {
     private final List<Integer> onMapClearExp = new ArrayList<>();
     private final List<Integer> onMapClearMeso = new ArrayList<>();
 
+    // instanced map thingies
+    private final List<MapleMap> mapsOrSomething = new ArrayList<>();
+
     // registers player status on an event (null on this Map structure equals to 0)
     private final Map<Integer, Integer> playerGrid = new HashMap<>();
 
@@ -109,6 +127,10 @@ public class EventInstanceManager {
 
     // forces deletion of items not supposed to be held outside of the event, dealt on a player's leaving moment.
     private final Set<Integer> exclusiveItems = new HashSet<>();
+
+    // damage
+    private HashMap<Integer, AtomicLong> dmgDealt = new HashMap<>();
+    private long totalDmg = 0;
 
     public EventInstanceManager(EventManager em, String name) {
         this.em = em;
@@ -134,6 +156,53 @@ public class EventInstanceManager {
         }
     }
 
+    private static HashMap<Integer, AtomicLong> sortByComparator(Map<Integer, AtomicLong> unsortMap) {
+        List<Entry<Integer, AtomicLong>> list = new LinkedList<>(unsortMap.entrySet());
+
+        // Sorting the list based on values
+        Collections.sort(list, new Comparator<Entry<Integer, AtomicLong>>() {
+            @Override
+            public int compare(Entry<Integer, AtomicLong> o1, Entry<Integer, AtomicLong> o2) {
+                return Long.compare(o2.getValue().get(), o1.getValue().get());
+            }
+        });
+
+        // Maintaining insertion order with the help of LinkedList
+        HashMap<Integer, AtomicLong> sortedMap = new LinkedHashMap<>();
+        for (Entry<Integer, AtomicLong> entry : list) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
+    }
+
+    public HashMap<Integer, AtomicLong> getDmgDealt() {
+        return dmgDealt;
+    }
+
+    public String sendDmgDealt(int world) {
+        String dealt = "Damage Dealt:\r\n";
+        PlayerStorage storage = Server.getInstance().getWorld(world).getPlayerStorage();
+        int x = 1;
+        DecimalFormat dec = new DecimalFormat("#.##");
+        DecimalFormat com = new DecimalFormat("#,###");
+        for (Entry<Integer, AtomicLong> e : dmgDealt.entrySet()) {
+            dealt += x + ". #b" + storage.getCharacterById(e.getKey()) + "#k - #r"
+                    + (com.format(e.getValue().get())) + "#k (" + dec.format(e.getValue().get() * 100.0 / totalDmg) + "%) damage dealt\r\n";
+            x++;
+        }
+        return dealt + "\r\n";
+    }
+
+    public void addDmgDealt(HashMap<Integer, AtomicLong> toAdd, long mobHp) {
+        for (Map.Entry<Integer, AtomicLong> entry : toAdd.entrySet()) {
+            Integer key = entry.getKey();
+            AtomicLong value = entry.getValue();
+            dmgDealt.merge(key, value, (v1, v2) -> new AtomicLong(v1.addAndGet(v2.get())));
+        }
+        totalDmg += mobHp;
+        dmgDealt = sortByComparator(dmgDealt);
+    }
+
     public int getEventPlayersJobs() {
         //Bits -> 0: BEGINNER 1: WARRIOR 2: MAGICIAN
         //        3: BOWMAN 4: THIEF 5: PIRATE
@@ -156,7 +225,7 @@ public class EventInstanceManager {
             }
         }
     }
-
+    
     public void applyEventPlayersSkillBuff(int skillId) {
         applyEventPlayersSkillBuff(skillId, Integer.MAX_VALUE);
     }
@@ -343,7 +412,7 @@ public class EventInstanceManager {
             event_schedule = null;
         }
 
-        dismissEventTimer();
+        // dismissEventTimer();
     }
 
     public boolean isTimerStarted() {
@@ -795,6 +864,12 @@ public class EventInstanceManager {
 
     public void clearPQ() {
         try {
+            BossLogEntry ent = ExpeditionType.typeToEntry(this.expedition.getType());
+            if(ent != null) {
+                for(Character chr : this.expedition.getActiveMembers()) {
+                    ExpeditionBossLog.insertPlayerEntry(chr.getId(), ent);
+                }
+            }
             invokeScriptFunction("clearPQ", EventInstanceManager.this);
         } catch (ScriptException | NoSuchMethodException ex) {
             ex.printStackTrace();
@@ -1092,11 +1167,36 @@ public class EventInstanceManager {
         }
     }
 
-    public final void setEventCleared() {
+    public final void setEventCleared() { setEventCleared(null); }
+
+    public final void setEventCleared(ExpeditionType type) {
         eventCleared = true;
 
+        String partyId = java.util.UUID.randomUUID().toString();
         for (Character chr : getPlayers()) {
-            chr.awardQuestPoint(YamlConfig.config.server.QUEST_POINT_PER_EVENT_CLEAR);
+            if (type != null) {
+                int characterId = chr.getId();
+                long damageDealt = 0;
+
+                if (dmgDealt.containsKey(characterId))
+                {
+                    damageDealt = dmgDealt.get(characterId).get();
+                }
+
+                long duration = timeStarted == 0 ? 0 : System.currentTimeMillis() - timeStarted;
+                chr.setExpeditionCompleted(type, duration, damageDealt, partyId);
+
+                String formattedCompletionTime = TimeConversion.millisecondsToTimeString(duration);
+                chr.dropMessage(6, type + " expedition completed. Duration: " + formattedCompletionTime);
+            } else { // award quest points for PQ completion.
+                chr.awardQuestPoint(YamlConfig.config.server.QUEST_POINT_PER_EVENT_CLEAR);
+            }
+        }
+
+        dismissEventTimer();
+
+        if (type != null) {
+            ExpeditionLeaderboard.updateLeaderboardFromExpedition(type, partyId);
         }
 
         scriptLock.lock();
@@ -1403,5 +1503,98 @@ public class EventInstanceManager {
         }
 
         return true;
+    }
+
+    public void applySealSkill(Monster monster) {
+        MobSkill sealSkill = MobSkillFactory.getMobSkillOrThrow(MobSkillType.SEAL_SKILL, 1);
+        sealSkill.applyEffect(monster);
+    }
+
+    public void applyReduceAvoid(Monster monster) {
+        MobSkill reduceAvoidSkill = MobSkillFactory.getMobSkillOrThrow(MobSkillType.EVA, 2);
+        reduceAvoidSkill.applyEffect(monster);
+    }
+
+    public void weakenMonster(Monster mob, int minMapId, int maxMapId) {
+        if (!isWithinMapRange(mob, minMapId, maxMapId)) {
+            return;
+        }
+
+        mob.getMap().setEventInstance(this);
+
+        registerMonster(mob);
+        clampMaxLevel(mob);
+        applyReduceAvoid(mob);
+    }
+
+    public void weakenMonstersOnMap(Character chr, int minMapId, int maxMapId) {
+        if (!isWithinMapRange(chr, minMapId, maxMapId)) {
+            return;
+        }
+
+        chr.getMap().setEventInstance(this);
+
+        for (Monster mob : chr.getMap().getAllMonsters()) {
+            registerMonster(mob);
+            clampMaxLevel(mob);
+            applyReduceAvoid(mob);
+        }
+    }
+
+    private void clampMaxLevel(Monster mob) {
+        if (mob.getLevel() > 200) {
+            log.info("[{}] - Forcing mob with id {} to level 200; ", getName(), mob.getId());
+            mob.changeLevel(200, false);
+        }
+    }
+
+    public boolean isWithinMapRange(Character chr, int minMapId, int maxMapId) {
+        int mapId = chr.getMap().getId();
+
+        boolean passed = mapId >= minMapId && mapId <= maxMapId;
+
+        log.info("[{}] - Character MapId {}; Map range {} - {}; Passed range check: {}; ", getName(), mapId, minMapId, maxMapId, passed);
+
+        return passed;
+    }
+
+    public boolean isWithinMapRange(Monster mob, int minMapId, int maxMapId) {
+        int mapId = mob.getMap().getId();
+
+        boolean passed = mapId >= minMapId && mapId <= maxMapId;
+
+        log.info("[{}] - Mob MapId {}; Map range {} - {}; Passed range check: {}; ", getName(), mapId, minMapId, maxMapId, passed);
+
+        return passed;
+    }
+
+    public void insertInstanceToMapsInRange(String scriptName, int minMapId, int maxMapId) {
+        MapManager mapFactory = getMapFactory();
+        mapFactory.setEventInstanceManager(this);
+        boolean hasFault = false;
+        for (int i = minMapId; i <= maxMapId; i++) {
+            try {
+                MapleMap map = mapFactory.getMap(i);
+
+                if (map == null) {
+                    continue;
+                }
+
+                map.setEventInstance(this);
+                mapsOrSomething.add(map);
+
+                log.warn("[{}] - Loaded map with id '{}'.", scriptName, i);
+            }
+            catch (Exception ex) {
+                if (!hasFault) { hasFault = true; }
+            }
+        }
+        mapFactory.setEventInstanceManager(null);
+
+        log.info("[{}] - Loaded '{}' maps with this instance.", scriptName, mapsOrSomething.size());
+    }
+
+    public void logMessage(String scriptName, String message) {
+        log.info("[{}] - {}", scriptName, message);
     }
 }

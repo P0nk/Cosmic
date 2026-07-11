@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9400083.img">
+<imgdir name="info">
+<int name="level" value="190"/>
+<int name="maxHP" value="2000000000"/>
+<int name="maxMP" value="100000"/>
+<int name="mpRecovery" value="10000"/>
+<int name="PADamage" value="1"/>
+<int name="MADamage" value="1"/>
+<int name="pushed" value="1000000000"/>
+<float name="fs" value="10.0"/>
+<int name="summonType" value="1"/>
+<int name="category" value="8"/>
+<int name="firstAttack" value="1"/>
+<string name="mobType" value="1N"/>
+<int name="ignoreMoveImpact" value="1"/>
+<imgdir name="attack">
+<imgdir name="0">
+<int name="action" value="1"/>
+<int name="attackRatio" value="100"/>
+<int name="type" value="0"/>
+<int name="fixAttack" value="1"/>
+<imgdir name="callSkillWithData">
+<int name="skill" value="227"/>
+<int name="level" value="3"/>
+<int name="delay" value="3360"/>
+</imgdir>
+<int name="cooltime" value="3000"/>
+</imgdir>
+</imgdir>
+<imgdir name="skill">
+<imgdir name="0">
+<int name="skill" value="227"/>
+<int name="action" value="1"/>
+<int name="level" value="3"/>
+<int name="onlyFsm" value="1"/>
+<int name="skillAfter" value="900"/>
+</imgdir>
+</imgdir>
+<int name="bodyAttack" value="1"/>
+<int name="fixedBodyAttackDamageR" value="1"/>
+<int name="bodyDisease" value="173"/>
+<int name="bodyDiseaseLevel" value="5"/>
+<int name="boss" value="1"/>
+<int name="noFlip" value="1"/>
+<int name="removeAfter" value="10"/>
+<int name="PDDamage" value="0"/>
+<int name="MDDamage" value="0"/>
+<int name="eva" value="0"/>
+<int name="acc" value="999"/>
+</imgdir>
+<imgdir name="stand">
+<canvas name="0" width="1" height="1">
+<vector name="origin" x="0" y="0"/>
+<imgdir name="rect">
+<imgdir name="0">
+<vector name="lt" x="-317" y="-1500"/>
+<vector name="rb" x="317" y="30"/>
+</imgdir>
+</imgdir>
+</canvas>
+</imgdir>
+<imgdir name="die1">
+<canvas name="0" width="1" height="1">
+</canvas>
+</imgdir>
+<imgdir name="skill1">
+<uol name="0" value="../stand/0"/>
+</imgdir>
+<imgdir name="attack1">
+<imgdir name="info">
+<imgdir name="range">
+<vector name="lt" x="0" y="0"/>
+<vector name="rb" x="0" y="0"/>
+</imgdir>
+</imgdir>
+<uol name="0" value="../stand/0"/>
+</imgdir>
+</imgdir>

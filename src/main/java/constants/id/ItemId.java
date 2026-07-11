@@ -63,8 +63,8 @@ public class ItemId {
     private static final int CHAIR_MAX = FISHING_CHAIR;
 
     public static boolean isChair(int itemId) {
-        return itemId >= CHAIR_MIN && itemId <= CHAIR_MAX;
-        // alt: return itemId / 10000 == 301;
+        // return itemId >= CHAIR_MIN && itemId <= CHAIR_MAX;
+         alt: return itemId / 10000 == 301;
     }
 
     // Throwing star
@@ -95,6 +95,46 @@ public class ItemId {
     public static final int BEGINNERS_GUIDE = 4161001;
     public static final int LEGENDS_GUIDE = 4161048;
     public static final int NOBLESSE_GUIDE = 4161047;
+    public static final int SWORD = 1302000; // Weapon
+    public static final int HAND_AXE = 1312004;
+    public static final int WOODEN_CLUB = 1322005;
+    public static final int BASIC_POLEARM = 1442079;
+    public static final int WHITE_UNDERSHIRT = 1040002; // Top
+    public static final int UNDERSHIRT = 1040006;
+    public static final int GREY_TSHIRT = 1040010;
+    public static final int WHITE_TUBETOP = 1041002;
+    public static final int YELLOW_TSHIRT = 1041006;
+    public static final int GREEN_TSHIRT = 1041010;
+    public static final int RED_STRIPED_TOP = 1041011;
+    public static final int SIMPLE_WARRIOR_TOP = 1042167;
+    public static final int BLUE_JEAN_SHORTS = 1060002; // Bottom
+    public static final int BROWN_COTTON_SHORTS = 1060006;
+    public static final int RED_MINISKIRT = 1061002;
+    public static final int INDIGO_MINISKIRT = 1061008;
+    public static final int SIMPLE_WARRIOR_PANTS = 1062115;
+    public static final int RED_RUBBER_BOOTS = 1072001;
+    public static final int LEATHER_SANDALS = 1072005;
+    public static final int YELLOW_RUBBER_BOOTS = 1072037;
+    public static final int BLUE_RUBBER_BOOTS = 1072038;
+    public static final int AVERAGE_MUSASHI_SHOES = 1072383;
+    public static final int BLACK_TOBEN = 30000; // Hair
+    public static final int ZETA = 30010;
+    public static final int BLACK_REBEL = 30020;
+    public static final int BLACK_BUZZ = 30030;
+    public static final int BLACK_SAMMY = 31000;
+    public static final int BLACK_EDGY = 31040;
+    public static final int BLACK_CONNIE = 31050;
+    public static final int MOTIVATED_LOOK_M = 20000; // Face
+    public static final int PERPLEXED_STARE = 20001;
+    public static final int LEISURE_LOOK_M = 20002;
+    public static final int MOTIVATED_LOOK_F = 21000;
+    public static final int FEARFUL_STARE_M = 21001;
+    public static final int LEISURE_LOOK_F = 21002;
+    public static final int FEARFUL_STARE_F = 21201;
+    public static final int PERPLEXED_STARE_HAZEL = 20401;
+    public static final int LEISURE_LOOK_HAZEL = 20402;
+    public static final int MOTIVATED_LOOK_AMETHYST = 21700;
+    public static final int MOTIVATED_LOOK_BLUE = 20100;
 
     // Warrior
     public static final int RED_HWARANG_SHIRT = 1040021;
@@ -165,6 +205,7 @@ public class ItemId {
     public static final int EYEDROP = 2050001;
     public static final int TONIC = 2050002;
     public static final int HOLY_WATER = 2050003;
+    public static final int ANTI_BANISH_SCROLL = 2030100;
     private static final int DOJO_PARTY_ALL_CURE = 2022433;
     private static final int CARNIVAL_PARTY_ALL_CURE = 2022163;
     public static final int WHITE_ELIXIR = 2022544;
@@ -311,10 +352,6 @@ public class ItemId {
         return itemId == NX_CARD_100 || itemId == NX_CARD_250;
     }
 
-    public static boolean isCashPackage(int itemId) {
-        return itemId / 10000 == 910;
-    }
-
     // Face expression
     private static final int FACE_EXPRESSION_MIN = 5160000;
     private static final int FACE_EXPRESSION_MAX = 5160014;
@@ -355,6 +392,8 @@ public class ItemId {
 
     // Catch mobs items
     public static final int PHEROMONE_PERFUME = 2270000;
+    public static final int MUTANT_PIG_ROPE = 2270021;
+    public static final int TAMED_MUTANT_PIG = 4032924;
     public static final int POUCH = 2270001;
     public static final int GHOST_SACK = 4031830;
     public static final int ARPQ_ELEMENT_ROCK = 2270002;

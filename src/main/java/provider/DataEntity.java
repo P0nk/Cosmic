@@ -26,6 +26,5 @@ package provider;
  */
 public interface DataEntity {
     String getName();
-
     DataEntity getParent();
 }

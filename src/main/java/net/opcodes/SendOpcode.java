@@ -240,6 +240,7 @@ public enum SendOpcode {
     MESO_BAG_MESSAGE(0xD2),
     UPDATE_QUEST_INFO(0xD3),
     PLAYER_HINT(0xD6),
+    PLAY_EVENT_SOUND(0XD7),
     MAKER_RESULT(0xD9),
     KOREAN_EVENT(0xDB),
     OPEN_UI(0xDC),
@@ -353,7 +354,12 @@ public enum SendOpcode {
     MAPLELIFE_RESULT(0x15D),
     MAPLELIFE_ERROR(0x15E),
     VICIOUS_HAMMER(0x162),
-    VEGA_SCROLL(0x166);
+    VEGA_SCROLL(0x166),
+
+    SET_USER_VAR(0x300);
+
+    //CUSTOM_FIELD(0x999);
+
     private int code = -2;
 
     SendOpcode(int code) {

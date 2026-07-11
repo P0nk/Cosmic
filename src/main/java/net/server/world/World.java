@@ -46,57 +46,22 @@ import net.server.guild.GuildSummary;
 import net.server.services.BaseService;
 import net.server.services.ServicesManager;
 import net.server.services.type.WorldServices;
-import net.server.task.CharacterAutosaverTask;
-import net.server.task.CharacterHpDecreaseTask;
-import net.server.task.FamilyDailyResetTask;
-import net.server.task.FishingTask;
-import net.server.task.HiredMerchantTask;
-import net.server.task.MapOwnershipTask;
-import net.server.task.MountTirednessTask;
-import net.server.task.PartySearchTask;
-import net.server.task.PetFullnessTask;
-import net.server.task.ServerMessageTask;
-import net.server.task.TimedMapObjectTask;
-import net.server.task.TimeoutTask;
-import net.server.task.WeddingReservationTask;
+import net.server.task.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
 import server.Storage;
 import server.TimerManager;
-import server.maps.AbstractMapObject;
-import server.maps.HiredMerchant;
-import server.maps.MapleMap;
-import server.maps.MiniDungeon;
-import server.maps.MiniDungeonInfo;
-import server.maps.PlayerShop;
-import server.maps.PlayerShopItem;
+import server.expeditions.ExpeditionBossLog;
+import server.maps.*;
 import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.Pair;
 import tools.packets.Fishing;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.sql.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -105,10 +70,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author kevintjuh93
@@ -199,6 +161,8 @@ public class World {
     private ScheduledFuture<?> partySearchSchedule;
     private ScheduledFuture<?> timeoutSchedule;
     private ScheduledFuture<?> hpDecSchedule;
+
+    private final Map<Integer, Map<ExpeditionBossLog.BossLogEntry, Short>> unclaimedRewards = new HashMap<>();
 
     public World(int world, int flag, String eventmsg, int exprate, int droprate, int bossdroprate, int mesorate, int questrate, int travelrate, int fishingrate) {
         this.id = world;
@@ -374,9 +338,24 @@ public class World {
             if (!chr.isLoggedin()) {
                 continue;
             }
-            chr.setWorldRates();
+            if (chr.getReborns() > 0) {
+                if (chr.getReborns() == 1) {
+                    chr.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_FIRST_RATE);
+                } else if (chr.getReborns() == 2) {
+                    chr.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_SECOND_RATE);
+                } else if (chr.getReborns() == 3) {
+                    if (chr.getLevel() >= 200) {
+                        chr.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_FINAL_RATE); // Use the new final rate
+                    } else {
+                        chr.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_THIRD_RATE);
+                    }
+                }
+            } else {
+                chr.setWorldRates();
+            }
         }
     }
+
 
     public int getDropRate() {
         return droprate;
@@ -530,6 +509,10 @@ public class World {
     public Storage getAccountStorage(Integer accountId) {
         return accountStorages.get(accountId);
     }
+
+
+
+
 
     private static List<Entry<Integer, SortedMap<Integer, Character>>> getSortedAccountCharacterView(Map<Integer, SortedMap<Integer, Character>> map) {
         List<Entry<Integer, SortedMap<Integer, Character>>> list = new ArrayList<>(map.size());
@@ -2211,9 +2194,31 @@ public class World {
         }
 
         players.disconnectAll();
-        players = null;
 
         clearWorldData();
         log.info("Finished shutting down world {}", id);
+    }
+
+    public boolean hasUnclaimedExpedition(int cid) {
+        Map<ExpeditionBossLog.BossLogEntry, Short> unclaimed = unclaimedRewards.get(cid);
+        return unclaimed != null && !unclaimed.isEmpty();
+    }
+
+    public Map<ExpeditionBossLog.BossLogEntry, Short> removeUnclaimedRewards(int cid) {
+        return unclaimedRewards.remove(cid);
+    }
+
+    public void addUnclaimed(ExpeditionBossLog.BossLogEntry boss, int cid) {
+        unclaimedRewards.compute(cid, (k, chrUnclaimed) -> chrUnclaimed);
+    }
+
+    public void removeUnclaimed(ExpeditionBossLog.BossLogEntry boss, int cid) {
+        Map<ExpeditionBossLog.BossLogEntry, Short> chrUnclaimed = unclaimedRewards.get(cid);
+        if (chrUnclaimed != null) {
+            Short unclaimedAmount = chrUnclaimed.get(boss);
+            if (unclaimedAmount != null) {
+                chrUnclaimed.put(boss, unclaimedAmount);
+            }
+        }
     }
 }

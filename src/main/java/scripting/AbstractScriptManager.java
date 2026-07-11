@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author Matze
@@ -84,6 +85,7 @@ public abstract class AbstractScriptManager {
         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("polyglot.js.allowHostAccess", true);
         bindings.put("polyglot.js.allowHostClassLookup", true);
+        bindings.put("polyglot.js.allowIO", true);
     }
 
     protected void resetContext(String path, Client c) {

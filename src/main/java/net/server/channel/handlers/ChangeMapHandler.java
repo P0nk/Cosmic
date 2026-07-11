@@ -29,7 +29,6 @@ import constants.id.ItemId;
 import constants.id.MapId;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
-import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.Trade;
@@ -85,7 +84,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
                 chr.setPosition(new Point(p.readInt(), p.readInt()));
             }
 
-            if (targetMapId != -1) {
+             if (targetMapId != -1) {
                 if (!chr.isAlive()) {
                     MapleMap map = chr.getMap();
                     if (wheel && chr.haveItemWithId(ItemId.WHEEL_OF_FORTUNE, false)) {
@@ -143,6 +142,14 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
                             final MapleMap to = chr.getWarpMap(targetMapId);
                             chr.changeMap(to, to.getPortal(0));
                         }
+                        if (targetMapId == 211070100 && chr.getMapId() == 211070000) {
+                            chr.potionCount = 100;
+                        }
+                        if (targetMapId == 211070101 || targetMapId == 211070100) {
+                            chr.inExpedition = true;
+                        } else {
+                            chr.inExpedition = false;
+                        }
                     }
                 }
             }
@@ -182,11 +189,7 @@ public final class ChangeMapHandler extends AbstractPacketHandler {
             c.disconnect(false, false);
             return;
         }
-        String[] socket = Server.getInstance().getInetSocket(c, c.getWorld(), c.getChannel());
-        if (socket == null) {
-            c.enableCSActions();
-            return;
-        }
+        String[] socket = c.getChannelServer().getIP().split(":");
         chr.getCashShop().open(false);
 
         chr.setSessionTransitionState();

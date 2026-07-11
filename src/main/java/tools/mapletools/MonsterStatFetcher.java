@@ -1,31 +1,17 @@
 package tools.mapletools;
 
-import provider.Data;
-import provider.DataDirectoryEntry;
-import provider.DataFileEntry;
-import provider.DataProvider;
-import provider.DataProviderFactory;
-import provider.DataTool;
+import provider.*;
 import provider.wz.DataType;
 import provider.wz.WZFiles;
-import server.life.BanishInfo;
-import server.life.Element;
-import server.life.ElementalEffectiveness;
+import server.life.*;
+import server.life.LifeFactory.BanishInfo;
 import server.life.LifeFactory.loseItem;
 import server.life.LifeFactory.selfDestruction;
-import server.life.MobSkillId;
-import server.life.MobSkillType;
-import server.life.MonsterStats;
 import tools.Pair;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MonsterStatFetcher {
     private static final DataProvider data = DataProviderFactory.getDataProvider(WZFiles.MOB);
@@ -134,10 +120,7 @@ public class MonsterStatFetcher {
                 }
                 Data banishData = monsterInfoData.getChildByPath("ban");
                 if (banishData != null) {
-                    int map = DataTool.getInt("banMap/0/field", banishData, -1);
-                    String portal = DataTool.getString("banMap/0/portal", banishData, "sp");
-                    String msg = DataTool.getString("banMsg", banishData);
-                    stats.setBanishInfo(new BanishInfo(map, portal, msg));
+                    stats.setBanishInfo(new BanishInfo(DataTool.getString("banMsg", banishData), DataTool.getInt("banMap/0/field", banishData, -1), DataTool.getString("banMap/0/portal", banishData, "sp")));
                 }
 
                 monsterStats.put(mid, stats);

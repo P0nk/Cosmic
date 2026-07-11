@@ -1,27 +1,5 @@
-/*
-    This file is part of the HeavenMS MapleStory Server
-    Copyleft (L) 2016 - 2019 RonanLana
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/**
- * @author: Ronan
- * @event: Horntail Battle
- */
+const ExpeditionType = Java.type("server.expeditions.ExpeditionType");
 
 var isPq = true;
 var minPlayers = 6, maxPlayers = 30;
@@ -198,7 +176,7 @@ function giveRandomEventReward(eim, player) {
 
 function clearPQ(eim) {
     eim.stopEventTimer();
-    eim.setEventCleared();
+    eim.setEventCleared(ExpeditionType.HORNTAIL);
 }
 
 function isHorntailHead(mob) {
@@ -217,14 +195,50 @@ function monsterKilled(mob, eim) {
         eim.showClearEffect(mob.getMap().getId());
         eim.clearPQ();
 
+        var party = eim.getPlayers();
+        var baseExp = 107545760; // Set to Horntail's base EXP value
+        var expLimit = 2147483647; // Maximum 32-bit integer value (~2.1 billion)
+
+        for (var i = 0; i < party.size(); i++) {
+            var player = party.get(i);
+            var expRate = player.getExpRate(); // Fetch the player's individual EXP rate
+            var totalExp = Math.floor(baseExp * expRate); // Calculate the total experience points as an integer
+
+            // Check if the total EXP exceeds the limit
+            if (totalExp > expLimit) {
+                // Split EXP into smaller chunks that fit within the limit
+                var chunks = Math.floor(totalExp / expLimit);
+                var remainderExp = totalExp % expLimit;
+
+                // Give EXP in chunks
+                for (var j = 0; j < chunks; j++) {
+                    player.gainExp(expLimit, true, true, true); // Grant the max EXP amount per chunk
+                }
+
+                // Give the remaining EXP
+                if (remainderExp > 0) {
+                    player.gainExp(remainderExp, true, true, true); // Grant the remaining EXP
+                }
+            } else {
+                // If totalExp is within the limit, grant it normally
+                player.gainExp(totalExp, true, true, true);
+            }
+
+            // Grant item reward
+            player.getClient().getAbstractPlayerInteraction().gainItem(4001126, 40);
+        }
+
         eim.dispatchRaiseQuestMobCount(8810018, 240060200);
-        mob.getMap().broadcastHorntailVictory();
+        // mob.getMap().broadcastHorntailVictory();
+
     } else if (isHorntailHead(mob)) {
         var killed = eim.getIntProperty("defeatedHead");
         eim.setIntProperty("defeatedHead", killed + 1);
         eim.showClearEffect(mob.getMap().getId());
     }
 }
+
+
 
 function allMonstersDead(eim) {}
 

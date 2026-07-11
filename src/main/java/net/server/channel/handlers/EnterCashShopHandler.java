@@ -26,8 +26,10 @@ import client.Client;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
+import scripting.npc.NPCScriptManager;
 import server.maps.MiniDungeonInfo;
 import tools.PacketCreator;
+
 
 /**
  * @author Flav
@@ -35,61 +37,7 @@ import tools.PacketCreator;
 public class EnterCashShopHandler extends AbstractPacketHandler {
     @Override
     public void handlePacket(InPacket p, Client c) {
-        try {
-            Character mc = c.getPlayer();
-
-            if (mc.cannotEnterCashShop()) {
-                c.sendPacket(PacketCreator.enableActions());
-                return;
-            }
-
-            if (mc.getEventInstance() != null) {
-                c.sendPacket(PacketCreator.serverNotice(5, "Entering Cash Shop or MTS are disabled when registered on an event."));
-                c.sendPacket(PacketCreator.enableActions());
-                return;
-            }
-
-            if (MiniDungeonInfo.isDungeonMap(mc.getMapId())) {
-                c.sendPacket(PacketCreator.serverNotice(5, "Changing channels or entering Cash Shop or MTS are disabled when inside a Mini-Dungeon."));
-                c.sendPacket(PacketCreator.enableActions());
-                return;
-            }
-
-            if (mc.getCashShop().isOpened()) {
-                return;
-            }
-
-            mc.closePlayerInteractions();
-            mc.closePartySearchInteractions();
-
-            mc.unregisterChairBuff();
-            Server.getInstance().getPlayerBuffStorage().addBuffsToStorage(mc.getId(), mc.getAllBuffs());
-            Server.getInstance().getPlayerBuffStorage().addDiseasesToStorage(mc.getId(), mc.getAllDiseases());
-            mc.setAwayFromChannelWorld();
-            mc.notifyMapTransferToPartner(-1);
-            mc.removeIncomingInvites();
-            mc.cancelAllBuffs(true);
-            mc.cancelAllDebuffs();
-            mc.cancelBuffExpireTask();
-            mc.cancelDiseaseExpireTask();
-            mc.cancelSkillCooldownTask();
-            mc.cancelExpirationTask();
-
-            mc.forfeitExpirableQuests();
-            mc.cancelQuestExpirationTask();
-
-            c.sendPacket(PacketCreator.openCashShop(c, false));
-            c.sendPacket(PacketCreator.showCashInventory(c));
-            c.sendPacket(PacketCreator.showGifts(mc.getCashShop().loadGifts()));
-            c.sendPacket(PacketCreator.showWishList(mc, false));
-            c.sendPacket(PacketCreator.showCash(mc));
-
-            c.getChannelServer().removePlayer(mc);
-            mc.getMap().removePlayer(mc);
-            mc.getCashShop().open(true);
-            mc.saveCharToDB();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        NPCScriptManager.getInstance().start(c, 9010004, c.getPlayer());
+        c.sendPacket(PacketCreator.enableActions());
     }
 }

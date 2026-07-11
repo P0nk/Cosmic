@@ -23,9 +23,9 @@ package scripting.npc;
 
 import client.Character;
 import client.*;
-import client.inventory.Item;
-import client.inventory.ItemFactory;
-import client.inventory.Pet;
+import client.inventory.*;
+import client.inventory.manipulator.InventoryManipulator;
+import client.keybind.KeyBinding;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
@@ -53,23 +53,26 @@ import server.expeditions.Expedition;
 import server.expeditions.ExpeditionType;
 import server.gachapon.Gachapon;
 import server.gachapon.Gachapon.GachaponItem;
-import server.life.LifeFactory;
-import server.life.PlayerNPC;
-import server.maps.MapManager;
-import server.maps.MapObject;
-import server.maps.MapObjectType;
-import server.maps.MapleMap;
+import server.life.*;
+import server.maps.*;
 import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.Pyramid;
 import server.partyquest.Pyramid.PyramidMode;
+import tools.DatabaseConnection;
 import tools.PacketCreator;
 import tools.packets.WeddingPackets;
 
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -164,6 +167,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
     public void sendYesNo(String text) {
         getClient().sendPacket(PacketCreator.getNPCTalk(npc, (byte) 1, text, "", (byte) 0));
+    }
+
+    public void sendYesNo(String text, int npcId) {
+        getClient().sendPacket(PacketCreator.getNPCTalk(npcId, (byte) 1, text, "", (byte) 0));
     }
 
     public void sendAcceptDecline(String text) {
@@ -278,8 +285,8 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         getPlayer().gainMeso(gain);
     }
 
-    public void gainMeso(Double gain) {
-        getPlayer().gainMeso(gain.intValue());
+    public void gainMeso(int gain, boolean show) {
+        getPlayer().gainMeso(gain, show);
     }
 
     public void gainExp(int gain) {
@@ -360,6 +367,18 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return getPlayer().getGender();
     }
 
+    public int getGiftLogCerezeth(String giftid) {
+        return getPlayer().getGiftLogCerezeth(giftid);
+    }
+
+    public void setGiftLogCerezeth(String giftid) {
+        getPlayer().setGiftLogCerezeth(giftid);
+    }
+
+    public void changeRebirthJobCerezeth(int jobid) {
+        getPlayer().changeRebirthJobCerezeth(Job.getById(jobid));
+    }
+
     public void changeJobById(int a) {
         getPlayer().changeJob(Job.getById(a));
     }
@@ -404,6 +423,33 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 continue;
             }
         }
+    }
+
+    public Object[] getSkillsByJob(int job) {
+        List<Integer> skills = new LinkedList<Integer>();
+        // for (MapleData skill_ : MapleDataProviderFactory.getDataProvider(new File(System.getProperty("wzpath") + "/" + "String.wz")).getData("Skill.img").getChildren()) {
+        for (Data skill_ : DataProviderFactory.getDataProvider(WZFiles.STRING).getData("Skill.img").getChildren()) {
+            try {
+                Skill skill = SkillFactory.getSkill(Integer.parseInt(skill_.getName()));
+                if (skill.getId() / 10000 == job) {
+                    skills.add(skill.getId());
+                }
+            } catch (NumberFormatException nfe) {
+                break;
+            } catch (NullPointerException npe) {
+                continue;
+            }
+        }
+        return skills.toArray();
+    }
+
+    public String getSkillDesc(int skillid) {
+        return SkillFactory.getSkillDesc(skillid).replaceAll("#c", "").replaceAll("#", "");
+    }
+
+    public void changeKeyBinding(int key, int type, int action) {
+        getPlayer().changeKeybinding(key, new KeyBinding(type, action));
+        getPlayer().sendKeymap();
     }
 
     public void doGachapon() {
@@ -582,6 +628,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         return ret.toArray();
     }
 
+    public int getNx(int type) {
+        return getPlayer().getCashShop().getCash(type);
+    }
+
     public Object[] getNamesWhoDropsItem(Integer itemId) {
         return ItemInformationProvider.getInstance().getWhoDrops(itemId).toArray();
     }
@@ -718,10 +768,10 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
 
         if (lobby.isCPQLobby()) {
             cpqMinLvl = 30;
-            cpqMaxLvl = 50;
+            cpqMaxLvl = 200;
         } else {
             cpqMinLvl = 51;
-            cpqMaxLvl = 70;
+            cpqMaxLvl = 200;
         }
 
         List<PartyCharacter> partyMembers = party.getPartyMembers();
@@ -1096,7 +1146,1354 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
                 }
             }
         }
-
         return false;
+    }
+
+    public void logMessage(String scriptName, String message) {
+        log.info("[{}] - {}", scriptName, message);
+    }
+
+    /**
+     * cm.letters("Hello world"); will show Christmas letters Hello world
+     *
+     * @param input the text to turn into christmas :)
+     * @return String with item images
+     */
+    public String letters(String input) {
+        //input = input.toLowerCase();
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            if (input.charAt(i) == ' ') {
+                str.append("\t");
+            } else {
+                str.append("#i").append(convert(input.charAt(i))).append("#");
+            }
+        }
+        return str.toString();
+    }
+
+    private int convert(char in) {
+        int upper = 3991000;
+        int lower = 3991026;
+        int output = java.lang.Character.isUpperCase(in) ? upper : lower;
+        switch (java.lang.Character.toLowerCase(in)) {
+            case 'a':
+                output += 0;
+                break;
+            case 'b':
+                output += 1;
+                break;
+            case 'c':
+                output += 2;
+                break;
+            case 'd':
+                output += 3;
+                break;
+            case 'e':
+                output += 4;
+                break;
+            case 'f':
+                output += 5;
+                break;
+            case 'g':
+                output += 6;
+                break;
+            case 'h':
+                output += 7;
+                break;
+            case 'i':
+                output += 8;
+                break;
+            case 'j':
+                output += 9;
+                break;
+            case 'k':
+                output += 10;
+                break;
+            case 'l':
+                output += 11;
+                break;
+            case 'm':
+                output += 12;
+                break;
+            case 'n':
+                output += 13;
+                break;
+            case 'o':
+                output += 14;
+                break;
+            case 'p':
+                output += 15;
+                break;
+            case 'q':
+                output += 16;
+                break;
+            case 'r':
+                output += 17;
+                break;
+            case 's':
+                output += 18;
+                break;
+            case 't':
+                output += 19;
+                break;
+            case 'u':
+                output += 20;
+                break;
+            case 'v':
+                output += 21;
+                break;
+            case 'w':
+                output += 22;
+                break;
+            case 'x':
+                output += 23;
+                break;
+            case 'y':
+                output += 24;
+                break;
+            case 'z':
+                output += 25;
+                break;
+        }
+        return output;
+    }
+
+    public void gainStatItem(int itemId, short str, short dex, short luk, short int_, short matk, short watk, short acc, short avoid, short jump, short speed, short wdef, short mdef, short hp, short mp, byte upgradeSlots) {
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        Item item = ii.getEquipById(itemId);
+        InventoryType type = ii.getInventoryType(itemId);
+        if (type.equals(InventoryType.EQUIP)) {
+            InventoryManipulator.addFromDrop(c, ii.statItem((Equip) item, str, dex, luk, int_, matk, watk, acc, avoid, jump, speed, wdef, mdef, hp, mp, upgradeSlots));
+        } else {
+            System.out.println("[NPCConversationManager] Stat item is not an equip!");
+        }
+    }
+
+    public int getReqLevel(int itemid) {
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        return ii.getEquipLevelReq(itemid);
+    }
+
+    public String getInventoryAsString(String type) {
+        StringBuilder sb = new StringBuilder();
+        Inventory inv = c.getPlayer().getInventory(InventoryType.getByWZName(type));
+        int i = 0;
+        sb.append("\r\n");
+        for (Item item : inv.list()) {
+            i++;
+            if (i > 4) {
+                sb.append("\r\n");
+                i = 1;
+            }
+            sb.append("#L").append(item.getPosition()).append("##i").append(item.getItemId()).append(":#").append(item.getQuantity()).append("#l");
+        }
+        return sb.toString();
+    }
+
+    public int getMesoStarforceCost(int nItemLevel, int nReqLevel, boolean superiorEquip) {
+        if (nItemLevel < 0) {
+            return 0;
+        }
+
+        int baseMesoCost = superiorEquip ? 10000000 * (nReqLevel / 10) : 8000 * (nReqLevel + 1);
+        double mesoMultiplier = superiorEquip ? 0.1 * (nItemLevel + 1) : 1.0 + 0.1 * (nItemLevel + 1);
+
+        if (!superiorEquip && nItemLevel >= 10) {
+            mesoMultiplier *= 4;
+        }
+
+        return Math.min((int) (baseMesoCost * mesoMultiplier), YamlConfig.config.server.STARFORCE_MAX_MESO_COST);
+    }
+
+    public boolean isSuperior(int nItemId) {
+        return (ItemConstants.SuperiorItemIds.contains(nItemId));
+    }
+
+    public int getSpellTraceCost(int nItemLevel, int nReqLevel, boolean superiorEquip) {
+        if (nItemLevel < 0) {
+            return 0;
+        }
+
+        if (superiorEquip) {
+            return 50 + (nItemLevel * 5);
+        }
+
+        int spellTraceReq = calculateBaseSpellTraceReq(nReqLevel);
+        int scaling = calculateScalingFactor(nReqLevel) + (nItemLevel >= 10 ? 3 : 0);
+
+        return Math.min(spellTraceReq + scaling * nItemLevel, YamlConfig.config.server.STARFORCE_MAX_SPELL_TRACE_COST);
+    }
+
+    private int calculateBaseSpellTraceReq(int nReqLevel) {
+        if (nReqLevel < 30) return 5;
+        if (nReqLevel < 70) return 10;
+        if (nReqLevel < 100) return 15;
+        if (nReqLevel < 120) return 20;
+        return 25;
+    }
+
+    private int calculateScalingFactor(int nReqLevel) {
+        if (nReqLevel < 30) return 1;
+        if (nReqLevel < 70) return 1;
+        if (nReqLevel < 100) return 2;
+        if (nReqLevel < 120) return 3;
+        return 4;
+    }
+
+    public double getProp(Equip nEquip) {
+        if(ItemConstants.SuperiorItemIds.contains(nEquip.getItemId())) {
+            if (nEquip.getLevel() == 0) {
+                return 100.0;
+            } else if (nEquip.getLevel() < 10) {
+                return 50.0;
+            } else {
+                return 30.0;
+            }
+        } else {
+            double prop = 0;
+            prop = switch (nEquip.getLevel()) {
+                case 0 -> 100;
+                case 1 -> 98;
+                case 2 -> 90;
+                case 3 -> 80;
+                case 4 -> 70;
+                case 5 -> 60;
+                case 6 -> 50;
+                case 7 -> 40;
+                case 8 -> 30;
+                case 9 -> 25;
+                case 10 -> 20;
+                case 11 -> 18;
+                case 12 -> 16;
+                case 13 -> 14;
+                case 14 -> 12;
+                case 15 -> 10;
+                case 16 -> 9;
+                case 17 -> 8;
+                case 18 -> 7;
+                case 19 -> 6;
+                case 20 -> 5;
+                case 21 -> 4;
+                case 22 -> 3;
+                case 23 -> 2;
+                case 24 -> 1;
+                case 25 -> 1;
+                case 26 -> 1;
+                case 27 -> 1;
+                case 28 -> 1;
+                case 29 -> 1;
+                default -> prop;
+            };
+            return prop;
+        }
+    }
+
+    private double getBoom(Equip nEquip) {
+        if (nEquip.getLevel() < 5) {
+            return 0;
+        } else if (nEquip.getItemLevel() < 10) {
+            return nEquip.getItemLevel();
+        } else {
+            return 30.0;
+        }
+    }
+
+    public static void improveSuperiorEquips(Equip nEquip, boolean fail) {
+        int level = nEquip.getLevel();
+
+        int watkAdd = 4 + level;
+        int matkAdd = 4 + level;
+        int strAdd = 10 + level;
+        int dexAdd = 10 + level;
+        int lukAdd = 10 + level;
+        int intAdd = 10 + level;
+
+        if (fail) {
+            strAdd = -strAdd;
+            dexAdd = -dexAdd;
+            lukAdd = -lukAdd;
+            intAdd = -intAdd;
+            watkAdd = -watkAdd;
+            matkAdd = -matkAdd;
+        }
+
+        if (level >= 5) {
+            nEquip.setWatk(getShortMaxIfOverflow(nEquip.getWatk() + watkAdd));
+            nEquip.setMatk(getShortMaxIfOverflow(nEquip.getMatk() + matkAdd));
+        }
+
+        nEquip.setStr(getShortMaxIfOverflow(nEquip.getStr() + strAdd));
+        nEquip.setDex(getShortMaxIfOverflow(nEquip.getDex() + dexAdd));
+        nEquip.setInt(getShortMaxIfOverflow(nEquip.getInt() + intAdd));
+        nEquip.setLuk(getShortMaxIfOverflow(nEquip.getLuk() + lukAdd));
+    }
+
+    public Item StarForceEquip(Item equip) {
+        Equip.ScrollResult scrollSuccess = Equip.ScrollResult.FAIL;
+        if (equip instanceof Equip nEquip) {
+            if ((nEquip.getUpgradeSlots()) > 0) {
+                double prop = getProp(nEquip); //success chance
+                double boom = getBoom(nEquip); //boom chances
+                if (ItemConstants.SuperiorItemIds.contains(nEquip.getItemId())) {
+                    if (rollSuccessChance(boom)) {
+                        return null;
+                    }
+                    if (rollSuccessChance(prop)) {
+                        improveSuperiorEquips(nEquip, false);
+                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
+                        nEquip.setLevel((byte) (nEquip.getLevel() + 1));
+                        scrollSuccess = Equip.ScrollResult.SUCCESS;
+                    } else {
+                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() + 1));
+                        nEquip.setLevel((byte) (nEquip.getLevel() - 1));
+                        improveSuperiorEquips(nEquip, true);
+                    }
+                }
+                else {
+                    if (prop <= 0) {
+                        return equip;
+                    }
+                    if (rollSuccessChance(prop)) {
+                        improveEquipStats(nEquip, false);
+                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
+                        nEquip.setLevel((byte) (nEquip.getLevel() + 1));
+                        scrollSuccess = Equip.ScrollResult.SUCCESS;
+                    } else if ((nEquip.getLevel() % 1) != 0) {
+                        nEquip.setLevel((byte) (nEquip.getLevel() - 1));
+                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() + 1));
+                        improveEquipStats(nEquip, true);
+                    }
+                }
+            }
+        }
+        final List<ModifyInventory> mods = new ArrayList<>();
+        mods.add(new ModifyInventory(3, equip));
+        mods.add(new ModifyInventory(0, equip));
+        c.sendPacket(PacketCreator.modifyInventory(true, mods));
+        c.getPlayer().getMap().broadcastMessage(PacketCreator.getScrollEffect(c.getPlayer().getId(), scrollSuccess, false, false));
+        return equip;
+    }
+
+    private static void applyStatAdditions(Equip nEquip, StarBoost boost, boolean fail) {
+        int strAdd = boost.getStr();
+        int dexAdd = boost.getDex();
+        int lukAdd = boost.getLuk();
+        int intAdd = boost.getInt();
+        int watkAdd = boost.getWatk();
+        int matkAdd = boost.getMatk();
+
+        if (fail) {
+            strAdd = -strAdd;
+            dexAdd = -dexAdd;
+            lukAdd = -lukAdd;
+            intAdd = -intAdd;
+            watkAdd = -watkAdd;
+            matkAdd = -matkAdd;
+        }
+
+        nEquip.setStr(getShortMaxIfOverflow(nEquip.getStr() + strAdd));
+        nEquip.setDex(getShortMaxIfOverflow(nEquip.getDex() + dexAdd));
+        nEquip.setLuk(getShortMaxIfOverflow(nEquip.getLuk() + lukAdd));
+        nEquip.setInt(getShortMaxIfOverflow(nEquip.getInt() + intAdd));
+        nEquip.setWatk(getShortMaxIfOverflow(nEquip.getWatk() + watkAdd));
+        nEquip.setMatk(getShortMaxIfOverflow(nEquip.getMatk() + matkAdd));
+    }
+
+    public static StarBoost calculateStatBoost(int itemId, int level) {
+        int catid = ((itemId / 10000) % 100);
+        if (catid >= 30) {
+            catid = 30;
+        }
+
+        return getStatAdditions(catid, level);
+    }
+
+
+    private static StarBoost getStatAdditions(int catid, int level) {
+        int watkAdd = 0, matkAdd = 0, strAdd = 0, dexAdd = 0, lukAdd = 0, intAdd = 0;
+
+        switch (catid) {
+            case 0 -> {
+                if (level == 0) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level < 8) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 3;
+                } else if (level <= 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 8;
+                }
+            }
+            case 30 -> {
+                if (level <= 2) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 3;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 4;
+                } else if (level == 10) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 5;
+                } else if (level == 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 10;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 15;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 20;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 20;
+                    watkAdd = matkAdd = 30;
+                }
+            }
+            case 1, 2 -> {
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 3;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 4;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 7;
+                }
+            }
+            case 4, 6, 7 -> {
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 2;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 8;
+                    watkAdd = matkAdd = 4;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 12;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 20;
+                    watkAdd = matkAdd = 7;
+                }
+            }
+            case 5, 9, 10 -> {
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 6;
+                    watkAdd = matkAdd = 5;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 7;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 15;
+                    watkAdd = matkAdd = 10;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 20;
+                    watkAdd = matkAdd = 12;
+                }
+            }
+            case 8, 3, 13, 12 -> {
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 3;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 3;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 5;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 7;
+                }
+            }
+            case 11 -> {
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 2;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 3;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 7;
+                }
+            }
+            case 14 -> dexAdd = strAdd = lukAdd = intAdd = 1;
+        }
+
+        return new StarBoost(watkAdd, matkAdd, strAdd, dexAdd, lukAdd, intAdd);
+    }
+
+
+    public static void improveEquipStats(Equip nEquip, boolean fail) {
+        int itemId = nEquip.getItemId();
+        int level = nEquip.getLevel();
+        StarBoost boost = calculateStatBoost(itemId, level);
+
+        applyStatAdditions(nEquip, boost, fail);
+    }
+
+    private static double testYourLuck(double prop, int dices) {   // revamped testYourLuck author: David A.
+        return Math.pow(1.0 - prop, dices);
+    }
+
+    public static boolean rollSuccessChance(double propPercent) {
+        return Math.random() >= testYourLuck(propPercent / 100.0, YamlConfig.config.server.SCROLL_CHANCE_ROLLS);
+    }
+
+    private static short getMaximumShortMaxIfOverflow(int value1, int value2) {
+        return (short) Math.min(Short.MAX_VALUE, Math.max(value1, value2));
+    }
+
+    private static short getShortMaxIfOverflow(int value) {
+        return (short) Math.min(Short.MAX_VALUE, value);
+    }
+
+
+    public String getInventoryAsStringNoDuplicates(String type, Set<Integer> noShow) {
+        Inventory inv = c.getPlayer().getInventory(InventoryType.getByWZName(type));
+        Set<Integer> items = new HashSet<>();
+        for (Item item : inv.list()) {
+            if (noShow == null || !noShow.contains(item.getItemId())) {
+                items.add(item.getItemId());
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        for (Integer item : items) {
+            i++;
+            if (i > 4) {
+                sb.append("\r\n");
+                i = 1;
+            }
+            sb.append("#L").append(item).append("##i").append(item).append(":##c").append(item).append("##l");
+        }
+        return sb.toString();
+    }
+
+    public String getInventoryAsStringFilter(String type, int[] filter) {
+        StringBuilder sb = new StringBuilder();
+        Inventory inv = c.getPlayer().getInventory(InventoryType.getByWZName(type));
+        int i = 0;
+        for (Item item : inv.list()) {
+            if (IntStream.of(filter).anyMatch(id -> id == item.getItemId())) {
+                i++;
+                if (i > 4) {
+                    sb.append("\r\n");
+                    i = 1;
+                }
+                sb.append("#L").append(item.getPosition()).append("##i").append(item.getItemId()).append(":##l");
+            }
+        }
+        return sb.toString();
+    }
+
+    public void summonMob(int mobid) {
+        summonMob(mobid, 1);
+    }
+
+    public void summonMob(int mobid, int count) {
+        for (int i = 0; i < count; i++) {
+            Monster mob = LifeFactory.getMonster(mobid);
+            getPlayer().getMap().spawnMonsterOnGroundBelow(mob, getPlayer().getPosition());
+        }
+    }
+
+    public void makeNpc(int npcid, int x, int y) { // npception ecksdee
+        Point p = new Point(x, y);
+        NPC npc = LifeFactory.getNPC(npcid);
+        npc.setPosition(p);
+        npc.setCy(p.y);
+        npc.setRx0(p.x + 50);
+        npc.setRx1(p.x - 50);
+        npc.setFh(getPlayer().getMap().getFootholds().findBelow(p).getId());
+        getPlayer().getMap().addMapObject(npc);
+        getPlayer().getMap().broadcastMessage(PacketCreator.spawnNPC(npc));
+    }
+
+    public void makeNpc(int npcid) {
+        makeNpc(npcid, getPlayer().getPosition().x, getPlayer().getPosition().y);
+    }
+
+    public boolean isEquip(int id) {
+        return ItemInformationProvider.getInstance().getInventoryType(id).equals(InventoryType.EQUIP);
+    }
+
+    public Equip getEquipById(int id) {
+        return (Equip) ItemInformationProvider.getInstance().getEquipById(id);
+    }
+
+    /**
+     * DO NOT TOUCH IF YOU DONT KNOW WHAT IT IS
+     *
+     * @param query
+     * @param return_item
+     * @return ANYTHING from the database
+     */
+    public ArrayList masterQueryRaw(String query, String return_item) {
+        ArrayList<Object> queryObjects = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(query); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    queryObjects.add(rs.getObject(return_item));
+                }
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+        if (queryObjects.isEmpty()) {
+            queryObjects.add("The query:\r\n#e" + query + "#n\r\nDid not give any result.");
+            return queryObjects;
+        }
+        return queryObjects;
+    }
+
+    public boolean masterQueryUpdate(String query) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(query)) {
+                ps.executeUpdate();
+            }
+            return true;
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean masterQueryInsert(String query) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(query)) {
+                ps.addBatch();
+                ps.executeBatch();
+            }
+            return true;
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+        return false;
+    }
+
+    public void clearDrops() {
+        MonsterInformationProvider.getInstance().clearDrops();
+    }
+
+    public ArrayList<NPC> getNPCs(Collection<MapObject> objects) {
+        ArrayList<NPC> NPCs = new ArrayList<>();
+        for (MapObject object : objects) {
+            if (object instanceof NPC) {
+                NPCs.add((NPC) object);
+            }
+        }
+        return NPCs;
+    }
+
+    public ArrayList<Monster> getMonsters(Collection<MapObject> objects) {
+        ArrayList<Monster> Monsters = new ArrayList<>();
+        for (MapObject object : objects) {
+            if (object instanceof Monster) {
+                Monsters.add((Monster) object);
+            }
+        }
+        return Monsters;
+    }
+
+    public ArrayList<MapItem> getMapItems(Collection<MapObject> objects) {
+        ArrayList<MapItem> MapItems = new ArrayList<>();
+        for (MapObject object : objects) {
+            if (object instanceof MapItem) {
+                MapItems.add((MapItem) object);
+            }
+        }
+        return MapItems;
+    }
+
+    public List<ShopItem> getShopItems(int shopId) {
+        return ShopFactory.getInstance().getShop(shopId).getItems();
+    }
+
+    public void removeShopItem(int shopId, ShopItem item) {
+        ShopFactory.getInstance().getShop(shopId).getItems().remove(item);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM `shopitems` WHERE `shopid` = ? AND `itemid` = ?")) {
+                ps.setInt(1, shopId);
+                ps.setInt(2, item.getItemId());
+                ps.execute();
+            }
+        } catch (SQLException sqle) {
+            log.error(sqle.getMessage());
+        }
+    }
+
+    public void setShopItemPrice(int shopId, ShopItem item, int newPrice) {
+        ShopFactory.getInstance().getShop(shopId).getItems().stream().filter(i -> i.equals(item)).findFirst().ifPresent(shopItem -> shopItem.setPrice(newPrice));
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `shopitems` SET `price` = ? WHERE `shopid` = ? AND `itemid` = ?")) {
+                ps.setInt(1, newPrice);
+                ps.setInt(2, shopId);
+                ps.setInt(3, item.getItemId());
+                ps.execute();
+            }
+        } catch (SQLException sqle) {
+            log.error(sqle.getMessage());
+        }
+    }
+
+    public String spyOnPlayer(String type, String playerName) {
+        StringBuilder spyInfo = new StringBuilder();
+        Character player = c.getWorldServer().getPlayerStorage().getCharacterByName(playerName);
+        if (player == null) {
+            System.out.println("Tried spying on a null or offline player " + playerName);
+            spyInfo.append(
+                    "This player seems to be offline at the moment"); //incase player logs out while you're spying
+        }
+        assert player != null;
+        Inventory equipped = player.getInventory(InventoryType.EQUIPPED);
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        switch (type) {
+            case "equip":
+                spyInfo.append("#b").append(playerName).append("'s Equipped Items:#k\r\n\r\n");
+
+                for (Item item : equipped) {
+                    int itemId = item.getItemId();
+                    Equip equippedItem = (Equip) item;
+                    spyInfo.append("Item: #v").append(itemId).append("# - #z").append(itemId).append("#\r\n")
+                            .append("Stats:\r\n");
+
+                    Map<String, Integer> cleanStats = ii.getCleanStats(itemId);
+
+                    Map<Equip.StatUpgrade, Short> statsMap = equippedItem.getStats();
+                    for (Map.Entry<Equip.StatUpgrade, Short> entry : statsMap.entrySet()) {
+                        Equip.StatUpgrade statUpgrade = entry.getKey();
+                        Short upgradedValue = entry.getValue();
+
+                        Integer cleanStatValue = cleanStats.get(statUpgrade.toString().toLowerCase());
+                        if (cleanStatValue == null) {
+                            cleanStatValue = 0;
+                        }
+
+                        if (cleanStatValue.equals(upgradedValue.intValue())) {
+                            upgradedValue = 0;
+                        }
+
+                        String statName = statUpgrade.toString().substring(3);
+                        spyInfo.append(statName).append(" #r").append(cleanStatValue).append("#k / +");
+                        spyInfo.append("#r").append(upgradedValue).append("#k");
+                        spyInfo.append("\r\n");
+                    }
+                    spyInfo.append("Upgrade slots - ").append(equippedItem.getUpgradeSlots())
+                            .append("\r\n\r\n");
+                }
+
+                break;
+
+            case "inventory":
+                spyInfo.append("#b").append(playerName).append("'s Inventory:#k\r\n\r\n");
+                for (InventoryType invType : InventoryType.values()) {
+                    if (invType != null && invType != InventoryType.EQUIPPED
+                            && invType != InventoryType.UNDEFINED && invType != InventoryType.CANHOLD) {
+                        for (Item item : player.getInventory(invType).sortedList()) {
+                            if (item != null) {
+                                String itemName = ii.getName(item.getItemId());
+                                spyInfo.append("#v").append(item.getItemId()).append("# ").append(itemName)
+                                        .append(" - x(#r").append(item.getQuantity()).append("#k)\r\n");
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case "info":
+                spyInfo.append("#b").append(playerName).append("'s Information:#k\r\n\r\n");
+                //amount value
+                int[] priorityItems = {2431000, 2431001, 5530009, 5530010, 5530011, 5530012, 5530013,
+                        5530014, 5530015, 5530016, 5530017, 5530018, 4000302, 4000303,
+                        4000304, 4000305, 4000307, 4000308, 4000309, 4000310, 5222000, 5451000};
+                for (int priorityItem : priorityItems) {
+                    spyInfo.append("#v").append(priorityItem).append("# - #z").append(priorityItem)
+                            .append("# x(#r").append(ii.getEquipById(priorityItem).getQuantity())
+                            .append("#k)\r\n");
+                }
+
+                break;
+
+            default:
+        }
+
+        return spyInfo.toString();
+    }
+
+    public String getEligibleEquipSelectionString(int itemId) {
+        StringBuilder sb = new StringBuilder();
+        Character character = Objects.requireNonNull(getPlayer(), "getPlayer() returned null.");
+
+        List<Item> equips = character.getInventory(InventoryType.EQUIP).listById(itemId);
+        for (Item equip : equips) {
+            Equip equipItem = (Equip) equip;
+            sb.append("#L").append(equip.getPosition()).append("##i").append(equipItem.getItemId()).append(":##l\r\n");
+        }
+
+        return sb.toString();
+    }
+
+    public StarBoost getStarForceEquipCraftingBonus(int slot) {
+        Equip equipItem = getStarForceEquip(slot);
+
+        return getStarForceEquipCraftingBonus(equipItem);
+    }
+
+    public int getStarForceEquipSpellTraceBonus(int slot) {
+        return getStarForceEquipSpellTraceBonus(getStarForceEquip(slot));
+    }
+
+    public int getStarForceEquipSpellTraceBonus(Equip equip) {
+        int level = equip.getLevel();
+        int itemId = equip.getItemId();
+
+        int itemRequirementLevel = getReqLevel(itemId);
+        boolean isSuperiorEquip = isSuperior(itemId);
+
+        int spellTraceCost = 0;
+
+        // less than level because it is cost up to the current level
+        for (int i = 1; i < level; i++) {
+            spellTraceCost += getSpellTraceCost(i, itemRequirementLevel, isSuperiorEquip);
+        }
+
+        // return 30% of Spell Trace cost rounded up to the next whole number
+        return (int) Math.ceil(spellTraceCost * 0.30);
+    }
+
+    public StarBoost getStarForceEquipCraftingBonus(Equip equip) {
+        int level = equip.getLevel();
+
+        StarBoost levelStatBonus = getStarForceEquipLevelBonus(equip, level);
+
+        StarBoost weaponStat = new StarBoost(equip.getWatk(), equip.getMatk(), equip.getStr(), equip.getDex(), equip.getLuk(), equip.getInt());
+
+        StarBoost weaponStatBonus = weaponStat.boostPercentage();
+
+        return levelStatBonus.add(weaponStat).add(weaponStatBonus);
+    }
+
+    public StarBoost getStarForceEquipLevelBonus(Equip equip, int level) {
+        int starForceBoost = level / 2;
+        int watkAdd = 2 * starForceBoost;
+        int matkAdd = 2 * starForceBoost;
+        int strAdd = 2 * starForceBoost;
+        int dexAdd = 2 * starForceBoost;
+        int lukAdd = 2 * starForceBoost;
+        int intAdd = 2 * starForceBoost;
+
+        int additionalStarForceBoost = level / 4;
+        watkAdd += additionalStarForceBoost;
+        matkAdd += additionalStarForceBoost;
+
+        return new StarBoost(watkAdd, matkAdd, strAdd, dexAdd, lukAdd, intAdd);
+    }
+
+    public Equip applyStarForceEquipCraftingBonus(Equip equip, int slot) {
+        Equip equipItem = getStarForceEquip(slot);
+
+        StarBoost starBoostBonus = getStarForceEquipCraftingBonus(equipItem);
+
+        equip.setWatk(getShortMaxIfOverflow(equip.getWatk() + starBoostBonus.getWatk()));
+        equip.setMatk(getShortMaxIfOverflow(equip.getMatk() + starBoostBonus.getMatk()));
+        equip.setStr(getShortMaxIfOverflow(equip.getStr() + starBoostBonus.getStr()));
+        equip.setDex(getShortMaxIfOverflow(equip.getDex() + starBoostBonus.getDex()));
+        equip.setLuk(getShortMaxIfOverflow(equip.getLuk() + starBoostBonus.getLuk()));
+        equip.setInt(getShortMaxIfOverflow(equip.getInt() + starBoostBonus.getInt()));
+
+        InventoryManipulator.removeFromSlot(c, equipItem.getInventoryType(), equipItem.getPosition(), equipItem.getQuantity(), false);
+        gainItem(4000999, getShortMaxIfOverflow(getStarForceEquipSpellTraceBonus(equip)));
+
+        return equip;
+    }
+
+    public String getStarForceEquipSlot() {
+        StringBuilder sb = new StringBuilder();
+        assert getChar() != null;
+        var equip = getChar().getInventory(InventoryType.EQUIP).orderedBySlot();
+        int i = 0;
+        for (Item item : equip) {
+            i++;
+//            if (i > 4) {
+//                sb.append("\r\n");
+//                i = 1;
+//            }
+            Equip equippedItem = (Equip) item;
+            if (equippedItem.getUpgradeSlots() == 0) {
+                continue;
+            }
+            //#
+            sb.append("#L").append(item.getPosition()).append("#");
+            sb.append("#i").append(item.getItemId()).append("#");
+            sb.append("#z").append(item.getItemId()).append("#").append(" (+" + ((Equip) item).getLevel() +")");
+            sb.append("#l\r\n");
+        }
+        return sb.toString();
+    }
+
+    public ItemInformationProvider getMIIP() {
+        return ItemInformationProvider.getInstance();
+    }
+
+    public Item getSFItem(int slot) {
+        return Objects.requireNonNull(getInventory(InventoryType.EQUIP).getItem((short) slot), "Item not found in provided slow.");
+    }
+
+    public Equip getStarForceEquip(int slot) {
+        Item item = getSFItem(slot);
+
+        return (Equip) item;
+    }
+
+    public boolean doesShopExist(int shopId) {
+        return ShopFactory.getInstance().getShop(shopId) != null;
+    }
+
+    public void addShopItem(int shopId, int itemId, int price) {
+        ShopFactory.getInstance().getShop(shopId).getItems().add(new ShopItem((short) 1, itemId, price, 0));
+        try (Connection con = DatabaseConnection.getConnection()) {
+            int position = 100;
+            try (PreparedStatement ps = con.prepareStatement("SELECT MAX(`position`) FROM `shopitems` WHERE `shopid` = ?")) {
+                ps.setInt(1, shopId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        position = rs.getInt(1);
+                        position += 1;
+                    }
+                }
+            }
+            try (PreparedStatement ps = con.prepareStatement("INSERT INTO shopitems(`shopid`, `itemid`, `price`, `position`) VALUES (?, ?, ?, ?)")) {
+                ps.setInt(1, shopId);
+                ps.setInt(2, itemId);
+                ps.setInt(3, price);
+                ps.setInt(4, position);
+                ps.execute();
+            }
+        } catch (SQLException sqle) {
+            log.error(sqle.getMessage());
+        }
+    }
+
+    public void addShopToDb(int shopId, int npcId) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("INSERT INTO shops(`shopid`, `npcid`) VALUES (?, ?)")) {
+                ps.setInt(1, shopId);
+                ps.setInt(2, npcId);
+                ps.execute();
+                ShopFactory.getInstance().reloadShops();
+            }
+        } catch (SQLException sqle) {
+            log.error(sqle.getMessage());
+        }
+    }
+
+    public boolean isStoredItemsEmpty() {
+        List<Map.Entry<Integer, Integer>> storedItems = getStoredItemsWithAmount();
+        return storedItems.isEmpty();  // Returns true if the list is empty, false otherwise
+    }
+
+
+    //This community is trash
+    /*public List<Map.Entry<Integer, Integer>> getStoredItemsWithAmount() {
+        List<Map.Entry<Integer, Integer>> items = new ArrayList<>();  // List to hold item ID and amount pairs
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT itemid, amount FROM infinitystorage WHERE charid = ?")) {
+                ps.setInt(1, getPlayer().getId());  // assuming getId() returns the charid of the player
+                try (ResultSet rs = ps.executeQuery()) {
+                    // Iterate over the result set to collect item ID and amount
+                    while (rs.next()) {
+                        int itemId = rs.getInt("itemid");  // Get the item ID
+                        int amount = rs.getInt("amount");  // Get the amount
+                        items.add(new AbstractMap.SimpleEntry<>(itemId, amount));  // Store as a pair (itemId, amount)
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage());  // replace with your logging mechanism
+        }
+
+        return items;  // return the list of item ID and amount pairs
+    }*/
+
+    public List<Map.Entry<Integer, Integer>>getStoredItemsWithAmount() {
+        getPlayer().getInfinityFromDB();
+        return getPlayer().getInfinityStorageAsList();
+    }
+
+    public String formatStoredItems(String type) {
+        List<Map.Entry<Integer, Integer>> storedItems = getStoredItemsWithAmount();
+        List<Map.Entry<Integer, Integer>> filteredStoredItems = new ArrayList<>();
+
+        if(type.equalsIgnoreCase("consume")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.USE) filteredStoredItems.add(entry);
+            }
+        }
+        if(type.equalsIgnoreCase("etc")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.ETC) filteredStoredItems.add(entry);
+            }
+        }
+        if(type.equalsIgnoreCase("setup")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.SETUP) filteredStoredItems.add(entry);
+            }
+        }
+
+        //for (Map.Entry<Integer, Integer> item : storedItems) {
+          //  System.out.println("Stored Item ID: " + item.getKey() + ", Amount: " + item.getValue());
+        //}
+        int i = 0;
+        int itemCounter = 0;
+        StringBuilder sb = new StringBuilder();
+        sb.append("\r\n");
+        for (Map.Entry<Integer, Integer> it : filteredStoredItems) {
+            Item item = getEquipById(it.getKey()).copy();
+            i++;
+            if (i > 4) {
+                sb.append("\r\n");
+                i = 1;
+            }
+            sb.append("#L" + itemCounter).append("##i").append(item.getItemId()).append(":#(").append(it.getValue()).append(")#l");
+            itemCounter++;
+        }
+        return sb.toString();
+    }
+
+    public Integer getSelectedStoredItemId(int index, String type) {
+        List<Map.Entry<Integer, Integer>> storedItems = getStoredItemsWithAmount();
+        List<Map.Entry<Integer, Integer>> filteredStoredItems = new ArrayList<>();
+
+        if(type.equalsIgnoreCase("consume")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.USE) filteredStoredItems.add(entry);
+            }
+        }
+        if(type.equalsIgnoreCase("etc")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.ETC) filteredStoredItems.add(entry);
+            }
+        }
+        if(type.equalsIgnoreCase("setup")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.SETUP) filteredStoredItems.add(entry);
+            }
+        }
+        return filteredStoredItems.get(index).getKey();
+    }
+
+    public Integer getSelectedStoredItemAmount(int index, String type){
+        List<Map.Entry<Integer, Integer>> storedItems = getStoredItemsWithAmount();
+        List<Map.Entry<Integer, Integer>> filteredStoredItems = new ArrayList<>();
+
+        if(type.equalsIgnoreCase("consume")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.USE) filteredStoredItems.add(entry);
+            }
+        }
+        if(type.equalsIgnoreCase("etc")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.ETC) filteredStoredItems.add(entry);
+            }
+        }
+        if(type.equalsIgnoreCase("setup")) {
+            for (Map.Entry<Integer, Integer> entry : storedItems) {
+                InventoryType entryType = getEquipById(entry.getKey()).getInventoryType();
+                if(entryType == InventoryType.SETUP) filteredStoredItems.add(entry);
+            }
+        }
+        return filteredStoredItems.get(index).getValue();
+    }
+
+    public Item getItemByTypeAndPos(String type, int position, Character chr) {
+        Item item = null;
+        try {
+            // Convert type ("Consume", "Etc") to the corresponding inventory type
+            InventoryType invType = getInventoryTypeFromString(type);
+
+            // Fetch the inventory of the player based on the type (Consume, Etc, etc.)
+            Inventory inv = chr.getInventory(invType);
+
+            // Retrieve the item from the inventory based on the position
+            item = inv.getItem((short) position);
+
+            // Verify the item is not null and the position matches
+            if (item != null && item.getPosition() == position) {
+                return item;  // Return the item if found at the correct position
+            }
+        } catch (Exception e) {
+            log.error("Failed to retrieve item by type and position: " + e.getMessage());
+        }
+        return null;  // Return null if no item is found
+    }
+
+    // Helper function to convert the string type to an inventory type
+    private InventoryType getInventoryTypeFromString(String type) {
+        switch (type.toLowerCase()) {
+            case "consume":
+                return InventoryType.USE;  // Use the appropriate type in your system
+            case "etc":
+                return InventoryType.ETC;      // Use the appropriate type in your system
+            case "setup":
+                return InventoryType.SETUP;      // Use the appropriate type in your system
+            default:
+                return InventoryType.UNDEFINED;  // Handle unknown/unsupported inventory types
+        }
+    }
+
+    /*public void updateStoredItem(int itemId, int amount, boolean clear) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            // Log the incoming parameters for debugging
+            log.info("Updating stored item with parameters - ItemID: " + itemId + ", Amount: " + amount);
+
+            if(clear) {
+                String deleteQuery = "DELETE FROM infinitystorage WHERE charid = ? AND itemid = ?";
+                try (PreparedStatement deletePs = con.prepareStatement(deleteQuery)) {
+                    deletePs.setInt(1, getPlayer().getId());  // charid
+                    deletePs.setInt(2, itemId);             // itemid
+                    deletePs.executeUpdate();
+                }
+            } else {
+                // Check if the item already exists in the database
+                String checkQuery = "SELECT id FROM infinitystorage WHERE charid = ? AND itemid = ?";
+                try (PreparedStatement checkPs = con.prepareStatement(checkQuery)) {
+                    checkPs.setInt(1, getPlayer().getId());  // charid
+                    checkPs.setInt(2, itemId);               // itemid
+
+                    try (ResultSet rs = checkPs.executeQuery()) {
+                        if (rs.next()) {
+                            // Item exists, perform an update
+                            String updateQuery = "UPDATE infinitystorage SET amount = ? WHERE charid = ? AND itemid = ?";
+                            try (PreparedStatement updatePs = con.prepareStatement(updateQuery)) {
+                                updatePs.setInt(1, amount);  // amount to set
+                                updatePs.setInt(2, getPlayer().getId());  // charid
+                                updatePs.setInt(3, itemId);  // itemid
+                                updatePs.executeUpdate();
+                            }
+                        } else {
+                            // Item does not exist, perform an insert
+                            String insertQuery = "INSERT INTO infinitystorage (charid, itemid, amount) VALUES (?, ?, ?)";
+                            try (PreparedStatement insertPs = con.prepareStatement(insertQuery)) {
+                                insertPs.setInt(1, getPlayer().getId());  // charid
+                                insertPs.setInt(2, itemId);               // itemid
+                                insertPs.setInt(3, amount);               // amount
+                                insertPs.executeUpdate();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error updating or inserting stored item: " + e.getMessage());
+        }
+    }*/
+
+    public void updateStoredItem(int itemId, int amount, boolean clear) {
+        Character player = getPlayer();
+        int playerId = player.getId();
+        int currentAmount = player.getInfinityStorageEntry(itemId);
+        int delta = currentAmount - amount;
+
+        if (clear) {
+            player.retrieveFromInfinityStorage(itemId, currentAmount);
+        } else if (amount <= currentAmount) {
+            player.retrieveFromInfinityStorage(itemId, delta);
+        } else {
+            player.storeInInfinityStorage(itemId, -delta);
+        }
+    }
+
+    public int getStoredItemAmount(int charId, int itemId) {
+        return getPlayer().getInfinityStorageEntry(itemId);
+    }
+
+    // Method to get the current stored amount from the database
+/*
+    public int getStoredItemAmount(int charId, int itemId) {
+        int amount = 0; // Default value if no entry is found
+        try (Connection con = DatabaseConnection.getConnection()) {
+            // Prepare SQL query to retrieve the stored amount
+            String query = "SELECT amount FROM infinitystorage WHERE charid = ? AND itemid = ?";
+            try (PreparedStatement ps = con.prepareStatement(query)) {
+                ps.setInt(1, charId);
+                ps.setInt(2, itemId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        amount = rs.getInt("amount"); // Fetch the amount
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Handle any SQL exceptions
+        }
+        return amount; // Return the current amount
+    }
+*/
+
+
+
+    public int getFreeSlots(Integer itemId) {
+        // Convert type to corresponding inventory type
+        InventoryType invType = getEquipById(itemId).getInventoryType();
+
+        // Get player's inventory of the specified type
+        Inventory inv = getPlayer().getInventory(invType);
+
+
+        return inv.getNumFreeSlot();
+    }
+
+
+
+
+    public boolean isEndChat(int mode, int type) {
+        return mode == -1 || ((type == 3 || type == 4) && mode == 0);
+    }
+
+    public ArrayList<Character> getCharacters(MapleMap map) {
+        return new ArrayList<>(map.getCharacters());
+    }
+
+    public ArrayList<Portal> getPortals(MapleMap map) {
+        return new ArrayList<>(map.getPortals());
+    }
+
+    public int getSFGain(int itemId, int level, boolean superior, String statType) {
+        int catid = ((itemId / 10000) % 100);
+        if (catid >= 30) {
+            catid = 30;
+        }
+        if(isSuperior(itemId)) {
+            int watkAdd = 4 + level;
+            int matkAdd = 4 + level;
+            int strAdd = 10 + level;
+            int dexAdd = 10 + level;
+            int lukAdd = 10 + level;
+            int intAdd = 10 + level;
+
+            if(statType.equalsIgnoreCase("str")) {
+                return strAdd;
+            } else if(statType.equalsIgnoreCase("dex")) {
+                return dexAdd;
+            } else if(statType.equalsIgnoreCase("int")) {
+                return intAdd;
+            } else if(statType.equalsIgnoreCase("luk")) {
+                return lukAdd;
+            } else if(statType.equalsIgnoreCase("watk")) {
+                if(level >= 5) return watkAdd;
+                else return 0;
+            } else if(statType.equalsIgnoreCase("matk")) {
+                if(level >= 5) return matkAdd;
+                else return 0;
+            }
+        } else {
+            if(statType.equalsIgnoreCase("str")) {
+                return getStatAdditions(catid, level).getStr();
+            } else if(statType.equalsIgnoreCase("dex")) {
+                return getStatAdditions(catid, level).getDex();
+            } else if(statType.equalsIgnoreCase("int")) {
+                return getStatAdditions(catid, level).getInt();
+            } else if(statType.equalsIgnoreCase("luk")) {
+                return getStatAdditions(catid, level).getLuk();
+            } else if(statType.equalsIgnoreCase("watk")) {
+                return getStatAdditions(catid, level).getWatk();
+            } else if(statType.equalsIgnoreCase("matk")) {
+                return getStatAdditions(catid, level).getMatk();
+            }
+        }
+        return 0;
+    }
+
+    public void playGlobalEventSound(String name){
+        Server.getInstance().broadcastMessage(c.getWorld(), PacketCreator.playEventSound(name));
+    }
+
+    public Equip itemToEquip(Item item) {
+        return (Equip) item;
+    }
+
+    public void sendMessageToPlayer(String string) {
+        getClient().sendPacket(PacketCreator.serverNotice(6, string));
+    }
+
+    public void debug(String string) {
+        System.out.println(string);
+    }
+
+
+    public Saloon getStyle(int selection) {
+        return getPlayer().getStyles().get(selection);
     }
 }

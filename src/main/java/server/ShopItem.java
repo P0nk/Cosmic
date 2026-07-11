@@ -27,7 +27,7 @@ package server;
 public class ShopItem {
     private final short buyable;
     private final int itemId;
-    private final int price;
+    private int price;
     private final int pitch;
 
     public ShopItem(short buyable, int itemId, int price, int pitch) {
@@ -47,6 +47,10 @@ public class ShopItem {
 
     public int getPrice() {
         return price;
+    }
+
+    public void setPrice(int price) {
+        this.price = price;
     }
 
     public int getPitch() {

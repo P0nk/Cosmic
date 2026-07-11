@@ -21,13 +21,10 @@
 */
 package net.server.channel.handlers;
 
-import client.BuddyList;
+import client.*;
 import client.BuddyList.BuddyAddResult;
-import client.BuddyList.BuddyOperation;
-import client.BuddylistEntry;
 import client.Character;
-import client.CharacterNameAndId;
-import client.Client;
+import client.BuddyList.BuddyOperation;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.world.World;

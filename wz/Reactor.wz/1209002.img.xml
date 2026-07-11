@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="1209002.img">
+    <imgdir name="info">
+        <string name="info" value="Nautilus Quest"/>
+        <int name="dcMark" value="1"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="29" height="35">
+            <vector name="origin" x="9" y="35"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="9"/>
+                <int name="state" value="1"/>
+                <vector name="lt" x="-10" y="-35"/>
+                <vector name="rb" x="20" y="1"/>
+                <string name="Message" value="You are too far away. Please move closer and try again."/>
+                <imgdir name="clickArea">
+                    <vector name="lt" x="-80" y="-66"/>
+                    <vector name="rb" x="80" y="6"/>
+                    <string name="Message" value="You are too far away. Please move closer and try again."/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="29" height="35">
+                <vector name="origin" x="10" y="35"/>
+                <int name="z" value="0"/>
+            </canvas>
+            <canvas name="1" width="29" height="35">
+                <vector name="origin" x="9" y="35"/>
+                <int name="z" value="0"/>
+            </canvas>
+            <canvas name="2" width="29" height="35">
+                <vector name="origin" x="10" y="35"/>
+                <int name="z" value="0"/>
+            </canvas>
+            <canvas name="3" width="29" height="35">
+                <vector name="origin" x="9" y="35"/>
+                <int name="z" value="0"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+        </canvas>
+    </imgdir>
+    <string name="action" value="gather_Item0"/>
+</imgdir>

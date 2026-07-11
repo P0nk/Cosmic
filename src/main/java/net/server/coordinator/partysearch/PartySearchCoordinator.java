@@ -33,14 +33,8 @@ import provider.wz.WZFiles;
 import tools.PacketCreator;
 import tools.Pair;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -121,6 +115,24 @@ public class PartySearchCoordinator {
         Map<Integer, Job> table = new HashMap<>();
 
         List<Pair<Integer, Integer>> jobSearchTypes = new LinkedList<Pair<Integer, Integer>>() {{
+            add(new Pair<>(Job.HERALD.getId(), 0));
+            add(new Pair<>(Job.RETRIBUTE.getId(), 0));
+            add(new Pair<>(Job.DARKOMEN.getId(), 0));
+            add(new Pair<>(Job.FIREGRANDMASTER.getId(), 0));
+            add(new Pair<>(Job.ICEGRANDMASTER.getId(), 0));
+            add(new Pair<>(Job.HOLYGRANDMASTER.getId(), 0));
+            add(new Pair<>(Job.SHARPEYES.getId(), 0));
+            add(new Pair<>(Job.CURSEDBOLT.getId(), 0));
+            add(new Pair<>(Job.VOID.getId(), 0));
+            add(new Pair<>(Job.INVERSE.getId(), 0));
+            add(new Pair<>(Job.CAPTAIN.getId(), 0));
+            add(new Pair<>(Job.SHARPSHOT.getId(), 0));
+            add(new Pair<>(Job.SYNTH_MASTER.getId(), 0));
+            add(new Pair<>(Job.DAWNWARRIOR5.getId(), 0));
+            add(new Pair<>(Job.BLAZEWIZARD5.getId(), 0));
+            add(new Pair<>(Job.WINDARCHER5.getId(), 0));
+            add(new Pair<>(Job.NIGHTWALKER5.getId(), 0));
+            add(new Pair<>(Job.THUNDERBREAKER5.getId(), 0));
             add(new Pair<>(Job.MAPLELEAF_BRIGADIER.getId(), 0));
             add(new Pair<>(0, 0));
             add(new Pair<>(Job.ARAN1.getId(), 0));

@@ -61,6 +61,13 @@ public class DataTool {
         return (Integer) data.getData();
     }
 
+    public static long getLong(Data data) {
+        if (data == null || data.getData() == null) {
+            return 0;// DEF?
+        }
+        return (Long) data.getData();
+    }
+
     public static int getInt(String path, Data data) {
         return getInt(data.getChildByPath(path));
     }
@@ -101,6 +108,15 @@ public class DataTool {
         }
     }
 
+    public static long getLongConvert(String path, Data data) {
+        Data d = data.getChildByPath(path);
+        if (d.getType() == DataType.STRING) {
+            return Long.parseLong(getString(d));
+        } else {
+            return getLong(d);
+        }
+    }
+
     public static int getInt(Data data, int def) {
         if (data == null || data.getData() == null) {
             return def;
@@ -121,19 +137,24 @@ public class DataTool {
     }
 
     public static int getIntConvert(String path, Data data, int def) {
-        Data d = data.getChildByPath(path);
-        if (d == null) {
+        if (data == null || path == null) {
             return def;
         }
-        if (d.getType() == DataType.STRING) {
-            try {
+
+        Data d = data.getChildByPath(path);
+        if (d == null || d.getType() == null) {
+            return def;
+        }
+
+        try {
+            if (d.getType() == DataType.STRING) {
                 return Integer.parseInt(getString(d));
-            } catch (NumberFormatException nfe) {
-                nfe.printStackTrace();
-                return def;
+            } else {
+                return getInt(d, def);
             }
-        } else {
-            return getInt(d, def);
+        } catch (NumberFormatException nfe) {
+            nfe.printStackTrace();
+            return def;
         }
     }
 

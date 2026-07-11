@@ -39,36 +39,6 @@ class ByteBufInPacketTest {
     }
 
     @Test
-    void readUnsignedByte() {
-        final byte writtenByte = Byte.MAX_VALUE;
-        byteBuf.writeByte(writtenByte);
-
-        short readUnsignedByte = inPacket.readUnsignedByte();
-
-        assertEquals(writtenByte, readUnsignedByte);
-    }
-
-    @Test
-    void readUnsignedByte_shouldBeNonnegative() {
-        final byte writtenByte = Byte.MIN_VALUE;
-        byteBuf.writeByte(writtenByte);
-
-        short readUnsignedByte = inPacket.readUnsignedByte();
-
-        assertEquals((short)writtenByte + 256, readUnsignedByte);
-    }
-
-    @Test
-    void readUnsignedByte_shouldBeNonnegative2() {
-        final byte writtenByte = -1;
-        byteBuf.writeByte(writtenByte);
-
-        short readUnsignedByte = inPacket.readUnsignedByte();
-
-        assertEquals((short)writtenByte + 256, readUnsignedByte);
-    }
-
-    @Test
     void readShort() {
         final short writtenShort = 12_345;
         byteBuf.writeShortLE(writtenShort);
@@ -234,13 +204,5 @@ class ByteBufInPacketTest {
         String afterReadingOpcode = inPacket.toString();
 
         assertEquals(initial.length(), afterReadingOpcode.length());
-    }
-
-    @Test
-    void equalsShouldCompareBytes() {
-        ByteBufInPacket packet1 = new ByteBufInPacket(Unpooled.wrappedBuffer(new byte[]{ 11, 22, 33, 44 }));
-        ByteBufInPacket packet2 = new ByteBufInPacket(Unpooled.wrappedBuffer(new byte[]{ 11, 22, 33, 44 }));
-
-        assertEquals(packet1, packet2);
     }
 }

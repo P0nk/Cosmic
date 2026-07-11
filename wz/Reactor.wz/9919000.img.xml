@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9919000.img">
+    <imgdir name="info">
+        <string name="info" value="Custodial Closet HP Recovery"/>
+        <int name="dcMark" value="2"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="59" height="38">
+            <vector name="origin" x="29" y="52"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <canvas name="1" width="57" height="42">
+            <vector name="origin" x="28" y="54"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <canvas name="2" width="55" height="40">
+            <vector name="origin" x="27" y="53"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <canvas name="3" width="57" height="42">
+            <vector name="origin" x="28" y="54"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="9"/>
+                <int name="state" value="1"/>
+                <vector name="lt" x="-33" y="-32"/>
+                <vector name="rb" x="32" y="30"/>
+                <imgdir name="clickArea">
+                    <vector name="lt" x="-161" y="-91"/>
+                    <vector name="rb" x="175" y="110"/>
+                    <string name="Message" value="You can&apos;t eat from all the way over here. Get closer."/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <int name="repeat" value="1"/>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="59" height="56">
+            <vector name="origin" x="29" y="28"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="101"/>
+                <int name="state" value="0"/>
+            </imgdir>
+            <int name="timeOut" value="30000"/>
+        </imgdir>
+    </imgdir>
+    <string name="action" value="mSchool_kitchen_hp"/>
+</imgdir>

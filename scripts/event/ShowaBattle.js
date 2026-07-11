@@ -23,6 +23,8 @@
  * @event: Showa Boss Battle
  */
 
+const ExpeditionType = Java.type("server.expeditions.ExpeditionType");
+
 var isPq = true;
 var minPlayers = 3, maxPlayers = 30;
 var minLevel = 100, maxLevel = 255;
@@ -195,7 +197,7 @@ function clearPQ(eim) {
     eim.getInstanceMap(801040100).killAllMonsters();
 
     eim.stopEventTimer();
-    eim.setEventCleared();
+    eim.setEventCleared(ExpeditionType.SHOWA);
 
     if (eim.getIntProperty("playerDied") == 0) {
         var mob = eim.getMonster(9400114);
@@ -212,6 +214,9 @@ function monsterKilled(mob, eim) {
     if (isTheBoss(mob)) {
         eim.showClearEffect();
         eim.clearPQ();
+        party = eim.getPlayers()
+        for (var i = 0; i < party.size(); i++)
+        eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001006, 1);
     }
 }
 

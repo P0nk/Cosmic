@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cosmic-maplestory</groupId>
@@ -44,34 +45,38 @@
     <properties>
         <!-- Project -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <mainClass>net.server.Server</mainClass>
 
         <!-- Maven plugins -->
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version> <!-- For running unit tests -->
-        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version> <!-- Disabled. (for building thin jar) -->
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version> <!-- For running unit tests -->
+        <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version> <!-- Disabled. (for building thin jar) -->
         <maven-assembly-plugin.version>3.7.1
         </maven-assembly-plugin.version> <!-- For packaging the executable fat jar -->
 
         <!-- Dependencies -->
-        <slf4j-api.version>2.0.17</slf4j-api.version> <!-- Logging facade -->
-        <log4j.version>2.25.0</log4j.version> <!-- Slf4j implementation -->
+        <slf4j-api.version>2.0.13</slf4j-api.version> <!-- Logging facade -->
+        <log4j.version>2.23.1</log4j.version> <!-- Slf4j implementation -->
         <graalvm-js.version>23.0.4</graalvm-js.version>
         <graalvm-js-scriptengine.version>24.0.1</graalvm-js-scriptengine.version> <!-- ScriptEngine implementation -->
-        <netty.version>4.2.2.Final</netty.version> <!-- Networking -->
+        <netty.version>4.1.109.Final</netty.version> <!-- Networking -->
         <yamlbeans.version>1.17</yamlbeans.version> <!-- Config file -->
         <jcip-annotations.version>1.0</jcip-annotations.version> <!-- Annotations for concurrency documentation -->
-        <HikariCP.version>6.3.0</HikariCP.version> <!-- Database connection pool -->
-        <mysql-connector-j.version>9.3.0</mysql-connector-j.version> <!-- MySQL JDBC driver -->
-        <jdbi-version>3.49.5</jdbi-version> <!-- Convenience wrapper around JDBC -->
-        <liquibase-core.version>4.32.0</liquibase-core.version> <!-- Database migrations -->
-        <junit.version>5.13.1</junit.version> <!-- Unit test -->
-        <mockito.version>5.18.0</mockito.version> <!-- Unit test -->
+        <HikariCP.version>5.1.0</HikariCP.version> <!-- Database connection pool -->
+        <mysql-connector-j.version>8.4.0</mysql-connector-j.version> <!-- MySQL JDBC driver -->
+        <jdbi-version>3.45.1</jdbi-version> <!-- Convenience wrapper around JDBC -->
+        <junit.version>5.10.2</junit.version> <!-- Unit test -->
+        <mockito.version>5.11.0</mockito.version> <!-- Unit test -->
     </properties>
 
     <dependencies>
+        <dependency>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-core</artifactId>
+        <version>4.31.0</version>
+    </dependency>
         <dependency>
             <groupId>com.esotericsoftware.yamlbeans</groupId>
             <artifactId>yamlbeans</artifactId>
@@ -99,11 +104,7 @@
             <artifactId>jdbi3-core</artifactId>
             <version>${jdbi-version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-            <version>${liquibase-core.version}</version>
-        </dependency>
+
 
         <!-- Networking -->
         <dependency>
@@ -191,6 +192,21 @@
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.28.0-GA</version>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>5.1.2</version>
         </dependency>
 
     </dependencies>

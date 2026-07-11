@@ -25,6 +25,7 @@ package client.processor.npc;
 
 import client.Character;
 import client.Client;
+import client.autoban.AutobanFactory;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.Item;
@@ -36,16 +37,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
 import server.maps.HiredMerchant;
+import server.maps.PlayerShopItem;
 import service.NoteService;
 import tools.DatabaseConnection;
+import tools.FilePrinter;
 import tools.PacketCreator;
 import tools.Pair;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -289,18 +294,18 @@ public class FredrickProcessor {
 
                     chr.withdrawMerchantMesos();
 
+                    for (Pair<Item, InventoryType> it : items) {
+                        Item item = it.getLeft();
+                        String itemName = ItemInformationProvider.getInstance().getName(item.getItemId());
+                        FilePrinter.print(FilePrinter.FREDRICK + chr.getName() + ".txt", chr.getName() + " put into Fredrick " + item.getQuantity() + " " + itemName + " (" + item.getItemId() + ")");
+                    }
+
                     if (deleteFredrickItems(chr.getId())) {
-                        HiredMerchant merchant = chr.getHiredMerchant();
-
-                        if (merchant != null) {
-                            merchant.clearItems();
-                        }
-
                         for (Pair<Item, InventoryType> it : items) {
                             Item item = it.getLeft();
                             InventoryManipulator.addFromDrop(chr.getClient(), item, false);
                             String itemName = ItemInformationProvider.getInstance().getName(item.getItemId());
-                            log.debug("Chr {} gained {}x {} ({})", chr.getName(), item.getQuantity(), itemName, item.getItemId());
+                            FilePrinter.print(FilePrinter.FREDRICK + chr.getName() + ".txt", chr.getName() + " gained " + item.getQuantity() + " " + itemName + " (" + item.getItemId() + ")");                            log.debug("Chr {} gained {}x {} ({})", chr.getName(), item.getQuantity(), itemName, item.getItemId());
                         }
 
                         chr.sendPacket(PacketCreator.fredrickMessage((byte) 0x1E));

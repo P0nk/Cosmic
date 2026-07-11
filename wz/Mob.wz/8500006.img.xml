@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8500006.img">
+    <imgdir name="info">
+        <int name="level" value="125"/>
+        <int name="maxHP" value="19933200"/>
+        <int name="maxMP" value="35000"/>
+        <int name="PADamage" value="0"/>
+        <int name="PDDamage" value="170"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="0"/>
+        <int name="MDDamage" value="210"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="832"/>
+        <int name="eva" value="240"/>
+        <int name="pushed" value="13000"/>
+        <float name="fs" value="10.0"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="8"/>
+        <string name="mobType" value="1N"/>
+        <int name="hideName" value="1"/>
+        <int name="invincible" value="1"/>
+        <imgdir name="skill">
+            <imgdir name="0">
+                <int name="skill" value="176"/>
+                <int name="action" value="1"/>
+                <int name="level" value="40"/>
+                <int name="effectAfter" value="0"/>
+                <int name="onlyFsm" value="1"/>
+                <int name="skillAfter" value="2000"/>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas name="0" width="1" height="1">
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+    <imgdir name="stand">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+    <imgdir name="skill1">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+</imgdir>

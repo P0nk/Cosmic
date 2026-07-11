@@ -37,15 +37,12 @@ import net.server.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.event.EventScriptManager;
+import scripting.field.FieldScriptManager;
 import server.TimerManager;
 import server.events.gm.Event;
 import server.expeditions.Expedition;
 import server.expeditions.ExpeditionType;
-import server.maps.HiredMerchant;
-import server.maps.MapManager;
-import server.maps.MapleMap;
-import server.maps.MiniDungeon;
-import server.maps.MiniDungeonInfo;
+import server.maps.*;
 import tools.PacketCreator;
 import tools.Pair;
 
@@ -53,25 +50,14 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 public final class Channel {
     private static final Logger log = LoggerFactory.getLogger(Channel.class);
@@ -86,6 +72,7 @@ public final class Channel {
     private ChannelServer channelServer;
     private String serverMessage;
     private MapManager mapManager;
+    private FieldScriptManager fieldScriptManager;
     private EventScriptManager eventSM;
     private ServicesManager services;
     private final Map<Integer, HiredMerchant> hiredMerchants = new HashMap<>();
@@ -290,6 +277,14 @@ public final class Channel {
     public void broadcastPacket(Packet packet) {
         for (Character chr : players.getAllCharacters()) {
             chr.sendPacket(packet);
+        }
+    }
+
+    public void broadcastGlobalPacket(Packet packet) {
+        for (Character chr : players.getAllCharacters()) {
+            if(chr.getGlobalMessageOnOff()) {
+                chr.sendPacket(packet);
+            }
         }
     }
 

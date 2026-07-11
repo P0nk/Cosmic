@@ -35,6 +35,8 @@ function enter(pi) {
                     return false;
                 }
             }
+
+            return false;
         } else {
             if (em.startInstance(pi.getPlayer())) { // thanks RedHat for noticing an issue here
                 pi.playPortalSound();

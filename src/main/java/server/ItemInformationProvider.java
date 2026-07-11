@@ -22,16 +22,9 @@
 package server;
 
 import client.Character;
-import client.Client;
-import client.Job;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.autoban.AutobanFactory;
-import client.inventory.Equip;
-import client.inventory.Inventory;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.WeaponType;
+import client.inventory.*;
 import config.YamlConfig;
 import constants.id.ItemId;
 import constants.inventory.EquipSlot;
@@ -42,36 +35,22 @@ import constants.skills.NightWalker;
 import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import provider.Data;
-import provider.DataDirectoryEntry;
-import provider.DataFileEntry;
-import provider.DataProvider;
-import provider.DataProviderFactory;
-import provider.DataTool;
+import provider.*;
 import provider.wz.WZFiles;
 import server.MakerItemFactory.MakerItemCreateEntry;
 import server.life.LifeFactory;
 import server.life.MonsterInformationProvider;
-import tools.DatabaseConnection;
-import tools.PacketCreator;
-import tools.Pair;
-import tools.Randomizer;
-import tools.StringUtil;
+import server.maps.MapleMap;
+import tools.*;
 
+import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * @author Matze
@@ -140,6 +119,7 @@ public class ItemInformationProvider {
     protected Map<Integer, Data> skillUpgradeInfoCache = new HashMap<>();
     protected Map<Integer, Pair<Integer, Set<Integer>>> cashPetFoodCache = new HashMap<>();
     protected Map<Integer, QuestConsItem> questItemConsCache = new HashMap<>();
+    protected Map<Integer, Point> bodyRelMoveCache = new HashMap<>();
 
     private ItemInformationProvider() {
         loadCardIdData();
@@ -216,7 +196,7 @@ public class ItemInformationProvider {
             theData = cashStringData;
         } else if (itemId >= 2000000 && itemId < 3000000) {
             theData = consumeStringData;
-        } else if ((itemId >= 1010000 && itemId < 1040000) || (itemId >= 1122000 && itemId < 1123000) || (itemId >= 1132000 && itemId < 1133000) || (itemId >= 1142000 && itemId < 1143000)) {
+        } else if ((itemId >= 1010000 && itemId < 1040000) || (itemId >= 1122000 && itemId < 1123000) || (itemId >= 1132000 && itemId < 1133000) || (itemId >= 1142000 && itemId < 1143900)) {
             theData = eqpStringData;
             cat = "Eqp/Accessory";
         } else if (itemId >= 1000000 && itemId < 1010000) {
@@ -228,13 +208,13 @@ public class ItemInformationProvider {
         } else if (itemId >= 1040000 && itemId < 1050000) {
             theData = eqpStringData;
             cat = "Eqp/Coat";
-        } else if (ItemConstants.isFace(itemId)) {
+        } else if (itemId >= 50000 && itemId < 55000) {
             theData = eqpStringData;
             cat = "Eqp/Face";
         } else if (itemId >= 1080000 && itemId < 1090000) {
             theData = eqpStringData;
             cat = "Eqp/Glove";
-        } else if (ItemConstants.isHair(itemId)) {
+        } else if (itemId >= 30000 && itemId < 35000) {
             theData = eqpStringData;
             cat = "Eqp/Hair";
         } else if (itemId >= 1050000 && itemId < 1060000) {
@@ -294,6 +274,25 @@ public class ItemInformationProvider {
         return blockMouse;
     }
 
+    public Map<String, Integer> getCleanStats(int itemId) {
+        Map<String, Integer> cleanStats = new HashMap<>();
+        Data item = getItemData(itemId);
+        if (item != null) {
+            Data info = item.getChildByPath("info");
+            if (info != null) {
+                for (Data data : info.getChildren()) {
+                    if (data.getName().startsWith("inc")) {
+                        String statName = data.getName().substring(3).toLowerCase();
+                        int statValue = Integer.parseInt(data.getData().toString());
+
+                        cleanStats.put(statName, statValue);
+                    }
+                }
+            }
+        }
+        return cleanStats;
+    }
+
     private Data getItemData(int itemId) {
         Data ret = null;
         String idStr = "0" + itemId;
@@ -344,24 +343,24 @@ public class ItemInformationProvider {
         return list;
     }
 
-    private static short getExtraSlotMaxFromPlayer(Client c, int itemId) {
+    private static short getExtraSlotMaxFromPlayer(Character c, int itemId) {
         short ret = 0;
 
         // thanks GMChuck for detecting player sensitive data being cached into getSlotMax
         if (ItemConstants.isThrowingStar(itemId)) {
-            if (c.getPlayer().getJob().isA(Job.NIGHTWALKER1)) {
-                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 10;
+            if (c.getJob().isA(Job.NIGHTWALKER1)) {
+                ret += c.getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 10;
             } else {
-                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 10;
+                ret += c.getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 10;
             }
         } else if (ItemConstants.isBullet(itemId)) {
-            ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
+            ret += c.getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
         }
 
         return ret;
     }
 
-    public short getSlotMax(Client c, int itemId) {
+    public short getSlotMax(Character c, int itemId) {
         Short slotMax = slotMaxCache.get(itemId);
         if (slotMax != null) {
             return (short) (slotMax + getExtraSlotMaxFromPlayer(c, itemId));
@@ -374,7 +373,7 @@ public class ItemInformationProvider {
                 if (ItemConstants.getInventoryType(itemId).getType() == InventoryType.EQUIP.getType()) {
                     ret = 1;
                 } else {
-                    ret = 100;
+                    ret = 32000;
                 }
             } else {
                 ret = (short) DataTool.getInt(smEntry);
@@ -515,7 +514,7 @@ public class ItemInformationProvider {
         return ret;
     }
 
-    protected String getEquipmentSlot(int itemId) {
+    public String getEquipmentSlot(int itemId) {
         if (equipmentSlotCache.containsKey(itemId)) {
             return equipmentSlotCache.get(itemId);
         }
@@ -540,6 +539,7 @@ public class ItemInformationProvider {
 
         return ret;
     }
+
 
     public Map<String, Integer> getEquipStats(int itemId) {
         if (equipStatsCache.containsKey(itemId)) {
@@ -1049,21 +1049,68 @@ public class ItemInformationProvider {
         Issue with clean slate found thanks to Masterrulax
         Vicious added in the clean slate check thanks to Crypter (CrypterDEV)
     */
-    public boolean canUseCleanSlate(Equip equip) {
-        Map<String, Integer> eqStats = getEquipStats(equip.getItemId());
-        if (eqStats == null || eqStats.get("tuc") == 0 ) {
-            return false;
+    public boolean canUseCleanSlate(Equip nEquip) {
+        Map<String, Integer> eqstats = this.getEquipStats(nEquip.getItemId());
+        if (nEquip.getVicious() < 1) {
+            return YamlConfig.config.server.USE_ENHANCED_CLEAN_SLATE || (nEquip.getLevel() + nEquip.getUpgradeSlots()) < (eqstats.get("tuc"));
+        } else {
+            return YamlConfig.config.server.USE_ENHANCED_CLEAN_SLATE || (nEquip.getLevel() + nEquip.getUpgradeSlots()) < (eqstats.get("tuc")) + nEquip.getVicious();
         }
-        int totalUpgradeCount = eqStats.get("tuc");
-        int freeUpgradeCount = equip.getUpgradeSlots();
-        int viciousCount = equip.getVicious();
-        int appliedScrollCount = equip.getLevel();
-        return freeUpgradeCount + appliedScrollCount < totalUpgradeCount + viciousCount;
+    }
+
+    public static void improveEquipStats(Equip nEquip, Map<String, Integer> stats) {
+        for (Entry<String, Integer> stat : stats.entrySet()) {
+            switch (stat.getKey()) {
+                case "STR":
+                    nEquip.setStr(getShortMaxIfOverflow(nEquip.getStr() + stat.getValue().intValue()));
+                    break;
+                case "DEX":
+                    nEquip.setDex(getShortMaxIfOverflow(nEquip.getDex() + stat.getValue().intValue()));
+                    break;
+                case "INT":
+                    nEquip.setInt(getShortMaxIfOverflow(nEquip.getInt() + stat.getValue().intValue()));
+                    break;
+                case "LUK":
+                    nEquip.setLuk(getShortMaxIfOverflow(nEquip.getLuk() + stat.getValue().intValue()));
+                    break;
+                case "PAD":
+                    nEquip.setWatk(getShortMaxIfOverflow(nEquip.getWatk() + stat.getValue().intValue()));
+                    break;
+                case "PDD":
+                    nEquip.setWdef(getShortMaxIfOverflow(nEquip.getWdef() + stat.getValue().intValue()));
+                    break;
+                case "MAD":
+                    nEquip.setMatk(getShortMaxIfOverflow(nEquip.getMatk() + stat.getValue().intValue()));
+                    break;
+                case "MDD":
+                    nEquip.setMdef(getShortMaxIfOverflow(nEquip.getMdef() + stat.getValue().intValue()));
+                    break;
+                case "ACC":
+                    nEquip.setAcc(getShortMaxIfOverflow(nEquip.getAcc() + stat.getValue().intValue()));
+                    break;
+                case "EVA":
+                    nEquip.setAvoid(getShortMaxIfOverflow(nEquip.getAvoid() + stat.getValue().intValue()));
+                    break;
+                case "Speed":
+                    nEquip.setSpeed(getShortMaxIfOverflow(nEquip.getSpeed() + stat.getValue().intValue()));
+                    break;
+                case "Jump":
+                    nEquip.setJump(getShortMaxIfOverflow(nEquip.getJump() + stat.getValue().intValue()));
+                    break;
+                case "MHP":
+                    nEquip.setHp(getShortMaxIfOverflow(nEquip.getHp() + stat.getValue().intValue()));
+                    break;
+                case "MMP":
+                    nEquip.setMp(getShortMaxIfOverflow(nEquip.getMp() + stat.getValue().intValue()));
+                    break;
+                case "afterImage":
+                    break;
+            }
+        }
     }
 
     public Item scrollEquipWithId(Item equip, int scrollId, boolean usingWhiteScroll, int vegaItemId, boolean isGM) {
         boolean assertGM = (isGM && YamlConfig.config.server.USE_PERFECT_GM_SCROLL);
-
         if (equip instanceof Equip nEquip) {
             Map<String, Integer> stats = this.getEquipStats(scrollId);
 
@@ -1134,59 +1181,402 @@ public class ItemInformationProvider {
         return equip;
     }
 
-    public static void improveEquipStats(Equip nEquip, Map<String, Integer> stats) {
-        for (Entry<String, Integer> stat : stats.entrySet()) {
-            switch (stat.getKey()) {
-                case "STR":
-                    nEquip.setStr(getShortMaxIfOverflow(nEquip.getStr() + stat.getValue().intValue()));
-                    break;
-                case "DEX":
-                    nEquip.setDex(getShortMaxIfOverflow(nEquip.getDex() + stat.getValue().intValue()));
-                    break;
-                case "INT":
-                    nEquip.setInt(getShortMaxIfOverflow(nEquip.getInt() + stat.getValue().intValue()));
-                    break;
-                case "LUK":
-                    nEquip.setLuk(getShortMaxIfOverflow(nEquip.getLuk() + stat.getValue().intValue()));
-                    break;
-                case "PAD":
-                    nEquip.setWatk(getShortMaxIfOverflow(nEquip.getWatk() + stat.getValue().intValue()));
-                    break;
-                case "PDD":
-                    nEquip.setWdef(getShortMaxIfOverflow(nEquip.getWdef() + stat.getValue().intValue()));
-                    break;
-                case "MAD":
-                    nEquip.setMatk(getShortMaxIfOverflow(nEquip.getMatk() + stat.getValue().intValue()));
-                    break;
-                case "MDD":
-                    nEquip.setMdef(getShortMaxIfOverflow(nEquip.getMdef() + stat.getValue().intValue()));
-                    break;
-                case "ACC":
-                    nEquip.setAcc(getShortMaxIfOverflow(nEquip.getAcc() + stat.getValue().intValue()));
-                    break;
-                case "EVA":
-                    nEquip.setAvoid(getShortMaxIfOverflow(nEquip.getAvoid() + stat.getValue().intValue()));
-                    break;
-                case "Speed":
-                    nEquip.setSpeed(getShortMaxIfOverflow(nEquip.getSpeed() + stat.getValue().intValue()));
-                    break;
-                case "Jump":
-                    nEquip.setJump(getShortMaxIfOverflow(nEquip.getJump() + stat.getValue().intValue()));
-                    break;
-                case "MHP":
-                    nEquip.setHp(getShortMaxIfOverflow(nEquip.getHp() + stat.getValue().intValue()));
-                    break;
-                case "MMP":
-                    nEquip.setMp(getShortMaxIfOverflow(nEquip.getMp() + stat.getValue().intValue()));
-                    break;
-                case "afterImage":
-                    break;
+    public int getMesoStarforceCost(int nItemLevel, int nReqLevel, boolean superiorEquip) {
+        if (nItemLevel <= 0) {
+            return 0;
+        }
+
+        int baseMesoCost = superiorEquip ? 1000000 * (nReqLevel / 10) : 2000 * nReqLevel;
+        double mesoMultiplier = superiorEquip ? 0.1 * nItemLevel : 1.0 + 0.1 * nItemLevel;
+
+        if (!superiorEquip && nItemLevel >= 10) {
+            mesoMultiplier *= 4;
+        }
+
+        return Math.min((int) (baseMesoCost * mesoMultiplier), YamlConfig.config.server.STARFORCE_MAX_MESO_COST);
+    }
+
+    public int getSpellTraceCost(int nItemLevel, int nReqLevel, boolean superiorEquip) {
+        if (nItemLevel <= 0) {
+            return 0;
+        }
+
+        if (superiorEquip) {
+            return 50 + (nItemLevel * 5);
+        }
+
+        int spellTraceReq = calculateBaseSpellTraceReq(nReqLevel);
+        int scaling = calculateScalingFactor(nReqLevel) + (nItemLevel >= 10 ? 3 : 0);
+
+        return Math.min(spellTraceReq + scaling * nItemLevel, YamlConfig.config.server.STARFORCE_MAX_SPELL_TRACE_COST);
+    }
+
+    private int calculateBaseSpellTraceReq(int nReqLevel) {
+        if (nReqLevel < 30) return 5;
+        if (nReqLevel < 70) return 10;
+        if (nReqLevel < 100) return 15;
+        if (nReqLevel < 120) return 20;
+        return 25;
+    }
+
+    private int calculateScalingFactor(int nReqLevel) {
+        if (nReqLevel < 30) return 1;
+        if (nReqLevel < 70) return 1;
+        if (nReqLevel < 100) return 2;
+        if (nReqLevel < 120) return 3;
+        return 4;
+    }
+
+    // public void distribute
+
+    public Item scrollEquipWithId(Item equip) {
+        if (equip instanceof Equip nEquip) {
+            if ((nEquip.getUpgradeSlots()) > 0) {
+                double prop = getProp(nEquip);
+                double boom = getBoom(nEquip);
+                if (ItemConstants.SuperiorItemIds.contains(nEquip.getItemId())) {
+                    prop = getSuperiorProp(nEquip);
+                    if (rollSuccessChance(boom)) {
+                        return null;
+                    }
+                    if (rollSuccessChance(prop)) {
+                        improveSuperiorEquips(nEquip, false);
+                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
+                        nEquip.setLevel((byte) (nEquip.getLevel() + 1));
+                    } else {
+                        nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() + 1));
+                        nEquip.setLevel((byte) (nEquip.getLevel() - 1));
+                        improveSuperiorEquips(nEquip, true);
+                    }
+                    return equip;
+                }
+                if (prop <= 0) {
+                    return equip;
+                }
+                if (rollSuccessChance(prop)) {
+                    improveEquipStats(nEquip, false);
+                    nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() - 1));
+                    nEquip.setLevel((byte) (nEquip.getLevel() + 1));
+                } else if (nEquip.getLevel() >= 8) {
+                    nEquip.setLevel((byte) (nEquip.getLevel() - 1));
+                    nEquip.setUpgradeSlots((byte) (nEquip.getUpgradeSlots() + 1));
+                    improveEquipStats(nEquip, true);
+                }
             }
         }
+        return equip;
+    }
+
+    private static double getProp(Equip nEquip) {
+        double prop = 0;
+        prop = switch (nEquip.getLevel()) {
+            case 0 -> 100;
+            case 1 -> 90;
+            case 2 -> 80;
+            case 3 -> 70;
+            case 4 -> 60;
+            case 5 -> 50;
+            case 6 -> 45;
+            case 7, 8 -> 40;
+            case 9, 10 -> 30;
+            case 11 -> 25;
+            case 12, 13, 14 -> 20;
+            default -> prop;
+        };
+        return prop;
+    }
+
+    private static double getSuperiorProp(Equip nEquip) {
+        if (nEquip.getLevel() == 0) {
+            return 100.0;
+        } else if (nEquip.getLevel() < 10) {
+            return 50.0;
+        } else {
+            return 30.0;
+        }
+    }
+
+    private static double getBoom(Equip nEquip) {
+        if (nEquip.getLevel() < 5) {
+            return 0;
+        } else if (nEquip.getItemLevel() < 10) {
+            return nEquip.getItemLevel();
+        } else {
+            return 30.0;
+        }
+    }
+
+    public static void improveSuperiorEquips(Equip nEquip, boolean fail) {
+        int level = nEquip.getLevel();
+
+        int watkAdd = 4 + level;
+        int matkAdd = 4 + level;
+        int strAdd = 10 + level;
+        int dexAdd = 10 + level;
+        int lukAdd = 10 + level;
+        int intAdd = 10 + level;
+
+        if (fail) {
+            strAdd = -strAdd;
+            dexAdd = -dexAdd;
+            lukAdd = -lukAdd;
+            intAdd = -intAdd;
+            watkAdd = -watkAdd;
+            matkAdd = -matkAdd;
+        }
+
+        if (level >= 5) {
+            nEquip.setWatk(getShortMaxIfOverflow(nEquip.getWatk() + watkAdd));
+            nEquip.setMatk(getShortMaxIfOverflow(nEquip.getMatk() + matkAdd));
+        }
+
+        nEquip.setStr(getShortMaxIfOverflow(nEquip.getStr() + strAdd));
+        nEquip.setDex(getShortMaxIfOverflow(nEquip.getDex() + dexAdd));
+        nEquip.setInt(getShortMaxIfOverflow(nEquip.getInt() + intAdd));
+        nEquip.setLuk(getShortMaxIfOverflow(nEquip.getLuk() + lukAdd));
+    }
+
+    public static void improveEquipStats(Equip nEquip, boolean fail) {
+        int itemId = nEquip.getItemId();
+        int level = nEquip.getLevel();
+        StarBoost boost = calculateStatBoost(itemId, level);
+
+        applyStatAdditions(nEquip, boost, fail);
+    }
+
+    private static void applyStatAdditions(Equip nEquip, StarBoost boost, boolean fail) {
+        int strAdd = boost.getStr();
+        int dexAdd = boost.getDex();
+        int lukAdd = boost.getLuk();
+        int intAdd = boost.getInt();
+        int watkAdd = boost.getWatk();
+        int matkAdd = boost.getMatk();
+
+        if (fail) {
+            strAdd = -strAdd;
+            dexAdd = -dexAdd;
+            lukAdd = -lukAdd;
+            intAdd = -intAdd;
+            watkAdd = -watkAdd;
+            matkAdd = -matkAdd;
+        }
+
+        nEquip.setStr(getShortMaxIfOverflow(nEquip.getStr() + strAdd));
+        nEquip.setDex(getShortMaxIfOverflow(nEquip.getDex() + dexAdd));
+        nEquip.setLuk(getShortMaxIfOverflow(nEquip.getLuk() + lukAdd));
+        nEquip.setInt(getShortMaxIfOverflow(nEquip.getInt() + intAdd));
+        nEquip.setWatk(getShortMaxIfOverflow(nEquip.getWatk() + watkAdd));
+        nEquip.setMatk(getShortMaxIfOverflow(nEquip.getMatk() + matkAdd));
+    }
+
+    public static StarBoost calculateStatBoost(int itemId, int level) {
+        int catid = ((itemId / 10000) % 100);
+        if (catid >= 30) {
+            catid = 30;
+        }
+
+        return getStatAdditions(catid, level);
+    }
+
+    private static StarBoost getStatAdditions(int catid, int level) {
+        int watkAdd = 0, matkAdd = 0, strAdd = 0, dexAdd = 0, lukAdd = 0, intAdd = 0;
+
+        switch (catid) {
+            case 0:
+                if (level == 0) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level < 8) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 3;
+                } else if (level <= 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 8;
+                }
+                break;
+
+            case 30:
+                if (level <= 2) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 3;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 4;
+                } else if (level == 10) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 5;
+                } else if (level == 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 10;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 15;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 20;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 20;
+                    watkAdd = matkAdd = 30;
+                }
+                break;
+
+            case 1:
+            case 2:
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 3;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 4;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 7;
+                }
+                break;
+
+            case 4:
+            case 6:
+            case 7:
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 2;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 8;
+                    watkAdd = matkAdd = 4;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 12;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 20;
+                    watkAdd = matkAdd = 7;
+                }
+                break;
+
+            case 5:
+            case 9:
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 6;
+                    watkAdd = matkAdd = 5;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 10;
+                    watkAdd = matkAdd = 7;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 15;
+                    watkAdd = matkAdd = 10;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 20;
+                    watkAdd = matkAdd = 12;
+                }
+                break;
+
+            case 8:
+            case 10:
+            case 3:
+            case 13:
+            case 12:
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 3;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 3;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 5;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 7;
+                }
+                break;
+
+            case 11:
+                if (level <= 5) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                } else if (level <= 7) {
+                    dexAdd = strAdd = lukAdd = intAdd = 1;
+                    watkAdd = matkAdd = 1;
+                } else if (level <= 9) {
+                    dexAdd = strAdd = lukAdd = intAdd = 2;
+                    watkAdd = matkAdd = 2;
+                } else if (level <= 11) {
+                    dexAdd = strAdd = lukAdd = intAdd = 3;
+                    watkAdd = matkAdd = 2;
+                } else if (level == 12) {
+                    dexAdd = strAdd = lukAdd = intAdd = 4;
+                    watkAdd = matkAdd = 3;
+                } else if (level == 13) {
+                    dexAdd = strAdd = lukAdd = intAdd = 5;
+                    watkAdd = matkAdd = 5;
+                } else {
+                    dexAdd = strAdd = lukAdd = intAdd = 7;
+                    watkAdd = matkAdd = 7;
+                }
+                break;
+
+            case 14:
+                dexAdd = strAdd = lukAdd = intAdd = 1;
+                break;
+        }
+
+        return new StarBoost(watkAdd, matkAdd, strAdd, dexAdd, lukAdd, intAdd);
     }
 
     public Item getEquipById(int equipId) {
         return getEquipById(equipId, -1);
+    }
+
+    public Equip getEquipByIdAsEquip(int equipId) {
+        Item item = getEquipById(equipId);
+
+        return item != null ? (Equip) item : null;
     }
 
     private Item getEquipById(int equipId, int ringId) {
@@ -1275,20 +1665,28 @@ public class ItemInformationProvider {
         return (short) (defaultValue + Math.floor(Randomizer.nextDouble() * (lMaxRange + 1)));
     }
 
+    private static short getRandStimulantUpgradedStat(short defaultValue, int maxRange) {
+        if (defaultValue == 0) {
+            return 0;
+        }
+        int lMaxRange = maxRange;
+        return (short) (defaultValue - maxRange + Math.floor(Randomizer.nextDouble() * (lMaxRange * 2 + 1)));
+    }
+
     public Equip randomizeUpgradeStats(Equip equip) {
-        equip.setStr(getRandUpgradedStat(equip.getStr(), 2));
-        equip.setDex(getRandUpgradedStat(equip.getDex(), 2));
-        equip.setInt(getRandUpgradedStat(equip.getInt(), 2));
-        equip.setLuk(getRandUpgradedStat(equip.getLuk(), 2));
-        equip.setMatk(getRandUpgradedStat(equip.getMatk(), 2));
-        equip.setWatk(getRandUpgradedStat(equip.getWatk(), 2));
-        equip.setAcc(getRandUpgradedStat(equip.getAcc(), 2));
-        equip.setAvoid(getRandUpgradedStat(equip.getAvoid(), 2));
-        equip.setJump(getRandUpgradedStat(equip.getJump(), 2));
-        equip.setWdef(getRandUpgradedStat(equip.getWdef(), 5));
-        equip.setMdef(getRandUpgradedStat(equip.getMdef(), 5));
-        equip.setHp(getRandUpgradedStat(equip.getHp(), 5));
-        equip.setMp(getRandUpgradedStat(equip.getMp(), 5));
+        equip.setStr(getRandStimulantUpgradedStat(equip.getStr(), 5));
+        equip.setDex(getRandStimulantUpgradedStat(equip.getDex(), 5));
+        equip.setInt(getRandStimulantUpgradedStat(equip.getInt(), 5));
+        equip.setLuk(getRandStimulantUpgradedStat(equip.getLuk(), 5));
+        equip.setMatk(getRandStimulantUpgradedStat(equip.getMatk(), 5));
+        equip.setWatk(getRandStimulantUpgradedStat(equip.getWatk(), 5));
+        equip.setAcc(getRandStimulantUpgradedStat(equip.getAcc(), 5));
+        equip.setAvoid(getRandStimulantUpgradedStat(equip.getAvoid(), 5));
+        equip.setJump(getRandStimulantUpgradedStat(equip.getJump(), 5));
+        equip.setWdef(getRandStimulantUpgradedStat(equip.getWdef(), 5));
+        equip.setMdef(getRandStimulantUpgradedStat(equip.getMdef(), 5));
+        equip.setHp(getRandStimulantUpgradedStat(equip.getHp(), 5));
+        equip.setMp(getRandStimulantUpgradedStat(equip.getMp(), 5));
         return equip;
     }
 
@@ -1689,8 +2087,24 @@ public class ItemInformationProvider {
         if (consumeOnPickupCache.containsKey(itemId)) {
             return consumeOnPickupCache.get(itemId);
         }
+
         Data data = getItemData(itemId);
-        boolean consume = DataTool.getIntConvert("spec/consumeOnPickup", data, 0) == 1 || DataTool.getIntConvert("specEx/consumeOnPickup", data, 0) == 1;
+
+        String path1 = "spec/consumeOnPickup";
+        String path2 = "specEx/consumeOnPickup";
+
+        boolean consume = false;
+
+        try {
+            consume = DataTool.getIntConvert(path1, data, 0) == 1;
+        } catch (Exception ignored) {
+        }
+
+        try {
+            consume = consume || DataTool.getIntConvert(path2, data, 0) == 1;
+        } catch (Exception ignored) {
+        }
+
         consumeOnPickupCache.put(itemId, consume);
         return consume;
     }
@@ -1860,32 +2274,46 @@ public class ItemInformationProvider {
         if (highfivestamp) {
             reqLevel -= 5;
         }
-        int i = 0; //lol xD
+        boolean cannotEquipItem = getIsItemRestrictedByPlayerReborns(chr.getReborns(), id);
+
+        if (cannotEquipItem) {
+            chr.dropMessage(1, "You need " + ItemConstants.getItemRebirthRequirement(equip.getItemId()) + " rebirth(s) to equip this item.");
+            chr.getClient().sendPacket(PacketCreator.enableActions());
+            equip.wear(false);
+            return false;
+        }
+
         //Removed job check. Shouldn't really be needed.
         if (reqLevel > chr.getLevel()) {
-            i++;
-        } else if (getEquipStats(equip.getItemId()).get("reqDEX") > chr.getTotalDex()) {
-            i++;
-        } else if (getEquipStats(equip.getItemId()).get("reqSTR") > chr.getTotalStr()) {
-            i++;
-        } else if (getEquipStats(equip.getItemId()).get("reqLUK") > chr.getTotalLuk()) {
-            i++;
-        } else if (getEquipStats(equip.getItemId()).get("reqINT") > chr.getTotalInt()) {
-            i++;
+            cannotEquipItem = true;
+        } else if (getEquipStats(id).get("reqDEX") > chr.getTotalDex()) {
+            cannotEquipItem = true;
+        } else if (getEquipStats(id).get("reqSTR") > chr.getTotalStr()) {
+            cannotEquipItem = true;
+        } else if (getEquipStats(id).get("reqLUK") > chr.getTotalLuk()) {
+            cannotEquipItem = true;
+        } else if (getEquipStats(id).get("reqINT") > chr.getTotalInt()) {
+            cannotEquipItem = true;
         }
-        int reqPOP = getEquipStats(equip.getItemId()).get("reqPOP");
+        int reqPOP = getEquipStats(id).get("reqPOP");
         if (reqPOP > 0) {
-            if (getEquipStats(equip.getItemId()).get("reqPOP") > chr.getFame()) {
-                i++;
+            if (getEquipStats(id).get("reqPOP") > chr.getFame()) {
+                cannotEquipItem = true;
             }
         }
 
-        if (i > 0) {
+        if (cannotEquipItem) {
             equip.wear(false);
             return false;
         }
         equip.wear(true);
         return true;
+    }
+
+    public boolean getIsItemRestrictedByPlayerReborns(int rebirths, int itemId) {
+        Set<Integer> restrictedItemIds = ItemConstants.getRestrictedItemsForRebirth(rebirths);
+
+        return restrictedItemIds.contains(itemId);
     }
 
     public ArrayList<Pair<Integer, String>> getItemDataByName(String name) {
@@ -2063,7 +2491,7 @@ public class ItemInformationProvider {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         int dropperid = rs.getInt("dropperid");
-                        itemid = getCrystalForLevel(LifeFactory.getMonsterLevel(dropperid));
+                        itemid = getCrystalForLevel(LifeFactory.getMonsterLevel(dropperid) - 1);
                     }
                 }
             }
@@ -2254,6 +2682,24 @@ public class ItemInformationProvider {
         return skillbook;
     }
 
+    public Point getBodyRelMove(int itemId) {
+        if (bodyRelMoveCache.containsKey(itemId)) {
+            return bodyRelMoveCache.get(itemId);
+        }
+
+        Point ret = new Point();
+        Data item = getItemData(itemId);
+        if (item != null) {
+            Data info = item.getChildByPath("info");
+            if (info != null) {
+                ret = DataTool.getPoint("bodyRelMove", info);
+            }
+        }
+
+        bodyRelMoveCache.put(itemId, ret);
+        return ret;
+    }
+
     public final QuestConsItem getQuestConsumablesInfo(final int itemId) {
         if (questItemConsCache.containsKey(itemId)) {
             return questItemConsCache.get(itemId);
@@ -2327,4 +2773,45 @@ public class ItemInformationProvider {
         }
 
     }
+
+    public InventoryType getInventoryType(int itemId) {
+        final byte type = (byte) (itemId / 1000000);
+        if (type < 1 || type > 5) {
+            return InventoryType.UNDEFINED;
+        }
+        return InventoryType.getByType(type);
+    }
+
+    public Equip statItem(Equip equip, short str, short dex, short luk, short int_) {
+        equip.setStr(str);
+        equip.setDex(dex);
+        equip.setInt(luk);
+        equip.setLuk(int_);
+        return equip;
+    }
+
+    public Equip statItem(Equip equip, short str, short dex, short luk, short int_, short matk, short watk, short acc, short avoid, short jump, short speed, short wdef, short mdef, short hp, short mp, byte upgradeSlots) {
+        equip.setStr(str != -1 ? str : equip.getStr());
+        equip.setDex(dex != -1 ? dex : equip.getDex());
+        equip.setLuk(luk != -1 ? luk : equip.getLuk());
+        equip.setInt(int_ != -1 ? int_ : equip.getInt());
+        equip.setMatk(matk != -1 ? matk : equip.getMatk());
+        equip.setWatk(watk != -1 ? watk : equip.getWatk());
+        equip.setAcc(acc != -1 ? acc : equip.getAcc());
+        equip.setAvoid(avoid != -1 ? avoid : equip.getAvoid());
+        equip.setJump(jump != -1 ? jump : equip.getJump());
+        equip.setSpeed(speed != -1 ? speed : equip.getSpeed());
+        equip.setWdef(wdef != -1 ? wdef : equip.getWdef());
+        equip.setMdef(mdef != -1 ? mdef : equip.getMdef());
+        equip.setHp(hp != -1 ? hp : equip.getHp());
+        equip.setMp(mp != -1 ? mp : equip.getMp());
+        equip.setUpgradeSlots(upgradeSlots != -1 ? upgradeSlots : equip.getUpgradeSlots());
+        return equip;
+    }
+
+    // Checks if the specified item ID has both a String entry and an Item Data entry
+    public boolean itemHasEssentialData(int itemId) {
+        return getName(itemId) != null && getItemData(itemId) != null;
+    }
+
 }

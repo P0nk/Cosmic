@@ -24,8 +24,11 @@ import client.Job;
 import client.creator.CharacterFactory;
 import client.creator.CharacterFactoryRecipe;
 import client.inventory.InventoryType;
+import client.inventory.Pet;
 import constants.id.ItemId;
 import constants.id.MapId;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * @author RonanLana
@@ -34,7 +37,12 @@ public class LegendCreator extends CharacterFactory {
 
     private static CharacterFactoryRecipe createRecipe(Job job, int level, int map, int top, int bottom, int shoes, int weapon) {
         CharacterFactoryRecipe recipe = new CharacterFactoryRecipe(job, level, map, top, bottom, shoes, weapon);
-        giveItem(recipe, ItemId.LEGENDS_GUIDE, 1, InventoryType.ETC);
+        giveItem(recipe, ItemId.BEGINNERS_GUIDE, 1, InventoryType.ETC);
+        giveItem(recipe, 5180000, 1, InventoryType.CASH);
+        int petid = Pet.createPet(5000529);
+        long expiration = System.currentTimeMillis() + DAYS.toMillis(30);
+        giveItem(recipe, 5000529, 1, InventoryType.CASH, petid, expiration );
+
         return recipe;
     }
 
@@ -43,6 +51,10 @@ public class LegendCreator extends CharacterFactory {
     }
 
     public static int createCharacter(Client c, String name, int face, int hair, int skin, int top, int bottom, int shoes, int weapon, int gender) {
-        return createNewCharacter(c, name, face, hair, skin, gender, createRecipe(Job.LEGEND, 1, MapId.ARAN_TUTORIAL_START, top, bottom, shoes, weapon));
+        int status = createNewCharacter(c, name, face, hair, skin, gender, createRecipe(Job.LEGEND, 1, MapId.FM_ENTRANCE, top, bottom, shoes, weapon));
+        return status;
+    }
+    private static void giveItem(CharacterFactoryRecipe recipe, int itemid, int quantity, InventoryType itemType, int petid, long expiration) {
+        recipe.addStartingItem(itemid, quantity, itemType, petid, expiration);
     }
 }

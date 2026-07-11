@@ -49,6 +49,7 @@ function takeoff() {
     Orbis_docked.broadcastShip(false);
     Ludibrium_docked.broadcastShip(false);
 
+
     em.setProperty("docked", "false");
     Orbis_docked.setDocked(false);
     Ludibrium_docked.setDocked(false);
@@ -63,6 +64,7 @@ function arrived() {
     Ludibrium_docked.broadcastShip(true);
     scheduleNew();
 }
+
 
 function cancelSchedule() {}
 

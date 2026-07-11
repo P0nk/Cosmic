@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9010011.img">
+    <imgdir name="info">
+        <imgdir name="speak">
+            <int name="chatBalloon" value="0"/>
+            <string name="0" value="Hello! Welcome to Maple World, land of hopes and dreams and warm, fuzzy feelings."/>
+            <string name="1" value="Oh no! No illegal programs or macros allowed!"/>
+        </imgdir>
+        <int name="level" value="10"/>
+        <int name="bodyAttack" value="1"/>
+        <int name="maxHP" value="9"/>
+        <int name="maxMP" value="9"/>
+        <int name="PADamage" value="9"/>
+        <int name="PDDamage" value="9"/>
+        <int name="PDRate" value="1"/>
+        <int name="MADamage" value="9"/>
+        <int name="MDDamage" value="9"/>
+        <int name="MDRate" value="1"/>
+        <int name="acc" value="9"/>
+        <int name="eva" value="9"/>
+        <int name="pushed" value="99999999"/>
+        <float name="fs" value="10.0"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="1"/>
+        <string name="mobType" value="1N"/>
+        <int name="publicReward" value="1"/>
+        <int name="boss" value="1"/>
+        <int name="partyBonusMob" value="1"/>
+        <int name="removeAfter" value="295"/>
+        <int name="changeableMob" value="1"/>
+        <string name="changeableMob_Type" value="eventQuest"/>
+        <int name="ignoreFieldOut" value="1"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="109" name="0" width="64">
+            <vector name="origin" x="34" y="118"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-118"/>
+            <vector name="rb" x="29" y="-10"/>
+            <vector name="head" x="-7" y="-118"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <canvas height="109" name="1" width="64">
+            <vector name="origin" x="34" y="119"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-119"/>
+            <vector name="rb" x="29" y="-11"/>
+            <vector name="head" x="-7" y="-119"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <canvas height="109" name="2" width="64">
+            <vector name="origin" x="34" y="118"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-118"/>
+            <vector name="rb" x="29" y="-10"/>
+            <vector name="head" x="-7" y="-118"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <canvas height="109" name="3" width="64">
+            <vector name="origin" x="34" y="117"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-117"/>
+            <vector name="rb" x="29" y="-9"/>
+            <vector name="head" x="-7" y="-117"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <canvas height="109" name="4" width="64">
+            <vector name="origin" x="34" y="116"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-117"/>
+            <vector name="rb" x="29" y="-9"/>
+            <vector name="head" x="-7" y="-117"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <canvas height="109" name="5" width="64">
+            <vector name="origin" x="34" y="117"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-117"/>
+            <vector name="rb" x="29" y="-10"/>
+            <vector name="head" x="-7" y="-117"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <imgdir name="speak">
+            <string name="0" value="Get your 9th Anniversary gifts right here!"/>
+            <int name="prob" value="100"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="move">
+        <uol name="0" value="../stand/0"/>
+        <uol name="1" value="../stand/1"/>
+        <uol name="2" value="../stand/2"/>
+        <uol name="3" value="../stand/3"/>
+        <uol name="4" value="../stand/4"/>
+        <uol name="5" value="../stand/5"/>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas height="118" name="0" width="74">
+            <vector name="origin" x="34" y="126"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-34" y="-118"/>
+            <vector name="rb" x="29" y="-10"/>
+            <vector name="head" x="-7" y="-118"/>
+            <int name="delay" value="600"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <imgdir name="speak">
+            <string name="0" value="Get your 9th Anniversary gifts right here!"/>
+            <int name="prob" value="100"/>
+        </imgdir>
+        <canvas height="109" name="0" width="64">
+            <vector name="origin" x="34" y="118"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="112" name="1" width="64">
+            <vector name="origin" x="35" y="120"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="123" name="2" width="65">
+            <vector name="origin" x="35" y="121"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="124" name="3" width="64">
+            <vector name="origin" x="34" y="122"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="125" name="4" width="64">
+            <vector name="origin" x="33" y="123"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="126" name="5" width="64">
+            <vector name="origin" x="34" y="124"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="126" name="6" width="66">
+            <vector name="origin" x="35" y="125"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="126" name="7" width="64">
+            <vector name="origin" x="36" y="126"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+        <canvas height="75" name="8" width="64">
+            <vector name="origin" x="35" y="127"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="300"/>
+            <vector name="head" x="-7" y="-118"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="jump">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

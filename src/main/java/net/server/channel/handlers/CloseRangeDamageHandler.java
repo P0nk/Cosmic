@@ -21,23 +21,14 @@
 */
 package net.server.channel.handlers;
 
-import client.BuffStat;
 import client.Character;
-import client.Client;
-import client.Job;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
-import constants.skills.Crusader;
-import constants.skills.DawnWarrior;
-import constants.skills.DragonKnight;
-import constants.skills.Hero;
-import constants.skills.NightWalker;
-import constants.skills.Rogue;
-import constants.skills.WindArcher;
+import constants.skills.*;
 import net.packet.InPacket;
+import net.packet.Packet;
 import server.StatEffect;
 import tools.PacketCreator;
 import tools.Pair;
@@ -77,10 +68,13 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
             chr.setDojoEnergy(chr.getDojoEnergy() + YamlConfig.config.server.DOJO_ENERGY_ATK);
             c.sendPacket(PacketCreator.getEnergy("energy", chr.getDojoEnergy()));
         }
+/*        if (chr.canShowAttackSkill()){
+            chr.getMap().broadcastMessage(chr, PacketCreator.closeRangeAttack(chr, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, attack.allDamage, attack.speed, attack.direction, attack.display), false, true);
+        }*/
+        Packet pkt = PacketCreator.closeRangeAttack(chr, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, attack.allDamage, attack.speed, attack.direction, attack.display);
+        chr.broadcastAttackMessage(pkt, true);
 
-        chr.getMap().broadcastMessage(chr, PacketCreator.closeRangeAttack(chr, attack.skill, attack.skilllevel,
-                attack.stance, attack.numAttackedAndDamage, attack.targets, attack.speed, attack.direction,
-                attack.display), false, true);
+
         int numFinisherOrbs = 0;
         Integer comboBuff = chr.getBuffedValue(BuffStat.COMBO);
         if (GameConstants.isFinisherSkill(attack.skill)) {
@@ -141,9 +135,9 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
         }
         if (attack.numAttacked > 0 && attack.skill == DragonKnight.SACRIFICE) {
             int totDamageToOneMonster = 0; // sacrifice attacks only 1 mob with 1 attack
-            final Iterator<AttackTarget> dmgIt = attack.targets.values().iterator();
+            final Iterator<List<Integer>> dmgIt = attack.allDamage.values().iterator();
             if (dmgIt.hasNext()) {
-                totDamageToOneMonster = dmgIt.next().damageLines().getFirst();
+                totDamageToOneMonster = dmgIt.next().get(0);
             }
 
             chr.safeAddHP(-1 * totDamageToOneMonster * attack.getAttackEffect(chr, null).getX() / 100);

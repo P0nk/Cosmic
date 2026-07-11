@@ -21,13 +21,8 @@
  */
 package server;
 
-import client.BuffStat;
 import client.Character;
-import client.Disease;
-import client.Job;
-import client.Mount;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.Item;
@@ -38,57 +33,7 @@ import config.YamlConfig;
 import constants.id.ItemId;
 import constants.id.MapId;
 import constants.inventory.ItemConstants;
-import constants.skills.Aran;
-import constants.skills.Assassin;
-import constants.skills.Bandit;
-import constants.skills.Beginner;
-import constants.skills.Bishop;
-import constants.skills.BlazeWizard;
-import constants.skills.Bowmaster;
-import constants.skills.Brawler;
-import constants.skills.Buccaneer;
-import constants.skills.ChiefBandit;
-import constants.skills.Cleric;
-import constants.skills.Corsair;
-import constants.skills.Crossbowman;
-import constants.skills.Crusader;
-import constants.skills.DarkKnight;
-import constants.skills.DawnWarrior;
-import constants.skills.DragonKnight;
-import constants.skills.Evan;
-import constants.skills.FPArchMage;
-import constants.skills.FPMage;
-import constants.skills.FPWizard;
-import constants.skills.Fighter;
-import constants.skills.GM;
-import constants.skills.Gunslinger;
-import constants.skills.Hermit;
-import constants.skills.Hero;
-import constants.skills.Hunter;
-import constants.skills.ILArchMage;
-import constants.skills.ILMage;
-import constants.skills.ILWizard;
-import constants.skills.Legend;
-import constants.skills.Magician;
-import constants.skills.Marauder;
-import constants.skills.Marksman;
-import constants.skills.NightLord;
-import constants.skills.NightWalker;
-import constants.skills.Noblesse;
-import constants.skills.Outlaw;
-import constants.skills.Page;
-import constants.skills.Paladin;
-import constants.skills.Pirate;
-import constants.skills.Priest;
-import constants.skills.Ranger;
-import constants.skills.Rogue;
-import constants.skills.Shadower;
-import constants.skills.Sniper;
-import constants.skills.Spearman;
-import constants.skills.SuperGM;
-import constants.skills.ThunderBreaker;
-import constants.skills.WhiteKnight;
-import constants.skills.WindArcher;
+import constants.skills.*;
 import net.packet.Packet;
 import net.server.Server;
 import net.server.world.Party;
@@ -99,27 +44,15 @@ import server.life.MobSkill;
 import server.life.MobSkillFactory;
 import server.life.MobSkillType;
 import server.life.Monster;
-import server.maps.Door;
-import server.maps.FieldLimit;
-import server.maps.MapObject;
-import server.maps.MapObjectType;
-import server.maps.MapleMap;
-import server.maps.Mist;
-import server.maps.Portal;
-import server.maps.Summon;
-import server.maps.SummonMovementType;
+import server.maps.*;
 import server.partyquest.CarnivalFactory;
 import server.partyquest.CarnivalFactory.MCSkill;
 import tools.PacketCreator;
 import tools.Pair;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Matze
@@ -135,8 +68,7 @@ public class StatEffect {
     private short mpCon, hpCon;
     private int duration, target, barrier, mob;
     private boolean overTime, repeatEffect;
-    private int sourceid;
-    private int moveTo;
+    private int sourceid;    private int moveTo;
     private int cp, nuffSkill;
     private List<Disease> cureDebuffs;
     private boolean skill;
@@ -208,7 +140,6 @@ public class StatEffect {
                 }
             }
         }
-
         return 0;
     }
 
@@ -561,8 +492,10 @@ public class StatEffect {
                     statups.add(new Pair<>(BuffStat.DRAGONBLOOD, ret.x));
                     break;
                 case Hero.STANCE:
+                case DawnWarrior.STANCE:
                 case Paladin.STANCE:
                 case DarkKnight.STANCE:
+                case 7101102:
                 case Aran.FREEZE_STANDING:
                     statups.add(new Pair<>(BuffStat.STANCE, iprop));
                     break;
@@ -591,10 +524,13 @@ public class StatEffect {
                 case FPArchMage.MANA_REFLECTION:
                 case ILArchMage.MANA_REFLECTION:
                 case Bishop.MANA_REFLECTION:
+                    statups.add(new Pair<>(BuffStat.STANCE, 80));
                     statups.add(new Pair<>(BuffStat.MANA_REFLECTION, 1));
                     break;
                 case Bishop.HOLY_SHIELD:
+                case 7101104:
                     statups.add(new Pair<>(BuffStat.HOLY_SHIELD, x));
+                    statups.add(new Pair<>(BuffStat.DIVINE_BODY, 1));
                     break;
                 case BlazeWizard.ELEMENTAL_RESET:
                 case Evan.ELEMENTAL_RESET:
@@ -635,6 +571,13 @@ public class StatEffect {
                     break;
                 case Bowmaster.SHARP_EYES:
                 case Marksman.SHARP_EYES:
+                case 13121008:
+                case 12111002:
+                case 2111004:
+                case 2211004:
+                case 2311005:
+                case 7101103:
+                case 5221018:
                     statups.add(new Pair<>(BuffStat.SHARP_EYES, ret.x << 8 | ret.y));
                     break;
                 case WindArcher.WIND_WALK:
@@ -668,10 +611,12 @@ public class StatEffect {
                     statups.add(new Pair<>(BuffStat.DASH2, ret.x));
                     statups.add(new Pair<>(BuffStat.DASH, ret.y));
                     break;
-                case Corsair.SPEED_INFUSION:
                 case Buccaneer.SPEED_INFUSION:
                 case ThunderBreaker.SPEED_INFUSION:
                     statups.add(new Pair<>(BuffStat.SPEED_INFUSION, x));
+                    break;
+                case 7101105:
+                    statups.add(new Pair<>(BuffStat.MESOUP, 1000));
                     break;
                 case Outlaw.HOMING_BEACON:
                 case Corsair.BULLSEYE:
@@ -808,8 +753,10 @@ public class StatEffect {
                 case FPArchMage.PARALYZE:
                 case Aran.COMBO_TEMPEST:
                 case Evan.ICE_BREATH:
+                case 2221011:
+                case 5221016:
+                case 1321016:
                     monsterStatus.put(MonsterStatus.FREEZE, 1);
-                    ret.duration *= 2; // freezing skills are a little strange
                     break;
                 case FPWizard.SLOW:
                 case ILWizard.SLOW:
@@ -819,14 +766,6 @@ public class StatEffect {
                 case FPWizard.POISON_BREATH:
                 case FPMage.ELEMENT_COMPOSITION:
                     monsterStatus.put(MonsterStatus.POISON, 1);
-                    break;
-                case Priest.DOOM:
-                    monsterStatus.put(MonsterStatus.DOOM, 1);
-                    break;
-                case ILMage.SEAL:
-                case FPMage.SEAL:
-                case BlazeWizard.SEAL:
-                    monsterStatus.put(MonsterStatus.SEAL, 1);
                     break;
                 case Hermit.SHADOW_WEB: // shadow web
                 case NightWalker.SHADOW_WEB:
@@ -933,7 +872,6 @@ public class StatEffect {
             applyto.toggleHide(false);
             return true;
         }
-
         if (primary && isHeal()) {
             affectedPlayers = applyBuff(applyfrom, useMaxRange);
         }
@@ -977,8 +915,18 @@ public class StatEffect {
                 Portal pt;
 
                 if (moveTo == MapId.NONE) {
-                    target = applyto.getMap().getReturnMap();
-                    pt = target.getRandomPlayerSpawnpoint();
+                    if (sourceid != ItemId.ANTI_BANISH_SCROLL) {
+                        target = applyto.getMap().getReturnMap();
+                        pt = target.getRandomPlayerSpawnpoint();
+                    } else {
+                        if (!applyto.canRecoverLastBanish()) {
+                            return false;
+                        }
+
+                        Pair<Integer, Integer> lastBanishInfo = applyto.getLastBanishData();
+                        target = applyto.getWarpMap(lastBanishInfo.getLeft());
+                        pt = target.getPortal(lastBanishInfo.getRight());
+                    }
                 } else {
                     target = applyto.getClient().getWorldServer().getChannel(applyto.getClient().getChannel()).getMapFactory().getMap(moveTo);
                     int targetid = target.getId() / 10000000;
@@ -1086,7 +1034,7 @@ public class StatEffect {
         } else if (isMist()) {
             Rectangle bounds = calculateBoundingBox(sourceid == NightWalker.POISON_BOMB ? pos : applyfrom.getPosition(), applyfrom.isFacingLeft());
             Mist mist = new Mist(bounds, applyfrom, this);
-            applyfrom.getMap().spawnMist(mist, getDuration(), mist.isPoisonMist(), false, mist.isRecoveryMist());
+            applyfrom.getMap().spawnMist(mist, getDuration(), mist.isPoisonMist(), false, mist.isRecoveryMist(), false);
         } else if (isTimeLeap()) {
             applyto.removeAllCooldownsExcept(Buccaneer.TIME_LEAP, true);
         } else if (cp != 0 && applyto.getMonsterCarnival() != null) {
@@ -1236,9 +1184,6 @@ public class StatEffect {
                 tosummon.addHP(x);
             }
         }
-        if (sourceid == Corsair.BATTLE_SHIP) {
-            chr.announceBattleshipHp();
-        }
     }
 
     public final void applyComboBuff(final Character applyto, int combo) {
@@ -1277,7 +1222,6 @@ public class StatEffect {
         if (!isMonsterRiding() && !isCouponBuff() && !isMysticDoor() && !isHyperBody() && !isCombo()) {     // last mystic door already dispelled if it has been used before.
             applyto.cancelEffect(this, true, -1);
         }
-
         List<Pair<BuffStat, Integer>> localstatups = statups;
         int localDuration = getBuffLocalDuration();
         int localsourceid = sourceid;
@@ -1292,6 +1236,7 @@ public class StatEffect {
 
             if (sourceid == Corsair.BATTLE_SHIP) {
                 ridingMountId = ItemId.BATTLESHIP;
+
             } else if (sourceid == Beginner.SPACESHIP || sourceid == Noblesse.SPACESHIP) {
                 ridingMountId = 1932000 + applyto.getSkillLevel(sourceid);
             } else if (sourceid == Beginner.YETI_MOUNT1 || sourceid == Noblesse.YETI_MOUNT1 || sourceid == Legend.YETI_MOUNT1) {
@@ -1353,13 +1298,6 @@ public class StatEffect {
                 buff = PacketCreator.giveBuff((skill ? sourceid : -sourceid), localDuration, cbstat);
                 mbuff = PacketCreator.giveForeignBuff(applyto.getId(), cbstat);
             } else if (isMonsterRiding()) {
-                if (sourceid == Corsair.BATTLE_SHIP) {//hp
-                    if (applyto.getBattleshipHp() <= 0) {
-                        applyto.resetBattleshipHp();
-                    }
-
-                    localstatups = statups;
-                }
                 buff = PacketCreator.giveBuff(localsourceid, localDuration, localstatups);
                 mbuff = PacketCreator.showMonsterRiding(applyto.getId(), givemount);
                 localDuration = duration;
@@ -1392,9 +1330,6 @@ public class StatEffect {
             applyto.registerEffect(this, starttime, starttime + localDuration, false);
             if (mbuff != null) {
                 applyto.getMap().broadcastMessage(applyto, mbuff, false);
-            }
-            if (sourceid == Corsair.BATTLE_SHIP) {
-                applyto.announceBattleshipHp();
             }
         }
     }
@@ -1526,14 +1461,10 @@ public class StatEffect {
             case Page.THREATEN:
             case FPWizard.SLOW:
             case ILWizard.SLOW:
-            case FPMage.SEAL:
-            case ILMage.SEAL:
-            case Priest.DOOM:
             case Hermit.SHADOW_WEB:
             case NightLord.NINJA_AMBUSH:
             case Shadower.NINJA_AMBUSH:
             case BlazeWizard.SLOW:
-            case BlazeWizard.SEAL:
             case NightWalker.SHADOW_WEB:
             case Crusader.ARMOR_CRASH:
             case DragonKnight.POWER_CRASH:
@@ -1645,6 +1576,7 @@ public class StatEffect {
         return skill && sourceid == Priest.MYSTIC_DOOR;
     }
 
+
     public boolean isPoison() {
         return skill && (sourceid == FPMage.POISON_MIST || sourceid == FPWizard.POISON_BREATH || sourceid == FPMage.ELEMENT_COMPOSITION || sourceid == NightWalker.POISON_BOMB || sourceid == BlazeWizard.FLAME_GEAR);
     }
@@ -1674,7 +1606,7 @@ public class StatEffect {
     }
 
     private boolean isSeal() {
-        return skill && (sourceid == ILMage.SEAL || sourceid == FPMage.SEAL || sourceid == BlazeWizard.SEAL);
+        return skill && (sourceid == 111111);
     }
 
     private boolean isDispel() {
@@ -1702,6 +1634,7 @@ public class StatEffect {
             case NightLord.HEROS_WILL:
             case Shadower.HEROS_WILL:
             case Buccaneer.PIRATES_RAGE:
+            case Corsair.HEROS_WILL:
             case Aran.HEROS_WILL:
                 return true;
 
@@ -1733,7 +1666,7 @@ public class StatEffect {
     }
 
     private boolean isInfusion() {
-        return skill && (sourceid == Buccaneer.SPEED_INFUSION || sourceid == Corsair.SPEED_INFUSION || sourceid == ThunderBreaker.SPEED_INFUSION);
+        return skill && (sourceid == Buccaneer.SPEED_INFUSION || sourceid == ThunderBreaker.SPEED_INFUSION);
     }
 
     private boolean isCygnusFA() {
@@ -1774,7 +1707,6 @@ public class StatEffect {
             case Outlaw.OCTOPUS:
             case Corsair.WRATH_OF_THE_OCTOPI:
                 return SummonMovementType.STATIONARY;
-            case Ranger.SILVER_HAWK:
             case Sniper.GOLDEN_EAGLE:
             case Priest.SUMMON_DRAGON:
             case Marksman.FROST_PREY:

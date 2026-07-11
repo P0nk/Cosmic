@@ -60,10 +60,25 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
         switch (itemId) {
             case ItemId.PHEROMONE_PERFUME:
                 if (mob.getId() == MobId.TAMABLE_HOG) {
-                    chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                    killMonster(mob);
-                    InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
-                    InventoryManipulator.addById(c, ItemId.HOG, (short) 1, "", -1);
+                    if (mob.getHp() < ((mob.getMaxHp() / 10) * 4)) {
+                        chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
+                        mob.getMap().killMonster(mob, null, false);
+                        InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
+                        InventoryManipulator.addById(c, ItemId.HOG, (short) 1, "", -1);
+                    }
+                }
+                c.sendPacket(PacketCreator.enableActions());
+                break;
+            case ItemId.MUTANT_PIG_ROPE:
+                if (mob.getId() == MobId.MUTANT_PIG) {
+                    if (mob.getHp() < ((mob.getMaxHp() / 10) * 4)) {
+                        chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
+                        mob.getMap().killMonster(mob, null, false);
+                        InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
+                        InventoryManipulator.addById(c, ItemId.TAMED_MUTANT_PIG, (short) 1, "", -1);
+                    } else {
+                        c.sendPacket(PacketCreator.catchMessage(0));
+                    }
                 }
                 c.sendPacket(PacketCreator.enableActions());
                 break;
@@ -72,7 +87,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                     if ((abm.getLastSpam(10) + 1000) < currentServerTime()) {
                         if (mob.getHp() < ((mob.getMaxHp() / 10) * 4)) {
                             chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                            killMonster(mob);
+                            mob.getMap().killMonster(mob, null, false);
                             InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                             InventoryManipulator.addById(c, ItemId.GHOST_SACK, (short) 1, "", -1);
                         } else {
@@ -90,10 +105,9 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                             if (chr.canHold(ItemId.ARPQ_SPIRIT_JEWEL, 1)) {
                                 if (Math.random() < 0.5) { // 50% chance
                                     chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                                    killMonster(mob);
+                                    mob.getMap().killMonster(mob, null, false);
                                     InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                                     InventoryManipulator.addById(c, ItemId.ARPQ_SPIRIT_JEWEL, (short) 1, "", -1);
-                                    chr.updateAriantScore();
                                 } else {
                                     chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 0));
                                 }
@@ -113,7 +127,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                 if (mob.getId() == MobId.LOST_RUDOLPH) {
                     if (mob.getHp() < ((mob.getMaxHp() / 10) * 4)) {
                         chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                        killMonster(mob);
+                        mob.getMap().killMonster(mob, null, false);
                         InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                         InventoryManipulator.addById(c, ItemId.TAMED_RUDOLPH, (short) 1, "", -1);
                     } else {
@@ -126,7 +140,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                 if (mob.getId() == MobId.KING_SLIME_DOJO) {
                     if (mob.getHp() < ((mob.getMaxHp() / 10) * 3)) {
                         chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                        killMonster(mob);
+                        mob.getMap().killMonster(mob, null, false);
                         InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                         InventoryManipulator.addById(c, ItemId.MONSTER_MARBLE_1, (short) 1, "", -1);
                     } else {
@@ -139,7 +153,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                 if (mob.getId() == MobId.FAUST_DOJO) {
                     if (mob.getHp() < ((mob.getMaxHp() / 10) * 3)) {
                         chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                        killMonster(mob);
+                        mob.getMap().killMonster(mob, null, false);
                         InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                         InventoryManipulator.addById(c, ItemId.MONSTER_MARBLE_2, (short) 1, "", -1);
                     } else {
@@ -152,7 +166,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                 if (mob.getId() == MobId.MUSHMOM_DOJO) {
                     if (mob.getHp() < ((mob.getMaxHp() / 10) * 3)) {
                         chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                        killMonster(mob);
+                        mob.getMap().killMonster(mob, null, false);
                         InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                         InventoryManipulator.addById(c, ItemId.MONSTER_MARBLE_3, (short) 1, "", -1);
                     } else {
@@ -165,7 +179,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                 if (mob.getId() == MobId.POISON_FLOWER) {
                     if (mob.getHp() < ((mob.getMaxHp() / 10) * 4)) {
                         chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                        killMonster(mob);
+                        mob.getMap().killMonster(mob, null, false);
                         InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                         InventoryManipulator.addById(c, ItemId.EPQ_MONSTER_MARBLE, (short) 1, "", -1);
                     } else {
@@ -179,7 +193,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                     if ((abm.getLastSpam(10) + 3000) < currentServerTime()) {
                         abm.spam(10);
                         chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                        killMonster(mob);
+                        mob.getMap().killMonster(mob, null, false);
                         InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                         InventoryManipulator.addById(c, ItemId.FISH_NET_WITH_A_CATCH, (short) 1, "", -1);
                     } else {
@@ -202,7 +216,7 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
                     if (timeCatch != 0 && (abm.getLastSpam(10) + timeCatch) < currentServerTime()) {
                         if (mobHp != 0 && mob.getHp() < ((mob.getMaxHp() / 100) * mobHp)) {
                             chr.getMap().broadcastMessage(PacketCreator.catchMonster(monsterid, itemId, (byte) 1));
-                            killMonster(mob);
+                            mob.getMap().killMonster(mob, null, false);
                             InventoryManipulator.removeById(c, InventoryType.USE, itemId, 1, true, true);
                             InventoryManipulator.addById(c, itemGanho, (short) 1, "", -1);
                         } else if (mob.getId() != MobId.P_JUNIOR) {
@@ -219,9 +233,5 @@ public final class UseCatchItemHandler extends AbstractPacketHandler {
 
                 // System.out.println("UseCatchItemHandler: \r\n" + slea.toString());
         }
-    }
-
-    private static void killMonster(Monster mob) {
-        mob.getMap().killMonster(mob, null, false, (short) 0);
     }
 }

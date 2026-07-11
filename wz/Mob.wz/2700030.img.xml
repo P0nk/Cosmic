@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="2700030.img">
+    <imgdir name="info">
+        <string name="elemAttr" value="S1"/>
+        <int name="level" value="110"/>
+        <int name="bodyAttack" value="1"/>
+        <int name="maxHP" value="330000000"/>
+        <int name="maxMP" value="500"/>
+        <int name="speed" value="20"/>
+        <int name="PADamage" value="1"/>
+        <int name="PDDamage" value="12"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="46"/>
+        <int name="MDDamage" value="40"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="23"/>
+        <int name="eva" value="1"/>
+        <int name="pushed" value="1000"/>
+        <float name="fs" value="10.0"/>
+        <int name="summonType" value="1"/>
+        <string name="mobType" value="8N"/>
+        <int name="invincible" value="1"/>
+        <int name="boss" value="1"/>
+        <imgdir name="ban">
+            <int name="banType" value="1"/>
+            <string name="banMsg" value="You stepped on an empty bottle! Run, before the security guard comes!"/>
+            <imgdir name="banMap">
+                <imgdir name="0">
+                    <int name="field" value="330003004"/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas name="0" width="15" height="35">
+            <vector name="origin" x="7" y="35"/>
+            <vector name="lt" x="-7" y="-35"/>
+            <vector name="rb" x="8" y="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="patrolSense">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="patrolUserdetect">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="patrolAttractdetect">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="patrolAttractarrive">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

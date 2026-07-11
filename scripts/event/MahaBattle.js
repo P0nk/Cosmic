@@ -144,6 +144,9 @@ function isMaha(mob) {
 function monsterKilled(mob, eim) {
     if (isMaha(mob)) {
         eim.clearPQ();
+        party = eim.getPlayers()
+        for (var i = 0; i < party.size(); i++)
+        eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001006, 1);
     }
 }
 

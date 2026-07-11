@@ -18,9 +18,7 @@ eQuestPrizes[0] = [[1002801, 1],  // Raven Ninja Bandana
     [1462006, 1], 	// Silver Crow
     [1462009, 1],	// Gross Jaeger
     [1452012, 1],	// Marine Arund
-    [1472031, 1],        // Black Mamba
-    [2044701, 1],        // Claw for ATT 60%
-    [2044501, 1],        // Bow for ATT 60%
+    [1472031, 1],        // Black Mamba%
     [3010041, 1],        // Skull Throne
     [0, 750000]];       // Mesos
 
@@ -28,10 +26,6 @@ eQuestPrizes[1] = [[1332077, 1],  // Raven's Beak
     [1322062, 1],	// Crushed Skull
     [1302068, 1], 	// Onyx Blade
     [4032016, 1],        // Tao of Sight
-    [2043001, 1],        // One Handed Sword for Att 60%
-    [2043201, 1],        // One Handed BW for Att 60%
-    [2044401, 1],        // Polearm for Att 60%
-    [2044301, 1],        // Spear for Att 60%
     [3010041, 1],        // Skull Throne
     [0, 1250000]];       // Mesos
 
@@ -41,9 +35,6 @@ eQuestPrizes[2] = [[1472072, 1],   //Raven's Claw
     [1302068, 1],        // Onyx Blade
     [4032017, 1],        // Tao of Harmony
     [4032015, 1],        // Tao of Shadows
-    [2043023, 1],        // One-Handed Sword for Att 100%[2]
-    [2043101, 1],        // One-Handed Axe for Att 60%
-    [2043301, 1],        // Dagger for Att 60%
     [3010040, 1],        // The Stirge Seat
     [0, 2500000]];       // Mesos
 
@@ -52,8 +43,6 @@ eQuestPrizes[3] = [[1002801, 1],   //Raven Ninja Bandana
     [1382006, 1], 	// Thorns
     [4032016, 1],        // Tao of Sight
     [4032015, 1],        // Tao of Shadows
-    [2043701, 1],        // Wand for Magic Att 60%
-    [2043801, 1],        // Staff for Magic Att 60%
     [3010040, 1],        // The Stirge Seat
     [0, 1750000]];       // Mesos
 

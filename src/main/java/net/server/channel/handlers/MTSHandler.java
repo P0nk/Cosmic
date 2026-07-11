@@ -35,7 +35,6 @@ import net.server.Server;
 import net.server.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import server.CashShop;
 import server.ItemInformationProvider;
 import server.MTSItemInfo;
 import tools.DatabaseConnection;
@@ -46,9 +45,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public final class MTSHandler extends AbstractPacketHandler {
@@ -124,12 +122,40 @@ public final class MTSHandler extends AbstractPacketHandler {
                                 return;
                             }
                         }
-
-                        LocalDate now = LocalDate.now();
-                        LocalDate sellEnd = now.plusDays(7);
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                        String date = sellEnd.format(formatter);
-
+                        Calendar calendar = Calendar.getInstance();
+                        int year;
+                        int month;
+                        int day;
+                        int oldmax = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+                        int oldday = calendar.get(Calendar.DAY_OF_MONTH) + 7;
+                        if (oldmax < oldday) {
+                            if (calendar.get(Calendar.MONTH) + 2 > 12) {
+                                year = calendar.get(Calendar.YEAR) + 1;
+                                month = 1;
+                                calendar.set(year, month, 1);
+                                day = oldday - oldmax;
+                            } else {
+                                month = calendar.get(Calendar.MONTH) + 2;
+                                year = calendar.get(Calendar.YEAR);
+                                calendar.set(year, month, 1);
+                                day = oldday - oldmax;
+                            }
+                        } else {
+                            day = calendar.get(Calendar.DAY_OF_MONTH) + 7;
+                            month = calendar.get(Calendar.MONTH);
+                            year = calendar.get(Calendar.YEAR);
+                        }
+                        String date = year + "-";
+                        if (month < 10) {
+                            date += "0" + month + "-";
+                        } else {
+                            date += month + "-";
+                        }
+                        if (day < 10) {
+                            date += "0" + day;
+                        } else {
+                            date += day + "";
+                        }
                         if (!i.getInventoryType().equals(InventoryType.EQUIP)) {
                             Item item = i;
                             try (PreparedStatement pse = con.prepareStatement("INSERT INTO mts_items (tab, type, itemid, quantity, expiration, giftFrom, seller, price, owner, sellername, sell_ends) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
@@ -403,7 +429,7 @@ public final class MTSHandler extends AbstractPacketHandler {
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
                         int price = rs.getInt("price") + 100 + (int) (rs.getInt("price") * 0.1); // taxes
-                        if (c.getPlayer().getCashShop().getCash(CashShop.NX_PREPAID) >= price) { // FIX
+                        if (c.getPlayer().getCashShop().getCash(4) >= price) { // FIX
                             boolean alwaysnull = true;
                             for (Channel cserv : Server.getInstance().getAllChannels()) {
                                 Character victim = cserv.getPlayerStorage().getCharacterById(rs.getInt("seller"));
@@ -460,11 +486,11 @@ public final class MTSHandler extends AbstractPacketHandler {
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
                         int price = rs.getInt("price") + 100 + (int) (rs.getInt("price") * 0.1);
-                        if (c.getPlayer().getCashShop().getCash(CashShop.NX_PREPAID) >= price) {
+                        if (c.getPlayer().getCashShop().getCash(4) >= price) {
                             for (Channel cserv : Server.getInstance().getAllChannels()) {
                                 Character victim = cserv.getPlayerStorage().getCharacterById(rs.getInt("seller"));
                                 if (victim != null) {
-                                    victim.getCashShop().gainCash(CashShop.NX_PREPAID, rs.getInt("price"));
+                                    victim.getCashShop().gainCash(4, rs.getInt("price"));
                                 } else {
                                     try (PreparedStatement pse = con.prepareStatement("SELECT accountid FROM characters WHERE id = ?")) {
                                         pse.setInt(1, rs.getInt("seller"));
@@ -735,7 +761,7 @@ public final class MTSHandler extends AbstractPacketHandler {
                     }
                 }
             }
-            try (PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM mts_items WHERE tab = ? " + (type != 0 ? "AND type = ?" : "") + " AND transfer = 0")) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM mts_items WHERE tab = ? " + (type != 0 ? "AND type = ?" : "") + "AND transfer = 0")) {
                 ps.setInt(1, tab);
                 if (type != 0) {
                     ps.setInt(2, type);

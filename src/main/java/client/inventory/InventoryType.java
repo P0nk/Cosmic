@@ -64,6 +64,7 @@ public enum InventoryType {
             case "Etc" -> ETC;
             case "Cash" -> CASH;
             case "Pet" -> CASH;
+            case "Eqp" -> EQUIP;
             default -> UNDEFINED;
         };
     }

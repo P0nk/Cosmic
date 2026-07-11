@@ -22,17 +22,16 @@
 package provider;
 
 import provider.wz.WZFiles;
-import provider.wz.WzImgFile;
+import provider.wz.XMLWZFile;
 
-/**
- * Returns a {@link DataProvider} for one of the standard v83 WZ roots ({@code Item}, {@code Map}, ...).
- * <p>
- * Backed by {@link WzImgFile}, which transparently serves both binary {@code *.img} files
- * and HaRepacker-exported {@code *.img.xml} files from the same folder tree. When both forms
- * are present at the same path, the binary {@code .img} wins.
- */
+import java.nio.file.Path;
+
 public class DataProviderFactory {
+    private static DataProvider getWZ(Path in) {
+        return new XMLWZFile(in);
+    }
+
     public static DataProvider getDataProvider(WZFiles in) {
-        return new WzImgFile(in.getFile().toFile());
+        return getWZ(in.getFile());
     }
 }

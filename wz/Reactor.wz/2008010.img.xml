@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="2008010.img">
+    <imgdir name="info">
+        <string name="info" value="크리세_발리스타공격"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="133" height="252">
+            <vector name="origin" x="67" y="243"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="150"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="201"/>
+                <int name="state" value="1"/>
+                <int name="0" value="5"/>
+                <vector name="lt" x="-63" y="-65"/>
+                <vector name="rb" x="66" y="31"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="210" height="303">
+                <vector name="origin" x="105" y="292"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="120"/>
+                <vector name="lt" x="-63" y="-65"/>
+                <vector name="rb" x="72" y="10"/>
+            </canvas>
+            <canvas name="1" width="198" height="204">
+                <vector name="origin" x="99" y="192"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="120"/>
+            </canvas>
+            <canvas name="2" width="206" height="202">
+                <vector name="origin" x="103" y="192"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="120"/>
+            </canvas>
+            <canvas name="3" width="198" height="201">
+                <vector name="origin" x="99" y="192"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="120"/>
+            </canvas>
+            <canvas name="4" width="204" height="201">
+                <vector name="origin" x="102" y="192"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="120"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="1">
+        <uol name="0" value="../0/hit/4"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="101"/>
+                <int name="state" value="2"/>
+            </imgdir>
+            <int name="timeOut" value="2000"/>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="204" height="308">
+                <vector name="origin" x="102" y="299"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="90"/>
+                <vector name="rb" x="73" y="1"/>
+            </canvas>
+            <canvas name="1" width="188" height="282">
+                <vector name="origin" x="94" y="273"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="90"/>
+            </canvas>
+            <canvas name="2" width="170" height="265">
+                <vector name="origin" x="85" y="256"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="90"/>
+            </canvas>
+            <canvas name="3" width="146" height="260">
+                <vector name="origin" x="73" y="251"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="90"/>
+            </canvas>
+            <canvas name="4" width="134" height="257">
+                <vector name="origin" x="67" y="248"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="90"/>
+            </canvas>
+            <canvas name="5" width="133" height="252">
+                <vector name="origin" x="67" y="243"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="90"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="2">
+        <uol name="0" value="../1/hit/5"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="101"/>
+                <int name="state" value="0"/>
+            </imgdir>
+            <int name="timeOut" value="120"/>
+        </imgdir>
+    </imgdir>
+    <string name="action" value="rockAttack"/>
+</imgdir>

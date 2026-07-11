@@ -42,7 +42,9 @@ public enum MiniDungeonInfo {
     NEWT_SECURED_ZONE(MapId.DESTROYED_DRAGON_NEST, MapId.NEWT_SECURED_ZONE_BASE, 19), // Jr. Newtie, Transforming Jr. Newtie
     PILLAGE_OF_TREASURE_ISLAND(MapId.RED_NOSE_PIRATE_DEN_2, MapId.PILLAGE_OF_TREASURE_ISLAND_BASE, 30), // Captain
     CRITICAL_ERROR(MapId.LAB_AREA_C1, MapId.CRITICAL_ERROR_BASE, 30), // Roid
-    LONGEST_RIDE_ON_BYEBYE_STATION(MapId.FANTASY_THEME_PARK_3, MapId.LONGEST_RIDE_ON_BYEBYE_STATION, 19); // Froscola, Jester Scarlion
+    LONGEST_RIDE_ON_BYEBYE_STATION(MapId.FANTASY_THEME_PARK_3, MapId.LONGEST_RIDE_ON_BYEBYE_STATION, 19), // Froscola, Jester Scarlion
+    KISS_DUKU(MapId.KISS_DUKU, MapId.KISS_DUKU, 20), // ULU Mini Dungeon
+    DKC2_BONUS1(MapId.DKC2_BONUS1, MapId.DKC2_BONUS1, 1); // ULU Mini Dungeon
 
     private final int baseId;
     private final int dungeonId;

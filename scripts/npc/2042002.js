@@ -3,7 +3,6 @@
  1.0 - First Version by Drago (MapleStorySA)
  2.0 - Second Version by Ronan (HeavenMS)
  3.0 - Third Version by Jayd - translated CPQ contents to English and added Pirate items
- Special thanks to 頼晏 (ryantpayton) for also stepping in to translate CPQ scripts.
  ---------------------------------------------------------------------------------------------------
  **/
 
@@ -17,17 +16,29 @@ var n5 = 20; //50
 
 var cpqMap = 980000000;
 var cpqMinLvl = 30;
-var cpqMaxLvl = 50;
-var cpqMinAmt = 2;
+var cpqMaxLvl = 200;
+var cpqMinAmt = 1;
 var cpqMaxAmt = 6;
+
+// Ronan's custom ore refiner NPC
+var refineRocks = true;     // enables moon rock, star rock
+var refineCrystals = true;  // enables common crystals
+var refineSpecials = true;  // enables lithium, special crystals
+var feeMultiplier = 7.0;
 
 function start() {
     status = -1;
 
     const YamlConfig = Java.type('config.YamlConfig');
     if (!YamlConfig.config.server.USE_CPQ) {
-        cm.sendOk("The Monster Carnival is currently unavailable.");
-        cm.dispose();
+        if (YamlConfig.config.server.USE_ENABLE_CUSTOM_NPC_SCRIPT) {
+            status = 0;
+            action(1, 0, 4);
+        } else {
+            cm.sendOk("The Monster Carnival is currently unavailable.");
+            cm.dispose();
+        }
+
         return;
     }
 
@@ -48,7 +59,6 @@ function action(mode, type, selection) {
             status--;
         }
 
-        const YamlConfig = Java.type('config.YamlConfig');
         if (cm.getPlayer().getMapId() == 980000010) {
             if (status == 0) {
                 cm.sendNext("I hope you had fun at the Monster Carnival!");
@@ -212,9 +222,9 @@ function action(mode, type, selection) {
                     }
                 } else {
                     var party = cm.getParty().getMembers();
-                    if ((selection >= 0 && selection <= 3) && party.size() < (YamlConfig.config.server.USE_ENABLE_SOLO_EXPEDITIONS ? 1 : 2)) {
+                    if ((selection >= 0 && selection <= 3) && party.size() < 1) {
                         cm.sendOk("You need at least 2 players to participate in the battle!");
-                    } else if ((selection >= 4 && selection <= 5) && party.size() < (YamlConfig.config.server.USE_ENABLE_SOLO_EXPEDITIONS ? 1 : 3)) {
+                    } else if ((selection >= 4 && selection <= 5) && party.size() < 1) {
                         cm.sendOk("You need at least 3 players to participate in the battle!");
                     } else {
                         cm.cpqLobby(selection);
@@ -227,10 +237,15 @@ function action(mode, type, selection) {
         } else {
             if (status == 0) {
                 var talk = "What would you like to do? If you have never participate in the Monster Carnival, you will need to know a few things before participating! \r\n#b#L0# Go to the Monster Carnival 1.#l \r\n#L3# Go to the Monster Carnival 2.#l \r\n#L1# Learn about the Monster Carnival.#l\r\n#L2# Trade #t4001129#.#l";
+
+                const YamlConfig = Java.type('config.YamlConfig');
+                if (YamlConfig.config.server.USE_ENABLE_CUSTOM_NPC_SCRIPT) {
+                    talk += "\r\n#L4# ... Can I just refine my ores?#l";
+                }
                 cm.sendSimple(talk);
             } else if (status == 1) {
                 if (selection == 0) {
-                    if ((cm.getLevel() > 29 && cm.getLevel() < 51) || cm.getPlayer().isGM()) {
+                    if ((cm.getLevel() > 29 && cm.getLevel() < 201) || cm.getPlayer().isGM()) {
                         cm.getChar().saveLocation("MONSTER_CARNIVAL");
                         cm.warp(980000000, 0);
                         cm.dispose();
@@ -254,6 +269,24 @@ function action(mode, type, selection) {
                     cm.warp(980030000, 0);
                     cm.dispose();
 
+                } else if (selection == 4) {
+                    var selStr = "Very well, instead I offer a steadfast #bore refining#k service for you, taxing #r" + ((feeMultiplier * 100) | 0) + "%#k over the usual fee to synthetize them. What will you do?#b";
+
+                    var options = ["Refine mineral ores", "Refine jewel ores"];
+                    if (refineCrystals) {
+                        options.push("Refine crystal ores");
+                    }
+                    if (refineRocks) {
+                        options.push("Refine plates/jewels");
+                    }
+
+                    for (var i = 0; i < options.length; i++) {
+                        selStr += "\r\n#L" + i + "# " + options[i] + "#l";
+                    }
+
+                    cm.sendSimple(selStr);
+
+                    status = 76;
                 }
             } else if (status == 2) {
                 select = selection;
@@ -267,8 +300,7 @@ function action(mode, type, selection) {
                         cm.dispose();
                     }
                 } else if (select == 1) {
-                    if (cm.haveItem(4001129, n2) && cm.canHold(2041211)) {
-                        cm.gainItem(2041211, 1);
+                    if (cm.haveItem(4001129, n2) && cm.canHold(4001129)) {
                         cm.gainItem(4001129, -n2);
                         cm.dispose();
                     } else {
@@ -277,7 +309,7 @@ function action(mode, type, selection) {
                     }
                 } else if (select == 2) {//S2 Warrior 26 S3 Magician 6 S4 Bowman 6 S5 Thief 8
                     status = 10;
-                    cm.sendSimple("Please make sure you have # t4001129 # for the weapon you want. Select the weapon you would like to trade # t4001129 #. The choices I have are really good, and I'm not the one who speaks to the people who say it! \r\n#b#L0# #z1302004# (" + n3 + " coins)#l\r\n#L1# #z1402006# (" + n3 + " coins)#l\r\n#L2# #z1302009# (" + n4 + " coins)#l\r\n#L3# #z1402007# (" + n4 + " coins)#l\r\n#L4# #z1302010# (" + n5 + " coins)#l\r\n#L5# #z1402003# (" + n5 + " coins)#l\r\n#L6# #z1312006# (" + n3 + " coins)#l\r\n#L7# #z1412004# (" + n3 + " coins)#l\r\n#L8# #z1312007# (" + n4 + " coins)#l\r\n#L9# #z1412005# (" + n4 + " coins)#l\r\n#L10# #z1312008# (" + n5 + " coins)#l\r\n#L11# #z1412003# (" + n5 + " coins)#l\r\n#L12# Continue to the next page (1/2)#l");
+                    cm.sendSimple("Please make sure you have #t4001129# for the weapon you want. Select the weapon you would like to trade #t4001129#. The choices I have are really good, and I'm not the one who speaks to the people who say it! \r\n#b#L0# #z1302004# (" + n3 + " coins)#l\r\n#L1# #z1402006# (" + n3 + " coins)#l\r\n#L2# #z1302009# (" + n4 + " coins)#l\r\n#L3# #z1402007# (" + n4 + " coins)#l\r\n#L4# #z1302010# (" + n5 + " coins)#l\r\n#L5# #z1402003# (" + n5 + " coins)#l\r\n#L6# #z1312006# (" + n3 + " coins)#l\r\n#L7# #z1412004# (" + n3 + " coins)#l\r\n#L8# #z1312007# (" + n4 + " coins)#l\r\n#L9# #z1412005# (" + n4 + " coins)#l\r\n#L10# #z1312008# (" + n5 + " coins)#l\r\n#L11# #z1412003# (" + n5 + " coins)#l\r\n#L12# Continue to the next page(1/2)#l");
                 } else if (select == 3) {
                     status = 20;
                     cm.sendSimple("Select the weapon you would like to trade. The weapons I have here are extremely attractive. See for yourself! \r\n#b#L0# #z1372001# (" + n3 + " coins)#l\r\n#L1# #z1382018# (" + n3 + " coins)#l\r\n#L2# #z1372012# (" + n4 + " coins)#l\r\n#L3# #z1382019# (" + n4 + " coins)#l\r\n#L4# #z1382001# (" + n5 + " coins)#l\r\n#L5# #z1372007# (" + n5 + " coins)#l");
@@ -407,12 +439,175 @@ function action(mode, type, selection) {
                     cm.sendNext("Oh, and do not worry about turning into a ghost. In the Monster Carnival, #byou will not lose EXP after death#k. So it's really an experience like no other!");
                     cm.dispose();
                 } else if (select == 2) {
-                    cm.sendNext("#bProtector#k is basically an invoked item that drastically increases the abilities of the monsters invoked by your group. Protector works until it is demolished by the opposing group, so I'm hoping you'll summon several monsters first, and then bring the Protector.");
+                    cm.sendNext("#bProtetor#k basically an invoked item that drastically increases the abilities of the monsters invoked by your group. Protector works until it is demolished by the opposing group, so I'm hoping you'll summon several monsters first, and then bring the Protector.");
                 }
             } else if (status == 66) {
                 cm.sendNext("Lastly, while in the Monster Carnival, #byou can not use items / recovery potions that you carry around with you. #kMeanwhile, the monsters let these items fall for good. when, and when you #bget them, the item will immediately activate#k. That's why it's important to know when to get these items.");
                 cm.dispose();
+            } else if (status == 77) {
+                var allDone;
+
+                if (selection == 0) {
+                    allDone = refineItems(0); // minerals
+                } else if (selection == 1) {
+                    allDone = refineItems(1); // jewels
+                } else if (selection == 2 && refineCrystals) {
+                    allDone = refineItems(2); // crystals
+                } else if (selection == 2 && !refineCrystals || selection == 3) {
+                    allDone = refineRockItems(); // moon/star rock
+                }
+
+                if (allDone) {
+                    cm.sendOk("Done. Thanks for showing up~.");
+                } else {
+                    cm.sendOk("Done. Be aware some of the items #rcould not be synthetized#k because either you have a lack of space on your ETC inventory or there's not enough mesos to cover the fee.");
+                }
+                cm.dispose();
             }
         }
     }
+}
+
+function getRefineFee(fee) {
+    return ((feeMultiplier * fee) | 0);
+}
+
+function isRefineTarget(refineType, refineItemid) {
+    if (refineType == 0) { //mineral refine
+        return refineItemid >= 4010000 && refineItemid <= 4010007 && !(refineItemid == 4010007 && !refineSpecials);
+    } else if (refineType == 1) { //jewel refine
+        return refineItemid >= 4020000 && refineItemid <= 4020008 && !(refineItemid == 4020008 && !refineSpecials);
+    } else if (refineType == 2) { //crystal refine
+        return refineItemid >= 4004000 && refineItemid <= 4004004 && !(refineItemid == 4004004 && !refineSpecials);
+    }
+
+    return false;
+}
+
+function getRockRefineTarget(refineItemid) {
+    if (refineItemid >= 4011000 && refineItemid <= 4011006) {
+        return 0;
+    } else if (refineItemid >= 4021000 && refineItemid <= 4021008) {
+        return 1;
+    }
+
+    return -1;
+}
+
+function refineItems(refineType) {
+    var allDone = true;
+
+    var refineFees = [[300, 300, 300, 500, 500, 500, 800, 270], [500, 500, 500, 500, 500, 500, 500, 1000, 3000], [5000, 5000, 5000, 5000, 1000000]];
+    var itemCount = {};
+
+    const InventoryType = Java.type('client.inventory.InventoryType');
+    var iter = cm.getPlayer().getInventory(InventoryType.ETC).iterator();
+    while (iter.hasNext()) {
+        var it = iter.next();
+        var itemid = it.getItemId();
+
+        if (isRefineTarget(refineType, itemid)) {
+            var ic = itemCount[itemid];
+
+            if (ic != undefined) {
+                itemCount[itemid] += it.getQuantity();
+            } else {
+                itemCount[itemid] = it.getQuantity();
+            }
+        }
+    }
+
+    for (var key in itemCount) {
+        var itemqty = itemCount[key];
+        var itemid = parseInt(key);
+
+        var refineQty = ((itemqty / 10) | 0);
+        if (refineQty <= 0) {
+            continue;
+        }
+
+        while (true) {
+            itemqty = refineQty * 10;
+
+            var fee = getRefineFee(refineFees[refineType][(itemid % 100) | 0] * refineQty);
+            if (cm.canHold(itemid + 1000, refineQty, itemid, itemqty) && cm.getMeso() >= fee) {
+                cm.gainMeso(-fee);
+                cm.gainItem(itemid, -itemqty);
+                cm.gainItem(itemid + (itemid != 4010007 ? 1000 : 1001), refineQty);
+
+                break;
+            } else if (refineQty <= 1) {
+                allDone = false;
+                break;
+            } else {
+                refineQty--;
+            }
+        }
+    }
+
+    return allDone;
+}
+
+function refineRockItems() {
+    var allDone = true;
+    var minItems = [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
+    var minRocks = [2147483647, 2147483647];
+
+    var rockItems = [4011007, 4021009];
+    var rockFees = [10000, 15000];
+
+    const InventoryType = Java.type('client.inventory.InventoryType');
+    var iter = cm.getPlayer().getInventory(InventoryType.ETC).iterator();
+    while (iter.hasNext()) {
+        var it = iter.next();
+        var itemid = it.getItemId();
+        var rockRefine = getRockRefineTarget(itemid);
+        if (rockRefine >= 0) {
+            var rockItem = ((itemid % 100) | 0);
+            var itemqty = it.getQuantity();
+
+            minItems[rockRefine][rockItem] += itemqty;
+        }
+    }
+
+    for (var i = 0; i < minRocks.length; i++) {
+        for (var j = 0; j < minItems[i].length; j++) {
+            if (minRocks[i] > minItems[i][j]) {
+                minRocks[i] = minItems[i][j];
+            }
+        }
+        if (minRocks[i] <= 0 || minRocks[i] == 2147483647) {
+            continue;
+        }
+
+        var refineQty = minRocks[i];
+        while (true) {
+            var fee = getRefineFee(rockFees[i] * refineQty);
+            if (cm.canHold(rockItems[i], refineQty) && cm.getMeso() >= fee) {
+                cm.gainMeso(-fee);
+
+                var j;
+                if (i == 0) {
+                    for (j = 4011000; j < 4011007; j++) {
+                        cm.gainItem(j, -refineQty);
+                    }
+                    cm.gainItem(j, refineQty);
+                } else {
+                    for (j = 4021000; j < 4021009; j++) {
+                        cm.gainItem(j, -refineQty);
+                    }
+                    cm.gainItem(j, refineQty);
+                }
+
+                break;
+            } else if (refineQty <= 1) {
+                allDone = false;
+                break;
+            } else {
+                refineQty--;
+            }
+        }
+    }
+
+    return allDone;
 }

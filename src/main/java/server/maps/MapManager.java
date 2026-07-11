@@ -101,6 +101,10 @@ public class MapManager {
         return (map != null) ? map : loadMapFromWz(mapid, true);
     }
 
+    public void setEventInstanceManager(EventInstanceManager eim) {
+        this.event = eim;
+    }
+
     public MapleMap getDisposableMap(int mapid) {
         return loadMapFromWz(mapid, false);
     }

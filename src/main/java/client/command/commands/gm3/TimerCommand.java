@@ -28,7 +28,7 @@ import client.Client;
 import client.command.Command;
 import tools.PacketCreator;
 
-public class TimerCommand extends Command {
+public class    TimerCommand extends Command {
     {
         setDescription("Set timer on a player in current map.");
     }

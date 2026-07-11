@@ -1,3 +1,4 @@
+/*
 var item;
 var stance;
 var status = -1;
@@ -25,15 +26,15 @@ function end(mode, type, selection) {
 
         const Job = Java.type('client.Job');
         if (stance == Job.WARRIOR || stance == Job.BEGINNER) {
-            vecItem = [2043002, 2043102, 2043202, 2044002, 2044102, 2044202, 2044402, 2044302];
+            vecItem = [2044302];
         } else if (stance == Job.MAGICIAN) {
-            vecItem = [2043702, 2043802];
+            vecItem = [ 2043802];
         } else if (stance == Job.BOWMAN || stance == Job.CROSSBOWMAN) {
-            vecItem = [2044502, 2044602];
+            vecItem = [ 2044602];
         } else if (stance == Job.THIEF) {
-            vecItem = [2043302, 2044702];
+            vecItem = [ 2044702];
         } else {
-            vecItem = [2044802, 2044902];
+            vecItem = [ 2044902];
         }
 
         for (var i = 0; i < vecItem.length; i++) {
@@ -55,3 +56,5 @@ function end(mode, type, selection) {
         qm.dispose();
     }
 }
+
+*/

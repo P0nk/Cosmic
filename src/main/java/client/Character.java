@@ -14,7 +14,7 @@
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; witout even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
+ GNU Affero General Public License for more details.ffff
 
 
  You should have received a copy of the GNU Affero General Public License
@@ -24,16 +24,8 @@ package client;
 
 import client.autoban.AutobanManager;
 import client.creator.CharacterFactoryRecipe;
-import client.inventory.Equip;
-import client.inventory.Inventory;
-import client.inventory.InventoryProof;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.ItemFactory;
-import client.inventory.ModifyInventory;
-import client.inventory.Pet;
-import client.inventory.PetDataFactory;
-import client.inventory.WeaponType;
+import client.inventory.*;
+import client.inventory.Equip.StatUpgrade;
 import client.inventory.manipulator.CashIdGenerator;
 import client.inventory.manipulator.InventoryManipulator;
 import client.keybind.KeyBinding;
@@ -48,39 +40,12 @@ import constants.id.ItemId;
 import constants.id.MapId;
 import constants.id.MobId;
 import constants.inventory.ItemConstants;
-import constants.skills.Aran;
-import constants.skills.Beginner;
-import constants.skills.Bishop;
-import constants.skills.BlazeWizard;
-import constants.skills.Bowmaster;
-import constants.skills.Brawler;
-import constants.skills.Buccaneer;
-import constants.skills.Corsair;
-import constants.skills.Crusader;
-import constants.skills.DarkKnight;
-import constants.skills.DawnWarrior;
-import constants.skills.Evan;
-import constants.skills.FPArchMage;
-import constants.skills.Hermit;
-import constants.skills.Hero;
-import constants.skills.ILArchMage;
-import constants.skills.Legend;
-import constants.skills.Magician;
-import constants.skills.Marauder;
-import constants.skills.Marksman;
-import constants.skills.NightLord;
-import constants.skills.Noblesse;
-import constants.skills.Paladin;
-import constants.skills.Priest;
-import constants.skills.Ranger;
-import constants.skills.Shadower;
-import constants.skills.Sniper;
-import constants.skills.ThunderBreaker;
-import constants.skills.Warrior;
+import constants.skills.*;
 import net.packet.Packet;
 import net.server.PlayerBuffValueHolder;
 import net.server.PlayerCoolDownValueHolder;
 import net.server.Server;
+import net.server.channel.Channel;
 import net.server.coordinator.world.InviteCoordinator;
 import net.server.guild.Alliance;
 import net.server.guild.Guild;
@@ -88,110 +53,62 @@ import net.server.guild.GuildCharacter;
 import net.server.guild.GuildPackets;
 import net.server.services.task.world.CharacterSaveService;
 import net.server.services.type.WorldServices;
-import net.server.world.Messenger;
-import net.server.world.MessengerCharacter;
-import net.server.world.Party;
-import net.server.world.PartyCharacter;
-import net.server.world.PartyOperation;
-import net.server.world.World;
+import net.server.world.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractPlayerInteraction;
 import scripting.event.EventInstanceManager;
+import scripting.field.FieldInstanceManager;
 import scripting.item.ItemScriptManager;
-import server.CashShop;
-import server.ExpLogger;
-import server.ExpLogger.ExpLogRecord;
-import server.ItemInformationProvider;
+import scripting.npc.NPCScriptManager;
+import server.*;
 import server.ItemInformationProvider.ScriptedItem;
-import server.Marriage;
-import server.Shop;
-import server.StatEffect;
-import server.Storage;
-import server.ThreadManager;
-import server.TimerManager;
-import server.Trade;
 import server.events.Events;
 import server.events.RescueGaga;
 import server.events.gm.Fitness;
 import server.events.gm.Ola;
-import server.life.BanishInfo;
-import server.life.MobSkill;
-import server.life.MobSkillFactory;
-import server.life.MobSkillId;
-import server.life.MobSkillType;
-import server.life.Monster;
-import server.life.PlayerNPC;
-import server.maps.AbstractAnimatedMapObject;
-import server.maps.Door;
-import server.maps.DoorObject;
-import server.maps.Dragon;
-import server.maps.FieldLimit;
-import server.maps.HiredMerchant;
-import server.maps.MapEffect;
-import server.maps.MapItem;
-import server.maps.MapManager;
-import server.maps.MapObject;
-import server.maps.MapObjectType;
-import server.maps.MapleMap;
-import server.maps.MiniGame;
+import server.expeditions.ExpeditionBossLog;
+import server.expeditions.ExpeditionType;
+import server.life.*;
+import server.maps.*;
 import server.maps.MiniGame.MiniGameResult;
-import server.maps.PlayerShop;
-import server.maps.PlayerShopItem;
-import server.maps.Portal;
-import server.maps.SavedLocation;
-import server.maps.SavedLocationType;
-import server.maps.Summon;
 import server.minigame.RockPaperScissor;
 import server.partyquest.AriantColiseum;
 import server.partyquest.MonsterCarnival;
 import server.partyquest.MonsterCarnivalParty;
 import server.partyquest.PartyQuest;
 import server.quest.Quest;
-import tools.DatabaseConnection;
-import tools.LongTool;
-import tools.PacketCreator;
-import tools.Pair;
-import tools.Randomizer;
+import server.transactions.TransactionItem;
+import server.transactions.TransactionService;
+import tools.*;
+import tools.exceptions.NotEnabledException;
 import tools.packets.WeddingPackets;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import com.fasterxml.jackson.databind.ObjectMapper;   //Added by Cerezeth
+import com.fasterxml.jackson.databind.node.ObjectNode;  //Added by Cerezeth
+import com.fasterxml.jackson.databind.node.ArrayNode;  //Added by Cerezeth
+
+import static java.util.concurrent.TimeUnit.*;
 
 public class Character extends AbstractCharacterObject {
     private static final Logger log = LoggerFactory.getLogger(Character.class);
@@ -214,6 +131,8 @@ public class Character extends AbstractCharacterObject {
     private int slots = 0;
     private int energybar;
     private int gmLevel;
+
+    private boolean autoLoginSetting;
     private int ci = 0;
     private FamilyEntry familyEntry;
     private int familyId;
@@ -225,7 +144,7 @@ public class Character extends AbstractCharacterObject {
     private int expRate = 1, mesoRate = 1, dropRate = 1, expCoupon = 1, mesoCoupon = 1, dropCoupon = 1;
     private int omokwins, omokties, omoklosses, matchcardwins, matchcardties, matchcardlosses;
     private int owlSearch;
-    private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastDeathtime, jailExpiration = -1;
+    private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastBuyback = 0, lastDeathtime, jailExpiration = -1;
     private transient int localstr, localdex, localluk, localint_, localmagic, localwatk;
     private transient int equipmaxhp, equipmaxmp, equipstr, equipdex, equipluk, equipint_, equipmagic, equipwatk, localchairhp, localchairmp;
     private int localchairrate;
@@ -236,7 +155,9 @@ public class Character extends AbstractCharacterObject {
     private int linkedLevel = 0;
     private String linkedName = null;
     private boolean finishedDojoTutorial;
+    private boolean usingOreStorage = false;
     private boolean usedStorage = false;
+    private boolean usedOreStorage = false;
     private String name;
     private String chalktext;
     private String commandtext;
@@ -244,14 +165,15 @@ public class Character extends AbstractCharacterObject {
     private String search = null;
     private final AtomicBoolean mapTransitioning = new AtomicBoolean(true);  // player client is currently trying to change maps or log in the game map
     private final AtomicBoolean awayFromWorld = new AtomicBoolean(true);  // player is online, but on cash shop or mts
-    private final AtomicInteger exp = new AtomicInteger();
+    private final AtomicLong exp = new AtomicLong();
     private final AtomicInteger gachaexp = new AtomicInteger();
     private final AtomicInteger meso = new AtomicInteger();
     private final AtomicInteger chair = new AtomicInteger(-1);
-    private long totalExpGained = 0;
     private int merchantmeso;
     private BuddyList buddylist;
     private EventInstanceManager eventInstance = null;
+
+    private FieldInstanceManager fieldInstance = null;
     private HiredMerchant hiredMerchant = null;
     private Client client;
     private GuildCharacter mgc = null;
@@ -266,11 +188,12 @@ public class Character extends AbstractCharacterObject {
     private final Pet[] pets = new Pet[3];
     private PlayerShop playerShop = null;
     private Shop shop = null;
-    private SkinColor skinColor = SkinColor.LIGHT;
+    private SkinColor skinColor = SkinColor.NORMAL;
     private Storage storage = null;
     private Trade trade = null;
     private MonsterBook monsterbook;
     private CashShop cashshop;
+    private final static NumberFormat nfFormatter = new DecimalFormat("###,###,###,###");
     private final Set<NewYearCardRecord> newyears = new LinkedHashSet<>();
     private final SavedLocation[] savedLocations;
     private final SkillMacro[] skillMacros = new SkillMacro[5];
@@ -292,15 +215,21 @@ public class Character extends AbstractCharacterObject {
     private final Map<Integer, KeyBinding> keymap = new LinkedHashMap<>();
     private final Map<Integer, Summon> summons = new LinkedHashMap<>();
     private final Map<Integer, CooldownValueHolder> coolDowns = new LinkedHashMap<>();
+    private long bankMesos;
+
+    private final Map<Integer, TotemCooldownValueHolder> totemCooldowns = new LinkedHashMap<>();
     private final EnumMap<Disease, Pair<DiseaseValueHolder, MobSkill>> diseases = new EnumMap<>(Disease.class);
     private byte[] m_aQuickslotLoaded;
     private QuickslotBinding m_pQuickslotKeyMapped;
     private Door pdoor = null;
     private Map<Quest, Long> questExpirations = new LinkedHashMap<>();
     private ScheduledFuture<?> dragonBloodSchedule;
+
+    public ScheduledFuture<?> BattleShipSchedule;
     private ScheduledFuture<?> hpDecreaseTask;
     private ScheduledFuture<?> beholderHealingSchedule, beholderBuffSchedule, berserkSchedule;
     private ScheduledFuture<?> skillCooldownTask = null;
+    private ScheduledFuture<?> toemCooldownTask = null;
     private ScheduledFuture<?> buffExpireTask = null;
     private ScheduledFuture<?> itemExpireTask = null;
     private ScheduledFuture<?> diseaseExpireTask = null;
@@ -312,6 +241,7 @@ public class Character extends AbstractCharacterObject {
     private ScheduledFuture<?> cpqSchedule = null;
     private final Lock chrLock = new ReentrantLock(true);
     private final Lock evtLock = new ReentrantLock(true);
+    private final Lock fieldLock = new ReentrantLock(true);
     private final Lock petLock = new ReentrantLock(true);
     private final Lock prtLock = new ReentrantLock();
     private final Lock cpnLock = new ReentrantLock();
@@ -351,10 +281,70 @@ public class Character extends AbstractCharacterObject {
     private int targetHpBarHash = 0;
     private long targetHpBarTime = 0;
     private long nextWarningTime = 0;
+    private int banishMap = -1;
+    private int banishSp = -1;
+    private long banishTime = 0;
     private long lastExpGainTime;
     private boolean pendingNameChange; //only used to change name on logout, not to be relied upon elsewhere
     private long loginTime;
     private boolean chasing = false;
+
+    public int potionCount = 0;
+    public boolean inExpedition = false;
+    private int reborns;
+    private int getLinkedStats;
+
+    //Monster Books Tiers
+    private int Tier1;
+    private int Tier2;
+    private int Tier3;
+    private int Tier4;
+    private int Tier5;
+    private int Tier6;
+    private int Tier7;
+    private int Tier8;
+    private int Tier9;
+
+    // Damage Skins
+
+    //private int damageSkin;
+    private int deathCounter = 0;
+
+    private boolean worldChat = false;
+
+    private long lastBackpackCommandTime = 0;
+
+    public long getLastBackpackCommandTime() {
+        return lastBackpackCommandTime;
+    }
+
+    public void setLastBackpackCommandTime(long time) {
+        this.lastBackpackCommandTime = time;
+    }
+
+    private boolean useModifiedPickupItem = false;
+
+    public void setUseModifiedPickupItem(boolean value) {
+        this.useModifiedPickupItem = value;
+    }
+
+    public boolean isUsingModifiedPickupItem() {
+        return this.useModifiedPickupItem;
+    }
+
+    private boolean showGlobal = true;
+
+    public void setDeathCounter(int deathCounter) {
+        this.deathCounter = deathCounter;
+    }
+
+    public int getDeathCount() {
+        return deathCounter;
+    }
+
+    private boolean showAttackSkill = true;
+
+    private List<Saloon> lStyles = new ArrayList<>();
 
     private Character() {
         super.setListener(new AbstractCharacterListener() {
@@ -444,6 +434,8 @@ public class Character extends AbstractCharacterObject {
 
         return (Job.BEGINNER);
     }
+
+    public boolean battleshipRunning = false;
 
     public Job getJobStyle(byte opt) {
         return getJobStyleInternal(this.getJob().getId(), opt);
@@ -621,6 +613,15 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public void addTotemCooldown(int npcId, long startTime, long length) {
+        chrLock.lock();
+        try {
+            this.totemCooldowns.put(Integer.valueOf(npcId), new TotemCooldownValueHolder(npcId, startTime, length));
+        } finally {
+            chrLock.unlock();
+        }
+    }
+
     public void addCrushRing(Ring r) {
         crushRings.add(r);
     }
@@ -726,6 +727,7 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+
     public void addSummon(int id, Summon summon) {
         summons.put(id, summon);
 
@@ -789,6 +791,10 @@ public class Character extends AbstractCharacterObject {
         return false;
     }
 
+    public Channel getChannel() {
+        return Server.getInstance().getChannel(world, client.getChannel());
+    }
+
     public int calculateMaxBaseDamage(int watk, WeaponType weapon) {
         int mainstat, secondarystat;
         if (getJob().isA(Job.THIEF) && weapon == WeaponType.DAGGER_OTHER) {
@@ -806,6 +812,25 @@ public class Character extends AbstractCharacterObject {
             secondarystat = localdex;
         }
         return (int) Math.ceil(((weapon.getMaxDamageMultiplier() * mainstat + secondarystat) / 100.0) * watk);
+    }
+
+    public int calculateMinBaseDamage(int watk, WeaponType weapon) {
+        int mainstat, secondarystat;
+        if (getJob().isA(Job.THIEF) && weapon == WeaponType.DAGGER_OTHER) {
+            weapon = WeaponType.DAGGER_THIEVES;
+        }
+
+        if (weapon == WeaponType.BOW || weapon == WeaponType.CROSSBOW || weapon == WeaponType.GUN) {
+            mainstat = localdex;
+            secondarystat = localstr;
+        } else if (weapon == WeaponType.CLAW || weapon == WeaponType.DAGGER_THIEVES) {
+            mainstat = localluk;
+            secondarystat = localdex + localstr;
+        } else {
+            mainstat = localstr;
+            secondarystat = localdex;
+        }
+        return (int) (Math.ceil(((weapon.getMaxDamageMultiplier() * mainstat + secondarystat) / 100.0) * watk) * (getMastery() / 100));
     }
 
     public int calculateMaxBaseDamage(int watk) {
@@ -829,8 +854,7 @@ public class Character extends AbstractCharacterObject {
         return maxbasedamage;
     }
 
-    public int calculateMaxBaseMagicDamage(int matk) {
-        int maxbasedamage = matk;
+    public int calculateMaxBaseMagicDamage(int maxbasedamage) {
         int totalint = getTotalInt();
 
         if (totalint > 2000) {
@@ -1054,15 +1078,12 @@ public class Character extends AbstractCharacterObject {
             skills[1] = DarkKnight.ACHILLES;
             skills[2] = DarkKnight.MONSTER_MAGNET;
         } else if (jobId == 212) {
-            skills[0] = FPArchMage.BIG_BANG;
             skills[1] = FPArchMage.MANA_REFLECTION;
             skills[2] = FPArchMage.PARALYZE;
         } else if (jobId == 222) {
-            skills[0] = ILArchMage.BIG_BANG;
             skills[1] = ILArchMage.MANA_REFLECTION;
             skills[2] = ILArchMage.CHAIN_LIGHTNING;
         } else if (jobId == 232) {
-            skills[0] = Bishop.BIG_BANG;
             skills[1] = Bishop.MANA_REFLECTION;
             skills[2] = Bishop.HOLY_SHIELD;
         } else if (jobId == 312) {
@@ -1138,6 +1159,77 @@ public class Character extends AbstractCharacterObject {
         }, 777);
     }
 
+    public synchronized void changeRebirthJobCerezeth(Job newJob) {
+        if (newJob == null) {
+            return;//the fuck you doing idiot!
+        }
+        this.job = newJob;
+
+        effLock.lock();
+        statWlock.lock();
+        try {
+            List<Pair<Stat, Integer>> statup = new ArrayList<>(7);
+            statup.add(new Pair<>(Stat.JOB, newJob.getId()));
+            sendPacket(PacketCreator.updatePlayerStats(statup, true, this));
+        } finally {
+            statWlock.unlock();
+            effLock.unlock();
+        }
+
+
+        if (!YamlConfig.config.server.USE_AUTOASSIGN_STARTERS_AP) {
+            return;
+        }
+
+        effLock.lock();
+        statWlock.lock();
+        try {
+            int tap = remainingAp + str + dex + int_ + luk, tsp = 0;
+            int tstr = 4, tdex = 4, tint = 4, tluk = 4;
+
+            switch (job.getId()) {
+                case 100:
+                case 1100:
+                case 2100:
+                    tstr = 35;
+                    // tsp += ((getLevel() - 10) * 3);
+                    break;
+                case 200:
+                case 1200:
+                    tint = 20;
+                    // tsp += ((getLevel() - 8) * 3);
+                    break;
+                case 300:
+                case 1300:
+                case 400:
+                case 1400:
+                    tdex = 25;
+                    // tsp += ((getLevel() - 10) * 3);
+                    break;
+                case 500:
+                case 1500:
+                    tdex = 20;
+                    // tsp += ((getLevel() - 10) * 3);
+                    break;
+            }
+
+            tap -= tstr;
+            tap -= tdex;
+            tap -= tint;
+            tap -= tluk;
+
+            if (tap >= 0) {
+                updateStrDexIntLukSp(tstr, tdex, tint, tluk, tap, tsp, GameConstants.getSkillBook(job.getId()));
+            } else {
+                log.warn("Chr {} tried to have its stats reset without enough AP available");
+            }
+        } finally {
+            statWlock.unlock();
+            effLock.unlock();
+        }
+
+    }
+
     public synchronized void changeJob(Job newJob) {
         if (newJob == null) {
             return;//the fuck you doing idiot!
@@ -1196,13 +1288,16 @@ public class Character extends AbstractCharacterObject {
         } else if (job_ == 200) {               // 1st mage
             addmp += Randomizer.rand(100, 150);
         } else if (job_ % 100 == 0) {           // 1st others
-            addhp += Randomizer.rand(100, 150);
+            addhp += Randomizer.rand(1, 1);
             addmp += Randomizer.rand(25, 50);
         } else if (job_ > 0 && job_ < 200) {    // 2nd~4th warrior
             addhp += Randomizer.rand(300, 350);
         } else if (job_ < 300) {                // 2nd~4th mage
             addmp += Randomizer.rand(450, 500);
         } else if (job_ > 0) {                  // 2nd~4th others
+            addhp += Randomizer.rand(300, 350);
+            addmp += Randomizer.rand(150, 200);
+        } else if (job_ == 700) {                  // Super Beginner
             addhp += Randomizer.rand(300, 350);
             addmp += Randomizer.rand(150, 200);
         }
@@ -1256,7 +1351,6 @@ public class Character extends AbstractCharacterObject {
         if (family != null) {
             family.broadcast(PacketCreator.jobMessage(1, job.getId(), name), this.getId());
         }
-        setMasteries(this.job.getId());
         guildUpdate();
 
         broadcastChangeJob();
@@ -1352,14 +1446,48 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
-    public void changeMapBanish(BanishInfo banishInfo) {
-        if (banishInfo.msg() != null) {
-            dropMessage(5, banishInfo.msg());
+    public boolean canRecoverLastBanish() {
+        return System.currentTimeMillis() - this.banishTime < MINUTES.toMillis(5);
+    }
+
+    public Pair<Integer, Integer> getLastBanishData() {
+        return new Pair<>(this.banishMap, this.banishSp);
+    }
+
+    public void clearBanishPlayerData() {
+        this.banishMap = -1;
+        this.banishSp = -1;
+        this.banishTime = 0;
+    }
+
+    public void setBanishPlayerData(int banishMap, int banishSp, long banishTime) {
+        this.banishMap = banishMap;
+        this.banishSp = banishSp;
+        this.banishTime = banishTime;
+    }
+
+    public void changeMapBanish(int mapid, String portal, String msg) {
+        if (YamlConfig.config.server.USE_SPIKES_AVOID_BANISH) {
+            for (Item it : this.getInventory(InventoryType.EQUIPPED).list()) {
+                if ((it.getFlag() & ItemConstants.SPIKES) == ItemConstants.SPIKES) {
+                    return;
+                }
+            }
+        }
+
+        int banMap = this.getMapId();
+        int banSp = this.getMap().findClosestPlayerSpawnpoint(this.getPosition()).getId();
+        long banTime = System.currentTimeMillis();
+
+        if (msg != null) {
+            dropMessage(5, msg);
         }
 
         MapleMap map_ = getWarpMap(mapid);
-        Portal portal_ = map_.getPortal(banishInfo.portal());
+        Portal portal_ = map_.getPortal(portal);
         changeMap(map_, portal_ != null ? portal_ : map_.getRandomPlayerSpawnpoint());
+
+        setBanishPlayerData(banMap, banSp, banTime);
     }
 
     public void changeMap(int map) {
@@ -1742,6 +1870,7 @@ public class Character extends AbstractCharacterObject {
         this.mapTransitioning.set(true);
 
         this.unregisterChairBuff();
+        this.clearBanishPlayerData();
         Trade.cancelTrade(this, Trade.TradeResult.UNSUCCESSFUL_ANOTHER_MAP);
         this.closePlayerInteractions();
 
@@ -1750,7 +1879,7 @@ public class Character extends AbstractCharacterObject {
             e = this.getParty().getEnemy();
         }
         final Party k = e;
-
+        clearSummons();
         sendPacket(warpPacket);
         map.removePlayer(this);
         if (client.getChannelServer().getPlayerStorage().getCharacterById(getId()) != null) {
@@ -1931,10 +2060,67 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
-    public boolean applyConsumeOnPickup(final int itemId) {
+    public void multiplySpawn() {
+        multiplySpawn(0);
+    }
+
+    public void multiplySpawn(int multiplier) {
+        if (getEventInstance() != null || MapId.isDojo(getMapId())) return;
+
+        int actualMultiplier = multiplier == 0 ? (int) (Math.random() * 3) + 1 : multiplier;
+
+        Character player = client.getPlayer();
+
+        int[] bossIDs = new int[]{
+                //marble bosses
+                8220003, 9220004, 8220005, 8220006, 7130020, 3400004, 3400006, //leviathan dodo lily lyka
+                //exp bosses
+                9400549, 9400575, 9400014, 9400121, 8510000, 8520000, 9400405, 9400408, 9400409, 9400660 //hh bf crow anego rpianus lpianus kacchu castellan toad rgs
+        };
+
+        List<Monster> monsters = map.getAllMonsters();
+
+        int initialMobCount = monsters.size();
+        int mapCapacity = map.getMobCapacity();
+
+        if (initialMobCount == mapCapacity) {
+            return;
+        }
+
+        int availableCapacity = mapCapacity - initialMobCount;
+
+        for (Monster monster : map.getAllMonsters()) {
+            if (!monster.isAlive() || monster.isBoss() || IntStream.of(bossIDs).anyMatch(bossId -> bossId == monster.getId()) || availableCapacity == 0) {
+                continue;
+            }
+
+            for (int i = 0; i < actualMultiplier; i++) {
+                if (availableCapacity == 0) {
+                    break;
+                }
+
+                map.spawnMonsterOnGroundBelow(LifeFactory.getMonster(monster.getId()), monster.getPosition());
+                availableCapacity--;
+            }
+        }
+
+        String showMsg = ("#bSpawns multiplied by #e" + (actualMultiplier + 1) + "#k#n!");
+        player.showHint(showMsg, 200);
+    }
+
+    public boolean applyConsumeOnPickup(final int itemId, boolean isPet) {
+        if (itemId == 2430030) {
+            if (!isPet) {
+                multiplySpawn();
+                return true;
+            }
+        }
+
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        boolean isConsumedOnPickup = ii.isConsumeOnPickup(itemId);
+
         if (itemId / 1000000 == 2) {
-            ItemInformationProvider ii = ItemInformationProvider.getInstance();
-            if (ii.isConsumeOnPickup(itemId)) {
+            if (isConsumedOnPickup) {
                 if (ItemConstants.isPartyItem(itemId)) {
                     List<Character> partyMembers = this.getPartyMembersOnSameMap();
                     if (!ItemId.isPartyAllCure(itemId)) {
@@ -1962,7 +2148,16 @@ public class Character extends AbstractCharacterObject {
                 }
 
                 if (itemId / 10000 == 238) {
-                    this.getMonsterBook().addCard(client, itemId);
+                    List<Character> partyMembers = this.getPartyMembersOnSameMap();
+                    if (!partyMembers.isEmpty()) {
+                        for (Character mc : partyMembers) {
+                            if (mc.isAlive()) {
+                                mc.getMonsterBook().addCard(mc.client, itemId);
+                            }
+                        }
+                    } else if (this.isAlive()) {
+                        this.getMonsterBook().addCard(client, itemId);
+                    }
                 }
                 return true;
             }
@@ -1974,7 +2169,18 @@ public class Character extends AbstractCharacterObject {
         pickupItem(ob, -1);
     }
 
-    public final void pickupItem(MapObject ob, int petIndex) {     // yes, one picks the MapObject, not the MapItem
+    public final void pickupItem(MapObject ob, int petIndex) {
+        if (isUsingModifiedPickupItem()) {
+            // Run the modified version
+            modifiedPickupItem(ob, petIndex);
+        } else {
+            // Run the original version
+            originalPickupItem(ob, petIndex);
+        }
+    }
+
+
+    public void originalPickupItem(MapObject ob, int petIndex) {
         if (ob == null) {                                               // pet index refers to the one picking up the item
             return;
         }
@@ -1986,14 +2192,14 @@ public class Character extends AbstractCharacterObject {
             }
 
             List<Character> mpcs = new LinkedList<>();
-            if (mapitem.getMeso() > 0 && !mapitem.isPickedUp()) {
+            if (mapitem.getMeso() > 0 && !mapitem.isAlreadyPickedUp()) {
                 mpcs = getPartyMembersOnSameMap();
             }
 
             ScriptedItem itemScript = null;
             mapitem.lockItem();
             try {
-                if (mapitem.isPickedUp()) {
+                if (mapitem.isAlreadyPickedUp()) {
                     sendPacket(PacketCreator.showItemUnavailable());
                     sendPacket(PacketCreator.enableActions());
                     return;
@@ -2002,34 +2208,40 @@ public class Character extends AbstractCharacterObject {
                 boolean isPet = petIndex > -1;
                 final Packet pickupPacket = PacketCreator.removeItemFromMap(mapitem.getObjectId(), (isPet) ? 5 : 2, this.getId(), isPet, petIndex);
 
-                Item mItem = mapitem.getItem();
-                boolean hasSpaceInventory = true;
                 ItemInformationProvider ii = ItemInformationProvider.getInstance();
-                if (ItemId.isNxCard(mapitem.getItemId()) || mapitem.getMeso() > 0 || ii.isConsumeOnPickup(mapitem.getItemId()) || (hasSpaceInventory = InventoryManipulator.checkSpace(client, mapitem.getItemId(), mItem.getQuantity(), mItem.getOwner()))) {
+
+                Item mItem = mapitem.getItem();
+                if (mapitem.getMeso() > 0) {
+                    if (!mpcs.isEmpty()) {
+                        int mesosamm = mapitem.getMeso() / mpcs.size();
+                        for (Character partymem : mpcs) {
+                            if (partymem.isLoggedinWorld()) {
+                                partymem.gainMeso(mesosamm, true, true, false);
+                            }
+                        }
+                    } else {
+                        this.gainMeso(mapitem.getMeso(), true, true, false);
+                    }
+
+                    this.getMap().pickItemDrop(pickupPacket, mapitem);
+                    return;
+                }
+                int itemId = mItem.getItemId();
+                boolean hasSpaceInventory = true;
+                boolean isConsumedOnPickup = ii.isConsumeOnPickup(itemId);
+
+                if (ItemId.isNxCard(itemId) || mapitem.getMeso() > 0 || isConsumedOnPickup || (hasSpaceInventory = InventoryManipulator.checkSpace(client, itemId, mItem.getQuantity(), mItem.getOwner()))) {
                     int mapId = this.getMapId();
 
                     if ((MapId.isSelfLootableOnly(mapId))) {//happyville trees and guild PQ
                         if (!mapitem.isPlayerDrop() || mapitem.getDropper().getObjectId() == client.getPlayer().getObjectId()) {
-                            if (mapitem.getMeso() > 0) {
-                                if (!mpcs.isEmpty()) {
-                                    int mesosamm = mapitem.getMeso() / mpcs.size();
-                                    for (Character partymem : mpcs) {
-                                        if (partymem.isLoggedinWorld()) {
-                                            partymem.gainMeso(mesosamm, true, true, false);
-                                        }
-                                    }
-                                } else {
-                                    this.gainMeso(mapitem.getMeso(), true, true, false);
-                                }
-
-                                this.getMap().pickItemDrop(pickupPacket, mapitem);
-                            } else if (ItemId.isNxCard(mapitem.getItemId())) {
+                            if (ItemId.isNxCard(itemId)) {
                                 // Add NX to account, show effect and make item disappear
                                 int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250;
                                 this.getCashShop().gainCash(1, nxGain);
 
                                 if (YamlConfig.config.server.USE_ANNOUNCE_NX_COUPON_LOOT) {
-                                    showHint("You have earned #e#b" + nxGain + " NX#k#n. (" + this.getCashShop().getCash(CashShop.NX_CREDIT) + " NX)", 300);
+                                    showHint("You have earned #e#b" + nxGain + " NX#k#n. (" + this.getCashShop().getCash(1) + " NX)", 300);
                                 }
 
                                 this.getMap().pickItemDrop(pickupPacket, mapitem);
@@ -2048,7 +2260,7 @@ public class Character extends AbstractCharacterObject {
                         return;
                     }
 
-                    if (!this.needQuestItem(mapitem.getQuest(), mapitem.getItemId())) {
+                    if (!this.needQuestItem(mapitem.getQuest(), itemId)) {
                         sendPacket(PacketCreator.showItemUnavailable());
                         sendPacket(PacketCreator.enableActions());
                         return;
@@ -2065,7 +2277,19 @@ public class Character extends AbstractCharacterObject {
                         } else {
                             this.gainMeso(mapitem.getMeso(), true, true, false);
                         }
-                    } else if (mItem.getItemId() / 10000 == 243) {
+                    } else if (ItemId.isNxCard(mapitem.getItemId())) {
+                        // Add NX to account, show effect and make item disappear
+                        int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250;
+                        this.getCashShop().gainCash(1, nxGain);
+
+                        if (YamlConfig.config.server.USE_ANNOUNCE_NX_COUPON_LOOT) {
+                            showHint("You have earned #e#b" + nxGain + " NX#k#n. (" + this.getCashShop().getCash(1) + " NX)", 300);
+                        }
+                    } else if (itemId == 2430030 && isPet) {
+                        sendPacket(PacketCreator.enableActions());
+                        return;
+                    } else if (applyConsumeOnPickup(itemId, isPet)) {
+                    } else if (itemId / 10000 == 243) {
                         ScriptedItem info = ii.getScriptedItemInfo(mItem.getItemId());
                         if (info != null && info.runOnPickup()) {
                             itemScript = info;
@@ -2075,15 +2299,6 @@ public class Character extends AbstractCharacterObject {
                                 return;
                             }
                         }
-                    } else if (ItemId.isNxCard(mapitem.getItemId())) {
-                        // Add NX to account, show effect and make item disappear
-                        int nxGain = mapitem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250;
-                        this.getCashShop().gainCash(1, nxGain);
-
-                        if (YamlConfig.config.server.USE_ANNOUNCE_NX_COUPON_LOOT) {
-                            showHint("You have earned #e#b" + nxGain + " NX#k#n. (" + this.getCashShop().getCash(CashShop.NX_CREDIT) + " NX)", 300);
-                        }
-                    } else if (applyConsumeOnPickup(mItem.getItemId())) {
                     } else if (InventoryManipulator.addFromDrop(client, mItem, true)) {
                         if (mItem.getItemId() == ItemId.ARPQ_SPIRIT_JEWEL) {
                             updateAriantScore();
@@ -2110,6 +2325,330 @@ public class Character extends AbstractCharacterObject {
         sendPacket(PacketCreator.enableActions());
     }
 
+
+    public void modifiedPickupItem(MapObject ob, int petIndex) {
+        // Place the code for the modified pickupItem here
+        if (ob == null) {
+            return;
+        }
+
+        if (ob instanceof MapItem mapitem) {
+            if (System.currentTimeMillis() - mapitem.getDropTime() < 400 || !mapitem.canBePickedBy(this)) {
+                sendPacket(PacketCreator.enableActions());
+                return;
+            }
+
+            List<Character> mpcs = new LinkedList<>();
+            if (mapitem.getMeso() > 0 && !mapitem.isAlreadyPickedUp()) {
+                mpcs = getPartyMembersOnSameMap();
+            }
+
+            ScriptedItem itemScript = null;
+            mapitem.lockItem();
+            try {
+                if (mapitem.isAlreadyPickedUp()) {
+                    sendPacket(PacketCreator.showItemUnavailable());
+                    sendPacket(PacketCreator.enableActions());
+                    return;
+                }
+
+                boolean isPet = petIndex > -1;
+                final Packet pickupPacket = PacketCreator.removeItemFromMap(mapitem.getObjectId(), (isPet) ? 5 : 2, this.getId(), isPet, petIndex);
+
+                ItemInformationProvider ii = ItemInformationProvider.getInstance();
+                Item mItem = mapitem.getItem();
+
+                if (mItem != null) {  // Check if the item is not null
+                    int itemId = mItem.getItemId();
+                    int amount = mItem.getQuantity();
+                    int charId = this.getId(); // Character ID
+
+                    boolean isUseItem = itemId >= 2000000 && itemId < 2999999;
+                    boolean isEtcItem = itemId >= 4000000 && itemId < 5000000;
+                    boolean isSetupItem = ii.getInventoryType(itemId) == InventoryType.SETUP;
+                    boolean isConsumeOnPickup = ii.isConsumeOnPickup(itemId); // Check if item is consumed on pickup
+
+                    boolean isEquip = ii.getInventoryType(itemId) == InventoryType.EQUIP;
+                    boolean isCash = ii.getInventoryType(itemId) == InventoryType.CASH;
+
+                    // Specific item ID check for the USE items that should go to the inventory
+                    List<Integer> directInventoryItems = Arrays.asList(
+                            2070000, 2070001, 2070002, 2070003, 2070004, 2070005, 2070006, 2070007, 2070008,
+                            2070009, 2070010, 2070011, 2070012, 2070013, 2070015, 2070016, 2070018,
+                            2330000, 2330001, 2330002, 2330003, 2330004, 2330005
+                    );
+
+                    // Insert the condition for itemId == 2430030 and isPet here
+                    if (itemId == 2430030 && isPet) {
+                        sendPacket(PacketCreator.enableActions());
+                        return;
+                    }
+
+                    if (ItemId.isNxCard(itemId) || mapitem.getMeso() > 0 || isConsumeOnPickup || InventoryManipulator.checkSpace(client, itemId, mItem.getQuantity(), mItem.getOwner())) {
+                        int mapId = this.getMapId();
+
+                        // Handling mesos
+                        if (mapitem.getMeso() > 0) {
+                            if (!mpcs.isEmpty()) {
+                                int mesosamm = mapitem.getMeso() / mpcs.size();
+                                for (Character partymem : mpcs) {
+                                    if (partymem.isLoggedinWorld()) {
+                                        partymem.gainMeso(mesosamm, true, true, false);
+                                    }
+                                }
+                            } else {
+                                this.gainMeso(mapitem.getMeso(), true, true, false);
+                            }
+                            this.getMap().pickItemDrop(pickupPacket, mapitem);
+                            return;
+                        }
+
+                        if (itemId == 2430030 && isPet) {
+                            sendPacket(PacketCreator.enableActions());
+                            return;
+                        }
+
+                        // Handle NX Cards
+                        if (ItemId.isNxCard(itemId)) {
+                            int nxGain = itemId == ItemId.NX_CARD_100 ? 100 : 250;
+                            this.getCashShop().gainCash(1, nxGain);
+
+                            if (YamlConfig.config.server.USE_ANNOUNCE_NX_COUPON_LOOT) {
+                                showHint("You have earned #e#b" + nxGain + " NX#k#n. (" + this.getCashShop().getCash(1) + " NX)", 300);
+                            }
+
+                            this.getMap().pickItemDrop(pickupPacket, mapitem);
+                            sendPacket(PacketCreator.enableActions());
+                            return;
+                        }
+
+                        // Consume on Pickup (buffs, etc.)
+                        if (isConsumeOnPickup) {
+                            applyConsumeOnPickup(itemId, isPet);  // Apply the effect immediately
+                            this.getMap().pickItemDrop(pickupPacket, mapitem);
+                            sendPacket(PacketCreator.enableActions());
+                            return;
+                        }
+
+                        // Handle 243xxx items (Scripted)
+                        if (itemId / 10000 == 243) {
+                            ScriptedItem info = ii.getScriptedItemInfo(mItem.getItemId());
+                            if (info != null && info.runOnPickup()) {
+                                itemScript = info;
+                            } else {
+                                if (!InventoryManipulator.addFromDrop(client, mItem, true)) {
+                                    sendPacket(PacketCreator.enableActions());
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Store USE, ETC, and SETUP items in infinity storage, except for specific USE items
+                        else if (isUseItem || isEtcItem || isSetupItem) {
+                            if (isUseItem && directInventoryItems.contains(itemId)) {
+                                // Add the item directly to the inventory
+                                if (!InventoryManipulator.addFromDrop(client, mItem, true)) {
+                                    sendPacket(PacketCreator.enableActions());
+                                    return;
+                                }
+                            } else {
+                                // Store the item in infinity storage
+                                storeInInfinityStorage(itemId, amount);
+                            }
+
+                            this.getMap().pickItemDrop(pickupPacket, mapitem);
+                            sendPacket(PacketCreator.enableActions());
+                            return;
+                        }
+
+                        // Handle EQUIP and CASH items
+                        else if (isEquip || isCash) {
+                            if (InventoryManipulator.addFromDrop(client, mItem, true)) {
+                                this.getMap().pickItemDrop(pickupPacket, mapitem);
+                            } else {
+                                sendPacket(PacketCreator.enableActions());
+                            }
+                            return;
+                        }
+                    } else {
+                        sendPacket(PacketCreator.getInventoryFull());
+                        sendPacket(PacketCreator.getShowInventoryFull());
+                        return;
+                    }
+                }
+
+                // Handle mesos again in case none of the above conditions were met
+                if (mapitem.getMeso() > 0) {
+                    if (!mpcs.isEmpty()) {
+                        int mesosamm = mapitem.getMeso() / mpcs.size();
+                        for (Character partymem : mpcs) {
+                            if (partymem.isLoggedinWorld()) {
+                                partymem.gainMeso(mesosamm, true, true, false);
+                            }
+                        }
+                    } else {
+                        this.gainMeso(mapitem.getMeso(), true, true, false);
+                    }
+                    this.getMap().pickItemDrop(pickupPacket, mapitem);
+                    return;
+                }
+            } finally {
+                mapitem.unlockItem();
+            }
+
+            if (itemScript != null) {
+                ItemScriptManager ism = ItemScriptManager.getInstance();
+                ism.runItemScript(client, itemScript);
+            }
+
+            sendPacket(PacketCreator.enableActions());
+        }
+    }
+
+
+    // Helper method to store items in infinitystorage
+ /*   private void storeInInfinityStorage(int charId, int itemId, int amount) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            PreparedStatement ps = con.prepareStatement(
+                    "SELECT amount FROM infinitystorage WHERE charid = ? AND itemid = ?");
+            ps.setInt(1, charId);
+            ps.setInt(2, itemId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                // Item exists, so we update the amount
+                int currentAmount = rs.getInt("amount");
+                PreparedStatement updatePs = con.prepareStatement(
+                        "UPDATE infinitystorage SET amount = ? WHERE charid = ? AND itemid = ?");
+                updatePs.setInt(1, currentAmount + amount);  // Merge the amounts
+                updatePs.setInt(2, charId);
+                updatePs.setInt(3, itemId);
+                updatePs.executeUpdate();
+            } else {
+                // Item does not exist, insert a new row
+                PreparedStatement insertPs = con.prepareStatement(
+                        "INSERT INTO infinitystorage (charid, itemid, amount, type, position) VALUES (?, ?, ?, NULL, NULL)");
+                insertPs.setInt(1, charId);  // Character ID
+                insertPs.setInt(2, itemId);  // Item ID
+                insertPs.setInt(3, amount);  // Amount
+                insertPs.executeUpdate();
+            }
+        } catch (SQLException e) {
+            log.error("Failed to insert or update item in infinitystorage for char {}: {}", charId, e.getMessage());
+        }
+    }*/
+
+    // Cache: key = itemId, value = amount
+    private Map<Integer, Integer> infinityStorageCache = new ConcurrentHashMap<>();
+
+    // Cache implementation: Only updates the cache, no SQL
+    public int getInfinityStorageEntry(int itemId) {
+        int currentAmount = 0;
+        if (infinityStorageCache.containsKey(itemId)) {
+            currentAmount = infinityStorageCache.get(itemId);
+        } else {
+            try (Connection con = DatabaseConnection.getConnection()) {
+                try (PreparedStatement ps = con.prepareStatement("SELECT amount FROM infinitystorage WHERE charid = ? AND itemid = ?")) {
+                    ps.setInt(1, this.id);
+                    ps.setInt(2, itemId);
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            currentAmount = rs.getInt("amount");
+                        }
+                    }
+                }
+            }
+            catch (SQLException sqle) {
+                sqle.printStackTrace();
+                currentAmount = 0;
+            }
+        }
+        return currentAmount;
+    }
+
+    public void storeInInfinityStorage(int itemId, int amount) {
+        int currentAmount = getInfinityStorageEntry(itemId);
+
+        infinityStorageCache.put(itemId, currentAmount + amount);
+    }
+
+    public boolean retrieveFromInfinityStorage(int itemId, int amount) {
+        int currentAmount = getInfinityStorageEntry(itemId);
+        if (amount > currentAmount) {
+            return false;
+        }
+
+        infinityStorageCache.put(itemId, currentAmount - amount);
+        return true;
+    }
+
+
+    // Method to flush the cache to the database (to be called explicitly elsewhere)
+    public void flushInfinityStorageCache() {
+        int charId = this.id;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            for (Map.Entry<Integer, Integer> entry : infinityStorageCache.entrySet()) {
+                int itemId = entry.getKey();
+                int amount = entry.getValue();
+
+                // Check if item exists in DB
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT amount FROM infinitystorage WHERE charid = ? AND itemid = ?");
+                ps.setInt(1, charId);
+                ps.setInt(2, itemId);
+
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    // Update existing entry in the DB
+                    int currentAmount = rs.getInt("amount");
+                    PreparedStatement updatePs = con.prepareStatement(
+                            "UPDATE infinitystorage SET amount = ? WHERE charid = ? AND itemid = ?");
+                    updatePs.setInt(1, amount);
+                    updatePs.setInt(2, charId);
+                    updatePs.setInt(3, itemId);
+                    updatePs.executeUpdate();
+                } else {
+                    // Insert a new row if it doesn't exist
+                    PreparedStatement insertPs = con.prepareStatement(
+                            "INSERT INTO infinitystorage (charid, itemid, amount, type, position) VALUES (?, ?, ?, NULL, NULL)");
+                    insertPs.setInt(1, charId);
+                    insertPs.setInt(2, itemId);
+                    insertPs.setInt(3, amount);
+                    insertPs.executeUpdate();
+                }
+            }
+            // Clear the cache after flushing
+            infinityStorageCache.clear();
+        } catch (SQLException e) {
+            log.error("Failed to flush cache to infinitystorage: {}", e.getMessage());
+        }
+    }
+
+    public List<Map.Entry<Integer, Integer>> getInfinityStorageAsList() {
+
+        return infinityStorageCache.entrySet().stream().filter(e -> e.getValue() != 0).sorted(Comparator.comparingInt(Entry::getKey)).collect(Collectors.toList());
+
+    }
+
+    public void getInfinityFromDB() {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT * FROM infinitystorage WHERE amount <> 0 AND charId = ?")) {
+                ps.setInt(1, this.id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        int itemId = rs.getInt("itemId");
+                        int amount = rs.getInt("amount");
+                        if (!infinityStorageCache.containsKey(itemId)) {
+                            infinityStorageCache.put(itemId, amount);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     public int countItem(int itemid) {
         return inventory[ItemConstants.getInventoryType(itemid).ordinal()].countById(itemid);
     }
@@ -2120,6 +2659,10 @@ public class Character extends AbstractCharacterObject {
 
     public boolean canHold(int itemid, int quantity) {
         return client.getAbstractPlayerInteraction().canHold(itemid, quantity);
+    }
+
+    public boolean canHold(List<Pair<Item, InventoryType>> items) {
+        return client.getAbstractPlayerInteraction().canHold(items);
     }
 
     public boolean canHoldUniques(List<Integer> itemids) {
@@ -2139,22 +2682,8 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void announceBattleshipHp() {
-        sendPacket(PacketCreator.skillCooldown(5221999, battleshipHp));
-    }
-
-    public void decreaseBattleshipHp(int decrease) {
-        this.battleshipHp -= decrease;
-        if (battleshipHp <= 0) {
-            Skill battleship = SkillFactory.getSkill(Corsair.BATTLE_SHIP);
-            int cooldown = battleship.getEffect(getSkillLevel(battleship)).getCooldown();
-            sendPacket(PacketCreator.skillCooldown(Corsair.BATTLE_SHIP, cooldown));
-            addCooldown(Corsair.BATTLE_SHIP, Server.getInstance().getCurrentTime(), SECONDS.toMillis(cooldown));
-            removeCooldown(5221999);
-            cancelEffectFromBuffStat(BuffStat.MONSTER_RIDING);
-        } else {
-            announceBattleshipHp();
-            addCooldown(5221999, 0, Long.MAX_VALUE);
-        }
+        sendPacket(PacketCreator.skillCooldown(Corsair.BATTLE_SHIP, 20));
+        sendPacket(PacketCreator.skillCooldown(5221999, 0));
     }
 
     public void decreaseReports() {
@@ -2291,11 +2820,6 @@ public class Character extends AbstractCharacterObject {
                 ps.executeUpdate();
             }
 
-            try (PreparedStatement ps = con.prepareStatement("DELETE FROM monsterbook WHERE charid = ?")) {
-                ps.setInt(1, cid);
-                ps.executeUpdate();
-            }
-
             try (PreparedStatement ps = con.prepareStatement("DELETE FROM characters WHERE id = ?")) {
                 ps.setInt(1, cid);
                 ps.executeUpdate();
@@ -2377,7 +2901,7 @@ public class Character extends AbstractCharacterObject {
                 ps.executeUpdate();
             }
 
-            String[] toDel = {"famelog", "inventoryitems", "keymap", "queststatus", "savedlocations", "trocklocations", "skillmacros", "skills", "eventstats" };
+            String[] toDel = {"famelog", "inventoryitems", "keymap", "queststatus", "savedlocations", "trocklocations", "skillmacros", "skills", "eventstats", "server_queue"};
             for (String s : toDel) {
                 Character.deleteWhereCharacterId(con, "DELETE FROM `" + s + "` WHERE characterid = ?", cid);
             }
@@ -2596,7 +3120,9 @@ public class Character extends AbstractCharacterObject {
             List<BuffStatValueHolder> mbsvhList = getAllStatups();
             for (BuffStatValueHolder mbsvh : mbsvhList) {
                 if (mbsvh.effect.isSkill()) {
-                    if (mbsvh.effect.getBuffSourceId() != Aran.COMBO_ABILITY) { // check discovered thanks to Croosade dev team
+                    if (mbsvh.effect.getBuffSourceId() != Aran.COMBO_ABILITY && mbsvh.effect.getBuffSourceId() != Magician.MAGIC_GUARD
+                            && mbsvh.effect.getBuffSourceId() != BlazeWizard.MAGIC_GUARD && mbsvh.effect.getBuffSourceId() !=
+                            Beginner.ECHO_OF_HERO && mbsvh.effect.getBuffSourceId() != Noblesse.ECHO_OF_HERO && mbsvh.effect.getBuffSourceId() != Legend.ECHO_OF_HERO) {
                         cancelEffect(mbsvh.effect, false, mbsvh.startTime);
                     }
                 }
@@ -2961,6 +3487,39 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public void cancelTotemCooldownTask() {
+        if (toemCooldownTask != null) {
+            toemCooldownTask.cancel(false);
+            toemCooldownTask = null;
+        }
+    }
+
+    public void totemCooldownTask() {
+        if (toemCooldownTask == null) {
+            toemCooldownTask = TimerManager.getInstance().register(new Runnable() {
+                @Override
+                public void run() {
+                    Set<Entry<Integer, TotemCooldownValueHolder>> es;
+
+                    chrLock.lock();
+                    try {
+                        es = new LinkedHashSet<>(totemCooldowns.entrySet());
+                    } finally {
+                        chrLock.unlock();
+                    }
+
+                    long curTime = Server.getInstance().getCurrentTime();
+                    for (Entry<Integer, TotemCooldownValueHolder> bel : es) {
+                        TotemCooldownValueHolder tcvh = bel.getValue();
+                        if (curTime >= tcvh.startTime + tcvh.length) {
+                            removeTotemCooldown(tcvh.npcId);
+                        }
+                    }
+                }
+            }, 1500);
+        }
+    }
+
     public void cancelExpirationTask() {
         if (itemExpireTask != null) {
             itemExpireTask.cancel(false);
@@ -3052,6 +3611,22 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+/*
+    public int getDamageSkin() {
+        return damageSkin;
+    }
+
+    public void setDamageSkin(int damageSkin, boolean update) {
+        this.damageSkin = damageSkin;
+        if (update) {
+            if (isHidden()) {
+                getMap().broadcastGMMessage(this, PacketCreator.Packets.updateDamageSkin(this), true);
+            } else {
+                getMap().broadcastMessage(this, PacketCreator.Packets.updateDamageSkin(this), true);
+            }
+        }
+    }
+*/
     public enum FameStatus {
 
         OK, NOT_TODAY, NOT_THIS_MONTH
@@ -3070,7 +3645,7 @@ public class Character extends AbstractCharacterObject {
         if ((currentgexp + exp.get()) >= ExpTable.getExpNeededForLevel(level)) {
             expgain += ExpTable.getExpNeededForLevel(level) - exp.get();
 
-            int nextneed = ExpTable.getExpNeededForLevel(level + 1);
+            long nextneed = ExpTable.getExpNeededForLevel(level + 1);
             if (currentgexp - expgain >= nextneed) {
                 expgain += nextneed;
             }
@@ -3100,10 +3675,10 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void gainExp(int gain, int party, boolean show, boolean inChat, boolean white) {
-        if (hasDisease(Disease.CURSE)) {
+/*        if (hasDisease(Disease.CURSE)) {
             gain *= 0.5;
             party *= 0.5;
-        }
+        }*/
 
         if (gain < 0) {
             gain = Integer.MAX_VALUE;   // integer overflow, heh.
@@ -3118,11 +3693,11 @@ public class Character extends AbstractCharacterObject {
         gainExpInternal(gain, equip, party, show, inChat, white);
     }
 
-    public void loseExp(int loss, boolean show, boolean inChat) {
+    public void loseExp(long loss, boolean show, boolean inChat) {
         loseExp(loss, show, inChat, true);
     }
 
-    public void loseExp(int loss, boolean show, boolean inChat, boolean white) {
+    public void loseExp(long loss, boolean show, boolean inChat, boolean white) {
         gainExpInternal(-loss, 0, 0, show, inChat, white);
     }
 
@@ -3148,12 +3723,11 @@ public class Character extends AbstractCharacterObject {
             long leftover = 0;
             long nextExp = exp.get() + total;
 
-            if (nextExp > (long) Integer.MAX_VALUE) {
+/*            if (nextExp > (long) Integer.MAX_VALUE) {
                 total = Integer.MAX_VALUE - exp.get();
                 leftover = nextExp - Integer.MAX_VALUE;
-            }
-            updateSingleStat(Stat.EXP, exp.addAndGet((int) total));
-            totalExpGained += total;
+            }*/
+            updateExpStat(exp.addAndGet(total));
             if (show) {
                 announceExpGain(gain, equip, party, inChat, white);
             }
@@ -3170,20 +3744,6 @@ public class Character extends AbstractCharacterObject {
                 gainExpInternal(leftover, equip, party, false, inChat, white);
             } else {
                 lastExpGainTime = System.currentTimeMillis();
-
-                if (YamlConfig.config.server.USE_EXP_GAIN_LOG) {
-                    ExpLogRecord expLogRecord = new ExpLogger.ExpLogRecord(
-                        getWorldServer().getExpRate(),
-                        expCoupon,
-                        totalExpGained,
-                        exp.get(),
-                        new Timestamp(lastExpGainTime),
-                        id
-                    );
-                    ExpLogger.putExpLogRecord(expLogRecord);
-                }
-
-                totalExpGained = 0;
             }
         }
     }
@@ -3287,6 +3847,21 @@ public class Character extends AbstractCharacterObject {
         } finally {
             chrLock.unlock();
             effLock.unlock();
+        }
+
+        return ret;
+    }
+
+    public List<TotemCooldownValueHolder> getAllTotemCooldowns() {
+        List<TotemCooldownValueHolder> ret = new ArrayList<>();
+
+        chrLock.lock();
+        try {
+            for (TotemCooldownValueHolder tcvh : totemCooldowns.values()) {
+                ret.add(new TotemCooldownValueHolder(tcvh.npcId, tcvh.startTime, tcvh.length));
+            }
+        } finally {
+            chrLock.unlock();
         }
 
         return ret;
@@ -3766,7 +4341,7 @@ public class Character extends AbstractCharacterObject {
                             recoveryTask.cancel(false);
                             recoveryTask = null;
                         }
-                    } else if (mbs == BuffStat.SUMMON || mbs == BuffStat.PUPPET) {
+                    } else if (mbs == BuffStat.SUMMON || mbs == BuffStat.PUPPET || mbs == BuffStat.HANDS) {
                         int summonId = mbsvh.effect.getSourceId();
 
                         Summon summon = summons.get(summonId);
@@ -4367,13 +4942,6 @@ public class Character extends AbstractCharacterObject {
             msel.getLeft().updateBuffEffect(this, activeStatups, msel.getRight());
             activeStatups.clear();
         }
-
-        if (this.isRidingBattleship()) {
-            List<Pair<BuffStat, Integer>> statups = new ArrayList<>(1);
-            statups.add(new Pair<>(BuffStat.MONSTER_RIDING, 0));
-            this.sendPacket(PacketCreator.giveBuff(ItemId.BATTLESHIP, 5221006, statups));
-            this.announceBattleshipHp();
-        }
     }
 
     private static BuffStat getSingletonStatupFromEffect(StatEffect mse) {
@@ -4382,7 +4950,6 @@ public class Character extends AbstractCharacterObject {
                 return mbs.getLeft();
             }
         }
-
         return null;
     }
 
@@ -4597,9 +5164,7 @@ public class Character extends AbstractCharacterObject {
 
                 if (!isSilent) {
                     addItemEffectHolder(sourceid, expirationtime, appliedStatups);
-                    for (Entry<BuffStat, BuffStatValueHolder> statup : toDeploy.entrySet()) {
-                        effects.put(statup.getKey(), statup.getValue());
-                    }
+                    effects.putAll(toDeploy);
 
                     if (active) {
                         retrievedEffects.put(sourceid, new Pair<>(effect, starttime));
@@ -4616,9 +5181,7 @@ public class Character extends AbstractCharacterObject {
             }
 
             addItemEffectHolder(sourceid, expirationtime, appliedStatups);
-            for (Entry<BuffStat, BuffStatValueHolder> statup : toDeploy.entrySet()) {
-                effects.put(statup.getKey(), statup.getValue());
-            }
+            effects.putAll(toDeploy);
         } finally {
             chrLock.unlock();
             effLock.unlock();
@@ -4922,7 +5485,7 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
-    public int getExp() {
+    public long getExp() {
         return exp.get();
     }
 
@@ -5050,9 +5613,21 @@ public class Character extends AbstractCharacterObject {
         usedStorage = true;
     }
 
+    public void setUsedOreStorage() {
+        usedStorage = true;
+    }
+
     public List<Ring> getFriendshipRings() {
         Collections.sort(friendshipRings);
         return friendshipRings;
+    }
+
+    public boolean getUsingOreStorage() {
+        return usingOreStorage;
+    }
+
+    public void setUsingOreStorage(boolean isUsingOreStorage) {
+        usingOreStorage = isUsingOreStorage;
     }
 
     public int getGender() {
@@ -5211,6 +5786,39 @@ public class Character extends AbstractCharacterObject {
         return job;
     }
 
+    public int getMastery() {
+        int seekMastery = 0;
+        if (job.getId() == 312) {
+            if (getSkillLevel(3120005) > 0) {
+                return 60 + getSkillLevel(3121005);
+            }
+        }
+        if (job.getId() == 322) {
+            if (getSkillLevel(3220004) > 0) {
+                return 60 + getSkillLevel(3220004);
+            }
+        }
+        if (job.getId() == 2112) {
+            if (getSkillLevel(21120001) > 0) {
+                return 60 + getSkillLevel(21120001);
+            }
+        }
+        if (job.getJobNiche() != 2) {
+            if (job.getId() % 10 == 1) {
+                seekMastery = job.getId() - 1;
+                seekMastery *= 10000;
+            } else if (job.getId() % 10 == 2) {
+                seekMastery = job.getId() - 2;
+                seekMastery *= 10000;
+            } else {
+                seekMastery = job.getId() * 10000;
+            }
+            return (int) ((10 + getSkillLevel(seekMastery)) * 2.5);
+        }
+        return 10;
+    }
+
+
     public int getJobRank() {
         return jobRank;
     }
@@ -5296,12 +5904,22 @@ public class Character extends AbstractCharacterObject {
         return localmagic;
     }
 
+    public int getEquippedMAD() {
+        return localmagic - localint_;
+    }
+
     public int getTotalWatk() {
         return localwatk;
     }
 
     public int getMaxClassLevel() {
-        return isCygnus() ? 120 : 200;
+        if (getReborns() == 3) {
+            return 255;
+        } else if (isCygnus()) {
+            return 200;
+        } else {
+            return 200; // Default value if neither condition is met
+        }
     }
 
     public int getMaxLevel() {
@@ -5658,7 +6276,7 @@ public class Character extends AbstractCharacterObject {
                 merchant.removeVisitor(this);
             }
             try {
-                merchant.saveItems(false);
+                merchant.saveItems();
             } catch (SQLException e) {
                 log.error("Error while saving {}'s Hired Merchant items.", name, e);
             }
@@ -5935,7 +6553,90 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void clearSummons() {
-        summons.clear();
+        if (summons.get(Ranger.SILVER_HAWK) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Ranger.SILVER_HAWK), true));
+            getMap().removeMapObject(summons.get(Ranger.SILVER_HAWK));
+        }
+        if (summons.get(Sniper.GOLDEN_EAGLE) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Sniper.GOLDEN_EAGLE), true));
+            getMap().removeMapObject(summons.get(Ranger.SILVER_HAWK));
+        }
+        if (summons.get(Marksman.FROST_PREY) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Marksman.FROST_PREY), true));
+            getMap().removeMapObject(summons.get(Marksman.FROST_PREY));
+        }
+        if (summons.get(Bowmaster.PHOENIX) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Bowmaster.PHOENIX), true));
+            getMap().removeMapObject(summons.get(Bowmaster.PHOENIX));
+        }
+        if (summons.get(ILArchMage.IFRIT) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(ILArchMage.IFRIT), true));
+            getMap().removeMapObject(summons.get(ILArchMage.IFRIT));
+        }
+        if (summons.get(FPArchMage.ELQUINES) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(FPArchMage.ELQUINES), true));
+            getMap().removeMapObject(summons.get(FPArchMage.ELQUINES));
+        }
+        if (summons.get(Bishop.BAHAMUT) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Bishop.BAHAMUT), true));
+            getMap().removeMapObject(summons.get(Bishop.BAHAMUT));
+        }
+        if (summons.get(Priest.SUMMON_DRAGON) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Priest.SUMMON_DRAGON), true));
+            getMap().removeMapObject(summons.get(Priest.SUMMON_DRAGON));
+        }
+        if (summons.get(NightWalker.DARKNESS) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(NightWalker.DARKNESS), true));
+            getMap().removeMapObject(summons.get(NightWalker.DARKNESS));
+        }
+        if (summons.get(BlazeWizard.IFRIT) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(BlazeWizard.IFRIT), true));
+            getMap().removeMapObject(summons.get(BlazeWizard.IFRIT));
+        }
+        if (summons.get(BlazeWizard.FLAME) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(BlazeWizard.FLAME), true));
+            getMap().removeMapObject(summons.get(BlazeWizard.FLAME));
+        }
+        if (summons.get(ThunderBreaker.LIGHTNING) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(ThunderBreaker.LIGHTNING), true));
+            getMap().removeMapObject(summons.get(ThunderBreaker.LIGHTNING));
+        }
+        if (summons.get(WindArcher.STORM) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(WindArcher.STORM), true));
+            getMap().removeMapObject(summons.get(WindArcher.STORM));
+        }
+        if (summons.get(DawnWarrior.SOUL) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(DawnWarrior.SOUL), true));
+            getMap().removeMapObject(summons.get(DawnWarrior.SOUL));
+        }
+        if (summons.get(WindArcher.STORM) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(WindArcher.STORM), true));
+            getMap().removeMapObject(summons.get(WindArcher.STORM));
+        }
+        if (summons.get(Outlaw.GAVIOTA) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Outlaw.GAVIOTA), true));
+            getMap().removeMapObject(summons.get(Outlaw.GAVIOTA));
+        }
+        if (summons.get(Outlaw.OCTOPUS) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Outlaw.OCTOPUS), true));
+            getMap().removeMapObject(summons.get(Outlaw.OCTOPUS));
+        }
+        if (summons.get(Corsair.WRATH_OF_THE_OCTOPI) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Corsair.WRATH_OF_THE_OCTOPI), true));
+            getMap().removeMapObject(summons.get(Corsair.WRATH_OF_THE_OCTOPI));
+        }
+        if (summons.get(Ranger.PUPPET) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Ranger.PUPPET), true));
+            getMap().removeMapObject(summons.get(Ranger.PUPPET));
+        }
+        if (summons.get(Sniper.PUPPET) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(Sniper.PUPPET), true));
+            getMap().removeMapObject(summons.get(Sniper.PUPPET));
+        }
+        if (summons.get(WindArcher.PUPPET) != null) {
+            sendPacket(PacketCreator.removeSummon(summons.get(WindArcher.PUPPET), true));
+            getMap().removeMapObject(summons.get(WindArcher.PUPPET));
+        }
     }
 
     public Summon getSummonByKey(int id) {
@@ -5975,14 +6676,9 @@ public class Character extends AbstractCharacterObject {
     }
 
     public void giveCoolDowns(final int skillid, long starttime, long length) {
-        if (skillid == 5221999) {
-            this.battleshipHp = (int) length;
-            addCooldown(skillid, 0, length);
-        } else {
-            long timeNow = Server.getInstance().getCurrentTime();
-            int time = (int) ((length + starttime) - timeNow);
-            addCooldown(skillid, timeNow, time);
-        }
+        long timeNow = Server.getInstance().getCurrentTime();
+        int time = (int) ((length + starttime) - timeNow);
+        addCooldown(skillid, timeNow, time);
     }
 
     public int gmLevel() {
@@ -6024,8 +6720,7 @@ public class Character extends AbstractCharacterObject {
             sendPacket(PacketCreator.giveBuff(energybar, 0, stat));
             sendPacket(PacketCreator.showOwnBuffEffect(energycharge.getId(), 2));
             getMap().broadcastPacket(this, PacketCreator.showBuffEffect(id, energycharge.getId(), 2));
-            getMap().broadcastPacket(this, PacketCreator.giveForeignPirateBuff(id, energycharge.getId(),
-                    ceffect.getDuration(), stat));
+            getMap().broadcastPacket(this, PacketCreator.giveForeignBuff(energybar, stat));
         }
         if (energybar >= 10000 && energybar < 11000) {
             energybar = 15000;
@@ -6114,11 +6809,98 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    private boolean canBuyback(int fee, boolean usingMesos) {
+        return (usingMesos ? this.getMeso() : cashshop.getCash(1)) >= fee;
+    }
+
+    private void applyBuybackFee(int fee, boolean usingMesos) {
+        if (usingMesos) {
+            this.gainMeso(-fee);
+        } else {
+            cashshop.gainCash(1, -fee);
+        }
+    }
+
+    private long getNextBuybackTime() {
+        return lastBuyback + MINUTES.toMillis(YamlConfig.config.server.BUYBACK_COOLDOWN_MINUTES);
+    }
+
+    private boolean isBuybackInvincible() {
+        return Server.getInstance().getCurrentTime() - lastBuyback < 4200;
+    }
+
+    private int getBuybackFee() {
+        float fee = YamlConfig.config.server.BUYBACK_FEE;
+        int grade = Math.min(Math.max(level, 30), 120) - 30;
+
+        fee += (grade * YamlConfig.config.server.BUYBACK_LEVEL_STACK_FEE);
+        if (YamlConfig.config.server.USE_BUYBACK_WITH_MESOS) {
+            fee *= YamlConfig.config.server.BUYBACK_MESO_MULTIPLIER;
+        }
+
+        return (int) Math.floor(fee);
+    }
+
+    public void showBuybackInfo() {
+        String s = "#eBUYBACK STATUS#n\r\n\r\nCurrent buyback fee: #b" + getBuybackFee() + " " + (YamlConfig.config.server.USE_BUYBACK_WITH_MESOS ? "mesos" : "NX") + "#k\r\n\r\n";
+
+        long timeNow = Server.getInstance().getCurrentTime();
+        boolean avail = true;
+        if (!isAlive()) {
+            long timeLapsed = timeNow - lastDeathtime;
+            long timeRemaining = MINUTES.toMillis(YamlConfig.config.server.BUYBACK_RETURN_MINUTES) - (timeLapsed + Math.max(0, getNextBuybackTime() - timeNow));
+            if (timeRemaining < 1) {
+                s += "Buyback #e#rUNAVAILABLE#k#n";
+                avail = false;
+            } else {
+                s += "Buyback countdown: #e#b" + getTimeRemaining(MINUTES.toMillis(YamlConfig.config.server.BUYBACK_RETURN_MINUTES) - timeLapsed) + "#k#n";
+            }
+            s += "\r\n";
+        }
+
+        if (timeNow < getNextBuybackTime() && avail) {
+            s += "Buyback available in #r" + getTimeRemaining(getNextBuybackTime() - timeNow) + "#k";
+            s += "\r\n";
+        } else {
+            s += "Buyback #bavailable#k";
+        }
+
+        this.showHint(s);
+    }
+
     private static String getTimeRemaining(long timeLeft) {
         int seconds = (int) Math.floor(timeLeft / SECONDS.toMillis(1)) % 60;
         int minutes = (int) Math.floor(timeLeft / MINUTES.toMillis(1)) % 60;
 
         return (minutes > 0 ? (String.format("%02d", minutes) + " minutes, ") : "") + String.format("%02d", seconds) + " seconds";
+    }
+
+    public boolean couldBuyback() {  // Ronan's buyback system
+        long timeNow = Server.getInstance().getCurrentTime();
+
+        if (timeNow - lastDeathtime > MINUTES.toMillis(YamlConfig.config.server.BUYBACK_RETURN_MINUTES)) {
+            this.dropMessage(5, "The period of time to decide has expired, therefore you are unable to buyback.");
+            return false;
+        }
+
+        long nextBuybacktime = getNextBuybackTime();
+        if (timeNow < nextBuybacktime) {
+            long timeLeft = nextBuybacktime - timeNow;
+            this.dropMessage(5, "Next buyback available in " + getTimeRemaining(timeLeft) + ".");
+            return false;
+        }
+
+        boolean usingMesos = YamlConfig.config.server.USE_BUYBACK_WITH_MESOS;
+        int fee = getBuybackFee();
+
+        if (!canBuyback(fee, usingMesos)) {
+            this.dropMessage(5, "You don't have " + fee + " " + (usingMesos ? "mesos" : "NX") + " to buyback.");
+            return false;
+        }
+
+        lastBuyback = timeNow;
+        applyBuybackFee(fee, usingMesos);
+        return true;
     }
 
     public boolean isBuffFrom(BuffStat stat, Skill skill) {
@@ -6152,6 +6934,13 @@ public class Character extends AbstractCharacterObject {
     public boolean isBeginnerJob() {
         return (job.getId() == 0 || job.getId() == 1000 || job.getId() == 2000);
     }
+
+    public boolean isSuperBeginner() {
+        return (job.getId() == 700 || job.getId() == 710 || job.getId() == 113 || job.getId() == 123 || job.getId() == 133 || job.getId() == 1113 || job.getId() == 213
+                || job.getId() == 223 || job.getId() == 233 || job.getId() == 1213 || job.getId() == 313 || job.getId() == 323 || job.getId() == 1313
+                || job.getId() == 413 || job.getId() == 423 || job.getId() == 1413 || job.getId() == 513 || job.getId() == 523 || job.getId() == 1513);
+    }
+
 
     public boolean isGM() {
         return gmLevel > 1;
@@ -6285,7 +7074,9 @@ public class Character extends AbstractCharacterObject {
         int improvingMaxMPLevel = 0;
 
         boolean isBeginner = isBeginnerJob();
-        if (YamlConfig.config.server.USE_AUTOASSIGN_STARTERS_AP && isBeginner && level < 11) {
+        int currentAP;
+
+        if (YamlConfig.config.server.USE_AUTOASSIGN_STARTERS_AP && isBeginner && level < 1) {
             effLock.lock();
             statWlock.lock();
             try {
@@ -6305,25 +7096,47 @@ public class Character extends AbstractCharacterObject {
                 effLock.unlock();
             }
         } else {
-            int remainingAp = 5;
+            int rebornsValue = getReborns(); // Fetch the updated reborns value using the getter
 
-            if (isCygnus()) {
-                if (level > 10) {
-                    if (level <= 17) {
-                        remainingAp += 2;
-                    } else if (level < 77) {
-                        remainingAp++;
-                    }
-                }
+            switch (rebornsValue) {
+                case 0:
+                    currentAP = 5;
+                    break;
+                case 1:
+                    currentAP = 4;
+                    break;
+                case 2:
+                    currentAP = 3;
+                    break;
+                case 3:
+                    currentAP = 2;
+                    break;
+                default:
+                    currentAP = 5; // Default to 5 if reborns is not in the specified cases
+                    break;
             }
-
-            gainAp(remainingAp, true);
+            if (level >= 200 && level < 210) {
+                currentAP = 10;
+            }
+            if (level >= 210 && level < 220) {
+                currentAP = 20;
+            }
+            if (level >= 220 && level < 230) {
+                currentAP = 30;
+            }
+            if (level >= 230 && level < 240) {
+                currentAP = 40;
+            }
+            if (level >= 240) {
+                currentAP = 50;
+            }
+            gainAp(currentAP, true);
         }
 
         int addhp = 0, addmp = 0;
         if (isBeginner) {
-            addhp += Randomizer.rand(12, 16);
-            addmp += Randomizer.rand(10, 12);
+            addhp += Randomizer.rand(60, 60);
+            addmp += Randomizer.rand(60, 60);
         } else if (job.isA(Job.WARRIOR) || job.isA(Job.DAWNWARRIOR1)) {
             improvingMaxHP = isCygnus() ? SkillFactory.getSkill(DawnWarrior.MAX_HP_INCREASE) : SkillFactory.getSkill(Warrior.IMPROVED_MAXHP);
             if (job.isA(Job.CRUSADER)) {
@@ -6345,6 +7158,9 @@ public class Character extends AbstractCharacterObject {
         } else if (job.isA(Job.GM)) {
             addhp += 30000;
             addmp += 30000;
+        } else if (job.isA(Job.SUPER_BEGINNER)) {
+            addhp += 75;
+            addmp += 75;
         } else if (job.isA(Job.PIRATE) || job.isA(Job.THUNDERBREAKER1)) {
             improvingMaxHP = isCygnus() ? SkillFactory.getSkill(ThunderBreaker.IMPROVE_MAX_HP) : SkillFactory.getSkill(Brawler.IMPROVE_MAX_HP);
             improvingMaxHPLevel = getSkillLevel(improvingMaxHP);
@@ -6416,7 +7232,6 @@ public class Character extends AbstractCharacterObject {
             statup.add(new Pair<>(Stat.AVAILABLESP, remainingSp[GameConstants.getSkillBook(job.getId())]));
             statup.add(new Pair<>(Stat.HP, hp));
             statup.add(new Pair<>(Stat.MP, mp));
-            statup.add(new Pair<>(Stat.EXP, exp.get()));
             statup.add(new Pair<>(Stat.LEVEL, level));
             statup.add(new Pair<>(Stat.MAXHP, clientmaxhp));
             statup.add(new Pair<>(Stat.MAXMP, clientmaxmp));
@@ -6424,6 +7239,7 @@ public class Character extends AbstractCharacterObject {
             statup.add(new Pair<>(Stat.DEX, dex));
 
             sendPacket(PacketCreator.updatePlayerStats(statup, true, this));
+            sendPacket(PacketCreator.updatePlayerEXP(0L, true));
         } finally {
             statWlock.unlock();
             effLock.unlock();
@@ -6510,6 +7326,53 @@ public class Character extends AbstractCharacterObject {
             return false;
         }
     }
+
+    public int getGiftLogCerezeth(String giftid) {
+        try (Connection con1 = DatabaseConnection.getConnection();
+             // PreparedStatement ps = con1.prepareStatement("select count(*) from `giftlog` where `accountid` = ? and `giftid` = ? and `lastredemption` >= subtime(current_timestamp, '1 0:0:0.0')")) {
+             PreparedStatement ps = con1.prepareStatement("SELECT COUNT(*) FROM `giftlog` WHERE `accountid` = ? AND `giftid` = ? AND `lastredemption` >= DATE(CONCAT(CURDATE(), ' 00:00:00'))")) {
+
+            int ret_count = 0;
+            // PreparedStatement ps;
+            // ps = con1.prepareStatement("select count(*) from giftlog where accountid = ? and giftid = ? and lastredemption >= subtime(current_timestamp, '1 0:0:0.0')");
+            ps.setInt(1, accountid);
+            ps.setString(2, giftid);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next())
+                ret_count = rs.getInt(1);
+            else
+                ret_count = -1;
+            rs.close();
+            ps.close();
+            return ret_count;
+        } catch (SQLException ex) { // Catch the SQLException
+            ex.printStackTrace(); // You can handle or log the exception here
+            return -1;
+        }
+    }
+
+    public void setGiftLogCerezeth(String giftid) {
+        try (Connection con1 = DatabaseConnection.getConnection();
+             PreparedStatement ps = con1.prepareStatement("insert into `giftlog` (`accountid`, `characterid`, `giftid`) values (?,?,?)")) {
+            ps.setInt(1, accountid);
+            ps.setInt(2, id);
+            ps.setString(3, giftid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    // public void setPlayerRatesCerezeth(int expRate, int mesoRate, int dropRate) {
+    //     this.expRate = expRate;
+    //     this.mesoRate = mesoRate;
+    //     this.dropRate = dropRate;
+    // }
+
+    public void setPlayerExpRatesCerezeth(int expRate) {
+        this.expRate = expRate;
+    }
+
     public void setPlayerRates() {
         this.expRate *= GameConstants.getPlayerBonusExpRate(this.level / 20);
         this.mesoRate *= GameConstants.getPlayerBonusMesoRate(this.level / 20);
@@ -6758,7 +7621,7 @@ public class Character extends AbstractCharacterObject {
             ret.setMaxMp(rs.getInt("maxmp"));
             ret.remainingAp = rs.getInt("ap");
             ret.loadCharSkillPoints(rs.getString("sp").split(","));
-            ret.exp.set(rs.getInt("exp"));
+            ret.exp.set(rs.getLong("exp"));
             ret.fame = rs.getInt("fame");
             ret.gachaexp.set(rs.getInt("gachaexp"));
             ret.mapid = rs.getInt("map");
@@ -6871,7 +7734,7 @@ public class Character extends AbstractCharacterObject {
                     ret.dex = rs.getInt("dex");
                     ret.int_ = rs.getInt("int");
                     ret.luk = rs.getInt("luk");
-                    ret.exp.set(rs.getInt("exp"));
+                    ret.exp.set(rs.getLong("exp"));
                     ret.gachaexp.set(rs.getInt("gachaexp"));
                     ret.hp = rs.getInt("hp");
                     ret.setMaxHp(rs.getInt("maxhp"));
@@ -6915,7 +7778,7 @@ public class Character extends AbstractCharacterObject {
                     ret.familyId = rs.getInt("familyId");
                     ret.bookCover = rs.getInt("monsterbookcover");
                     ret.monsterbook = new MonsterBook();
-                    ret.monsterbook.loadCards(charid);
+                    ret.monsterbook.loadCards(ret.accountid);
                     ret.vanquisherStage = rs.getInt("vanquisherStage");
                     ret.ariantPoints = rs.getInt("ariantPoints");
                     ret.dojoPoints = rs.getInt("dojoPoints");
@@ -6926,6 +7789,9 @@ public class Character extends AbstractCharacterObject {
                     ret.buddylist = new BuddyList(buddyCapacity);
                     ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
                     ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
+                    ret.reborns = rs.getInt("reborns");
+                    ret.bankMesos = rs.getLong("bank");
+                   // ret.damageSkin = rs.getInt("damageskin");
 
                     wserv = Server.getInstance().getWorld(ret.world);
 
@@ -7036,8 +7902,24 @@ public class Character extends AbstractCharacterObject {
                                 ret.messengerposition = position;
                             }
                         }
+
+
                         ret.loggedIn = true;
                     }
+                }
+            }
+
+            // Saloon
+            try (PreparedStatement stmt = con.prepareStatement("SELECT loadout_name, face, hair, skin FROM character_styles WHERE charid = ?")) {
+                stmt.setInt(1, charid);
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    String loadout_name = rs.getString("loadout_name");
+                    int face = rs.getInt("face");
+                    int hair = rs.getInt("hair");
+                    int skin = rs.getInt("skin");
+                    ret.lStyles.add(new Saloon(loadout_name, hair, face, skin));
                 }
             }
 
@@ -7122,6 +8004,25 @@ public class Character extends AbstractCharacterObject {
                         ret.linkedLevel = rs.getInt("level");
                     }
                 }
+            }
+
+            // Monster book stats
+            try (PreparedStatement ps = con.prepareStatement("SELECT SUM(Tier1) AS Total1, SUM(Tier2) AS Total2, SUM(Tier3) AS Total3, SUM(Tier4) AS Total4, SUM(Tier5) AS Total5, SUM(Tier6) AS Total6, SUM(Tier7) AS Total7, SUM(Tier8) AS Total8, SUM(Tier9) AS Total9 FROM `monsterbook_stats` WHERE accountid= ?")) {
+                ps.setInt(1, ret.getAccountID());
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    ret.Tier1 = rs.getInt("Total1");
+                    ret.Tier2 = rs.getInt("Total2");
+                    ret.Tier3 = rs.getInt("Total3");
+                    ret.Tier4 = rs.getInt("Total4");
+                    ret.Tier5 = rs.getInt("Total5");
+                    ret.Tier6 = rs.getInt("Total6");
+                    ret.Tier7 = rs.getInt("Total7");
+                    ret.Tier8 = rs.getInt("Total8");
+                    ret.Tier9 = rs.getInt("Total9");
+                }
+                // rs.close();
+                // ps.close();
             }
 
             if (channelserver) {
@@ -7213,6 +8114,7 @@ public class Character extends AbstractCharacterObject {
                     }
                 }
 
+
                 // Cooldowns (delete)
                 try (PreparedStatement ps = con.prepareStatement("DELETE FROM cooldowns WHERE charid = ?")) {
                     ps.setInt(1, ret.getId());
@@ -7303,18 +8205,19 @@ public class Character extends AbstractCharacterObject {
                         }
                     }
                 }
-                
+
                 ret.buddylist.loadFromDb(charid);
                 ret.storage = wserv.getAccountStorage(ret.accountid);
 
                 /* Double-check storage incase player is first time on server
                  * The storage won't exist so nothing to load
                  */
-                if(ret.storage == null) {
+                if (ret.storage == null) {
                     wserv.loadAccountStorage(ret.accountid);
                     ret.storage = wserv.getAccountStorage(ret.accountid);
                 }
-                
+
+
                 int startHp = ret.hp, startMp = ret.mp;
                 ret.reapplyLocalStats();
                 ret.changeHpMp(startHp, startMp, true);
@@ -7393,6 +8296,17 @@ public class Character extends AbstractCharacterObject {
         public CooldownValueHolder(int skillId, long startTime, long length) {
             super();
             this.skillId = skillId;
+            this.startTime = startTime;
+            this.length = length;
+        }
+    }
+
+    public static class TotemCooldownValueHolder {
+        public int npcId;
+        public long startTime, length;
+
+        public TotemCooldownValueHolder(int npcId, long startTime, long length) {
+            this.npcId = npcId;
             this.startTime = startTime;
             this.length = length;
         }
@@ -7481,7 +8395,7 @@ public class Character extends AbstractCharacterObject {
             usedSafetyCharm = true;
         } else if (getJob() != Job.BEGINNER) { //Hmm...
             if (!FieldLimit.NO_EXP_DECREASE.check(getMap().getFieldLimit())) {  // thanks Conrad for noticing missing FieldLimit check
-                int XPdummy = ExpTable.getExpNeededForLevel(getLevel());
+                long XPdummy = ExpTable.getExpNeededForLevel(getLevel());
 
                 if (getMap().isTown()) {    // thanks MindLove, SIayerMonkey, HaItsNotOver for noting players only lose 1% on town maps
                     XPdummy /= 100;
@@ -7493,7 +8407,7 @@ public class Character extends AbstractCharacterObject {
                     }
                 }
 
-                int curExp = getExp();
+                long curExp = getExp();
                 if (curExp > XPdummy) {
                     loseExp(XPdummy, false, false);
                 } else {
@@ -7554,6 +8468,44 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+//    public void sitChairWithTeleport(int itemId, List<LifeMovementFragment> moves) {
+//        if (this.isLoggedinWorld()) {
+//            if (itemId >= 1000000) {    // sit on item chair
+//                if (chair.get() < 0) {
+//                    setChair(itemId);
+//
+//                    ItemInformationProvider iip = ItemInformationProvider.getInstance();
+//
+//                    getMap().broadcastMessage(this, PacketCreator.showChair(this.getId(), itemId), false);
+//
+//                    Point currentPosition = getPosition();
+//                    Point positionOffset = iip.getBodyRelMove(itemId);
+//
+//                    this.translatePosition(positionOffset);
+//
+//                    getMap().movePlayer(this, getPosition());
+//                    if (isHidden()) {
+//                        getMap().broadcastGMMessage(this, PacketCreator.movePlayer(getId(), p, movementDataLength), false);
+//                    } else {
+//                        getMap().broadcastMessage(this, PacketCreator.movePlayer(getId(), p, movementDataLength), false);
+//                    }
+//
+//                }
+//                sendPacket(PacketCreator.enableActions());
+//            } else if (itemId >= 0) {    // sit on map chair
+//                if (chair.get() < 0) {
+//                    setChair(itemId);
+//                    if (registerChairBuff()) {
+//                        getMap().broadcastMessage(this, PacketCreator.giveForeignChairSkillEffect(this.getId()), false);
+//                    }
+//                    sendPacket(PacketCreator.cancelChair(itemId));
+//                }
+//            } else {    // stand up
+//                unsitChairInternal();
+//            }
+//        }
+//    }
+
     private void setChair(int chair) {
         this.chair.set(chair);
     }
@@ -7566,6 +8518,7 @@ public class Character extends AbstractCharacterObject {
         if (eim != null) {
             eim.unregisterPlayer(this);    // some event scripts uses this...
         }
+
         changeMap(returnMap);
 
         cancelAllBuffs(false);  // thanks Oblivium91 for finding out players still could revive in area and take damage before returning to town
@@ -7878,6 +8831,15 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public void removeTotemCooldown(int npcId) {
+        chrLock.lock();
+        try {
+            this.totemCooldowns.remove(npcId);
+        } finally {
+            chrLock.unlock();
+        }
+    }
+
     public void removePet(Pet pet, boolean shift_left) {
         petLock.lock();
         try {
@@ -8127,7 +9089,7 @@ public class Character extends AbstractCharacterObject {
                     }
                     String sp = sps.toString();
                     ps.setString(23, sp.substring(0, sp.length() - 1));
-
+                    //ps.setInt(24, damageSkin);
                     int updateRows = ps.executeUpdate();
                     if (updateRows < 1) {
                         log.error("Error trying to insert chr {}", name);
@@ -8170,6 +9132,12 @@ public class Character extends AbstractCharacterObject {
                     }
                 }
 
+                //Monster Book data
+                try (PreparedStatement ps = con.prepareStatement("INSERT IGNORE INTO monsterbook_stats (accountid) VALUES (?)")) {
+                    ps.setInt(1, client.getAccID());
+                    ps.executeUpdate();
+                }
+
                 // No quickslots, or no change.
                 boolean bQuickslotEquals = this.m_pQuickslotKeyMapped == null || (this.m_aQuickslotLoaded != null && Arrays.equals(this.m_pQuickslotKeyMapped.GetKeybindings(), this.m_aQuickslotLoaded));
                 if (!bQuickslotEquals) {
@@ -8207,7 +9175,7 @@ public class Character extends AbstractCharacterObject {
                         ps.executeBatch();
                     }
                 }
-                
+
                 con.commit();
                 return true;
             } catch (Exception e) {
@@ -8256,7 +9224,7 @@ public class Character extends AbstractCharacterObject {
             con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
 
             try {
-                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?, dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?, ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?, hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?, mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?, etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?, finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?, matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?, jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?, partySearch = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?, dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?, ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?, hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?, mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?, etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?, finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?, matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?, jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?, partySearch = ?, bank = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, level);    // thanks CanIGetaPR for noticing an unnecessary "level" limitation when persisting DB data
                     ps.setInt(2, fame);
 
@@ -8267,7 +9235,7 @@ public class Character extends AbstractCharacterObject {
                         ps.setInt(4, dex);
                         ps.setInt(5, luk);
                         ps.setInt(6, int_);
-                        ps.setInt(7, Math.abs(exp.get()));
+                        ps.setLong(7, Math.abs(exp.get()));
                         ps.setInt(8, Math.abs(gachaexp.get()));
                         ps.setInt(9, hp);
                         ps.setInt(10, mp);
@@ -8348,7 +9316,7 @@ public class Character extends AbstractCharacterObject {
                         ps.setInt(i + 31, getSlots(i));
                     }
 
-                    monsterbook.saveCards(con, id);
+                    monsterbook.saveCards(con, client.getAccID());
 
                     ps.setInt(36, bookCover);
                     ps.setInt(37, vanquisherStage);
@@ -8370,13 +9338,17 @@ public class Character extends AbstractCharacterObject {
                     ps.setTimestamp(53, new Timestamp(lastExpGainTime));
                     ps.setInt(54, ariantPoints);
                     ps.setBoolean(55, canRecvPartySearchInvite);
-                    ps.setInt(56, id);
+                    ps.setLong(56, bankMesos);
+                   // ps.setInt(57, damageSkin);  damageskin = ?  <<Add this up there
+                    ps.setInt(57, id);
 
                     int updateRows = ps.executeUpdate();
                     if (updateRows < 1) {
                         throw new RuntimeException("Character not in database (" + id + ")");
                     }
                 }
+
+                flushInfinityStorageCache();
 
                 List<Pet> petList = new LinkedList<>();
                 petLock.lock();
@@ -8622,6 +9594,22 @@ public class Character extends AbstractCharacterObject {
 
                 }
 
+                // Saloon
+                deleteWhereCharacterId(con, "DELETE FROM character_styles WHERE charid = ?");
+                try (PreparedStatement stmt = con.prepareStatement( "INSERT INTO character_styles (charid, loadout_name, hair, face, skin) VALUES (?, ?, ?, ?, ?)")) {
+                    for (Saloon saloon : lStyles) {
+
+                        stmt.setInt(1, id);
+                        stmt.setString(2, saloon.getLoadoutName());
+                        stmt.setInt(3, saloon.getHair());
+                        stmt.setInt(4, saloon.getFace());
+                        stmt.setInt(5, saloon.getSkin());
+                        stmt.addBatch();
+                    }
+
+                    stmt.executeBatch();
+                }
+
                 if (cashshop != null) {
                     cashshop.save(con);
                 }
@@ -8759,6 +9747,15 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public void setFieldInstance(FieldInstanceManager fieldInstance) {
+        fieldLock.lock();
+        try {
+            this.fieldInstance = fieldInstance;
+        } finally {
+            fieldLock.unlock();
+        }
+    }
+
     public void setExp(int amount) {
         this.exp.set(amount);
     }
@@ -8884,7 +9881,11 @@ public class Character extends AbstractCharacterObject {
         boolean playerDied = false;
         if (hp <= 0) {
             if (oldHp > hp) {
-                playerDied = true;
+                if (!isBuybackInvincible()) {
+                    playerDied = true;
+                } else {
+                    hp = 1;
+                }
             }
         }
 
@@ -9191,6 +10192,245 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public int sellAllItemsFromName(byte invTypeId, String name) {
+        //player decides from which inventory items should be sold.
+        InventoryType type = InventoryType.getByType(invTypeId);
+
+        Inventory inv = getInventory(type);
+        inv.lockInventory();
+        try {
+            Item it = inv.findByName(name);
+            if (it == null) {
+                return (-1);
+            }
+
+            ItemInformationProvider ii = ItemInformationProvider.getInstance();
+            return (sellAllItemsFromPosition(ii, type, it.getPosition()));
+        } finally {
+            inv.unlockInventory();
+        }
+    }
+
+    public int sellAllItemsFromPosition(ItemInformationProvider ii, InventoryType type, short pos) {
+        int mesoGain = 0;
+
+        Inventory inv = getInventory(type);
+        inv.lockInventory();
+        try {
+            for (short i = pos; i <= inv.getSlotLimit(); i++) {
+                if (inv.getItem(i) == null) {
+                    continue;
+                }
+                mesoGain += standaloneSell(getClient(), ii, type, i, inv.getItem(i).getQuantity());
+            }
+        } finally {
+            inv.unlockInventory();
+        }
+
+        return (mesoGain);
+    }
+
+    private int standaloneSell(Client c, ItemInformationProvider ii, InventoryType type, short slot, short quantity) {
+        if (quantity == 0xFFFF || quantity == 0) {
+            quantity = 1;
+        }
+
+        Inventory inv = getInventory(type);
+        inv.lockInventory();
+        try {
+            Item item = inv.getItem(slot);
+            if (item == null) { //Basic check
+                return (0);
+            }
+
+            int itemid = item.getItemId();
+            if (ItemConstants.isRechargeable(itemid)) {
+                quantity = item.getQuantity();
+            } else if (ItemId.isWeddingToken(itemid) || ItemId.isWeddingRing(itemid)) {
+                return (0);
+            }
+
+            if (quantity < 0) {
+                return (0);
+            }
+            short iQuant = item.getQuantity();
+            if (iQuant == 0xFFFF) {
+                iQuant = 1;
+            }
+
+            if (quantity <= iQuant && iQuant > 0) {
+                InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
+                int recvMesos = ii.getPrice(itemid, quantity);
+                if (recvMesos > 0) {
+                    gainMeso(recvMesos, false);
+                    return (recvMesos);
+                }
+            }
+
+            return (0);
+        } finally {
+            inv.unlockInventory();
+        }
+    }
+
+    private static boolean hasMergeFlag(Item item) {
+        return (item.getFlag() & ItemConstants.MERGE_UNTRADEABLE) == ItemConstants.MERGE_UNTRADEABLE;
+    }
+
+    private static void setMergeFlag(Item item) {
+        short flag = item.getFlag();
+        flag |= ItemConstants.MERGE_UNTRADEABLE;
+        flag |= ItemConstants.UNTRADEABLE;
+        item.setFlag(flag);
+    }
+
+    private List<Equip> getUpgradeableEquipped() {
+        List<Equip> list = new LinkedList<>();
+
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        for (Item item : getInventory(InventoryType.EQUIPPED)) {
+            if (ii.isUpgradeable(item.getItemId())) {
+                list.add((Equip) item);
+            }
+        }
+
+        return list;
+    }
+
+    private static List<Equip> getEquipsWithStat(List<Pair<Equip, Map<StatUpgrade, Short>>> equipped, StatUpgrade stat) {
+        List<Equip> equippedWithStat = new LinkedList<>();
+
+        for (Pair<Equip, Map<StatUpgrade, Short>> eq : equipped) {
+            if (eq.getRight().containsKey(stat)) {
+                equippedWithStat.add(eq.getLeft());
+            }
+        }
+
+        return equippedWithStat;
+    }
+
+    public boolean mergeAllItemsFromName(String name) {
+        InventoryType type = InventoryType.EQUIP;
+
+        Inventory inv = getInventory(type);
+        inv.lockInventory();
+        try {
+            Item it = inv.findByName(name);
+            if (it == null) {
+                return false;
+            }
+
+            Map<StatUpgrade, Float> statups = new LinkedHashMap<>();
+            mergeAllItemsFromPosition(statups, it.getPosition());
+
+            List<Pair<Equip, Map<StatUpgrade, Short>>> upgradeableEquipped = new LinkedList<>();
+            Map<Equip, List<Pair<StatUpgrade, Integer>>> equipUpgrades = new LinkedHashMap<>();
+            for (Equip eq : getUpgradeableEquipped()) {
+                upgradeableEquipped.add(new Pair<>(eq, eq.getStats()));
+                equipUpgrades.put(eq, new LinkedList<Pair<StatUpgrade, Integer>>());
+            }
+
+            /*
+            for (Entry<StatUpgrade, Float> es : statups.entrySet()) {
+                System.out.println(es);
+            }
+            */
+
+            for (Entry<StatUpgrade, Float> e : statups.entrySet()) {
+                Double ev = Math.sqrt(e.getValue());
+
+                Set<Equip> extraEquipped = new LinkedHashSet<>(equipUpgrades.keySet());
+                List<Equip> statEquipped = getEquipsWithStat(upgradeableEquipped, e.getKey());
+                float extraRate = (float) (0.2 * Math.random());
+
+                if (!statEquipped.isEmpty()) {
+                    float statRate = 1.0f - extraRate;
+
+                    int statup = (int) Math.ceil((ev * statRate) / statEquipped.size());
+                    for (Equip statEq : statEquipped) {
+                        equipUpgrades.get(statEq).add(new Pair<>(e.getKey(), statup));
+                        extraEquipped.remove(statEq);
+                    }
+                }
+
+                if (!extraEquipped.isEmpty()) {
+                    int statup = (int) Math.round((ev * extraRate) / extraEquipped.size());
+                    if (statup > 0) {
+                        for (Equip extraEq : extraEquipped) {
+                            equipUpgrades.get(extraEq).add(new Pair<>(e.getKey(), statup));
+                        }
+                    }
+                }
+            }
+
+            dropMessage(6, "EQUIPMENT MERGE operation results:");
+            for (Entry<Equip, List<Pair<StatUpgrade, Integer>>> eqpUpg : equipUpgrades.entrySet()) {
+                List<Pair<StatUpgrade, Integer>> eqpStatups = eqpUpg.getValue();
+                if (!eqpStatups.isEmpty()) {
+                    Equip eqp = eqpUpg.getKey();
+                    setMergeFlag(eqp);
+
+                    String showStr = " '" + ItemInformationProvider.getInstance().getName(eqp.getItemId()) + "': ";
+                    String upgdStr = eqp.gainStats(eqpStatups).getLeft();
+
+                    this.forceUpdateItem(eqp);
+
+                    showStr += upgdStr;
+                    dropMessage(6, showStr);
+                }
+            }
+
+            return true;
+        } finally {
+            inv.unlockInventory();
+        }
+    }
+
+    public void mergeAllItemsFromPosition(Map<StatUpgrade, Float> statups, short pos) {
+        Inventory inv = getInventory(InventoryType.EQUIP);
+        inv.lockInventory();
+        try {
+            for (short i = pos; i <= inv.getSlotLimit(); i++) {
+                standaloneMerge(statups, getClient(), InventoryType.EQUIP, i, inv.getItem(i));
+            }
+        } finally {
+            inv.unlockInventory();
+        }
+    }
+
+    private void standaloneMerge(Map<StatUpgrade, Float> statups, Client c, InventoryType type, short slot, Item item) {
+        short quantity;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        if (item == null || (quantity = item.getQuantity()) < 1 || ii.isCash(item.getItemId()) || !ii.isUpgradeable(item.getItemId()) || hasMergeFlag(item)) {
+            return;
+        }
+
+        Equip e = (Equip) item;
+        for (Entry<StatUpgrade, Short> s : e.getStats().entrySet()) {
+            Float newVal = statups.get(s.getKey());
+
+            float incVal = s.getValue().floatValue();
+            switch (s.getKey()) {
+                case incPAD:
+                case incMAD:
+                case incPDD:
+                case incMDD:
+                    incVal = (float) Math.log(incVal);
+                    break;
+            }
+
+            if (newVal != null) {
+                newVal += incVal;
+            } else {
+                newVal = incVal;
+            }
+
+            statups.put(s.getKey(), newVal);
+        }
+
+        InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
+    }
+
     public void setShop(Shop shop) {
         this.shop = shop;
     }
@@ -9308,6 +10548,31 @@ public class Character extends AbstractCharacterObject {
         @Override
         public String toString() {
             return skillevel + ":" + masterlevel;
+        }
+    }
+
+    public boolean totemIsCooling(int npcId) {
+        chrLock.lock();
+        try {
+            return totemCooldowns.containsKey(Integer.valueOf(npcId));
+        } finally {
+            chrLock.unlock();
+        }
+    }
+
+    // Because why would someone want to know how much time is left...
+    public long getTotemCooldownTimeRemaining(int npcId) {
+        chrLock.lock();
+        try {
+            if (totemCooldowns.containsKey(Integer.valueOf(npcId))) {
+                TotemCooldownValueHolder tcvh = totemCooldowns.get(npcId);
+
+                return (tcvh.startTime + tcvh.length) - Server.getInstance().getCurrentTime();
+            }
+
+            return 0;
+        } finally {
+            chrLock.unlock();
         }
     }
 
@@ -9661,9 +10926,14 @@ public class Character extends AbstractCharacterObject {
         updateSingleStat(stat, newval, false);
     }
 
+    public void updateExpStat(long newval) {
+        sendPacket(PacketCreator.updatePlayerEXP(newval, true));
+    }
+
     private void updateSingleStat(Stat stat, int newval, boolean itemReaction) {
         sendPacket(PacketCreator.updatePlayerStats(Collections.singletonList(new Pair<>(stat, Integer.valueOf(newval))), itemReaction, this));
     }
+
 
     public void sendPacket(Packet packet) {
         client.sendPacket(packet);
@@ -9701,7 +10971,8 @@ public class Character extends AbstractCharacterObject {
     }
 
     @Override
-    public void setObjectId(int id) {}
+    public void setObjectId(int id) {
+    }
 
     @Override
     public String toString() {
@@ -10091,6 +11362,7 @@ public class Character extends AbstractCharacterObject {
         cancelBuffExpireTask();
         cancelDiseaseExpireTask();
         cancelSkillCooldownTask();
+        cancelTotemCooldownTask();
         cancelExpirationTask();
 
         if (questExpireTask != null) {
@@ -10710,6 +11982,49 @@ public class Character extends AbstractCharacterObject {
         return -1;
     }
 
+
+    public int sellAllPosLast(InventoryType type, short pos, short lpos) {
+        int mesoGain = 0;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        Inventory inv = getInventory(type);
+        List<Item> itemsToSell = new ArrayList<>();
+        inv.lockInventory();
+
+        try {
+            for (short i = pos; i <= lpos; i++) {
+                Item item = inv.getItem(i);
+                if (item == null) {
+                    continue;
+                }
+                if (item instanceof Equip) {
+                    Equip equip = (Equip) item;
+                    if (equip.getItemLevel() > 1) {
+                        continue;
+                    }
+                }
+                itemsToSell.add(item);
+            }
+
+            if (!itemsToSell.isEmpty()) {
+                int userId = getId();
+                int transactionId = TransactionService.createTransaction(userId);
+
+                List<TransactionItem> transactionItems = TransactionService.convertItemsToTransactionItems(itemsToSell);
+                TransactionService.createTransactionItems(transactionId, transactionItems);
+
+                for (Item item : itemsToSell) {
+                    mesoGain += standaloneSell(getClient(), ii, type, item.getPosition(), item.getQuantity());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            inv.unlockInventory();
+        }
+
+        return mesoGain;
+    }
+
     public void setRewardPoints(int value) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("UPDATE accounts SET rewardpoints=? WHERE id=?;")) {
@@ -10719,6 +12034,202 @@ public class Character extends AbstractCharacterObject {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setReborns(int value) {
+        if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+            yellowMessage("Rebirth system is not enabled!");
+            throw new NotEnabledException();
+        }
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE characters SET reborns=? WHERE id=?;")) {
+            ps.setInt(1, value);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addReborns() {
+        setReborns(getReborns() + 1);
+    }
+
+    public int getReborns() {
+        if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+            yellowMessage("Rebirth system is not enabled!");
+            throw new NotEnabledException();
+        }
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT reborns FROM characters WHERE id=?;")) {
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        throw new RuntimeException();
+    }
+
+    public String getAllRebornDataCerezeth() {
+        if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+            yellowMessage("Rebirth system is not enabled!");
+            throw new NotEnabledException();
+        }
+
+        List<ObjectNode> jsonDataList = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement psSelect = con.prepareStatement("SELECT accountid, job, characterid, name, reborns FROM characters_rebirth WHERE characterid=?;")) {
+
+            psSelect.setInt(1, id);
+
+            try (ResultSet rs = psSelect.executeQuery()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                while (rs.next()) {
+                    int accountId = rs.getInt("accountid");
+                    int job = rs.getInt("job");
+                    int characterid = rs.getInt("characterid");
+                    String name = rs.getString("name");
+                    int reborns = rs.getInt("reborns");
+
+                    ObjectNode jsonObject = objectMapper.createObjectNode();
+                    jsonObject.put("accountid", accountId);
+                    jsonObject.put("job", job);
+                    jsonObject.put("characterid", characterid);
+                    jsonObject.put("name", name);
+                    jsonObject.put("reborns", reborns);
+
+                    jsonDataList.add(jsonObject);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // throw new RuntimeException();
+        }
+
+        // Convert the list of JSON objects to a JSON array string
+        ObjectMapper objectMapper = new ObjectMapper();
+        ArrayNode jsonArray = objectMapper.valueToTree(jsonDataList);
+        return jsonArray.toString();
+    }
+
+    public void updateRebornTableCerezeth() {
+        if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+            yellowMessage("Rebirth system is not enabled!");
+            throw new NotEnabledException();
+        }
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement psSelect = con.prepareStatement("SELECT accountid, job, name, reborns FROM characters WHERE id=?;");
+             PreparedStatement psInsert = con.prepareStatement("INSERT INTO characters_rebirth (accountid, job, characterid, name, reborns) VALUES (?, ?, ?, ?, ?);")) {
+
+            psSelect.setInt(1, id);
+
+            try (ResultSet rs = psSelect.executeQuery()) {
+                if (rs.next()) {
+                    int accountId = rs.getInt("accountid");
+                    int job = rs.getInt("job");
+                    String name = rs.getString("name");
+                    int reborns = rs.getInt("reborns");
+
+                    psInsert.setInt(1, accountId);
+                    psInsert.setInt(2, job);
+                    psInsert.setInt(3, id);
+                    psInsert.setString(4, name);
+                    psInsert.setInt(5, reborns);
+
+                    psInsert.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // throw new RuntimeException();
+        }
+    }
+
+
+    public void executeReborn() {
+        // default to beginner: job id = 0
+        // this prevents a breaking change
+        executeRebornAs(Job.BEGINNER);
+    }
+
+    public void executeRebornAsId(int jobId) {
+        executeRebornAs(Job.getById(jobId));
+    }
+
+    public void executeRebornAs(Job job) {
+        if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+            yellowMessage("Rebirth system is not enabled!");
+            throw new NotEnabledException();
+        }
+        if (getLevel() != getMaxClassLevel()) {
+            return;
+        }
+        addReborns();
+        changeJob(job);
+        setLevel(0);
+        levelUp(true);
+        updateRebornTableCerezeth();
+    }
+
+    public void executeRebornAfterFirstCerezeth() {
+        if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+            yellowMessage("Rebirth system is not enabled!");
+            throw new NotEnabledException();
+        }
+        if (getLevel() != getMaxClassLevel()) {
+            return;
+        }
+        addReborns();
+        setLevel((YamlConfig.config.server.REBIRTH_RESET_LEVEL - 1));
+        levelUp(true);
+    }
+
+    public String getCharacterStatsCerezeth() {
+
+        List<ObjectNode> jsonDataList = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement psSelect = con.prepareStatement("SELECT str, luk, dex, `int` FROM characters WHERE id=?;")) {
+
+            psSelect.setInt(1, id);
+
+            try (ResultSet rs = psSelect.executeQuery()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                while (rs.next()) {
+                    int str = rs.getInt("str");
+                    int luk = rs.getInt("luk");
+                    int dex = rs.getInt("dex");
+                    int intel = rs.getInt("int");
+
+                    ObjectNode jsonObject = objectMapper.createObjectNode();
+                    jsonObject.put("str", str);
+                    jsonObject.put("luk", luk);
+                    jsonObject.put("dex", dex);
+                    jsonObject.put("int", intel);
+
+
+                    jsonDataList.add(jsonObject);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // throw new RuntimeException();
+        }
+
+        // Convert the list of JSON objects to a JSON array string
+        ObjectMapper objectMapper = new ObjectMapper();
+        ArrayNode jsonArray = objectMapper.valueToTree(jsonDataList);
+        return jsonArray.toString();
     }
 
     //EVENTS
@@ -10881,6 +12392,142 @@ public class Character extends AbstractCharacterObject {
         return this.ariantPoints;
     }
 
+    public int getBossLog(String bossid) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try {
+                int ret_count = 0;
+                PreparedStatement ps;
+                ps = con.prepareStatement("select count(*) from bosslog where characterid = ? and bossid = ? and lastattempt >= subtime(current_timestamp, '1 0:0:0.0')");
+                ps.setInt(1, id);
+                ps.setString(2, bossid);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next())
+                    ret_count = rs.getInt(1);
+                else
+                    ret_count = -1;
+                rs.close();
+                ps.close();
+                return ret_count;
+            } finally {
+                con.close();
+            }
+        } catch (Exception Ex) {
+            return -1;
+            //e.printStackTrace();
+        }
+    }
+
+    public int getGiftLog(String bossid) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try {
+                int ret_count = 0;
+                PreparedStatement ps;
+                ps = con.prepareStatement("select count(*) from bosslog where accountid = ? and bossid = ? and lastattempt >= subtime(current_timestamp, '1 0:0:0.0')");
+                ps.setInt(1, accountid);
+                ps.setString(2, bossid);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next())
+                    ret_count = rs.getInt(1);
+                else
+                    ret_count = -1;
+                rs.close();
+                ps.close();
+                return ret_count;
+            } finally {
+                con.close();
+            }
+        } catch (Exception Ex) {
+            return -1;
+            //e.printStackTrace();
+        }
+    }
+
+    public int logExists(String bossid) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try {
+                int ret_count = 0;
+                PreparedStatement ps;
+                ps = con.prepareStatement("select count(*) from bosslog where accountid = ? and bossid = ? and lastattempt >= subtime(current_timestamp, '14 0:0:0.0')");
+                ps.setInt(1, accountid);
+                ps.setString(2, bossid);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next())
+                    ret_count = rs.getInt(1);
+                else
+                    ret_count = -1;
+                rs.close();
+                ps.close();
+                return ret_count;
+            } finally {
+                con.close();
+            }
+        } catch (Exception Ex) {
+            return -1;
+            //e.printStackTrace();
+        }
+    }
+
+    public void deleteLog(String bossid) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try {
+                PreparedStatement ps;
+                ps = con.prepareStatement("delete from bosslog where bossid=?");
+                ps.setString(1, bossid);
+                ps.executeUpdate();
+                ps.close();
+            } finally {
+                con.close();
+            }
+        } catch (Exception Ex) {
+            //e.printStackTrace();
+        }
+    }
+
+    //setBossLog module
+    public void setBossLog(String bossid) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try {
+                PreparedStatement ps;
+                ps = con.prepareStatement("insert into bosslog (accountid, characterid, bossid) values (?,?,?)");
+                ps.setInt(1, accountid);
+                ps.setInt(2, id);
+                ps.setString(3, bossid);
+                ps.executeUpdate();
+                ps.close();
+            } finally {
+                con.close();
+            }
+        } catch (Exception Ex) {
+            // return -1;
+            //e.printStackTrace();
+        }
+    }
+
+    public List<Character> getCharactersByHWID() {
+        List<Character> characters = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT c.* FROM characters c join accounts a WHERE a.id=c.accountid and a.hwid=?")) {
+                ps.setString(1, getClient().getHwid().hwid());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Character res = new Character();
+                        res.setName(rs.getString("name"));
+                        res.id = rs.getInt("id");
+                        characters.add(res);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return characters;
+    }
+
     public void setLanguage(int num) {
         getClient().setLanguage(num);
 
@@ -10904,5 +12551,537 @@ public class Character extends AbstractCharacterObject {
 
     public void setChasing(boolean chasing) {
         this.chasing = chasing;
+    }
+
+    //Monster Book Tiers 
+    public int getTier1() {
+        return Tier1;
+    }
+
+    public int getTier2() {
+        return Tier2;
+    }
+
+    public int getTier3() {
+        return Tier3;
+    }
+
+    public int getTier4() {
+        return Tier4;
+    }
+
+    public int getTier5() {
+        return Tier5;
+    }
+
+    public int getTier6() {
+        return Tier6;
+    }
+
+    public int getTier7() {
+        return Tier7;
+    }
+
+    public int getTier8() {
+        return Tier8;
+    }
+
+    public int getTier9() {
+        return Tier9;
+    }
+
+    //Adding Cards to Monster Book Tiers 
+    public void AddTier1(int points) {
+        this.Tier1 += points;
+    }
+
+    public void AddTier2(int points) {
+        this.Tier2 += points;
+    }
+
+    public void AddTier3(int points) {
+        this.Tier3 += points;
+    }
+
+    public void AddTier4(int points) {
+        this.Tier4 += points;
+    }
+
+    public void AddTier5(int points) {
+        this.Tier5 += points;
+    }
+
+    public void AddTier6(int points) {
+        this.Tier6 += points;
+    }
+
+    public void AddTier7(int points) {
+        this.Tier7 += points;
+    }
+
+    public void AddTier8(int points) {
+        this.Tier8 += points;
+    }
+
+    public void AddTier9(int points) {
+        this.Tier9 += points;
+    }
+
+    public void ResetTiers(int points) {
+        this.Tier1 = points;
+        this.Tier2 = points;
+        this.Tier3 = points;
+        this.Tier4 = points;
+        this.Tier5 = points;
+        this.Tier6 = points;
+        this.Tier7 = points;
+        this.Tier8 = points;
+        this.Tier9 = points;
+    }
+
+    //Update Tiers 
+    public void UpdateTier1() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier1  = ?  WHERE accountid = ?")) {
+                ps.setInt(1, Tier1);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier2() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier2  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier2);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier3() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier3  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier3);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier4() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier4  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier4);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier5() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier5  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier5);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier6() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier6  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier6);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier7() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier7  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier7);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier8() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier8  = ? WHERE accountid = ?")) {
+                ps.setInt(1, Tier8);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    public void UpdateTier9() {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            try (PreparedStatement ps = con.prepareStatement("UPDATE `monsterbook_stats` SET Tier9  = ?  WHERE accountid = ?")) {
+                ps.setInt(1, Tier9);
+                ps.setInt(2, this.getAccountID());
+                ps.executeUpdate();
+            }
+            con.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
+
+    /*
+    public void saveDamageSkinToStorage(int damageSkinId) {
+        try (Connection con = DatabaseConnection.getConnection();
+             // First, check if the entry exists
+             PreparedStatement psCheck = con.prepareStatement("SELECT COUNT(*) FROM damageskinstorage WHERE charid = ? AND damageskin = ?");
+             PreparedStatement psInsert = con.prepareStatement("INSERT INTO damageskinstorage (`charid`, `damageskin`) VALUES (?, ?)")) {
+
+            psCheck.setInt(1, this.getId());  // Get the character ID
+            psCheck.setInt(2, damageSkinId);   // The selected damage skin ID
+
+            ResultSet rs = psCheck.executeQuery();
+            rs.next();  // Move to the first result row
+
+            int count = rs.getInt(1);  // Get the count result
+
+            if (count == 0) {  // If there are no matching rows, insert the new skin
+                psInsert.setInt(1, this.getId());  // Get the character ID
+                psInsert.setInt(2, damageSkinId);   // The selected damage skin ID
+                psInsert.executeUpdate();
+            } else {
+                System.out.println("Damage skin ID: " + damageSkinId + " already exists for charid: " + this.getId());
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Failed to insert damage skin into storage for charid: " + this.getId() + " | Error: " + e);
+        }
+    }
+
+    public List<Integer> getSavedDamageSkins() {
+        List<Integer> savedSkins = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT damageskin FROM damageskinstorage WHERE charid = ?")) {
+
+            ps.setInt(1, this.getId());  // Get the character ID
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                savedSkins.add(rs.getInt("damageskin"));  // Add each skin ID to the list
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve saved damage skins for charid: " + this.getId() + " | Error: " + e);
+        }
+
+        return savedSkins;
+    }
+    */
+
+    public int getLinkedStats() {
+        return getLinkedStats;
+    }
+
+    public void applyLinkStatsBoost() {
+        equipchanged = true;
+
+        short equipHP = 0;
+        short equipMP = 0;
+        short equipSTR = 0;
+        short equipDEX = 0;
+        short equipINT = 0;
+        short equipLUK = 0;
+        short equipWatk = 0;
+        short equipMatk = 0;
+
+        // Link bonus applied to equips.
+        Inventory equippedItems = this.getInventory(InventoryType.EQUIPPED);
+        for (Item item : equippedItems.list()) {
+            if (item.getItemId() == 1113232) {
+                continue;
+            }
+            Equip eq = (Equip) item;
+            equipHP += eq.getHp();
+            equipMP += eq.getMp();
+            equipSTR += eq.getStr();
+            equipDEX += eq.getDex();
+            equipINT += eq.getInt();
+            equipLUK += eq.getLuk();
+            equipWatk += eq.getWatk();
+            equipMatk += eq.getMatk();
+        }
+
+        Inventory equip = this.getInventory(InventoryType.EQUIP);
+        Inventory equipped = this.getInventory(InventoryType.EQUIPPED);
+        Equip linkEquip = (Equip) equip.findById(1113232);
+        if (linkEquip == null)
+            linkEquip = (Equip) equipped.findById(1113232);
+        if (linkEquip == null) {
+            System.out.println("Error: Unable to find link medal.");
+            return;
+        }
+
+        //Monster book stat gain for each maxed Tier
+        //Tier 1 = +25HP/MP and +1 STR/DEX/INT/LUK 
+        //Tier 2 = +25HP/MP and +1 STR/DEX/INT/LUK 
+        //Tier 3 = +50HP/MP and +2 STR/DEX/INT/LUK  
+        //Tier 4 = +50HP/MP and +2 STR/DEX/INT/LUK  
+        //Tier 5 = +75HP/MP and +3 STR/DEX/INT/LUK  
+        //Tier 6 = +75HP/MP and +3 STR/DEX/INT/LUK   
+        //Tier 7 = +100HP/MP and +4 STR/DEX/INT/LUK  
+        //Tier 8 = +100HP/MP and +4 STR/DEX/INT/LUK 
+        //Tier 9 = +125HP/MP, +5 STR/DEX/INT/LUK, and +5 Watk/+10 Matk (Mark's request)
+
+        short medalHP = (short) (this.getTier1() * 25 + this.getTier2() * 25 + this.getTier3() * 25 + this.getTier4() * 25 + this.getTier5() * 25 + this.getTier6() * 25 + this.getTier7() * 25 + this.getTier8() * 25 + this.getTier9() * 25);
+        short medalMP = (short) (this.getTier1() * 25 + this.getTier2() * 25 + this.getTier3() * 25 + this.getTier4() * 25 + this.getTier5() * 25 + this.getTier6() * 25 + this.getTier7() * 25 + this.getTier8() * 25 + this.getTier9() * 25);
+        short medalSTR = (short) (this.getTier1() + this.getTier2() + this.getTier3() * 2 + this.getTier4() * 2 + this.getTier5() * 3 + this.getTier6() * 3 + this.getTier7() * 4 + this.getTier8() * 4 + this.getTier9() * 5);
+        short medalDEX = (short) (this.getTier1() + this.getTier2() + this.getTier3() * 2 + this.getTier4() * 2 + this.getTier5() * 3 + this.getTier6() * 3 + this.getTier7() * 4 + this.getTier8() * 4 + this.getTier9() * 5);
+        short medalINT = (short) (this.getTier1() + this.getTier2() + this.getTier3() * 2 + this.getTier4() * 2 + this.getTier5() * 3 + this.getTier6() * 3 + this.getTier7() * 4 + this.getTier8() * 4 + this.getTier9() * 5);
+        short medalLUK = (short) (this.getTier1() + this.getTier2() + this.getTier3() * 2 + this.getTier4() * 2 + this.getTier5() * 3 + this.getTier6() * 3 + this.getTier7() * 4 + this.getTier8() * 4 + this.getTier9() * 5);
+        short medalWatk = (short) (this.getTier9() * 5);
+        short medalMatk = (short) (this.getTier9() * 10);
+
+        try {
+            if (medalWatk < 2) {
+                medalWatk = 2;
+            }
+            if (medalMatk < 2) {
+                medalMatk = 2;
+            }
+            linkEquip.setHp(medalHP);
+            linkEquip.setMp(medalMP);
+            linkEquip.setStr(medalSTR);
+            linkEquip.setDex(medalDEX);
+            linkEquip.setInt(medalINT);
+            linkEquip.setLuk(medalLUK);
+            linkEquip.setWatk(medalWatk);
+            linkEquip.setMatk(medalMatk);
+
+            byte flag = (byte) linkEquip.getFlag();
+            flag |= ItemConstants.UNTRADEABLE;
+            flag |= ItemConstants.LOCK;
+            linkEquip.setFlag(flag);
+            this.forceUpdateItem(linkEquip);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        recalcLocalStats();
+    }
+
+    private String dataSearch;
+    private ArrayList<Integer> dataSearchArr;
+    private String dataSearchType;
+
+    public String getDataSearch() {
+        return dataSearch;
+    }
+
+    public void setDataSearch(String result) {
+        dataSearch = result;
+    }
+
+    public ArrayList<Integer> getDataSearchArr() {
+        return dataSearchArr;
+    }
+
+    public void setDataSearchArr(ArrayList<Integer> arr) {
+        dataSearchArr = arr;
+    }
+
+    public String getDataSearchType() {
+        return dataSearchType;
+    }
+
+    public void setDataSearchType(String dataSearchType) {
+        this.dataSearchType = dataSearchType;
+    }
+
+    private int philID = 100100;
+
+    public int getPhilID() {
+        return philID;
+    }
+
+    public void setPhilID(int id) {
+        philID = id;
+    }
+
+    public void openNpcIn(int npc, String scriptname, int time, boolean dispose) {
+        TimerManager.getInstance().schedule(() -> {
+            if (dispose) {
+                client.removeClickedNPC();
+                NPCScriptManager.getInstance().dispose(client);
+            }
+            NPCScriptManager.getInstance().start(client, npc, scriptname, null);
+        }, time);
+    }
+
+    public void openNpcIn(int npc, int time) {
+        openNpcIn(npc, null, time, true);
+    }
+
+    public void openNpcIn(String npc, int time) {
+        openNpcIn(3002029, npc, time, true);
+    }
+
+
+    public boolean damageCheckinProgress = false;
+    public boolean damageChecks = false;
+    public long damageCheck = 0;
+    public int damageTestLength = 0;
+
+    public void damageTimer() {
+        dropMessage("Damage test will begin and will last for " + damageTestLength + " seconds.");
+        damageCheckinProgress = true;
+        TimerManager.getInstance().schedule(new Runnable() {
+            @Override
+            public void run() {
+                damageCheckinProgress = false;
+                damageChecks = false;
+                showHint("Damage per second: #b" + nfFormatter.format((damageCheck / damageTestLength))+
+                "#k\r\nTotal damage dealt: #r" + nfFormatter.format((damageCheck)));
+                dropMessage("Damage per second: " + nfFormatter.format((damageCheck / damageTestLength)));
+                dropMessage("Total damage dealt: " + nfFormatter.format((damageCheck)));
+                damageCheck = 0;
+            }
+        }, damageTestLength * 1000L);
+    }
+
+    public void setAutoLogin() {
+        byte al = 0;
+        log.debug(getName() + " is toggling auto login!");
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+            // Fetch the current autologin value for the specified account
+            try (PreparedStatement ps = con.prepareStatement("SELECT autologin FROM accounts WHERE id = ?")) {
+                ps.setInt(1, accountid);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        al = rs.getByte("autologin");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Toggle the autologin value
+        al = (al == 0) ? (byte) 1 : (byte) 0;
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE accounts SET autologin = ? WHERE id = ?")) {
+            ps.setByte(1, al);
+            ps.setInt(2, accountid);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setExpeditionCompleted(ExpeditionType type) {
+        setExpeditionCompleted(type, 0, null);
+    }
+
+    public void setExpeditionCompleted(ExpeditionType type, long eventTime) {
+        ExpeditionBossLog.setExpeditionCompleted(getClient(), type, eventTime, 0, null);
+    }
+
+    public void setExpeditionCompleted(ExpeditionType type, long eventTime, String partyUUID) {
+        ExpeditionBossLog.setExpeditionCompleted(getClient(), type, eventTime, 0, partyUUID);
+    }
+
+    public void setExpeditionCompleted(ExpeditionType type, long eventTime, long damageDealt, String partyUUID) {
+        ExpeditionBossLog.setExpeditionCompleted(getClient(), type, eventTime, damageDealt, partyUUID);
+    }
+
+    public boolean reachedRewardLimit(ExpeditionType type) {
+        return ExpeditionBossLog.reachedBossRewardLimit(getId(), type);
+    }
+
+    public long getBankMesos() {
+        return bankMesos;
+    }
+
+    public void gainBankMeso(long amount) {
+        bankMesos += amount;
+    }
+
+    public void toggleWorldChat() {
+        worldChat = !worldChat;
+    }
+
+    public boolean getWorldChatOnOff() {
+        return worldChat;
+    }
+
+    public void toggleGlobalMessage() {
+        showGlobal = !showGlobal;
+    }
+
+    public boolean getGlobalMessageOnOff() {
+        return showGlobal;
+    }
+
+    public void toggleAttackSkill() {
+        showAttackSkill = !showAttackSkill;
+    }
+
+    public void setshowAttackSkill(boolean showAttackSkill) {
+        this.showAttackSkill = showAttackSkill;
+    }
+
+    public boolean canShowAttackSkill() {
+        return showAttackSkill;
+    }
+
+    public void broadcastAttackMessage(Packet pkt) {
+        broadcastAttackMessage(pkt, false);
+    }
+
+    public void broadcastAttackMessage(Packet pkt, boolean ranged) {
+        if (showAttackSkill) {
+            getMap().broadCastAttackMessage(this, pkt, false, ranged);
+        }
+    }
+
+    public List<Saloon> getStyles() {
+        return lStyles;
     }
 }

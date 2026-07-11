@@ -116,7 +116,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
                     CashItem cItem = CashItemFactory.getItem(p.readInt());
                     Map<String, String> recipient = Character.getCharacterFromDatabase(p.readString());
                     String message = p.readString();
-                    if (!canBuy(chr, cItem, cs.getCash(CashShop.NX_PREPAID)) || message.isEmpty() || message.length() > 73) {
+                    if (!canBuy(chr, cItem, cs.getCash(4)) || message.length() < 1 || message.length() > 73) {
                         c.enableCSActions();
                         return;
                     }
@@ -405,7 +405,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
                     c.sendPacket(PacketCreator.showCash(c.getPlayer()));
                 } else if (action == 0x2E) { //name change
                     CashItem cItem = CashItemFactory.getItem(p.readInt());
-                    if (cItem == null || !canBuy(chr, cItem, cs.getCash(CashShop.NX_PREPAID))) {
+                    if (cItem == null || !canBuy(chr, cItem, cs.getCash(4))) {
                         c.sendPacket(PacketCreator.showCashShopMessage((byte) 0));
                         c.enableCSActions();
                         return;
@@ -434,7 +434,7 @@ public final class CashOperationHandler extends AbstractPacketHandler {
                     c.enableCSActions();
                 } else if (action == 0x31) { //world transfer
                     CashItem cItem = CashItemFactory.getItem(p.readInt());
-                    if (cItem == null || !canBuy(chr, cItem, cs.getCash(CashShop.NX_PREPAID))) {
+                    if (cItem == null || !canBuy(chr, cItem, cs.getCash(4))) {
                         c.sendPacket(PacketCreator.showCashShopMessage((byte) 0));
                         c.enableCSActions();
                         return;

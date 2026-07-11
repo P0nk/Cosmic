@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9912003.img">
+    <imgdir name="info">
+        <string name="info" value="Fishbowl"/>
+        <string name="viewName" value="Fishbowl"/>
+        <int name="forcedViewName" value="1"/>
+        <int name="frontTile" value="1"/>
+        <int name="resetTime" value="5"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="26" y="53"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/8659068.img/0/0"/>
+        </canvas>
+        <canvas name="1" width="1" height="1">
+            <vector name="origin" x="26" y="53"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/8659068.img/0/1"/>
+        </canvas>
+        <canvas name="2" width="1" height="1">
+            <vector name="origin" x="26" y="53"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/8659068.img/0/2"/>
+        </canvas>
+        <canvas name="3" width="1" height="1">
+            <vector name="origin" x="26" y="53"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/8659068.img/0/3"/>
+        </canvas>
+        <canvas name="4" width="1" height="1">
+            <vector name="origin" x="26" y="53"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/8659068.img/0/4"/>
+        </canvas>
+        <canvas name="5" width="1" height="1">
+            <vector name="origin" x="26" y="53"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/8659068.img/0/5"/>
+        </canvas>
+        <int name="repeat" value="1"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="1"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="83" height="68">
+                <vector name="origin" x="32" y="65"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="200"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="1">
+        <uol name="0" value="../0/0"/>
+        <uol name="1" value="../0/1"/>
+        <uol name="2" value="../0/2"/>
+        <uol name="3" value="../0/3"/>
+        <uol name="4" value="../0/4"/>
+        <uol name="5" value="../0/5"/>
+        <int name="repeat" value="1"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="2"/>
+            </imgdir>
+        </imgdir>
+        <uol name="hit" value="../0/hit"/>
+    </imgdir>
+    <imgdir name="2">
+        <uol name="0" value="../0/0"/>
+        <uol name="1" value="../0/1"/>
+        <uol name="2" value="../0/2"/>
+        <uol name="3" value="../0/3"/>
+        <uol name="4" value="../0/4"/>
+        <uol name="5" value="../0/5"/>
+        <int name="repeat" value="1"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="3"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="29" y="52"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/8659068.img/0/hit/0"/>
+            </canvas>
+            <canvas name="1" width="1" height="1">
+                <vector name="origin" x="26" y="77"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/8659068.img/0/hit/1"/>
+            </canvas>
+            <canvas name="2" width="1" height="1">
+                <vector name="origin" x="29" y="73"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/8659068.img/0/hit/2"/>
+            </canvas>
+            <canvas name="3" width="1" height="1">
+                <vector name="origin" x="30" y="54"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/8659068.img/0/hit/3"/>
+            </canvas>
+            <canvas name="4" width="1" height="1">
+                <vector name="origin" x="29" y="52"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/8659068.img/0/hit/4"/>
+            </canvas>
+            <canvas name="5" width="1" height="1">
+                <vector name="origin" x="29" y="52"/>
+                <int name="z" value="0"/>
+                <int name="a0" value="255"/>
+                <int name="a1" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/8659068.img/0/hit/5"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="3">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+        </canvas>
+    </imgdir>
+    <string name="action" value="museum_fishTank"/>
+</imgdir>

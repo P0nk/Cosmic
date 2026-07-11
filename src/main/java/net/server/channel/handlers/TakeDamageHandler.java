@@ -21,11 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package net.server.channel.handlers;
 
-import client.BuffStat;
 import client.Character;
-import client.Client;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.Item;
@@ -42,12 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.StatEffect;
 import server.life.LifeFactory.loseItem;
-import server.life.MobAttackInfo;
-import server.life.MobAttackInfoFactory;
-import server.life.MobSkill;
-import server.life.MobSkillFactory;
-import server.life.MobSkillType;
-import server.life.Monster;
+import server.life.*;
 import server.maps.MapObject;
 import server.maps.MapleMap;
 import tools.PacketCreator;
@@ -159,6 +151,9 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
                     mpattack = chr.getMp() - 1;
                     is_deadly = true;
                 }
+                if(attackInfo.getDiseaseLevel() == 12 && attackInfo.getDiseaseSkill() == 124) {
+                    damage = 100000;
+                }
                 mpattack += attackInfo.getMpBurn();
 
                 Optional<MobSkillType> possibleType = MobSkillType.from(attackInfo.getDiseaseSkill());
@@ -174,12 +169,11 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
                         int id = jobid * 10000 + 1002;
                         Skill manaReflectSkill = SkillFactory.getSkill(id);
                         if (chr.isBuffFrom(BuffStat.MANA_REFLECTION, manaReflectSkill) && chr.getSkillLevel(manaReflectSkill) > 0 && manaReflectSkill.getEffect(chr.getSkillLevel(manaReflectSkill)).makeChanceResult()) {
-                            int bouncedamage = (damage * manaReflectSkill.getEffect(chr.getSkillLevel(manaReflectSkill)).getX() / 100);
-                            if (bouncedamage > attacker.getMaxHp() / 5) {
-                                bouncedamage = attacker.getMaxHp() / 5;
-                            }
-                            map.damageMonster(chr, attacker, bouncedamage);
-                            map.broadcastMessage(chr, PacketCreator.damageMonster(oid, bouncedamage), true);
+//                            int bouncedamage = (damage * manaReflectSkill.getEffect(chr.getSkillLevel(manaReflectSkill)).getX() / 100);
+//                            if (bouncedamage > attacker.getMaxHp() / 5) {
+//                                bouncedamage = attacker.getMaxHp() / 5;
+//                            }
+                            map.damageMonster(chr, attacker, 20);
                             chr.sendPacket(PacketCreator.showOwnBuffEffect(id, 5));
                             map.broadcastMessage(chr, PacketCreator.showBuffEffect(chr.getId(), id, 5), false);
                         }
@@ -209,7 +203,7 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
                 if (damagefrom == -1) {
                     if (chr.getBuffedValue(BuffStat.POWERGUARD) != null) { // PG works on bosses, but only at half of the rate.
                         int bouncedamage = (int) (damage * (chr.getBuffedValue(BuffStat.POWERGUARD).doubleValue() / (attacker.isBoss() ? 200 : 100)));
-                        bouncedamage = Math.min(bouncedamage, attacker.getMaxHp() / 10);
+                        bouncedamage = (int)Math.min(bouncedamage, attacker.getMaxHp() / 10);
                         damage -= bouncedamage;
                         map.damageMonster(chr, attacker, bouncedamage);
                         map.broadcastMessage(chr, PacketCreator.damageMonster(oid, bouncedamage), false, true);
@@ -220,7 +214,7 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
                         Skill skill = SkillFactory.getSkill(Aran.BODY_PRESSURE);
                         if (!attacker.alreadyBuffedStats().contains(MonsterStatus.NEUTRALISE)) {
                             if (!attacker.isBoss() && bPressure.makeChanceResult()) {
-                                attacker.applyStatus(chr, new MonsterStatusEffect(Collections.singletonMap(MonsterStatus.NEUTRALISE, 1), skill, null, false), false, (bPressure.getDuration() / 10) * 2, false);
+                                attacker.applyStatus(chr, new MonsterStatusEffect(Collections.singletonMap(MonsterStatus.NEUTRALISE, 1), skill, null, false), false, (bPressure.getDuration() / 10) * 2, false, false);
                             }
                         }
                     }
@@ -262,24 +256,27 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
 
                 chr.addMPHP(-hploss, -mploss);
             } else if (mesoguard != null) {
-                damage = Math.round(damage / 2);
-                int mesoloss = (int) (damage * (mesoguard.doubleValue() / 100.0));
-                if (chr.getMeso() < mesoloss) {
-                    chr.gainMeso(-chr.getMeso(), false);
-                    chr.cancelBuffStats(BuffStat.MESOGUARD);
-                } else {
-                    chr.gainMeso(-mesoloss, false);
-                }
+                damage = Math.round((float) damage / 2);
+                // int mesoloss = (int) (damage * (mesoguard.doubleValue() / 100.0)); // Comment out or remove this line
+                // if (chr.getMeso() < mesoloss) {
+                //     chr.gainMeso(-chr.getMeso(), false);
+                //     chr.cancelBuffStats(BuffStat.MESOGUARD);
+                // } else {
+                //     chr.gainMeso(-mesoloss, false);
+                // }
                 chr.addMPHP(-damage, -mpattack);
             } else {
-                if (chr.isRidingBattleship()) {
-                    chr.decreaseBattleshipHp(damage);
-                }
+//                if (chr.isRidingBattleship()) {
+//                    chr.decreaseBattleshipHp(damage);
+//                }
                 chr.addMPHP(-damage, -mpattack);
             }
         }
         if (!chr.isHidden()) {
             map.broadcastMessage(chr, PacketCreator.damagePlayer(damagefrom, monsteridfrom, chr.getId(), damage, fake, direction, is_pgmr, pgmr, is_pg, oid, pos_x, pos_y), false);
+            if (monsteridfrom > 8880002 && monsteridfrom < 8880015) {
+                chr.getMap().killMonster(attacker, chr, false);
+            }
         } else {
             map.broadcastGMMessage(chr, PacketCreator.damagePlayer(damagefrom, monsteridfrom, chr.getId(), damage, fake, direction, is_pgmr, pgmr, is_pg, oid, pos_x, pos_y), false);
         }
@@ -289,7 +286,7 @@ public final class TakeDamageHandler extends AbstractPacketHandler {
         }
 
         for (Character player : banishPlayers) {  // chill, if this list ever gets non-empty an attacker does exist, trust me :)
-            player.changeMapBanish(attacker.getBanish());
+            player.changeMapBanish(attacker.getBanish().getMap(), attacker.getBanish().getPortal(), attacker.getBanish().getMsg());
         }
     }
 }

@@ -57,24 +57,21 @@ public final class MobDamageMobHandler extends AbstractPacketHandler {
         Monster attacker = map.getMonsterByOid(from);
         Monster damaged = map.getMonsterByOid(to);
 
-        if (attacker == null || damaged == null) {
-            return;
+        if (attacker != null && damaged != null) {
+            int maxDmg = calcMaxDamage(attacker, damaged, magic);     // thanks Darter (YungMoozi) for reporting unchecked dmg
+
+            if (dmg > maxDmg) {
+                AutobanFactory.DAMAGE_HACK.alert(c.getPlayer(), "Possible packet editing hypnotize damage exploit.");   // thanks Rien dev team
+                String attackerName = MonsterInformationProvider.getInstance().getMobNameFromId(attacker.getId());
+                String damagedName = MonsterInformationProvider.getInstance().getMobNameFromId(damaged.getId());
+                log.warn("Chr {} had hypnotized {} to attack {} with damage {} (max: {})", c.getPlayer().getName(),
+                        attackerName, damagedName, dmg, maxDmg);
+                dmg = maxDmg;
+            }
+
+            map.damageMonster(chr, damaged, dmg);
+            map.broadcastMessage(chr, PacketCreator.damageMonster(to, dmg), false);
         }
-
-        int maxDmg = calcMaxDamage(attacker, damaged, magic);     // thanks Darter (YungMoozi) for reporting unchecked dmg
-
-        if (dmg > maxDmg) {
-            AutobanFactory.DAMAGE_HACK.alert(c.getPlayer(), "Possible packet editing hypnotize damage exploit.");   // thanks Rien dev team
-            String attackerName = MonsterInformationProvider.getInstance().getMobNameFromId(attacker.getId());
-            String damagedName = MonsterInformationProvider.getInstance().getMobNameFromId(damaged.getId());
-            log.warn("Chr {} had hypnotized {} to attack {} with damage {} (max: {})", c.getPlayer().getName(),
-                    attackerName, damagedName, dmg, maxDmg);
-            dmg = maxDmg;
-        }
-
-        map.damageMonster(chr, damaged, dmg);
-        map.broadcastMessage(chr, PacketCreator.damageMonster(to, dmg), false);
-
     }
 
     private static int calcMaxDamage(Monster attacker, Monster damaged, boolean magic) {

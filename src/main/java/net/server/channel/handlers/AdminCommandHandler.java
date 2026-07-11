@@ -133,7 +133,7 @@ public final class AdminCommandHandler extends AbstractPacketHandler {
                 for (int x = 0; x < amount; x++) {
                     Monster monster = (Monster) monsterx.get(x);
                     if (monster.getId() == mobToKill) {
-                        c.getPlayer().getMap().killMonster(monster, c.getPlayer(), true, (short) 0);
+                        c.getPlayer().getMap().killMonster(monster, c.getPlayer(), true);
                     }
                 }
                 break;

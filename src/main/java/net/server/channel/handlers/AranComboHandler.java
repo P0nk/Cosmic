@@ -35,10 +35,10 @@ public class AranComboHandler extends AbstractPacketHandler {
     public void handlePacket(InPacket p, Client c) {
         final Character player = c.getPlayer();
         int skillLevel = player.getSkillLevel(SkillFactory.getSkill(Aran.COMBO_ABILITY));
-        if (GameConstants.isAran(player.getJob().getId()) && (skillLevel > 0 || player.getJob().getId() == 2000)) {
+        if (skillLevel > 0) {
             final long currentTime = currentServerTime();
             short combo = player.getCombo();
-            if ((currentTime - player.getLastCombo()) > 3000 && combo > 0) {
+            if ((currentTime - player.getLastCombo()) > 6000 && combo > 0) {
                 combo = 0;
             }
             combo++;

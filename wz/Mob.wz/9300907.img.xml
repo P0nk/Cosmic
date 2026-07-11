@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9300907.img">
+    <imgdir name="info">
+        <int name="dropItemPeriod" value="6"/>
+        <int name="level" value="30"/>
+        <int name="maxHP" value="900"/>
+        <int name="maxMP" value="120"/>
+        <int name="speed" value="5"/>
+        <int name="PADamage" value="133"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="136"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="16"/>
+        <int name="eva" value="4"/>
+        <int name="pushed" value="150"/>
+        <float name="fs" value="10.0"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="1"/>
+        <string name="mobType" value="1N"/>
+        <int name="changeableMob" value="1"/>
+        <int name="explosiveReward" value="1"/>
+        <int name="hideName" value="1"/>
+        <int name="hideHP" value="1"/>
+        <int name="allyMob" value="1"/>
+        <int name="PDDamage" value="0"/>
+        <int name="MDDamage" value="0"/>
+        <int name="eva" value="0"/>
+        <int name="acc" value="999"/>
+        <int name="PADamage" value="1200"/>
+        <int name="MADamage" value="1250"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="115" name="0" width="85">
+            <vector name="origin" x="43" y="115"/>
+            <vector name="lt" x="-45" y="-116"/>
+            <vector name="rb" x="42" y="0"/>
+            <vector name="head" x="-3" y="-97"/>
+            <int name="delay" value="100"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

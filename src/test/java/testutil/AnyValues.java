@@ -8,10 +8,6 @@ public class AnyValues {
         return "string";
     }
 
-    public static short anyShort() {
-        return 4;
-    }
-
     public static DaoException daoException() {
         return new DaoException(string(), new RuntimeException());
     }

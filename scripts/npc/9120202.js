@@ -1,8 +1,8 @@
 /*
-	This file is part of the OdinMS Maple Story Server
+    This file is part of the OdinMS Maple Story Server
     Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
+               Matthias Butz <matze@odinms.de>
+               Jan Christian Meyer <vimes@odinms.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -45,15 +45,27 @@ function action(mode, type, selection) {
             status--;
         }
 
-        var eim = cm.getEventInstance();
-        if (!eim.isEventCleared()) {
+        var eim;
+        eim = cm.getEventInstance();
+        if (eim === null) {
+            if (status == 0) {
+                cm.sendYesNo("How did you even get in here without starting the expedition? Do you want to leave?");                            
+            }
+            else if (status == 1) {
+                cm.warp(801040004, 1);
+                cm.dispose();
+            }
+        }
+        else if (!eim.isEventCleared()) {
             if (status == 0) {
                 cm.sendYesNo("If you leave now, you won't be able to return. Are you sure you want to leave?");
             } else if (status == 1) {
                 cm.warp(801040004, 1);
                 cm.dispose();
             }
-        } else {
+            
+        }
+        else {
             if (status == 0) {
                 cm.sendNext("You guys did it, great job! Now our city is free from the tyranny of their mobs! As representative of the city, please accept this as a prize for your efforts, as I get you back to town.");
             }
@@ -70,4 +82,5 @@ function action(mode, type, selection) {
             }
         }
     }
+    // }
 }

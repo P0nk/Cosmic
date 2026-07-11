@@ -116,13 +116,21 @@ public class CharacterFactoryRecipe {
     }
 
     public void addStartingItem(int itemid, int quantity, InventoryType itemType) {
+        addStartingItem(itemid, quantity, itemType, -1, -1);
+    }
+
+    public void addStartingItem(int itemid, int quantity, InventoryType itemType, int petid, long expiration) {
         AtomicInteger p = runningTypePosition.get(itemType);
         if (p == null) {
             p = new AtomicInteger(0);
             runningTypePosition.put(itemType, p);
         }
 
-        itemsWithType.add(new Pair<>(new Item(itemid, (short) p.getAndIncrement(), (short) quantity), itemType));
+
+
+        Item newitem = new Item(itemid, (short) p.getAndIncrement(), (short) quantity, petid);
+        newitem.setExpiration(expiration);
+        itemsWithType.add(new Pair<>(newitem, itemType));
     }
 
     public Job getJob() {

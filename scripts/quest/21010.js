@@ -83,8 +83,8 @@ function end(mode, type, selection) {
     } else if (status == 2) {
         if (qm.isQuestStarted(21010) && !qm.isQuestCompleted(21010)) {
             qm.gainExp(16);
-            qm.gainItem(2000022, 5);
-            qm.gainItem(2000023, 5);
+            qm.gainItem(2000022, 3);
+            qm.gainItem(2000023, 3);
             qm.forceCompleteQuest();
         }
 

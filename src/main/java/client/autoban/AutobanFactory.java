@@ -99,10 +99,10 @@ public enum AutobanFactory {
             }
             Server.getInstance().broadcastGMMessage((chr != null ? chr.getWorld() : 0), PacketCreator.sendYellowTip((chr != null ? Character.makeMapleReadable(chr.getName()) : "") + " caused " + this.name() + " " + reason));
         }
-        if (YamlConfig.config.server.USE_AUTOBAN_LOG) {
-            final String chrName = chr != null ? Character.makeMapleReadable(chr.getName()) : "";
-            log.info("Autoban alert - chr {} caused {}-{}", chrName, this.name(), reason);
-        }
+//        if (YamlConfig.config.server.USE_AUTOBAN_LOG) {
+//            final String chrName = chr != null ? Character.makeMapleReadable(chr.getName()) : "";
+//            log.info("Autoban alert - chr {} caused {}-{}", chrName, this.name(), reason);
+//        }
     }
 
     public void autoban(Character chr, String value) {

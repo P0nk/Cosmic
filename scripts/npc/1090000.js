@@ -172,7 +172,7 @@ function action(mode, type, selection) {
 
     if (actionx["1stJob"]) {
         if (status == 0) {
-            if (cm.getLevel() >= 10 && cm.canGetFirstJob(jobType)) {
+            if (cm.getLevel() >= 10 && cm.getPlayer().getSkillLevel(1051) == 0 && cm.canGetFirstJob(jobType)) {
                 cm.sendYesNo("Oh...! You look like someone that can definitely be a part of us... all you need is a little slang, and... yeah... so, what do you think? Wanna be the Pirate?");
             } else {
                 cm.sendOk("Train a bit more until you reach the base requirements and I can show you the way of the #rPirate#k.");

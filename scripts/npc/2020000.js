@@ -1,25 +1,3 @@
-/*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
-		       Matthias Butz <matze@odinms.de>
-		       Jan Christian Meyer <vimes@odinms.de>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation version 3 as published by
-    the Free Software Foundation. You may not use, modify or distribute
-    this program under any other version of the GNU Affero General Public
-    License.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 /* Vogen
 	El Nath: El Nath Market (211000100)
 	
@@ -30,6 +8,7 @@
 	* Crystals (including Dark)
 	* Processed Wood/Screws
 	* Arrows/Bronze Arrows/Steel Arrows
+* Commented out ability to refine
 */
 var status = 0;
 var selectedType = -1;
@@ -53,8 +32,8 @@ function action(mode, type, selection) {
         cm.dispose();
     }
     if (status == 0 && mode == 1) {
-        var selStr = "Hm? Who might you be? Oh, you've heard about my forging skills? In that case, I'd be glad to process some of your ores... for a fee.#b"
-        var options = ["Refine a mineral ore", "Refine a jewel ore", "Refine a rare jewel", "Refine a crystal ore", "Create materials", "Create Arrows"];
+        var selStr = "Hm? Who might you be? Oh, you've heard about my forging skills? I've since #rretired#k from that profession. \r\n\r\nMight I suggest #b#eNimble#n#k in the #bFree Market#k? She can even #renhance advanced equipment#k. \r\n\r\nThough now I just #rcreate materials#k and #rcarve arrows#k. I'd be glad to process some of them for you.#b"
+        var options = [/*"Refine a mineral ore", "Refine a jewel ore", "Refine a rare jewel", "Refine a crystal ore",*/ "Create Materials", "Create Arrows"];
         for (var i = 0; i < options.length; i++) {
             selStr += "\r\n#L" + i + "# " + options[i] + "#l";
         }
@@ -62,7 +41,7 @@ function action(mode, type, selection) {
         cm.sendSimple(selStr);
     } else if (status == 1 && mode == 1) {
         selectedType = selection;
-        if (selectedType == 0) { //mineral refine
+        /*if (selectedType == 0) { //mineral refine
             var selStr = "So, what kind of mineral ore would you like to refine?#b";
             var minerals = ["Bronze", "Steel", "Mithril", "Adamantium", "Silver", "Orihalcon", "Gold"];
             for (var i = 0; i < minerals.length; i++) {
@@ -94,7 +73,7 @@ function action(mode, type, selection) {
             }
             equip = false;
             cm.sendSimple(selStr);
-        } else if (selectedType == 4) { //material refine
+        */if (selectedType == 0) { //material refine
             var selStr = "Materials? I know of a few materials that I can make for you...#b";
             var materials = ["Make Processed Wood with Tree Branch", "Make Processed Wood with Firewood", "Make Screws (packs of 15)"];
             for (var i = 0; i < materials.length; i++) {
@@ -102,7 +81,7 @@ function action(mode, type, selection) {
             }
             equip = false;
             cm.sendSimple(selStr);
-        } else if (selectedType == 5) { //arrow refine
+        } else if (selectedType == 1) { //arrow refine
             var selStr = "Arrows? Not a problem at all.#b";
             var arrows = ["Arrow for Bow", "Arrow for Crossbow", "Bronze Arrow for Bow", "Bronze Arrow for Crossbow", "Steel Arrow for Bow", "Steel Arrow for Crossbow"];
             for (var i = 0; i < arrows.length; i++) {
@@ -116,7 +95,7 @@ function action(mode, type, selection) {
         }
     } else if (status == 2 && mode == 1) {
         selectedItem = selection;
-        if (selectedType == 0) { //mineral refine
+        /*if (selectedType == 0) { //mineral refine
             var itemSet = [4011000, 4011001, 4011002, 4011003, 4011004, 4011005, 4011006];
             var matSet = [4010000, 4010001, 4010002, 4010003, 4010004, 4010005, 4010006];
             var matQtySet = [10, 10, 10, 10, 10, 10, 10];
@@ -138,7 +117,7 @@ function action(mode, type, selection) {
             var itemSet = [4011007, 4021009];
             var matSet = [[4011000, 4011001, 4011002, 4011003, 4011004, 4011005, 4011006], [4021000, 4021001, 4021002, 4021003, 4021004, 4021005, 4021006, 4021007, 4021008]];
             var matQtySet = [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1]];
-            var costSet = [10000, 15000];
+            var costSet = [500000, 500000];
             item = itemSet[selectedItem];
             mats = matSet[selectedItem];
             matQty = matQtySet[selectedItem];
@@ -152,7 +131,7 @@ function action(mode, type, selection) {
             mats = matSet[selectedItem];
             matQty = matQtySet[selectedItem];
             cost = costSet[selectedItem];
-        } else if (selectedType == 4) { //material refine
+        */if (selectedType == 0) { //material refine
             var itemSet = [4003001, 4003001, 4003000];
             var matSet = [4000003, 4000018, [4011000, 4011001]];
             var matQtySet = [10, 5, [1, 1]];
@@ -174,7 +153,7 @@ function action(mode, type, selection) {
             qty = (selection > 0) ? selection : (selection < 0 ? -selection : 1);
         }
 
-        if (selectedType == 5) { //arrow refine
+        if (selectedType == 1) { //arrow refine
             var itemSet = [2060000, 2061000, 2060001, 2061001, 2060002, 2061002];
             var matSet = [[4003001, 4003004], [4003001, 4003004], [4011000, 4003001, 4003004], [4011000, 4003001, 4003004],
                 [4011001, 4003001, 4003005], [4011001, 4003001, 4003005]];
@@ -193,7 +172,7 @@ function action(mode, type, selection) {
             prompt += qty + " #t" + item + "#?";
         }
 
-        prompt += " In that case, I'm going to need specific items from you in order to make it. Make sure you have room in your inventory, though!#b";
+        prompt += " In that case, I'm going to need specific items from you in order to make it. Make sure you have room in your inventory!#b";
 
         if (mats instanceof Array) {
             for (var i = 0; i < mats.length; i++) {

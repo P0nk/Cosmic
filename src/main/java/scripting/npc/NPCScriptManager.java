@@ -23,11 +23,15 @@ package scripting.npc;
 
 import client.Character;
 import client.Client;
+import client.inventory.Item;
+import constants.inventory.ItemConstants;
 import net.server.world.PartyCharacter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractScriptManager;
+import scripting.event.scheduler.EventScriptScheduler;
 import server.ItemInformationProvider.ScriptedItem;
+import server.life.PlayerNPC;
 import tools.PacketCreator;
 
 import javax.script.Invocable;
@@ -47,8 +51,12 @@ public class NPCScriptManager extends AbstractScriptManager {
     private final Map<Client, NPCConversationManager> cms = new HashMap<>();
     private final Map<Client, Invocable> scripts = new HashMap<>();
 
+    private final EventScriptScheduler ess = new EventScriptScheduler();
     public static NPCScriptManager getInstance() {
         return instance;
+    }
+
+    public void spawnItemEventNpc(int itmeId) {
     }
 
     public boolean isNpcScriptAvailable(Client c, String fileName) {

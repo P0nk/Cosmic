@@ -82,7 +82,7 @@ public class MapId {
     public static final int FROM_ORBIS_TO_EREVE = 200090020;
 
     // Aran
-    public static final int ARAN_TUTORIAL_START = 914000000;
+    public static final int ARAN_TUTORIAL_START = 910000000;
     public static final int ARAN_TUTORIAL_MAX = 914000500;
     public static final int ARAN_INTRO = 140090000;
     private static final int BURNING_FOREST_1 = 914000200;
@@ -93,6 +93,34 @@ public class MapId {
     public static boolean isGodlyStatMap(int mapId) {
         return mapId == BURNING_FOREST_1 || mapId == BURNING_FOREST_2 || mapId == BURNING_FOREST_3;
     }
+
+    public static boolean isRB0BossMap(int mapId) {
+        return mapId == 280030000 || mapId >= 240060000 && mapId <= 240060201;
+    }
+
+    public static boolean isRB1BossMap(int mapId) {
+       return mapId == 270050100 || mapId == 21170100 || mapId == 21170101;
+    }
+
+    public static boolean isRb2BossMap(int mapId) {
+        return mapId == 271041100 || mapId == 271040100;
+    }
+
+    public static boolean LOTUS_TRAINING_MAP(int mapId) {
+        return mapId == 2064 || mapId == 2065;
+    }
+
+    public static final int MAGNUS_TRAINING = 401060101;
+
+    public static boolean MAGNUS_MAP(int mapId) {
+        return mapId == 401060100 || mapId == 401600200 || mapId == 401600300;
+    }
+
+    public static boolean LOTUS_MAP(int mapId) {
+        return mapId == 1064 || mapId == 1065;
+    }
+
+
 
     // Aran intro
     public static final int ARAN_TUTO_1 = 914090010;
@@ -208,6 +236,8 @@ public class MapId {
     public static final int CRITICAL_ERROR_BASE = 261020301;
     public static final int FANTASY_THEME_PARK_3 = 551030000;
     public static final int LONGEST_RIDE_ON_BYEBYE_STATION = 551030001;
+    public static final int KISS_DUKU = 541020620;
+    public static final int DKC2_BONUS1 = 910000008;
 
     // Boss rush
     private static final int BOSS_RUSH_MIN = 970030100;
@@ -270,7 +300,7 @@ public class MapId {
     public static final int MANONS_FOREST = 240020401;
     public static final int HOLLOWED_GROUND = 682000001;
     public static final int CURSED_SANCTUARY = 105090900;
-    public static final int DOOR_TO_ZAKUM = 211042300;
+    public static final int DOOR_TO_ZAKUM = 211042400;
     public static final int DRAGON_NEST_LEFT_BEHIND = 240040511;
     public static final int HENESYS_PARK = 100000200;
     public static final int ENTRANCE_TO_HORNTAILS_CAVE = 240050400;

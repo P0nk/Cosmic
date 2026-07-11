@@ -123,7 +123,7 @@ function setup(level, lobbyid) {
 
     eim.getInstanceMap(105100400).resetPQ(level);
     eim.getInstanceMap(105100401).resetPQ(level);
-    eim.schedule("releaseLeftClaw", releaseClawTime * 60000);
+    eim.schedule("releaseLeftClaw", releaseClawTime * 5000);
 
     respawnStages(eim);
     eim.startEventTimer(eventTime * 60000);
@@ -256,7 +256,7 @@ function monsterKilled(mob, eim) {
             eim.clearPQ();
 
             eim.dispatchRaiseQuestMobCount(bossMobId, entryMap);
-            mob.getMap().broadcastBalrogVictory(eim.getLeader().getName());
+            //mob.getMap().broadcastBalrogVictory(eim.getLeader().getName());
         } else {
             if (count == 1) {
                 var mapobj = eim.getInstanceMap(entryMap);

@@ -38,11 +38,8 @@ import server.maps.Mist;
 import tools.Randomizer;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Danny (Leifde)
@@ -193,14 +190,49 @@ public class MobSkill {
 
     // TODO: avoid output argument banishPlayersOutput
     public void applyEffect(Character player, Monster monster, boolean skill, List<Character> banishPlayersOutput) {
-        // See if the MobSkill is successful before doing anything
-        if (!makeChanceResult()) {
-            return;
-        }
-
         Disease disease = null;
         Map<MonsterStatus, Integer> stats = new EnumMap<>(MonsterStatus.class);
         List<Integer> reflection = new ArrayList<>();
+        MapleMap map = monster.getMap();
+        switch(monster.getId()) {
+            case 8840000:
+                if (id.type() == MobSkillType.ATTACK_UP || id.type() == MobSkillType.ATTACK_UP_M) {
+                    if (map.countMonster(8210006) > 0) {
+                        monster.heal((monster.getMaxHp() / 20) * map.countMonster(8210006), 0);
+                        map.killMonster(8210006);
+                    }
+                    if (map.countMonster(8210007) > 0) {
+                        monster.heal((monster.getMaxHp() / 10) * map.countMonster(8210006), 0);
+                        map.killMonster(8210007);
+                    }
+                }
+                if (id.type() == MobSkillType.DEFENSE_UP || id.type() == MobSkillType.DEFENSE_UP_M) {
+                    map.tpVL(monster);
+                }
+                break;
+            case 8240099:
+            case 8240098:
+                if (id.level() == 7) {
+                    Random r = new Random();
+                    map.LotusSpawn(r.nextInt(0, 1), r.nextInt(10, 15));
+                } else if (id.level() == 8) {
+                    Random r = new Random();
+                    map.LotusSpawn(r.nextInt(0, 1), r.nextInt(8, 10));
+                } else if (id.level() == 11) {
+                    Random r = new Random();
+                    map.LotusSpawn(r.nextInt(1), r.nextInt(12, 15));
+                } else if (id.level() == 65) {
+                    map.LotusSpawn(2, 8);
+                }
+                break;
+            case 8880000:
+            case 8880002:
+            case 8880010:
+                if(id.level() == 13) {
+                    map.spawnPillars(3);
+                }
+                break;
+        }
         switch (id.type()) {
             case ATTACK_UP, ATTACK_UP_M, PAD -> stats.put(MonsterStatus.WEAPON_ATTACK_UP, x);
             case MAGIC_ATTACK_UP, MAGIC_ATTACK_UP_M, MAD -> stats.put(MonsterStatus.MAGIC_ATTACK_UP, x);
@@ -221,12 +253,12 @@ public class MobSkill {
             case REVERSE_INPUT -> disease = Disease.CONFUSE;
             case UNDEAD -> disease = Disease.ZOMBIFY;
             case PHYSICAL_IMMUNE -> {
-                if (!monster.isBuffed(MonsterStatus.MAGIC_IMMUNITY)) {
+                if (makeChanceResult() && !monster.isBuffed(MonsterStatus.MAGIC_IMMUNITY)) {
                     stats.put(MonsterStatus.WEAPON_IMMUNITY, x);
                 }
             }
             case MAGIC_IMMUNE -> {
-                if (!monster.isBuffed(MonsterStatus.WEAPON_IMMUNITY)) {
+                if (makeChanceResult() && !monster.isBuffed(MonsterStatus.WEAPON_IMMUNITY)) {
                     stats.put(MonsterStatus.MAGIC_IMMUNITY, x);
                 }
             }
@@ -294,7 +326,7 @@ public class MobSkill {
         Rectangle mistArea = calculateBoundingBox(monster.getPosition());
         var mist = new Mist(mistArea, monster, this);
         int mistDuration = x * 100;
-        monster.getMap().spawnMist(mist, mistDuration, false, false, false);
+        monster.getMap().spawnMist(mist, mistDuration, false, false, false, false);
     }
 
     private void summonMonsters(Monster monster) {

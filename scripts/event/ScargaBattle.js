@@ -23,6 +23,8 @@
  * @event: Scarga Battle
  */
 
+const ExpeditionType = Java.type("server.expeditions.ExpeditionType");
+
 var isPq = true;
 var minPlayers = 6, maxPlayers = 30;
 var minLevel = 100, maxLevel = 255;
@@ -184,7 +186,7 @@ function giveRandomEventReward(eim, player) {
 
 function clearPQ(eim) {
     eim.stopEventTimer();
-    eim.setEventCleared();
+    eim.setEventCleared(ExpeditionType.SCARGA);
 }
 
 function isScarga(mob) {
@@ -198,6 +200,9 @@ function monsterKilled(mob, eim) {
         if (killed == 1) {
             eim.showClearEffect();
             eim.clearPQ();
+            party = eim.getPlayers()
+            for (var i = 0; i < party.size(); i++)
+            eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001006, 30);
         }
 
         eim.setIntProperty("defeatedBoss", killed + 1);

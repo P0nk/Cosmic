@@ -37,7 +37,10 @@ public class PinkbeanCommand extends Command {
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
-        player.getMap().spawnMonsterOnGroundBelow(LifeFactory.getMonster(MobId.PINK_BEAN), player.getPosition());
+        int[] bosses = {MobId.PINK_BEAN, 8880150, 8850011, 8645009, 8880415, 8840000, 8880302};
+        for(int boss: bosses) {
+            player.getMap().spawnMonsterOnGroundBelow(LifeFactory.getMonster(boss), player.getPosition());
+        }
 
     }
 }

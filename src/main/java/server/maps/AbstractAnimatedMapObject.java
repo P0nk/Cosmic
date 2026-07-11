@@ -22,11 +22,7 @@
 package server.maps;
 
 import io.netty.buffer.Unpooled;
-import net.packet.ByteBufInPacket;
-import net.packet.ByteBufOutPacket;
-import net.packet.InPacket;
-import net.packet.OutPacket;
-import net.packet.Packet;
+import net.packet.*;
 
 import java.util.Arrays;
 

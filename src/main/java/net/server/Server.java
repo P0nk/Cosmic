@@ -21,10 +21,8 @@
  */
 package net.server;
 
+import client.*;
 import client.Character;
-import client.Client;
-import client.Family;
-import client.SkillFactory;
 import client.command.CommandsExecutor;
 import client.inventory.Item;
 import client.inventory.ItemFactory;
@@ -36,7 +34,6 @@ import constants.game.GameConstants;
 import constants.inventory.ItemConstants;
 import constants.net.OpcodeConstants;
 import constants.net.ServerConstants;
-import database.DatabaseMigrations;
 import database.note.NoteDao;
 import net.ChannelDependencies;
 import net.PacketProcessor;
@@ -48,30 +45,23 @@ import net.server.coordinator.session.SessionCoordinator;
 import net.server.guild.Alliance;
 import net.server.guild.Guild;
 import net.server.guild.GuildCharacter;
-import net.server.task.BossLogTask;
-import net.server.task.CharacterDiseaseTask;
-import net.server.task.CouponTask;
-import net.server.task.DueyFredrickTask;
-import net.server.task.EventRecallCoordinatorTask;
-import net.server.task.InvitationTask;
-import net.server.task.LoginCoordinatorTask;
-import net.server.task.LoginStorageTask;
-import net.server.task.RankingCommandTask;
-import net.server.task.RankingLoginTask;
-import net.server.task.RespawnTask;
+import net.server.task.*;
 import net.server.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scripting.portal.PortalPlayerInteraction;
 import server.CashShop.CashItemFactory;
 import server.SkillbookInformationProvider;
 import server.ThreadManager;
 import server.TimerManager;
 import server.expeditions.ExpeditionBossLog;
-import server.life.PlayerNPC;
+import server.life.PlayerNPCFactory;
 import server.quest.Quest;
 import service.NoteService;
 import tools.DatabaseConnection;
+import tools.HairsAndFacesHandler;
+import tools.PacketCreator;
 import tools.Pair;
 
 import java.sql.Connection;
@@ -80,20 +70,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -103,10 +81,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 public class Server {
     private static final Logger log = LoggerFactory.getLogger(Server.class);
@@ -216,6 +191,20 @@ public class Server {
 
     public boolean canEnterDeveloperRoom() {
         return availableDeveloperRoom;
+    }
+
+    private final Map<String, Client> connectedClients = new HashMap<>();
+
+    public void registerClient(Client client) {
+        connectedClients.put(client.getAccountName(), client);
+    }
+
+    public void unregisterClient(String accName) {
+        connectedClients.remove(accName);
+    }
+
+    public Client getConnectedClient(String accName) {
+        return connectedClients.get(accName);
     }
 
     private void loadPlayerNpcMapStepFromDb() {
@@ -578,6 +567,24 @@ public class Server {
         return Math.max(0, nextDay.getTimeInMillis() - System.currentTimeMillis());
     }
 
+    public static long getTimeLeftUntilNextThursday() {
+        Calendar now = Calendar.getInstance();
+        Calendar nextThursday = Calendar.getInstance();
+        nextThursday.set(Calendar.HOUR_OF_DAY, 0);
+        nextThursday.set(Calendar.MINUTE, 0);
+        nextThursday.set(Calendar.SECOND, 0);
+        nextThursday.set(Calendar.MILLISECOND, 0);
+
+        int currentDayOfWeek = now.get(Calendar.DAY_OF_WEEK);
+        int daysUntilNextThursday = (Calendar.THURSDAY - currentDayOfWeek + 7) % 7;
+        if (daysUntilNextThursday == 0) {
+            daysUntilNextThursday = 7;
+        }
+
+        nextThursday.add(Calendar.DAY_OF_MONTH, daysUntilNextThursday);
+        return Math.max(0, nextThursday.getTimeInMillis() - now.getTimeInMillis());
+    }
+
     public Map<Integer, Integer> getCouponRates() {
         return couponRates;
     }
@@ -862,6 +869,8 @@ public class Server {
         Instant beforeInit = Instant.now();
         log.info("Cosmic v{} starting up.", ServerConstants.VERSION);
 
+        //HairsAndFacesHandler.createHairAndFaceListsFile();
+
         if (YamlConfig.config.server.SHUTDOWNHOOK) {
             Runtime.getRuntime().addShutdownHook(new Thread(shutdown(false)));
         }
@@ -870,22 +879,20 @@ public class Server {
             throw new IllegalStateException("Failed to initiate a connection to the database");
         }
 
-        DatabaseMigrations.runDatabaseMigrations();
-
         channelDependencies = registerChannelDependencies();
 
         final ExecutorService initExecutor = Executors.newFixedThreadPool(10);
         // Run slow operations asynchronously to make startup faster
         final List<Future<?>> futures = new ArrayList<>();
-        futures.add(initExecutor.submit(SkillFactory::loadAllSkills));
-        futures.add(initExecutor.submit(CashItemFactory::loadAllCashItems));
-        futures.add(initExecutor.submit(Quest::loadAllQuests));
-        futures.add(initExecutor.submit(SkillbookInformationProvider::loadAllSkillbookInformation));
+        futures.add(initExecutor.submit(() -> SkillFactory.loadAllSkills()));
+        futures.add(initExecutor.submit(() -> CashItemFactory.loadAllCashItems()));
+        futures.add(initExecutor.submit(() -> Quest.loadAllQuests()));
+        futures.add(initExecutor.submit(() -> SkillbookInformationProvider.loadAllSkillbookInformation()));
+        futures.add(initExecutor.submit(() -> PlayerNPCFactory.loadFactoryMetadata()));
         initExecutor.shutdown();
 
         TimeZone.setDefault(TimeZone.getTimeZone(YamlConfig.config.server.TIMEZONE));
 
-        final int worldCount = Math.min(GameConstants.WORLD_NAMES.length, YamlConfig.config.server.WORLDS);
         try (Connection con = DatabaseConnection.getConnection()) {
             setAllLoggedOut(con);
             setAllMerchantsInactive(con);
@@ -896,7 +903,6 @@ public class Server {
             CashIdGenerator.loadExistentCashIdsFromDb(con);
             applyAllNameChanges(con); // -- name changes can be missed by INSTANT_NAME_CHANGE --
             applyAllWorldTransfers(con);
-            PlayerNPC.loadRunningRankData(con, worldCount);
         } catch (SQLException sqle) {
             log.error("Failed to run all startup-bound database tasks", sqle);
             throw new IllegalStateException(sqle);
@@ -906,6 +912,8 @@ public class Server {
         initializeTimelyTasks(channelDependencies);    // aggregated method for timely tasks thanks to lxconan
 
         try {
+            int worldCount = Math.min(GameConstants.WORLD_NAMES.length, YamlConfig.config.server.WORLDS);
+
             for (int i = 0; i < worldCount; i++) {
                 initWorld();
             }
@@ -913,11 +921,8 @@ public class Server {
 
             loadPlayerNpcMapStepFromDb();
 
-            if (YamlConfig.config.server.USE_FAMILY_SYSTEM) {
-                try (Connection con = DatabaseConnection.getConnection()) {
-                    Family.loadAllFamilies(con);
-                }
-            }
+//
+
         } catch (Exception e) {
             log.error("[SEVERE] Syntax error in 'world.ini'.", e); //For those who get errors
             System.exit(0);
@@ -947,6 +952,7 @@ public class Server {
         for (Channel ch : this.getAllChannels()) {
             ch.reloadEventScriptManager();
         }
+       // DamageSkin.loadDamageSkins();
     }
 
     private ChannelDependencies registerChannelDependencies() {
@@ -998,6 +1004,58 @@ public class Server {
         timeLeft = getTimeLeftForNextDay();
         ExpeditionBossLog.resetBossLogTable();
         tMan.register(new BossLogTask(), DAYS.toMillis(1), timeLeft);
+
+        new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                if (isDoorOpen()) {
+                    // Countdown from 5 minutes to 1 minute
+                    for (int minutesRemaining = 5; minutesRemaining > 0; minutesRemaining--) {
+                        this.broadcastMessage(0, PacketCreator.sendYellowTip(
+                                "The special retro JQ doors are now open for " + minutesRemaining +
+                                        " minute" + (minutesRemaining > 1 ? "s" : "") + "! Hurry before they close!"
+                        ));
+
+                        try {
+                            Thread.sleep(1 * 60000); // Wait 1 minute
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return; // Exit the loop if interrupted
+                        }
+                    }
+                }
+
+                // Sleep for 1 minute before checking door status again
+                try {
+                    Thread.sleep(1 * 60000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }).start();
+    }
+
+    // Define the cycle start hour (24-hour format)
+    private static final int START_HOUR = 0; // Example: cycle starts at 9:00 AM
+
+    public boolean isDoorOpen() {
+        // Get the current time in milliseconds
+        long currentTimeMillis = System.currentTimeMillis();
+
+        // Convert milliseconds to total minutes since Unix epoch
+        long totalMinutes = currentTimeMillis / (1000 * 60);
+
+        // Calculate the minutes at which the cycle should start (from the Unix epoch)
+        // Convert START_HOUR into minutes (since midnight)
+        long startTimeInMinutes = START_HOUR * 60;
+
+        // Adjust the total minutes relative to the start time
+        long adjustedMinutes = totalMinutes - startTimeInMinutes;
+
+        // Each 3-hour interval is 180 minutes
+        long minutesInCurrentCycle = adjustedMinutes % 60;
+
+        // Return true if within the first 5 minutes of the adjusted 3-hour window
+        return minutesInCurrentCycle >= 0 && minutesInCurrentCycle < 5;
     }
 
     public static void main(String[] args) {
@@ -1315,6 +1373,13 @@ public class Server {
             ch.broadcastPacket(packet);
         }
     }
+
+    public void sendGlobal(int world, Packet packet) {
+        for (Channel ch : getChannelsFromWorld(world)) {
+            ch.broadcastGlobalPacket(packet);
+        }
+    }
+
 
     public void broadcastGMMessage(int world, Packet packet) {
         for (Channel ch : getChannelsFromWorld(world)) {
@@ -1918,6 +1983,16 @@ public class Server {
     }
 
     private synchronized void shutdownInternal(boolean restart) {
+
+        for (Client client : Server.getInstance().connectedClients.values()) {
+            client.disconnect(true, false);
+        }
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+        }
         log.info("{} the server!", restart ? "Restarting" : "Shutting down");
         if (getWorlds() == null) {
             return;//already shutdown
@@ -1964,7 +2039,11 @@ public class Server {
         TimerManager.getInstance().stop();
 
         log.info("Worlds and channels are offline.");
-        loginServer.stop();
+
+        if (loginServer != null) {
+            loginServer.stop();
+        }
+
         if (!restart) {  // shutdown hook deadlocks if System.exit() method is used within its body chores, thanks MIKE for pointing that out
             // We disabled log4j's shutdown hook in the config file, so we have to manually shut it down here,
             // after our last log statement.

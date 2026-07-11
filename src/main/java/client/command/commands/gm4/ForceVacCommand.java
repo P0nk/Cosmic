@@ -51,13 +51,13 @@ public class ForceVacCommand extends Command {
 
             mapItem.lockItem();
             try {
-                if (mapItem.isPickedUp()) {
+                if (mapItem.isAlreadyPickedUp()) {
                     continue;
                 }
 
                 if (mapItem.getMeso() > 0) {
                     player.gainMeso(mapItem.getMeso(), true);
-                } else if (player.applyConsumeOnPickup(mapItem.getItemId())) {    // thanks Vcoc for pointing out consumables on pickup not being processed here
+                } else if (player.applyConsumeOnPickup(mapItem.getItemId(), false)) {    // thanks Vcoc for pointing out consumables on pickup not being processed here
                 } else if (ItemId.isNxCard(mapItem.getItemId())) {
                     // Add NX to account, show effect and make item disappear
                     player.getCashShop().gainCash(1, mapItem.getItemId() == ItemId.NX_CARD_100 ? 100 : 250);

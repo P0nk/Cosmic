@@ -102,7 +102,7 @@ public class Shop {
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
                         c.getPlayer().gainMeso(-amount, false);
                     } else {
-                        short slotMax = ii.getSlotMax(c, item.getItemId());
+                        short slotMax = ii.getSlotMax(c.getPlayer(), item.getItemId());
                         quantity = slotMax;
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
                         c.getPlayer().gainMeso(-item.getPrice(), false);
@@ -125,7 +125,7 @@ public class Shop {
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
                         InventoryManipulator.removeById(c, InventoryType.ETC, ItemId.PERFECT_PITCH, amount, false, false);
                     } else {
-                        short slotMax = ii.getSlotMax(c, item.getItemId());
+                        short slotMax = ii.getSlotMax(c.getPlayer(), item.getItemId());
                         quantity = slotMax;
                         InventoryManipulator.addById(c, itemId, quantity, "", -1);
                         InventoryManipulator.removeById(c, InventoryType.ETC, ItemId.PERFECT_PITCH, amount, false, false);
@@ -146,9 +146,9 @@ public class Shop {
                 if (InventoryManipulator.checkSpace(c, itemId, quantity, "")) {
                     if (ItemConstants.isPet(itemId)) {
                         int petid = Pet.createPet(itemId);
-                        InventoryManipulator.addById(c, itemId, quantity, "", petid, -1);
+                        InventoryManipulator.addById(c.getPlayer(), itemId, quantity, "", petid, -1);
                     } else {
-                        InventoryManipulator.addById(c, itemId, quantity, "", -1, -1);
+                        InventoryManipulator.addById(c.getPlayer(), itemId, quantity, "", -1, -1);
                     }
                     c.getPlayer().gainMeso(diff, false);
                 } else {
@@ -220,7 +220,7 @@ public class Shop {
         if (item == null || !ItemConstants.isRechargeable(item.getItemId())) {
             return;
         }
-        short slotMax = ii.getSlotMax(c, item.getItemId());
+        short slotMax = ii.getSlotMax(c.getPlayer(), item.getItemId());
         if (item.getQuantity() < 0) {
             return;
         }
@@ -298,5 +298,9 @@ public class Shop {
 
     public int getId() {
         return id;
+    }
+
+    public List<ShopItem> getItems() {
+        return items;
     }
 }

@@ -1,0 +1,992 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="910004018.img">
+    <imgdir name="info">
+        <int name="version" value="10"/>
+        <int name="cloud" value="0"/>
+        <int name="town" value="0"/>
+        <float name="mobRate" value="1.0"/>
+        <string name="bgm" value="Bgm28/thefinalWar"/>
+        <int name="returnMap" value="910004018"/>
+        <int name="forcedReturn" value="910004018"/>
+        <int name="hideMinimap" value="1"/>
+        <string name="mapMark" value="Magnus"/>
+        <int name="fieldLimit" value="336636"/>
+        <int name="VRLeft" value="417"/>
+        <int name="VRRight" value="3097"/>
+        <int name="VRTop" value="-2000"/>
+        <int name="VRBottom" value="-1200"/>
+        <string name="onFirstUserEnter" value="magnus_summon_N"/>
+        <string name="onUserEnter" value="magnus_enter_HP"/>
+        <int name="decInterval" value="2000"/>
+        <int name="limitUpgradeItem" value="1"/>
+        <int name="standAlone" value="0"/>
+        <int name="partyStandAlone" value="0"/>
+        <string name="fieldScript" value="BossMagnus"/>
+        <int name="isFixDec" value="1"/>
+        <int name="decHPr" value="1"/>
+        <int name="isDecView" value="1"/>
+        <int name="largeSplit" value="2"/>
+        <int name="remoteEffect" value="-2"/>
+        <int name="quarterView" value="0"/>
+        <int name="reviveCurField" value="1"/>
+        <int name="noChair" value="1"/>
+    </imgdir>
+    <imgdir name="miniMap">
+        <canvas name="canvas" width="168" height="56" pixFormat="1" magLevel="0" bytedata="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">
+        </canvas>
+        <int name="width" value="2700"/>
+        <int name="height" value="901"/>
+        <int name="centerX" value="-407"/>
+        <int name="centerY" value="2099"/>
+        <int name="mag" value="4"/>
+    </imgdir>
+    <imgdir name="0">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="1">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="2">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+            <imgdir name="0">
+                <int name="x" value="958"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="11"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="x" value="1162"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="12"/>
+            </imgdir>
+            <imgdir name="2">
+                <int name="x" value="1570"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="13"/>
+            </imgdir>
+            <imgdir name="3">
+                <int name="x" value="1366"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="14"/>
+            </imgdir>
+            <imgdir name="4">
+                <int name="x" value="1774"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="15"/>
+            </imgdir>
+            <imgdir name="5">
+                <int name="x" value="1978"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="16"/>
+            </imgdir>
+            <imgdir name="6">
+                <int name="x" value="2182"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="6"/>
+            </imgdir>
+            <imgdir name="7">
+                <int name="x" value="2386"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="7"/>
+            </imgdir>
+            <imgdir name="8">
+                <int name="x" value="550"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="8"/>
+            </imgdir>
+            <imgdir name="9">
+                <int name="x" value="754"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="9"/>
+            </imgdir>
+            <imgdir name="10">
+                <int name="x" value="2590"/>
+                <int name="y" value="-1608"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="10"/>
+            </imgdir>
+            <imgdir name="11">
+                <int name="x" value="1425"/>
+                <int name="y" value="-1744"/>
+                <int name="z" value="10"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="8"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="12">
+                <int name="x" value="1900"/>
+                <int name="y" value="-1742"/>
+                <int name="z" value="10"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="8"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="13">
+                <int name="x" value="2376"/>
+                <int name="y" value="-1743"/>
+                <int name="z" value="10"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="8"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="14">
+                <int name="x" value="949"/>
+                <int name="y" value="-1744"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="8"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="3">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+            <imgdir name="0">
+                <int name="x" value="678"/>
+                <int name="y" value="-1723"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="1"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="19"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="x" value="1187"/>
+                <int name="y" value="-1723"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="2"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="20"/>
+            </imgdir>
+            <imgdir name="2">
+                <int name="x" value="1663"/>
+                <int name="y" value="-1722"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="2"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="17"/>
+            </imgdir>
+            <imgdir name="3">
+                <int name="x" value="2139"/>
+                <int name="y" value="-1722"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="2"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="18"/>
+            </imgdir>
+            <imgdir name="4">
+                <int name="x" value="2614"/>
+                <int name="y" value="-1723"/>
+                <int name="z" value="10"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="4"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="18"/>
+            </imgdir>
+            <imgdir name="5">
+                <int name="x" value="2615"/>
+                <int name="y" value="-1722"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="2"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="18"/>
+            </imgdir>
+            <imgdir name="6">
+                <int name="x" value="3010"/>
+                <int name="y" value="-1756"/>
+                <int name="z" value="11"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="7"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="18"/>
+            </imgdir>
+            <imgdir name="7">
+                <int name="x" value="2841"/>
+                <int name="y" value="-1680"/>
+                <int name="z" value="11"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="5"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="8">
+                <int name="x" value="2843"/>
+                <int name="y" value="-1677"/>
+                <int name="z" value="10"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="6"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="9">
+                <int name="x" value="2377"/>
+                <int name="y" value="-1518"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="13"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="4">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+            <imgdir name="0">
+                <int name="x" value="1082"/>
+                <int name="y" value="-1274"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_upstairs"/>
+                <string name="l1" value="foot"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="x" value="1532"/>
+                <int name="y" value="-1274"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_upstairs"/>
+                <string name="l1" value="foot"/>
+                <string name="l2" value="1"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="1"/>
+            </imgdir>
+            <imgdir name="2">
+                <int name="x" value="1982"/>
+                <int name="y" value="-1274"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_upstairs"/>
+                <string name="l1" value="foot"/>
+                <string name="l2" value="2"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="2"/>
+            </imgdir>
+            <imgdir name="3">
+                <int name="x" value="2432"/>
+                <int name="y" value="-1274"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_upstairs"/>
+                <string name="l1" value="foot"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="3"/>
+            </imgdir>
+            <imgdir name="4">
+                <int name="x" value="2882"/>
+                <int name="y" value="-1274"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_upstairs"/>
+                <string name="l1" value="foot"/>
+                <string name="l2" value="1"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="4"/>
+            </imgdir>
+            <imgdir name="5">
+                <int name="x" value="632"/>
+                <int name="y" value="-1274"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_upstairs"/>
+                <string name="l1" value="foot"/>
+                <string name="l2" value="0"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="5"/>
+            </imgdir>
+            <imgdir name="6">
+                <int name="x" value="2608"/>
+                <int name="y" value="-1592"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="9"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="7">
+                <int name="x" value="2611"/>
+                <int name="y" value="-1591"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="10"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="8">
+                <int name="x" value="2610"/>
+                <int name="y" value="-1591"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="11"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="9">
+                <int name="x" value="3081"/>
+                <int name="y" value="-1591"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="11"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="10">
+                <int name="x" value="2830"/>
+                <int name="y" value="-1464"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="12"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="11">
+                <int name="x" value="562"/>
+                <int name="y" value="-1721"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="3"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="12">
+                <int name="x" value="949"/>
+                <int name="y" value="-1520"/>
+                <int name="z" value="8"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="13"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="13">
+                <int name="x" value="1428"/>
+                <int name="y" value="-1519"/>
+                <int name="z" value="8"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="13"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+            <imgdir name="14">
+                <int name="x" value="1899"/>
+                <int name="y" value="-1518"/>
+                <int name="z" value="8"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="13"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="5">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="6">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+            <imgdir name="0">
+                <int name="x" value="2834"/>
+                <int name="y" value="-1354"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="14"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+                <string name="tags" value="sleepGas10"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="x" value="2142"/>
+                <int name="y" value="-1354"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="14"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+                <string name="tags" value="sllepGas20"/>
+            </imgdir>
+            <imgdir name="2">
+                <int name="x" value="1663"/>
+                <int name="y" value="-1352"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="14"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+                <string name="tags" value="sllepGas30"/>
+            </imgdir>
+            <imgdir name="3">
+                <int name="x" value="1191"/>
+                <int name="y" value="-1353"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="14"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+                <string name="tags" value="sleepGas40"/>
+            </imgdir>
+            <imgdir name="4">
+                <int name="x" value="708"/>
+                <int name="y" value="-1352"/>
+                <int name="z" value="9"/>
+                <string name="oS" value="gran_helisium"/>
+                <string name="l0" value="citadel_boss"/>
+                <string name="l1" value="magnus"/>
+                <string name="l2" value="14"/>
+                <int name="f" value="0"/>
+                <int name="zM" value="0"/>
+                <string name="tags" value="sleepGas50"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="7">
+        <imgdir name="info">
+        </imgdir>
+        <imgdir name="obj">
+        </imgdir>
+        <imgdir name="tile">
+        </imgdir>
+    </imgdir>
+    <imgdir name="ladderRope">
+    </imgdir>
+    <imgdir name="portal">
+        <imgdir name="0">
+            <int name="x" value="602"/>
+            <int name="y" value="-1391"/>
+            <int name="pt" value="0"/>
+            <int name="tm" value="999999999"/>
+            <string name="tn" value=""/>
+            <string name="pn" value="sp"/>
+        </imgdir>
+        <imgdir name="1">
+            <int name="x" value="594"/>
+            <int name="y" value="-1344"/>
+            <int name="pt" value="11"/>
+            <int name="tm" value="999999999"/>
+            <string name="tn" value=""/>
+            <string name="pn" value="pt_magnusDoor"/>
+            <string name="script" value="pt_magnusDoor"/>
+        </imgdir>
+        <imgdir name="2">
+            <int name="x" value="500"/>
+            <int name="y" value="-1344"/>
+            <int name="pt" value="1"/>
+            <int name="tm" value="910004018"/>
+            <string name="tn" value="ph00"/>
+            <string name="pn" value="ph00"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="reactor">
+    </imgdir>
+    <imgdir name="back">
+        <imgdir name="0">
+            <int name="x" value="-153"/>
+            <int name="y" value="-131"/>
+            <int name="rx" value="0"/>
+            <int name="ry" value="0"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="1"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="0"/>
+        </imgdir>
+        <imgdir name="1">
+            <int name="x" value="-1140"/>
+            <int name="y" value="-379"/>
+            <int name="rx" value="-15"/>
+            <int name="ry" value="-15"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="4"/>
+        </imgdir>
+        <imgdir name="2">
+            <int name="x" value="-700"/>
+            <int name="y" value="-106"/>
+            <int name="rx" value="-17"/>
+            <int name="ry" value="-17"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="2"/>
+        </imgdir>
+        <imgdir name="3">
+            <int name="x" value="48"/>
+            <int name="y" value="-276"/>
+            <int name="rx" value="-17"/>
+            <int name="ry" value="-17"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="3"/>
+        </imgdir>
+        <imgdir name="4">
+            <int name="x" value="548"/>
+            <int name="y" value="-397"/>
+            <int name="rx" value="-15"/>
+            <int name="ry" value="-15"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="1"/>
+        </imgdir>
+        <imgdir name="5">
+            <int name="x" value="-466"/>
+            <int name="y" value="114"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="2000"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="1"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="5"/>
+        </imgdir>
+        <imgdir name="6">
+            <int name="x" value="234"/>
+            <int name="y" value="-126"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="2500"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="1"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="6"/>
+        </imgdir>
+        <imgdir name="7">
+            <int name="x" value="-2709"/>
+            <int name="y" value="30"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="7"/>
+        </imgdir>
+        <imgdir name="8">
+            <int name="x" value="-1909"/>
+            <int name="y" value="12"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="8"/>
+        </imgdir>
+        <imgdir name="9">
+            <int name="x" value="-1109"/>
+            <int name="y" value="117"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="9"/>
+        </imgdir>
+        <imgdir name="10">
+            <int name="x" value="-308"/>
+            <int name="y" value="-75"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="10"/>
+        </imgdir>
+        <imgdir name="11">
+            <int name="x" value="491"/>
+            <int name="y" value="30"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="7"/>
+        </imgdir>
+        <imgdir name="12">
+            <int name="x" value="-2824"/>
+            <int name="y" value="110"/>
+            <int name="rx" value="-40"/>
+            <int name="ry" value="-40"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisiumTown"/>
+            <int name="no" value="1"/>
+        </imgdir>
+        <imgdir name="13">
+            <int name="x" value="484"/>
+            <int name="y" value="154"/>
+            <int name="rx" value="-40"/>
+            <int name="ry" value="-40"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisiumTown"/>
+            <int name="no" value="0"/>
+        </imgdir>
+        <imgdir name="14">
+            <int name="x" value="-2110"/>
+            <int name="y" value="145"/>
+            <int name="rx" value="-40"/>
+            <int name="ry" value="-40"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisiumTown"/>
+            <int name="no" value="0"/>
+        </imgdir>
+        <imgdir name="15">
+            <int name="x" value="-1206"/>
+            <int name="y" value="136"/>
+            <int name="rx" value="-40"/>
+            <int name="ry" value="-40"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisiumTown"/>
+            <int name="no" value="1"/>
+        </imgdir>
+        <imgdir name="16">
+            <int name="x" value="1291"/>
+            <int name="y" value="12"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisium"/>
+            <int name="no" value="8"/>
+        </imgdir>
+        <imgdir name="17">
+            <int name="x" value="2091"/>
+            <int name="y" value="117"/>
+            <int name="rx" value="-30"/>
+            <int name="ry" value="-30"/>
+            <int name="cx" value="0"/>
+            <int name="cy" value="0"/>
+            <int name="a" value="255"/>
+            <int name="type" value="0"/>
+            <string name="bS" value="grandisHelisiumTown"/>
+            <int name="no" value="9"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="foothold">
+        <imgdir name="4">
+            <imgdir name="0">
+                <imgdir name="1">
+                    <int name="x1" value="857"/>
+                    <int name="y1" value="-1347"/>
+                    <int name="x2" value="1307"/>
+                    <int name="y2" value="-1347"/>
+                    <int name="prev" value="6"/>
+                    <int name="next" value="2"/>
+                </imgdir>
+                <imgdir name="2">
+                    <int name="x1" value="1307"/>
+                    <int name="y1" value="-1347"/>
+                    <int name="x2" value="1757"/>
+                    <int name="y2" value="-1347"/>
+                    <int name="prev" value="1"/>
+                    <int name="next" value="3"/>
+                    <int name="piece" value="1"/>
+                </imgdir>
+            </imgdir>
+            <imgdir name="1">
+                <imgdir name="3">
+                    <int name="x1" value="1757"/>
+                    <int name="y1" value="-1347"/>
+                    <int name="x2" value="2207"/>
+                    <int name="y2" value="-1347"/>
+                    <int name="prev" value="2"/>
+                    <int name="next" value="4"/>
+                    <int name="piece" value="2"/>
+                </imgdir>
+            </imgdir>
+            <imgdir name="2">
+                <imgdir name="4">
+                    <int name="x1" value="2207"/>
+                    <int name="y1" value="-1347"/>
+                    <int name="x2" value="2657"/>
+                    <int name="y2" value="-1347"/>
+                    <int name="prev" value="3"/>
+                    <int name="next" value="5"/>
+                    <int name="piece" value="3"/>
+                </imgdir>
+            </imgdir>
+            <imgdir name="3">
+                <imgdir name="5">
+                    <int name="x1" value="2657"/>
+                    <int name="y1" value="-1347"/>
+                    <int name="x2" value="3107"/>
+                    <int name="y2" value="-1347"/>
+                    <int name="prev" value="4"/>
+                    <int name="next" value="0"/>
+                    <int name="piece" value="4"/>
+                </imgdir>
+            </imgdir>
+            <imgdir name="5">
+                <imgdir name="6">
+                    <int name="x1" value="407"/>
+                    <int name="y1" value="-1347"/>
+                    <int name="x2" value="857"/>
+                    <int name="y2" value="-1347"/>
+                    <int name="prev" value="0"/>
+                    <int name="next" value="1"/>
+                    <int name="piece" value="5"/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <imgdir name="5">
+            <imgdir name="23">
+                <imgdir name="7">
+                    <int name="x1" value="407"/>
+                    <int name="y1" value="-428"/>
+                    <int name="x2" value="854"/>
+                    <int name="y2" value="-428"/>
+                    <int name="prev" value="0"/>
+                    <int name="next" value="8"/>
+                    <int name="piece" value="5"/>
+                </imgdir>
+                <imgdir name="8">
+                    <int name="x1" value="854"/>
+                    <int name="y1" value="-428"/>
+                    <int name="x2" value="1304"/>
+                    <int name="y2" value="-428"/>
+                    <int name="prev" value="7"/>
+                    <int name="next" value="9"/>
+                </imgdir>
+                <imgdir name="9">
+                    <int name="x1" value="1304"/>
+                    <int name="y1" value="-428"/>
+                    <int name="x2" value="1754"/>
+                    <int name="y2" value="-428"/>
+                    <int name="prev" value="8"/>
+                    <int name="next" value="10"/>
+                    <int name="piece" value="1"/>
+                </imgdir>
+                <imgdir name="10">
+                    <int name="x1" value="1754"/>
+                    <int name="y1" value="-428"/>
+                    <int name="x2" value="2204"/>
+                    <int name="y2" value="-428"/>
+                    <int name="prev" value="9"/>
+                    <int name="next" value="11"/>
+                    <int name="piece" value="2"/>
+                </imgdir>
+                <imgdir name="11">
+                    <int name="x1" value="2204"/>
+                    <int name="y1" value="-428"/>
+                    <int name="x2" value="2654"/>
+                    <int name="y2" value="-428"/>
+                    <int name="prev" value="10"/>
+                    <int name="next" value="12"/>
+                    <int name="piece" value="3"/>
+                </imgdir>
+                <imgdir name="12">
+                    <int name="x1" value="2654"/>
+                    <int name="y1" value="-428"/>
+                    <int name="x2" value="3107"/>
+                    <int name="y2" value="-428"/>
+                    <int name="prev" value="11"/>
+                    <int name="next" value="0"/>
+                    <int name="piece" value="4"/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="life">
+        <imgdir name="0">
+            <string name="id" value="8880002"/>
+            <int name="x" value="2577"/>
+            <int name="y" value="-1367"/>
+            <int name="cy" value="-1347"/>
+            <int name="rx0" value="2377"/>
+            <int name="rx1" value="2777"/>
+            <string name="type" value="m"/>
+            <int name="fh" value="4"/>
+        </imgdir>
+    </imgdir>
+</imgdir>

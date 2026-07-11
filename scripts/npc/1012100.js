@@ -122,7 +122,7 @@ function action(mode, type, selection) {
 
     if (actionx["1stJob"]) {
         if (status == 0) {
-            if (cm.getLevel() >= 10 && cm.canGetFirstJob(jobType)) {
+            if (cm.getLevel() >= 10 && cm.getPlayer().getSkillLevel(1051) == 0 && cm.canGetFirstJob(jobType)) {
                 cm.sendNextPrev("It is an important and final choice. You will not be able to turn back.");
             } else {
                 cm.sendOk("Train a bit more until you reach the base requirements and I can show you the way of the #rBowman#k.");

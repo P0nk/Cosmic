@@ -27,6 +27,7 @@ import client.Disease;
 import client.inventory.InventoryType;
 import client.inventory.Item;
 import client.inventory.manipulator.InventoryManipulator;
+import config.YamlConfig;
 import constants.id.ItemId;
 import constants.inventory.ItemConstants;
 import net.AbstractPacketHandler;
@@ -42,7 +43,6 @@ public final class UseItemHandler extends AbstractPacketHandler {
     @Override
     public final void handlePacket(InPacket p, Client c) {
         Character chr = c.getPlayer();
-
         if (!chr.isAlive()) {
             c.sendPacket(PacketCreator.enableActions());
             return;
@@ -52,7 +52,7 @@ public final class UseItemHandler extends AbstractPacketHandler {
         short slot = p.readShort();
         int itemId = p.readInt();
         Item toUse = chr.getInventory(InventoryType.USE).getItem(slot);
-        if (toUse != null && toUse.getQuantity() > 0 && toUse.getItemId() == itemId) {
+        if (toUse != null && toUse.getQuantity() > 0 && toUse.getItemId() == itemId && !chr.inExpedition) {
             if (itemId == ItemId.ALL_CURE_POTION) {
                 chr.dispelDebuffs();
                 remove(c, slot);
@@ -72,8 +72,23 @@ public final class UseItemHandler extends AbstractPacketHandler {
                 remove(c, slot);
                 return;
             } else if (ItemConstants.isTownScroll(itemId)) {
+                int banMap = chr.getMapId();
+                int banSp = chr.getMap().findClosestPlayerSpawnpoint(chr.getPosition()).getId();
+                long banTime = currentServerTime();
+
+                if (ii.getItemEffect(toUse.getItemId()).applyTo(chr)) {
+                    if (YamlConfig.config.server.USE_BANISHABLE_TOWN_SCROLL) {
+                        chr.setBanishPlayerData(banMap, banSp, banTime);
+                    }
+
+                    remove(c, slot);
+                }
+                return;
+            } else if (ItemConstants.isAntibanishScroll(itemId)) {
                 if (ii.getItemEffect(toUse.getItemId()).applyTo(chr)) {
                     remove(c, slot);
+                } else {
+                    chr.dropMessage(5, "You cannot recover from a banish state at the moment.");
                 }
                 return;
             }
@@ -88,6 +103,14 @@ public final class UseItemHandler extends AbstractPacketHandler {
                     mse.applyTo(player);
                 }
             }
+        }  else if(toUse != null && toUse.getQuantity() > 0 && toUse.getItemId() == itemId && chr.potionCount > 0) {
+            chr.potionCount--;
+            StatEffect mse = ii.getItemEffect(toUse.getItemId());
+            for (Character player : chr.getMap().getCharacters()) {
+                mse.applyTo(player);
+            }
+            remove(c, slot);
+            chr.dropMessage(5, "Remaining Potion Count: " + chr.potionCount);
         }
     }
 

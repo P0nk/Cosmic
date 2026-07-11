@@ -23,6 +23,8 @@ package server.maps;
 import client.Character;
 import client.Client;
 import client.inventory.Item;
+import client.inventory.manipulator.InventoryManipulator;
+import server.ItemInformationProvider;
 import tools.PacketCreator;
 
 import java.awt.*;
@@ -133,6 +135,24 @@ public class MapItem extends AbstractMapObject {
     }
 
     public final boolean canBePickedBy(Character chr) {
+        return canBePickedBy(chr, false);
+    }
+    public final boolean canBePickedBy(Character chr, boolean byPet) {
+        if (!chr.needQuestItem(questid, getItemId())) {
+            return false;
+        }
+
+        if (this.meso == 0
+                && !InventoryManipulator.checkSpace(chr.getClient(), getItemId(), getItem().getQuantity(), getItem().getOwner())
+                && !ItemInformationProvider.getInstance().isConsumeOnPickup(getItemId())
+        ){
+            if (!byPet) {
+                chr.getClient().sendPacket(PacketCreator.getInventoryFull());
+                chr.getClient().sendPacket(PacketCreator.getShowInventoryFull());
+            }
+
+            return false;
+        }
         if (character_ownerid <= 0 || isFFADrop()) {
             return true;
         }
@@ -168,7 +188,7 @@ public class MapItem extends AbstractMapObject {
         return playerDrop;
     }
 
-    public final boolean isPickedUp() {
+    public final boolean isAlreadyPickedUp() {
         return pickedUp;
     }
 
@@ -208,8 +228,7 @@ public class MapItem extends AbstractMapObject {
         if (chr.needQuestItem(questid, getItemId())) {
             this.lockItem();
             try {
-                client.sendPacket(PacketCreator.dropItemFromMapObject(chr, this, null, getPosition(),
-                        (byte) 2, (short) 0));
+                client.sendPacket(PacketCreator.dropItemFromMapObject(chr, this, null, getPosition(), (byte) 2));
             } finally {
                 this.unlockItem();
             }

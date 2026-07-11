@@ -44,6 +44,22 @@ public class MaxStatCommand extends Command {
             player.setPlayerRates();
         }
         player.setWorldRates();
+        if (player.getReborns() > 0) {
+            if (player.getReborns() == 1) {
+                player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_FIRST_RATE);
+            } else if (player.getReborns() == 2) {
+                player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_SECOND_RATE);
+            } else if (player.getReborns() == 3) {
+                if (player.getLevel() >= 200) {
+                    player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_FINAL_RATE); // Use final rate for level 200+
+                } else {
+                    player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_THIRD_RATE);
+                }
+            } else {
+                player.setWorldRates(); // Fallback for players with more rebirths
+            }
+        }
+
         player.updateStrDexIntLuk(Short.MAX_VALUE);
         player.setFame(13337);
         player.updateMaxHpMaxMp(30000, 30000);

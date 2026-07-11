@@ -1,4 +1,4 @@
 @echo off
-@title Cosmic
-java -Xmx2048m -Dwz-path=wz -jar target\Cosmic.jar
+@title MapleRoot
+java -Xmx2048m -Dwz-path=wz -jar "E:\Testing shit\MapleRoot-Server-main\dist\artifacts\Cosmic_jar\Cosmic.jar"
 pause

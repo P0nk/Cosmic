@@ -351,7 +351,7 @@ public class EventManager {
         }
     }
 
-    private EventInstanceManager createInstance(String name, Object... args) throws ScriptException, NoSuchMethodException {
+    public EventInstanceManager createInstance(String name, Object... args) throws ScriptException, NoSuchMethodException {
         return (EventInstanceManager) iv.invokeFunction(name, args);
     }
 
@@ -362,6 +362,48 @@ public class EventManager {
         }
 
         instanceLocks.put(eventName, lobbyId);
+    }
+
+    public boolean startTotemInstance(Character chr, int npcId) {
+        if (this.isDisposed() || !this.name.equals("SpawnTotemEvent")) {
+            return false;
+        }
+
+        startLock.lock();
+        try {
+            // see if there is another event instance on the map
+            EventInstanceManager eim;
+            try {
+                eim = createInstance("setupTotem", chr, npcId);
+
+                registerEventInstance(eim.getName(), availableLobbyInstance());
+
+                MapleMap map = chr.getMap();
+                map.setEventInstance(eim);
+
+                List<Character> players = map.getAllPlayers();
+
+                for (Character player: players) {
+                    eim.registerPlayer(player);
+                }
+
+                eim.startEvent();
+            } catch (ScriptException | NullPointerException e) {
+                String message = getInternalScriptExceptionMessage(e);
+                if (message != null && !message.startsWith(EventInstanceInProgressException.EIIP_KEY)) {
+                    throw e;
+                }
+                return false;
+            }
+
+            return true;
+        } catch (ScriptException | NoSuchMethodException ex) {
+            log.error("Event script startInstance", ex);
+        } finally {
+            startLock.unlock();
+        }
+
+        return false;
     }
 
     public boolean startInstance(Expedition exped) {
@@ -936,6 +978,10 @@ public class EventManager {
         }
 
         instantiateQueuedInstance();    // keep filling the queue until reach threshold.
+    }
+
+    public void logMessage(String scriptName, String message) {
+        log.info("[{}] - {}", scriptName, message);
     }
 
     private class EventManagerTask implements Runnable {

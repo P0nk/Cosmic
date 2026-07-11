@@ -32,7 +32,12 @@
 
 function start() {
     if (cm.getMapId() == 280030000) {
-        if (!cm.getEventInstance().isEventCleared()) {
+        var eim;
+        eim = cm.getEventInstance();
+        if (eim === null) {
+            cm.sendYesNo("How did you even get in here without starting the expedition? Do you want to leave?");            
+        }
+        else if (!cm.getEventInstance().isEventCleared()) {
             cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
         } else {
             cm.sendYesNo("You guys finally overthrew Zakum, what a superb feat! Congratulations! Are you sure you want to leave now?");

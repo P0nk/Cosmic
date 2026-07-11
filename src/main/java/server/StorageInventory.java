@@ -33,11 +33,11 @@ import java.util.*;
 public class StorageInventory {
     private final Client c;
     private Map<Short, Item> inventory = new LinkedHashMap<>();
-    private final byte slotLimit;
+    private final int slotLimit;
 
     public StorageInventory(Client c, List<Item> toSort) {
         this.inventory = new LinkedHashMap<>();
-        this.slotLimit = (byte) toSort.size();
+        this.slotLimit = toSort.size() ;
         this.c = c;
 
         for (Item item : toSort) {
@@ -45,7 +45,7 @@ public class StorageInventory {
         }
     }
 
-    private byte getSlotLimit() {
+    private int getSlotLimit() {
         return slotLimit;
     }
 
@@ -110,7 +110,7 @@ public class StorageInventory {
         if (source == null) {
             return;
         }
-        short slotMax = ItemInformationProvider.getInstance().getSlotMax(c, source.getItemId());
+        short slotMax = ItemInformationProvider.getInstance().getSlotMax(c.getPlayer(), source.getItemId());
         this.move(src, dst, slotMax);
     }
 
@@ -172,7 +172,7 @@ public class StorageInventory {
                 if (dstItem.getItemId() != srcItem.getItemId()) {
                     continue;
                 }
-                if (dstItem.getQuantity() == ii.getSlotMax(c, this.getItem(dst).getItemId())) {
+                if (dstItem.getQuantity() == ii.getSlotMax(c.getPlayer(), this.getItem(dst).getItemId())) {
                     break;
                 }
 

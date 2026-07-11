@@ -20,29 +20,11 @@
  */
 package tools;
 
-import client.BuddylistEntry;
-import client.BuffStat;
 import client.Character;
+import client.*;
 import client.Character.SkillEntry;
-import client.Client;
-import client.Disease;
-import client.FamilyEntitlement;
-import client.FamilyEntry;
-import client.MonsterBook;
-import client.Mount;
-import client.QuestStatus;
-import client.Ring;
-import client.Skill;
-import client.SkillMacro;
-import client.Stat;
-import client.inventory.Equip;
+import client.inventory.*;
 import client.inventory.Equip.ScrollResult;
-import client.inventory.Inventory;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.ItemFactory;
-import client.inventory.ModifyInventory;
-import client.inventory.Pet;
 import client.keybind.KeyBinding;
 import client.keybind.QuickslotBinding;
 import client.newyear.NewYearCardRecord;
@@ -56,7 +38,6 @@ import constants.id.MapId;
 import constants.id.NpcId;
 import constants.inventory.ItemConstants;
 import constants.skills.Buccaneer;
-import constants.skills.ChiefBandit;
 import constants.skills.Corsair;
 import constants.skills.ThunderBreaker;
 import net.encryption.InitializationVector;
@@ -68,9 +49,8 @@ import net.packet.Packet;
 import net.server.PlayerCoolDownValueHolder;
 import net.server.Server;
 import net.server.channel.Channel;
-import net.server.channel.handlers.AbstractDealDamageHandler.AttackTarget;
 import net.server.channel.handlers.PlayerInteractionHandler;
-import net.server.channel.handlers.SummonDamageHandler.SummonAttackTarget;
+import net.server.channel.handlers.SummonDamageHandler.SummonAttackEntry;
 import net.server.channel.handlers.WhisperHandler;
 import net.server.guild.Alliance;
 import net.server.guild.Guild;
@@ -79,49 +59,22 @@ import net.server.world.Party;
 import net.server.world.PartyCharacter;
 import net.server.world.PartyOperation;
 import net.server.world.World;
-import server.CashShop;
 import server.CashShop.CashItem;
 import server.CashShop.CashItemFactory;
 import server.CashShop.SpecialCashItem;
-import server.DueyPackage;
-import server.ItemInformationProvider;
-import server.MTSItemInfo;
-import server.ShopItem;
-import server.Trade;
+import server.*;
 import server.events.gm.Snowball;
-import server.life.MobSkill;
-import server.life.MobSkillId;
-import server.life.Monster;
-import server.life.NPC;
-import server.life.PlayerNPC;
-import server.maps.AbstractMapObject;
-import server.maps.Door;
-import server.maps.DoorObject;
-import server.maps.Dragon;
-import server.maps.HiredMerchant;
-import server.maps.MapItem;
-import server.maps.MapleMap;
-import server.maps.MiniGame;
+import server.life.*;
+import server.maps.*;
 import server.maps.MiniGame.MiniGameResult;
-import server.maps.Mist;
-import server.maps.PlayerShop;
-import server.maps.PlayerShopItem;
-import server.maps.Reactor;
-import server.maps.Summon;
 import server.movement.LifeMovementFragment;
 
 import java.awt.*;
 import java.net.InetAddress;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 /**
@@ -181,6 +134,7 @@ public class PacketCreator {
     }
 
     private static void addCharStats(OutPacket p, Character chr) {
+       // p.writeInt(chr.getDamageSkin()); //damage skin
         p.writeInt(chr.getId()); // character id
         p.writeFixedString(StringUtil.getRightPaddedStr(chr.getName(), '\0', 13));
         p.writeByte(chr.getGender()); // gender (0 = male, 1 = female)
@@ -214,7 +168,7 @@ public class PacketCreator {
         } else {
             p.writeShort(chr.getRemainingSp()); // remaining sp
         }
-        p.writeInt(chr.getExp()); // current exp
+        p.writeLong(chr.getExp()); // current exp
         p.writeShort(chr.getFame()); // fame
         p.writeInt(chr.getGachaExp()); //Gacha Exp
         p.writeInt(chr.getMapId()); // current map id
@@ -303,7 +257,7 @@ public class PacketCreator {
         Map<Short, Integer> myEquip = new LinkedHashMap<>();
         Map<Short, Integer> maskedEquip = new LinkedHashMap<>();
         for (Item item : ii) {
-            short pos = (byte) (item.getPosition() * -1);
+            short pos = (short) (item.getPosition() * -1);
             if (pos < 100 && myEquip.get(pos) == null) {
                 myEquip.put(pos, item.getItemId());
             } else if (pos > 100 && pos != 111) { // don't ask. o.o
@@ -343,13 +297,21 @@ public class PacketCreator {
         return p;
     }
 
+
+    public static Packet playEventSound(String soundName) {
+        final OutPacket p = OutPacket.create(SendOpcode.PLAY_EVENT_SOUND);
+        p.writeString(soundName);
+        return p;
+    }
+
+
     private static void addCharEntry(OutPacket p, Character chr, boolean viewall) {
         addCharStats(p, chr);
         addCharLook(p, chr, false);
         if (!viewall) {
             p.writeByte(0);
         }
-        if (chr.isGM() || chr.isGmJob()) {  // thanks Daddy Egg (Ubaware), resinate for noticing GM jobs crashing on non-GM players account
+        if (chr.isGM() || chr.isSuperBeginner() || chr.isGmJob()) {  // thanks Daddy Egg (Ubaware), resinate for noticing GM jobs crashing on non-GM players account
             p.writeByte(0);
             return;
         }
@@ -909,8 +871,11 @@ public class PacketCreator {
         for (Character chr : chars) {
             addCharEntry(p, chr, false);
         }
-
-        p.writeByte(YamlConfig.config.server.ENABLE_PIC && !c.canBypassPic() ? (c.getPic() == null || c.getPic().equals("") ? 0 : 1) : 2);
+        if (c.autolog > 0) {
+            p.writeByte(2);
+        } else {
+            p.writeByte(YamlConfig.config.server.ENABLE_PIC && !c.canBypassPic() ? (c.getPic() == null || c.getPic().equals("") ? 0 : 1) : 2);
+        }
         p.writeInt(YamlConfig.config.server.COLLECTIVE_CHARSLOT ? chars.size() + c.getAvailableCharacterSlots() : c.getCharacterSlots());
         return p;
     }
@@ -1036,11 +1001,21 @@ public class PacketCreator {
                     p.writeShort(statupdate.getRight().shortValue());
                 } else if (statupdate.getLeft().getValue() == 0x20000) {
                     p.writeShort(statupdate.getRight().shortValue());
+                } else if (statupdate.getLeft().getValue() == 0x10000) {
+                    p.writeLong(statupdate.getRight().shortValue());
                 } else {
                     p.writeInt(statupdate.getRight());
                 }
             }
         }
+        return p;
+    }
+
+    public static Packet updatePlayerEXP(Long stats, boolean enableActions) {
+        OutPacket p = OutPacket.create(SendOpcode.STAT_CHANGED);
+        p.writeBool(enableActions);
+        p.writeInt(0x10000);
+        p.writeLong(stats);
         return p;
     }
 
@@ -1272,7 +1247,7 @@ public class PacketCreator {
      * @param servermessage Is this a scrolling ticker?
      * @return The server notice packet.
      */
-    private static Packet serverMessage(int type, int channel, String message, boolean servermessage, boolean megaEar, int npc) {
+    public  static Packet serverMessage(int type, int channel, String message, boolean servermessage, boolean megaEar, int npc) {
         OutPacket p = OutPacket.create(SendOpcode.SERVERMESSAGE);
         p.writeByte(type);
         if (servermessage) {
@@ -1728,7 +1703,7 @@ public class PacketCreator {
      * @param inChat Show in the chat window?
      * @return The meso gain packet.
      */
-    public static Packet getShowMesoGain(int gain, boolean inChat) {
+    public static Packet getShowMesoGain(long gain, boolean inChat) {
         final OutPacket p = OutPacket.create(SendOpcode.SHOW_STATUS_INFO);
         if (!inChat) {
             p.writeByte(0);
@@ -1736,7 +1711,7 @@ public class PacketCreator {
         } else {
             p.writeByte(5);
         }
-        p.writeInt(gain);
+        p.writeLong(gain);
         p.writeShort(0);
         return p;
     }
@@ -1816,8 +1791,7 @@ public class PacketCreator {
         return p;
     }
 
-    public static Packet dropItemFromMapObject(Character player, MapItem drop, Point dropfrom, Point dropto, byte mod,
-                                               short delay) {
+    public static Packet dropItemFromMapObject(Character player, MapItem drop, Point dropfrom, Point dropto, byte mod) {
         int dropType = drop.getDropType();
         if (drop.hasClientsideOwnership(player) && dropType < 3) {
             dropType = 2;
@@ -1835,7 +1809,7 @@ public class PacketCreator {
 
         if (mod != 2) {
             p.writePos(dropfrom);
-            p.writeShort(delay);
+            p.writeShort(0);//Fh?
         }
         if (drop.getMeso() == 0) {
             addExpirationTime(p, drop.getItem().getExpiration());
@@ -1942,6 +1916,7 @@ public class PacketCreator {
     public static Packet spawnPlayerMapObject(Client target, Character chr, boolean enteringField) {
         OutPacket p = OutPacket.create(SendOpcode.SPAWN_PLAYER);
         p.writeInt(chr.getId());
+        //p.writeInt(chr.getDamageSkin());
         p.writeByte(chr.getLevel()); //v83
         p.writeString(chr.getName());
         if (chr.getGuildId() < 1) {
@@ -2305,18 +2280,31 @@ public class PacketCreator {
         return p;
     }
 
-    public static Packet summonAttack(int cid, int summonOid, byte direction, List<SummonAttackTarget> targets) {
+    public static Packet moveMonster2(int oid, boolean skillPossible, int actionDir, int data,
+                                      Point startPos, InPacket movementPacket, long movementDataLength) {
+        final OutPacket p = OutPacket.create(SendOpcode.MOVE_MONSTER);
+        p.writeInt(oid);
+        p.writeByte(0);
+        p.writeBool(skillPossible);
+        p.writeByte(actionDir);
+        p.writeInt(data);
+        p.writePos(startPos);
+        rebroadcastMovementList(p, movementPacket, movementDataLength);
+        return p;
+    }
+
+    public static Packet summonAttack(int cid, int summonOid, byte direction, List<SummonAttackEntry> allDamage) {
         OutPacket p = OutPacket.create(SendOpcode.SUMMON_ATTACK);
         //b2 00 29 f7 00 00 9a a3 04 00 c8 04 01 94 a3 04 00 06 ff 2b 00
         p.writeInt(cid);
         p.writeInt(summonOid);
         p.writeByte(0);     // char level
         p.writeByte(direction);
-        p.writeByte(targets.size());
-        for (SummonAttackTarget target : targets) {
-            p.writeInt(target.monsterOid()); // oid
+        p.writeByte(allDamage.size());
+        for (SummonAttackEntry attackEntry : allDamage) {
+            p.writeInt(attackEntry.getMonsterOid()); // oid
             p.writeByte(6); // who knows
-            p.writeInt(target.damage()); // damage
+            p.writeInt(attackEntry.getDamage()); // damage
         }
 
         return p;
@@ -2341,40 +2329,29 @@ public class PacketCreator {
         }
         */
 
-    public static Packet closeRangeAttack(Character chr, int skill, int skilllevel, int stance,
-                                          int numAttackedAndDamage, Map<Integer, AttackTarget> targets, int speed,
-                                          int direction, int display) {
+    public static Packet closeRangeAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage, Map<Integer, List<Integer>> damage, int speed, int direction, int display) {
         final OutPacket p = OutPacket.create(SendOpcode.CLOSE_RANGE_ATTACK);
-        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, 0, targets, speed, direction,
-                display);
+        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, 0, damage, speed, direction, display);
         return p;
     }
 
-    public static Packet rangedAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage,
-                                      int projectile, Map<Integer, AttackTarget> targets, int speed, int direction,
-                                      int display) {
+    public static Packet rangedAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage, int projectile, Map<Integer, List<Integer>> damage, int speed, int direction, int display) {
         final OutPacket p = OutPacket.create(SendOpcode.RANGED_ATTACK);
-        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, projectile, targets, speed, direction,
-                display);
+        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, projectile, damage, speed, direction, display);
         p.writeInt(0);
         return p;
     }
 
-    public static Packet magicAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage,
-                                     Map<Integer, AttackTarget> targets, int charge, int speed, int direction,
-                                     int display) {
+    public static Packet magicAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage, Map<Integer, List<Integer>> damage, int charge, int speed, int direction, int display) {
         final OutPacket p = OutPacket.create(SendOpcode.MAGIC_ATTACK);
-        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, 0, targets, speed, direction,
-                display);
+        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, 0, damage, speed, direction, display);
         if (charge != -1) {
             p.writeInt(charge);
         }
         return p;
     }
 
-    private static void addAttackBody(OutPacket p, Character chr, int skill, int skilllevel, int stance,
-                                      int numAttackedAndDamage, int projectile, Map<Integer, AttackTarget> targets,
-                                      int speed, int direction, int display) {
+    private static void addAttackBody(OutPacket p, Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage, int projectile, Map<Integer, List<Integer>> damage, int speed, int direction, int display) {
         p.writeInt(chr.getId());
         p.writeByte(numAttackedAndDamage);
         p.writeByte(0x5B);//?
@@ -2388,16 +2365,16 @@ public class PacketCreator {
         p.writeByte(speed);
         p.writeByte(0x0A);
         p.writeInt(projectile);
-        for (Map.Entry<Integer, AttackTarget> target : targets.entrySet()) {
-            AttackTarget value = target.getValue();
-            if (value != null) {
-                p.writeInt(target.getKey());
+        for (Integer oned : damage.keySet()) {
+            List<Integer> onedList = damage.get(oned);
+            if (onedList != null) {
+                p.writeInt(oned);
                 p.writeByte(0x0);
-                if (skill == ChiefBandit.MESO_EXPLOSION) {
-                    p.writeByte(value.damageLines().size());
+                if (skill == 4211006) {
+                    p.writeByte(onedList.size());
                 }
-                for (Integer damageLine : value.damageLines()) {
-                    p.writeInt(damageLine);
+                for (Integer eachd : onedList) {
+                    p.writeInt(eachd);
                 }
             }
         }
@@ -2437,7 +2414,7 @@ public class PacketCreator {
                 p.writeShort(0);
                 p.writeInt(0);
                 p.writeShort(doubleToShortBits(ii.getUnitPrice(item.getItemId())));
-                p.writeShort(ii.getSlotMax(c, item.getItemId()));
+                p.writeShort(ii.getSlotMax(c.getPlayer(), item.getItemId()));
             }
         }
         return p;
@@ -2514,7 +2491,7 @@ public class PacketCreator {
         p.writeBool(scrollSuccess == ScrollResult.SUCCESS);
         p.writeBool(scrollSuccess == ScrollResult.CURSE);
         p.writeBool(legendarySpirit);
-        p.writeBool(whiteScroll);
+        p.writeBool(false);
         return p;
     }
 
@@ -2605,14 +2582,6 @@ public class PacketCreator {
                 p.writeByte(slot);
             }
         }
-        return p;
-    }
-
-    public static Packet removeExplodedMesoFromMap(int mapObjectId, short delay) {
-        OutPacket p = OutPacket.create(SendOpcode.REMOVE_ITEM_FROM_MAP);
-        p.writeByte(4);
-        p.writeInt(mapObjectId);
-        p.writeShort(delay);
         return p;
     }
 
@@ -2839,7 +2808,7 @@ public class PacketCreator {
         boolean special = false;
         writeLongMask(p, statups);
         for (Pair<BuffStat, Integer> statup : statups) {
-            if (statup.getLeft().equals(BuffStat.MONSTER_RIDING) || statup.getLeft().equals(BuffStat.HOMING_BEACON)) {
+            if ((statup.getLeft().equals(BuffStat.MONSTER_RIDING) || statup.getLeft().equals(BuffStat.HOMING_BEACON)) && buffid != 1932000 && buffid != 5221006) {
                 special = true;
             }
             p.writeShort(statup.getRight().shortValue());
@@ -2864,7 +2833,8 @@ public class PacketCreator {
      */
     public static Packet showMonsterRiding(int cid, Mount mount) { //Gtfo with this, this is just giveForeignBuff
         final OutPacket p = OutPacket.create(SendOpcode.GIVE_FOREIGN_BUFF);
-        p.writeInt(cid);
+        if (mount.getItemId() == 1932000)
+            p.writeInt(cid);
         p.writeLong(BuffStat.MONSTER_RIDING.getValue());
         p.writeLong(0);
         p.writeShort(0);
@@ -3370,7 +3340,7 @@ public class PacketCreator {
         p.writeInt(npc);
         p.writeByte(msgType);
         p.writeByte(speaker);
-        p.writeString(talk);
+        p.writeString("#w" + talk);
         p.writeBytes(HexTool.toBytes(endBytes));
         return p;
     }
@@ -3382,7 +3352,7 @@ public class PacketCreator {
         p.writeByte(0x0E);
         p.writeByte(0);
         p.writeInt(0);
-        p.writeString(talk);
+        p.writeString("#w" + talk);
         return p;
     }
 
@@ -3392,7 +3362,7 @@ public class PacketCreator {
         p.writeInt(npc);
         p.writeByte(7);
         p.writeByte(0); //speaker
-        p.writeString(talk);
+        p.writeString("#w" + talk);
         p.writeByte(styles.length);
         for (int style : styles) {
             p.writeInt(style);
@@ -3406,7 +3376,7 @@ public class PacketCreator {
         p.writeInt(npc);
         p.writeByte(3);
         p.writeByte(0); //speaker
-        p.writeString(talk);
+        p.writeString("#w" + talk);
         p.writeInt(def);
         p.writeInt(min);
         p.writeInt(max);
@@ -3420,7 +3390,7 @@ public class PacketCreator {
         p.writeInt(npc);
         p.writeByte(2);
         p.writeByte(0); //speaker
-        p.writeString(talk);
+        p.writeString("#w" + talk);
         p.writeString(def);//:D
         p.writeInt(0);
         return p;
@@ -3674,12 +3644,12 @@ public class PacketCreator {
         return p;
     }
 
-    public static Packet showBossHP(int oid, int currHP, int maxHP, byte tagColor, byte tagBgColor) {
+    public static Packet showBossHP(int oid, long currHP, long maxHP, byte tagColor, byte tagBgColor) {
         final OutPacket p = OutPacket.create(SendOpcode.FIELD_EFFECT);
         p.writeByte(5);
         p.writeInt(oid);
-        p.writeInt(currHP);
-        p.writeInt(maxHP);
+        p.writeInt((int) currHP);
+        p.writeInt((int) maxHP);
         p.writeByte(tagColor);
         p.writeByte(tagBgColor);
         return p;
@@ -4048,21 +4018,32 @@ public class PacketCreator {
     }
 
     public static Packet spawnMobMist(int objId, int ownerMobId, MobSkillId msId, Mist mist) {
-        return spawnMist(objId, ownerMobId, msId.type().getId(), msId.level(), mist);
+        return spawnMist(objId, ownerMobId, msId.type().getId(), msId.level(), mist, false);
     }
 
-    public static Packet spawnMist(int objId, int ownerId, int skill, int level, Mist mist) {
+    public static Packet spawnMist(int objId, int ownerId, int skill, int level, Mist mist, boolean veil) {
         OutPacket p = OutPacket.create(SendOpcode.SPAWN_MIST);
         p.writeInt(objId);
-        p.writeInt(mist.isMobMist() ? 0 : mist.isPoisonMist() ? 1 : mist.isRecoveryMist() ? 4 : 2); // mob mist = 0, player poison = 1, smokescreen = 2, unknown = 3, recovery = 4
+        if(veil) {
+            p.writeInt(2);
+        } else {
+            p.writeInt(mist.isMobMist() ? 0 : mist.isPoisonMist() ? 1 : mist.isRecoveryMist() ? 4 : 2);
+        }
         p.writeInt(ownerId);
         p.writeInt(skill);
         p.writeByte(level);
         p.writeShort(mist.getSkillDelay()); // Skill delay
-        p.writeInt(mist.getBox().x);
-        p.writeInt(mist.getBox().y);
-        p.writeInt(mist.getBox().x + mist.getBox().width);
-        p.writeInt(mist.getBox().y + mist.getBox().height);
+        if(!veil) {
+            p.writeInt(mist.getBox().x);
+            p.writeInt(mist.getBox().y);
+            p.writeInt(mist.getBox().x + mist.getBox().width);
+            p.writeInt(mist.getBox().y + mist.getBox().height);
+        } else {
+            p.writeInt(-415);
+            p.writeInt(-500);
+            p.writeInt(890);
+            p.writeInt(1000);
+        }
         p.writeInt(0);
         return p;
     }
@@ -4088,17 +4069,17 @@ public class PacketCreator {
         return damageMonster(oid, damage, 0, 0);
     }
 
-    public static Packet healMonster(int oid, int heal, int curhp, int maxhp) {
-        return damageMonster(oid, -heal, curhp, maxhp);
+    public static Packet healMonster(int oid, long heal, long curhp, long maxhp) {
+        return damageMonster(oid, -(int) heal, curhp, maxhp);
     }
 
-    private static Packet damageMonster(int oid, int damage, int curhp, int maxhp) {
+    private static Packet damageMonster(int oid, int damage, long curhp, long maxhp) {
         final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
         p.writeInt(oid);
         p.writeByte(0);
         p.writeInt(damage);
-        p.writeInt(curhp);
-        p.writeInt(maxhp);
+        p.writeInt((int) curhp);
+        p.writeInt((int) maxhp);
         return p;
     }
 
@@ -4239,6 +4220,7 @@ public class PacketCreator {
 
     public static Packet environmentMove(String env, int mode) {
         OutPacket p = OutPacket.create(SendOpcode.FIELD_OBSTACLE_ONOFF);
+        System.out.println(mode);
         p.writeString(env);
         p.writeInt(mode);   // 0: stop and back to start, 1: move
         return p;
@@ -4249,6 +4231,7 @@ public class PacketCreator {
         p.writeInt(envList.size());
 
         for (Entry<String, Integer> envMove : envList) {
+            System.out.println(envMove.getKey());
             p.writeString(envMove.getKey());
             p.writeInt(envMove.getValue());
         }
@@ -4576,6 +4559,7 @@ public class PacketCreator {
 
     public static Packet skillCooldown(int sid, int time) {
         final OutPacket p = OutPacket.create(SendOpcode.COOLDOWN);
+
         p.writeInt(sid);
         p.writeShort(time);//Int in v97
         return p;
@@ -5413,7 +5397,7 @@ public class PacketCreator {
 
     public static Packet givePirateBuff(List<Pair<BuffStat, Integer>> statups, int buffid, int duration) {
         OutPacket p = OutPacket.create(SendOpcode.GIVE_BUFF);
-        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION || buffid == Corsair.SPEED_INFUSION;
+        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION;
         writeLongMask(p, statups);
         p.writeShort(0);
         for (Pair<BuffStat, Integer> stat : statups) {
@@ -5428,7 +5412,7 @@ public class PacketCreator {
 
     public static Packet giveForeignPirateBuff(int cid, int buffid, int time, List<Pair<BuffStat, Integer>> statups) {
         OutPacket p = OutPacket.create(SendOpcode.GIVE_FOREIGN_BUFF);
-        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION || buffid == Corsair.SPEED_INFUSION;
+        boolean infusion = buffid == Buccaneer.SPEED_INFUSION || buffid == ThunderBreaker.SPEED_INFUSION;
         p.writeInt(cid);
         writeLongMask(p, statups);
         p.writeShort(0);
@@ -5603,8 +5587,8 @@ public class PacketCreator {
 
     public static Packet showMTSCash(Character chr) {
         final OutPacket p = OutPacket.create(SendOpcode.MTS_OPERATION2);
-        p.writeInt(chr.getCashShop().getCash(CashShop.NX_PREPAID));
-        p.writeInt(chr.getCashShop().getCash(CashShop.MAPLE_POINT));
+        p.writeInt(chr.getCashShop().getCash(4));
+        p.writeInt(chr.getCashShop().getCash(2));
         return p;
     }
 
@@ -5712,9 +5696,9 @@ public class PacketCreator {
 
     public static Packet showCash(Character mc) {
         final OutPacket p = OutPacket.create(SendOpcode.QUERY_CASH_RESULT);
-        p.writeInt(mc.getCashShop().getCash(CashShop.NX_CREDIT));
-        p.writeInt(mc.getCashShop().getCash(CashShop.MAPLE_POINT));
-        p.writeInt(mc.getCashShop().getCash(CashShop.NX_PREPAID));
+        p.writeInt(mc.getCashShop().getCash(1));
+        p.writeInt(mc.getCashShop().getCash(2));
+        p.writeInt(mc.getCashShop().getCash(4));
         return p;
     }
 
@@ -6203,6 +6187,23 @@ public class PacketCreator {
         return showSpecialEffect(15);
     }
 
+    public static Packet showBuybackEffect() {
+        final OutPacket p = OutPacket.create(SendOpcode.SHOW_ITEM_GAIN_INCHAT);
+        p.writeByte(11);
+        p.writeInt(0);
+
+        return p;
+    }
+
+    public static Packet showForeignBuybackEffect(int cid) {
+        final OutPacket p = OutPacket.create(SendOpcode.SHOW_FOREIGN_EFFECT);
+        p.writeInt(cid);
+        p.writeByte(11);
+        p.writeInt(0);
+
+        return p;
+    }
+
     /**
      * 0 = Levelup 6 = Exp did not drop (Safety Charms) 7 = Enter portal sound
      * 8 = Job change 9 = Quest complete 10 = Recovery 11 = Buff effect
@@ -6502,15 +6503,14 @@ public class PacketCreator {
         return p;
     }
 
-    public static Packet onCashGachaponOpenSuccess(int accountid, long boxCashId, int remainingBoxes, Item reward,
-                                                   int rewardItemId, int rewardQuantity, boolean bJackpot) {
+    public static Packet onCashGachaponOpenSuccess(int accountid, long sn, int remainingBoxes, Item item, int itemid, int nSelectedItemCount, boolean bJackpot) {
         OutPacket p = OutPacket.create(SendOpcode.CASHSHOP_CASH_ITEM_GACHAPON_RESULT);
         p.writeByte(0xE5);   // subopcode thanks to Ubaware
-        p.writeLong(boxCashId);
+        p.writeLong(sn);// sn of the box used
         p.writeInt(remainingBoxes);
-        addCashItemInformation(p, reward, accountid);
-        p.writeInt(rewardItemId);
-        p.writeByte(rewardQuantity); // nSelectedItemCount
+        addCashItemInformation(p, item, accountid);
+        p.writeInt(itemid);// the itemid of the liSN?
+        p.writeByte(nSelectedItemCount);// the total count now? o.O
         p.writeBool(bJackpot);// "CashGachaponJackpot"
         return p;
     }
@@ -6753,13 +6753,19 @@ public class PacketCreator {
         return builder.toString();
     }
 
-    public static Packet MobDamageMobFriendly(Monster mob, int damage, int remainingHp) {
+    public static Packet MobDamageMobFriendly(Monster mob, int damage, long remainingHp) {
         final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
         p.writeInt(mob.getObjectId());
         p.writeByte(1); // direction ?
         p.writeInt(damage);
-        p.writeInt(remainingHp);
-        p.writeInt(mob.getMaxHp());
+        if (mob.getMaxHp() > Integer.MAX_VALUE) {
+            long fixedMaxHP = (mob.getMaxHp() / 10000);
+            long fixedCurrHP = (remainingHp / 10000);
+            p.writeInt((int) fixedCurrHP);
+            p.writeInt((int) fixedMaxHP);
+        }
+        p.writeInt((int) remainingHp);
+        p.writeInt((int) mob.getMaxHp());
         return p;
     }
 
@@ -6936,7 +6942,7 @@ public class PacketCreator {
     public static Packet talkGuide(String talk) {
         final OutPacket p = OutPacket.create(SendOpcode.TALK_GUIDE);
         p.writeByte(0);
-        p.writeString(talk);
+        p.writeString("#w" + talk);
         p.writeBytes(new byte[]{(byte) 0xC8, 0, 0, 0, (byte) 0xA0, (byte) 0x0F, 0, 0});
         return p;
     }
@@ -7389,6 +7395,18 @@ public class PacketCreator {
         return p;
     }
 
+    public static Packet changeTaggedObject(Set<Entry<String, Integer>> envList) {
+        OutPacket p = OutPacket.create(SendOpcode.SET_MAP_OBJECT_VISIBLE);
+        p.writeInt(envList.size());
+
+        for (Entry<String, Integer> envMove : envList) {
+            p.writeString(envMove.getKey());
+            p.writeInt(envMove.getValue());
+        }
+
+        return p;
+    }
+
     /**
      * Makes the NPCs provided set as scriptable, informing the client to search for js scripts for these NPCs even
      * if they already have entries within the wz files.
@@ -7459,4 +7477,43 @@ public class PacketCreator {
         return p;
     }
 
+     /*
+    public class Packets {
+
+        enum Subopcode {
+            DAMAGE_SKIN(0x01);
+
+            private final int value;
+
+            Subopcode(int value) {
+                this.value = value;
+            }
+
+            public int getValue() {
+                return value;
+            }
+        }
+
+        public static Packet updateDamageSkin(Character chr) {
+            final OutPacket p = OutPacket.create(SendOpcode.CUSTOM_FIELD);
+            p.writeShort(Subopcode.DAMAGE_SKIN.getValue());
+
+            p.writeInt(chr.getId());
+            p.writeInt(chr.getDamageSkin());
+            return p;
+        }
+    }
+
+  */
+
+    /*
+    public static Packet setDamageSkin(int charId, int damageSkinId) {
+        OutPacket p = OutPacket.create(SendOpcode.SET_USER_VAR);
+        p.writeInt(charId);
+        p.writeByte(1);
+        p.writeInt(damageSkinId); //check 257
+        return p;
+    }
+*/
 }
+

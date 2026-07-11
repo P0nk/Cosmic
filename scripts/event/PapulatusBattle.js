@@ -20,8 +20,9 @@
 
 /**
  * @author: Ronan
- * @event: Vs Papulatus
+ * @event: Vs Von Leon
  */
+const ExpeditionType = Java.type("server.expeditions.ExpeditionType");
 
 var isPq = true;
 var minPlayers = 1, maxPlayers = 6;
@@ -116,6 +117,7 @@ function setup(level, lobbyid) {
     eim.setProperty("level", level);
     eim.setProperty("boss", "0");
 
+
     eim.getInstanceMap(220080001).resetPQ(level);
 
     respawnStages(eim);
@@ -125,10 +127,7 @@ function setup(level, lobbyid) {
     return eim;
 }
 
-function afterSetup(eim) {
-    updateGateState(1);
-}
-
+function afterSetup(eim) {}
 function respawnStages(eim) {}
 
 function playerEntry(eim, player) {
@@ -209,8 +208,7 @@ function giveRandomEventReward(eim, player) {
 
 function clearPQ(eim) {
     eim.stopEventTimer();
-    eim.setEventCleared();
-    updateGateState(0);
+    eim.setEventCleared(ExpeditionType.PAPULATUS);
 }
 
 function isPapulatus(mob) {
@@ -222,6 +220,9 @@ function monsterKilled(mob, eim) {
     if (isPapulatus(mob)) {
         eim.showClearEffect();
         eim.clearPQ();
+        party = eim.getPlayers()
+        for (var i = 0; i < party.size(); i++)
+        eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001126, 5);
     }
 }
 
@@ -229,14 +230,4 @@ function allMonstersDead(eim) {}
 
 function cancelSchedule() {}
 
-function updateGateState(newState) {    // thanks Conrad for noticing missing gate update
-    em.getChannelServer().getMapFactory().getMap(220080000).getReactorById(2208001).forceHitReactor(newState);
-    em.getChannelServer().getMapFactory().getMap(220080000).getReactorById(2208002).forceHitReactor(newState);
-    em.getChannelServer().getMapFactory().getMap(220080000).getReactorById(2208003).forceHitReactor(newState);
-}
-
-function dispose(eim) {
-    if (!eim.isEventCleared()) {
-        updateGateState(0);
-    }
-}
+function dispose(eim) {}

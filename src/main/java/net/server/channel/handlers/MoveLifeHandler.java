@@ -27,12 +27,7 @@ import config.YamlConfig;
 import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import server.life.MobSkill;
-import server.life.MobSkillFactory;
-import server.life.MobSkillId;
-import server.life.MobSkillType;
-import server.life.Monster;
-import server.life.MonsterInformationProvider;
+import server.life.*;
 import server.maps.MapObject;
 import server.maps.MapObjectType;
 import server.maps.MapleMap;
@@ -71,10 +66,14 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
         List<Character> banishPlayers = null;
 
         byte pNibbles = p.readByte();
-        byte rawActivity = p.readByte();
-        int skillId = p.readByte() & 0xff;
-        int skillLv = p.readByte() & 0xff;
-        short pOption = p.readShort();
+        byte actionDir = p.readByte();
+        byte rawActivity = actionDir;
+
+        // Thanks to my mom for providing me good food and finding that bug
+        int data = p.readInt();
+        int skillId = data & 0xFF;
+        int skillLv = (data >> 8) & 0xFF;
+        short pOption = (short)((data >> 16) & 0xFFFF);
         p.skip(8);
 
         if (rawActivity >= 0) {
@@ -165,7 +164,7 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
                         useSkillLevel, nextMovementCouldBeSkill, mobMp);
             }
 
-            map.broadcastMessage(player, PacketCreator.moveMonster(objectid, nextMovementCouldBeSkill, rawActivity, useSkillId, useSkillLevel, pOption, startPos, p, movementDataLength), serverStartPos);
+            map.broadcastMessage(player, PacketCreator.moveMonster2(objectid, nextMovementCouldBeSkill, actionDir, data, startPos, p, movementDataLength), serverStartPos);
             //updatePosition(res, monster, -2); //does this need to be done after the packet is broadcast?
             map.moveMonster(monster, monster.getPosition());
         } catch (EmptyMovementException e) {
@@ -173,7 +172,7 @@ public final class MoveLifeHandler extends AbstractMovementPacketHandler {
 
         if (banishPlayers != null) {
             for (Character chr : banishPlayers) {
-                chr.changeMapBanish(monster.getBanish());
+                chr.changeMapBanish(monster.getBanish().getMap(), monster.getBanish().getPortal(), monster.getBanish().getMsg());
             }
         }
     }

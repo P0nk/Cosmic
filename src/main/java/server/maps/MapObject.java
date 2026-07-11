@@ -31,6 +31,7 @@ public interface MapObject {
     MapObjectType getType();
     Point getPosition();
     void setPosition(Point position);
+    void translatePosition(Point relativePosition);
     void sendSpawnData(Client client);
     void sendDestroyData(Client client);
     void nullifyPosition();

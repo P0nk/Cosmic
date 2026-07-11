@@ -42,16 +42,16 @@ public class RechargeCommand extends Command {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         for (Item torecharge : c.getPlayer().getInventory(InventoryType.USE).list()) {
             if (ItemConstants.isThrowingStar(torecharge.getItemId())) {
-                torecharge.setQuantity(ii.getSlotMax(c, torecharge.getItemId()));
+                torecharge.setQuantity(ii.getSlotMax(c.getPlayer(), torecharge.getItemId()));
                 c.getPlayer().forceUpdateItem(torecharge);
             } else if (ItemConstants.isArrow(torecharge.getItemId())) {
-                torecharge.setQuantity(ii.getSlotMax(c, torecharge.getItemId()));
+                torecharge.setQuantity(ii.getSlotMax(c.getPlayer(), torecharge.getItemId()));
                 c.getPlayer().forceUpdateItem(torecharge);
             } else if (ItemConstants.isBullet(torecharge.getItemId())) {
-                torecharge.setQuantity(ii.getSlotMax(c, torecharge.getItemId()));
+                torecharge.setQuantity(ii.getSlotMax(c.getPlayer(), torecharge.getItemId()));
                 c.getPlayer().forceUpdateItem(torecharge);
             } else if (ItemConstants.isConsumable(torecharge.getItemId())) {
-                torecharge.setQuantity(ii.getSlotMax(c, torecharge.getItemId()));
+                torecharge.setQuantity(ii.getSlotMax(c.getPlayer(), torecharge.getItemId()));
                 c.getPlayer().forceUpdateItem(torecharge);
             }
         }

@@ -39,15 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.ItemInformationProvider;
 import server.Trade;
-import server.maps.FieldLimit;
-import server.maps.HiredMerchant;
-import server.maps.MapObject;
-import server.maps.MapObjectType;
-import server.maps.MiniGame;
+import server.maps.*;
 import server.maps.MiniGame.MiniGameType;
-import server.maps.PlayerShop;
-import server.maps.PlayerShopItem;
-import server.maps.Portal;
 import tools.PacketCreator;
 
 import java.awt.*;
@@ -656,7 +649,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                     }
 
                     try {
-                        merchant.saveItems(false);   // thanks Masterrulax for realizing yet another dupe with merchants/Fredrick
+                        merchant.saveItems();   // thanks Masterrulax for realizing yet another dupe with merchants/Fredrick
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
@@ -727,7 +720,7 @@ public final class PlayerInteractionHandler extends AbstractPacketHandler {
                 }
 
                 merchant.withdrawMesos(chr);
-                merchant.clearInexistentItems();
+                merchant.clearNonexistentItems();
 
                 if (merchant.getItems().isEmpty()) {
                     merchant.closeOwnerMerchant(chr);

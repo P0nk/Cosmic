@@ -29,6 +29,14 @@ import server.life.Monster;
 import tools.PacketCreator;
 
 public final class MonsterBombHandler extends AbstractPacketHandler {
+    private static boolean isBombMob(int mobid) {
+        return switch (mobid) {
+            case MobId.HIGH_DARKSTAR, MobId.LOW_DARKSTAR, 9600069 -> true;
+            default -> false;
+        };
+
+    }
+
     @Override
     public final void handlePacket(InPacket p, Client c) {
         int oid = p.readInt();
@@ -36,7 +44,9 @@ public final class MonsterBombHandler extends AbstractPacketHandler {
         if (!c.getPlayer().isAlive() || monster == null) {
             return;
         }
-        if (monster.getId() == MobId.HIGH_DARKSTAR || monster.getId() == MobId.LOW_DARKSTAR) {
+        //if ((monster.getStats().selfDestruction().getAction()& 2) !=0) maybe use when more than 10 mobs?
+        if (isBombMob(monster.getId())) {
+            monster.dispatchMonsterKilled(false);
             monster.getMap().broadcastMessage(PacketCreator.killMonster(monster.getObjectId(), 4));
             c.getPlayer().getMap().removeMapObject(oid);
         }

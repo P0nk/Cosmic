@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8220105.img">
+    <imgdir name="info">
+        <int name="hideName" value="1"/>
+        <int name="level" value="245"/>
+        <int name="maxHP" value="35000000"/>
+        <int name="maxMP" value="1"/>
+        <int name="flySpeed" value="100"/>
+        <int name="PADamage" value="1"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="1"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="423"/>
+        <int name="eva" value="999"/>
+        <int name="pushed" value="99999999"/>
+        <float name="fs" value="10.0"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="8"/>
+        <string name="mobType" value="1N"/>
+        <int name="overSpeed" value="1"/>
+        <imgdir name="mobGenFlying">
+            <int name="resetTime" value="5000"/>
+            <int name="minRange" value="500"/>
+        </imgdir>
+        <int name="summonEffect" value="-2"/>
+        <int name="ignoreChase" value="1"/>
+        <string name="ignoreMoveableMsg" value="어두운 기운에 의해 보호되어 행동 불가 상태가 되지 않는다."/>
+        <int name="ignoreMovable" value="1"/>
+        <int name="ignoreMoveImpact" value="1"/>
+        <int name="notSeperateSoul" value="1"/>
+        <int name="PDDamage" value="0"/>
+        <int name="MDDamage" value="0"/>
+        <int name="eva" value="0"/>
+    </imgdir>
+    <imgdir name="fly">
+        <canvas name="0" width="1" height="1">
+            <int name="delay" value="90"/>
+            <vector name="origin" x="0" y="0"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../fly/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../fly/0"/>
+    </imgdir>
+    <imgdir name="regen">
+        <uol name="0" value="../fly/0"/>
+    </imgdir>
+</imgdir>

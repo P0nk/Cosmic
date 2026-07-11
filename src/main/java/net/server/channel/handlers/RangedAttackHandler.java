@@ -21,11 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package net.server.channel.handlers;
 
-import client.BuffStat;
 import client.Character;
-import client.Client;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.Item;
@@ -35,13 +32,7 @@ import config.YamlConfig;
 import constants.id.ItemId;
 import constants.id.MapId;
 import constants.inventory.ItemConstants;
-import constants.skills.Aran;
-import constants.skills.Buccaneer;
-import constants.skills.NightLord;
-import constants.skills.NightWalker;
-import constants.skills.Shadower;
-import constants.skills.ThunderBreaker;
-import constants.skills.WindArcher;
+import constants.skills.*;
 import net.packet.InPacket;
 import net.packet.Packet;
 import org.slf4j.Logger;
@@ -81,34 +72,32 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
             chr.setDojoEnergy(chr.getDojoEnergy() + YamlConfig.config.server.DOJO_ENERGY_ATK);
             c.sendPacket(PacketCreator.getEnergy("energy", chr.getDojoEnergy()));
         }
+        Packet broadcastmessagepacket = PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, 0, attack.allDamage, attack.speed, attack.direction, attack.display);
 
         if (attack.skill == Buccaneer.ENERGY_ORB || attack.skill == ThunderBreaker.SPARK || attack.skill == Shadower.TAUNT || attack.skill == NightLord.TAUNT) {
-            chr.getMap().broadcastMessage(chr, PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel,
-                    attack.stance, attack.numAttackedAndDamage, 0, attack.targets, attack.speed,
-                    attack.direction, attack.display), false);
+           //chr.getMap().broadcastMessage(chr, broadcastmessagepacket, false);
+            chr.broadcastAttackMessage(broadcastmessagepacket);
             applyAttack(attack, chr, 1);
         } else if (attack.skill == ThunderBreaker.SHARK_WAVE && chr.getSkillLevel(ThunderBreaker.SHARK_WAVE) > 0) {
-            chr.getMap().broadcastMessage(chr, PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel,
-                    attack.stance, attack.numAttackedAndDamage, 0, attack.targets, attack.speed,
-                    attack.direction, attack.display), false);
+           //chr.getMap().broadcastMessage(chr, broadcastmessagepacket, false);
+            chr.broadcastAttackMessage(broadcastmessagepacket);
             applyAttack(attack, chr, 1);
 
             for (int i = 0; i < attack.numAttacked; i++) {
                 chr.handleEnergyChargeGain();
             }
         } else if (attack.skill == Aran.COMBO_SMASH || attack.skill == Aran.COMBO_FENRIR || attack.skill == Aran.COMBO_TEMPEST) {
-            chr.getMap().broadcastMessage(chr, PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel,
-                    attack.stance, attack.numAttackedAndDamage, 0, attack.targets, attack.speed,
-                    attack.direction, attack.display), false);
-            if (attack.skill == Aran.COMBO_SMASH && chr.getCombo() >= 30) {
-                chr.setCombo((short) 0);
-                applyAttack(attack, chr, 1);
-            } else if (attack.skill == Aran.COMBO_FENRIR && chr.getCombo() >= 100) {
-                chr.setCombo((short) 0);
+            //chr.getMap().broadcastMessage(chr, broadcastmessagepacket, false);
+            chr.broadcastAttackMessage(broadcastmessagepacket);
+            if (attack.skill == Aran.COMBO_SMASH && chr.getCombo() >= 10) {
+                chr.setCombo((short) (chr.getCombo() - 10));
                 applyAttack(attack, chr, 2);
+            } else if (attack.skill == Aran.COMBO_FENRIR && chr.getCombo() >= 30) {
+                chr.setCombo((short) (chr.getCombo() - 30));
+                applyAttack(attack, chr, 3);
             } else if (attack.skill == Aran.COMBO_TEMPEST && chr.getCombo() >= 200) {
-                chr.setCombo((short) 0);
-                applyAttack(attack, chr, 4);
+                chr.setCombo((short)(chr.getCombo() - 200));
+                applyAttack(attack, chr, 5);
             }
         } else {
             Item weapon = chr.getInventory(InventoryType.EQUIPPED).getItem((short) -11);
@@ -219,17 +208,14 @@ public final class RangedAttackHandler extends AbstractDealDamageHandler {
                     case 3221001: // Pierce
                     case 5221004: // Rapid Fire
                     case 13111002: // KoC Hurricane
-                        packet = PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel, attack.rangedirection,
-                                attack.numAttackedAndDamage, visProjectile, attack.targets, attack.speed,
-                                attack.direction, attack.display);
+                        packet = PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel, attack.rangedirection, attack.numAttackedAndDamage, visProjectile, attack.allDamage, attack.speed, attack.direction, attack.display);
                         break;
                     default:
-                        packet = PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel, attack.stance,
-                                attack.numAttackedAndDamage, visProjectile, attack.targets, attack.speed,
-                                attack.direction, attack.display);
+                        packet = PacketCreator.rangedAttack(chr, attack.skill, attack.skilllevel, attack.stance, attack.numAttackedAndDamage, visProjectile, attack.allDamage, attack.speed, attack.direction, attack.display);
                         break;
                 }
-                chr.getMap().broadcastMessage(chr, packet, false, true);
+                //chr.getMap().broadcastMessage(chr, packet, false, true);
+                chr.broadcastAttackMessage(packet, true);
 
                 if (attack.skill != 0) {
                     Skill skill = SkillFactory.getSkill(attack.skill);

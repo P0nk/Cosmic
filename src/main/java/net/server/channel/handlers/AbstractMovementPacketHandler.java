@@ -26,12 +26,7 @@ import net.packet.InPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.maps.AnimatedMapObject;
-import server.movement.AbsoluteLifeMovement;
-import server.movement.ChangeEquip;
-import server.movement.JumpDownMovement;
-import server.movement.LifeMovementFragment;
-import server.movement.RelativeLifeMovement;
-import server.movement.TeleportMovement;
+import server.movement.*;
 import tools.exceptions.EmptyMovementException;
 
 import java.awt.*;
@@ -153,6 +148,10 @@ public abstract class AbstractMovementPacketHandler extends AbstractPacketHandle
             throw new EmptyMovementException(p);
         }
         return res;
+    }
+
+    protected void generateFloatMovementCommand(Character chr, Point relBodyMove) {
+
     }
 
     protected void updatePosition(InPacket p, AnimatedMapObject target, int yOffset) throws EmptyMovementException {

@@ -27,10 +27,7 @@ import client.Client;
 import client.command.Command;
 import net.server.Server;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 public class UptimeCommand extends Command {
     {

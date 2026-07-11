@@ -30,10 +30,7 @@ import net.server.Server;
 import net.server.world.World;
 import server.TimerManager;
 
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 public class ShutdownCommand extends Command {
     {

@@ -73,10 +73,10 @@ public class MakerItemFactory {
         return ret;
     }
 
-    private static double getMakerStimulantFee(int itemid) {
+    public static double getMakerStimulantFee(int itemId) {
         if (YamlConfig.config.server.USE_MAKER_FEE_HEURISTICS) {
-            EquipType et = EquipType.getEquipTypeById(itemid);
-            int eqpLevel = ii.getEquipLevelReq(itemid);
+            EquipType et = EquipType.getEquipTypeById(itemId);
+            int eqpLevel = ii.getEquipLevelReq(itemId);
 
             switch (et) {
                 case CAP:
@@ -108,10 +108,10 @@ public class MakerItemFactory {
         }
     }
 
-    private static double getMakerReagentFee(int itemid, int reagentLevel) {
+    public static double getMakerReagentFee(int itemId, int reagentLevel) {
         if (YamlConfig.config.server.USE_MAKER_FEE_HEURISTICS) {
-            EquipType et = EquipType.getEquipTypeById(itemid);
-            int eqpLevel = ii.getEquipLevelReq(itemid);
+            EquipType et = EquipType.getEquipTypeById(itemId);
+            int eqpLevel = ii.getEquipLevelReq(itemId);
 
             switch (et) {
                 case CAP:

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9410871.img">
+<imgdir name="info">
+<int name="level" value="100"/>
+<int name="maxHP" value="1000"/>
+<int name="PADamage" value="1000"/>
+<int name="MADamage" value="1000"/>
+<int name="pushed" value="1000000000"/>
+<int name="firstAttack" value="1"/>
+<int name="boss" value="1"/>
+<int name="ignoreMoveImpact" value="1"/>
+<int name="ignoreMovable" value="1"/>
+<int name="noFlip" value="1"/>
+<imgdir name="attack">
+<imgdir name="0">
+<int name="action" value="1"/>
+<int name="attackRatio" value="100"/>
+<int name="type" value="0"/>
+<int name="fixAttack" value="1"/>
+<int name="cooltime" value="5000"/>
+</imgdir>
+</imgdir>
+<int name="useCreateScript" value="1"/>
+<int name="useReaction" value="1"/>
+<int name="hideName" value="1"/>
+<int name="PDDamage" value="0"/>
+<int name="MDDamage" value="0"/>
+<int name="eva" value="0"/>
+<int name="acc" value="999"/>
+</imgdir>
+<imgdir name="stand">
+<canvas name="0" width="1" height="1">
+</canvas>
+</imgdir>
+<imgdir name="hit1">
+<uol name="0" value="../stand/0"/>
+</imgdir>
+<imgdir name="die1">
+<uol name="0" value="../stand/0"/>
+</imgdir>
+<imgdir name="attack1">
+<imgdir name="info">
+<imgdir name="range">
+<vector name="lt" x="0" y="0"/>
+<vector name="rb" x="0" y="0"/>
+</imgdir>
+<int name="delay" value="0"/>
+</imgdir>
+<uol name="0" value="../stand/0"/>
+</imgdir>
+</imgdir>

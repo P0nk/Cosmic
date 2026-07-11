@@ -20,17 +20,90 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
- * @Author: Moogra
+/* Tana
+ * 
+ * @Author Rulax
+ * Helps players leave the map
+ * Tana
  */
 
+var status;
+
 function start() {
-    cm.sendYesNo("Beep... beep... you can make your escape to a safer place through me. Beep... beep... would you like to leave this place?");
+    status = -1;
+    action(1, 0, 0)
 }
 
 function action(mode, type, selection) {
-    if (mode > 0) {
-        cm.warp(220080000);
+    if (mode < 1) {
+        cm.dispose();
+    } else {
+        if (mode == 0) {
+            cm.dispose();
+            return;
+        }
+
+        if (mode == 1) {
+            status++;
+        } else {
+            status--;
+        }
+
+        let eim = cm.getEventInstance();
+        let mapId = cm.getMapId();
+        let warpToMapId = getWarpToMapId(mapId);
+
+        if (warpToMapId !== 0) {
+            if (eim === null) {
+                cm.sendYesNo("How did you even get in here without starting the expedition? Do you want to leave?");
+            } else if (!eim.isEventCleared()) {
+                cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
+            } else {
+                cm.sendYesNo("You guys finally overthrew such darkness!, what a superb feat! Congratulations! Are you sure you want to leave now?");
+            }
+        } else {
+            cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
+        }
+
+        if (status == 1) {
+            if (eim.isEventCleared()){
+            let rewarded = eim.getProperty("rewarded") == "true";
+
+            const players = eim.getPlayers();
+
+            // Add item rewards based on the map or other conditions
+            switch (mapId) {
+                case 220080001: //ZAKUM
+                    if (!rewarded) {
+                        players.forEach((chr, index) => {
+                            const playerInteraction = chr.getAbstractPlayerInteraction();
+                            playerInteraction.gainItem(2000005, 100);
+                        })
+
+                        eim.setProperty("rewarded", "true");
+                    }
+                    break;
+            }
+            
+        }else {
+            cm.dispose();
+        }
+            cm.warp(warpToMapId);
+        }
     }
-    cm.dispose();
+}
+
+function getWarpToMapId(mapId) {
+    let warpToMapId;
+
+    switch (mapId) {
+        case 220080001:
+            warpToMapId = 220080000; //PAPULATUS
+            break;
+        // Add more cases for other map IDs as needed
+        default:
+            warpToMapId = 0; // Default warp destination if the map ID is not handled
+    }
+
+    return warpToMapId;
 }

@@ -29,11 +29,7 @@ import net.packet.InPacket;
 import net.server.Server;
 import tools.PacketCreator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public final class ViewAllCharHandler extends AbstractPacketHandler {
     private static final int CHARACTER_LIMIT = 60; // Client will crash if sending 61 or more characters

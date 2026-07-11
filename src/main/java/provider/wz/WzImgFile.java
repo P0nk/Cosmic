@@ -73,7 +73,7 @@ public class WzImgFile implements DataProvider {
         File xml = new File(root, path + XML_SUFFIX);
         if (xml.isFile()) {
             try (FileInputStream fis = new FileInputStream(xml)) {
-                return new XMLDomMapleData(fis, xml.getParentFile());
+                return new XMLDomMapleData(fis, xml.getParentFile().toPath());
             } catch (FileNotFoundException e) {
                 return null;
             } catch (IOException e) {

@@ -32,6 +32,7 @@ public enum Disease {
     SEDUCE(0x80, MobSkillType.SEDUCE),
     FISHABLE(0x100),
     ZOMBIFY(0x4000),
+    STOP_POTION(0x100000L, MobSkillType.STOP_POTION),
     CONFUSE(0x80000, MobSkillType.REVERSE_INPUT),
     STUN(0x2000000000000L, MobSkillType.STUN),
     POISON(0x4000000000000L, MobSkillType.POISON),

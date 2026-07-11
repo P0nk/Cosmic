@@ -31,17 +31,11 @@ import server.ItemInformationProvider;
 import server.ThreadManager;
 import tools.Pair;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * @author Matze, Ronan
@@ -200,7 +194,7 @@ public class Inventory implements Iterable<Item> {
         }
 
         if (ret.size() > 1) {
-            ret.sort((i1, i2) -> i1.getPosition() - i2.getPosition());
+            ret.sort(Comparator.comparingInt(Item::getPosition));
         }
 
         return ret;
@@ -293,6 +287,13 @@ public class Inventory implements Iterable<Item> {
 
     public void removeItem(short slot) {
         removeItem(slot, (short) 1, false);
+    }
+
+    public void cursedItem(Item source, short slot) {
+        Item cursed = new Item(source.getItemId(), slot, (short) 1);
+        addItem(source);
+        inventory.remove(source.getPosition());
+        cursed.setPosition(source.getPosition());
     }
 
     public void removeItem(short slot, short quantity, boolean allowZero) {
@@ -656,7 +657,31 @@ public class Inventory implements Iterable<Item> {
         lock.unlock();
     }
 
+    public Collection<Item> sortedList() {
+        lock.lock();
+        try {
+            List<Item> items = new ArrayList<>(inventory.values());
+            Collections.sort(items, new Comparator<Item>() {
+
+                @Override
+                public int compare(Item o1, Item o2) {
+                    return Short.compare(o1.getPosition(), o2.getPosition());
+                }
+
+            });
+            return items;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public void dispose() {
         owner = null;
+    }
+
+    public List<Item> orderedBySlot() {
+        return inventory.values().stream()
+                .sorted(Comparator.comparingInt(Item::getPosition))
+                .collect(Collectors.toList());
     }
 }

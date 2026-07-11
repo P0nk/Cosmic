@@ -52,6 +52,14 @@ public final class PetAutoPotHandler extends AbstractPacketHandler {
         }
 
         PetAutopotProcessor.runAutopotAction(c, slot, itemId);
+        //Thanks RobbertW for this snippy snip
+        if (chr.countItem(itemId) == 25) {
+            chr.showHint("Your pet is almost out of #e#r#t" + itemId + "##k#n! (#b25#k left)", 300);
+        }
+
+        if (chr.countItem(itemId) == 0) {
+            chr.showHint("Your pet just consumed your last #e#r#t" + itemId + "##k#n! Be careful!", 300);
+        }
+    }
     }
 
-}

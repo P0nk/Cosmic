@@ -36,11 +36,14 @@ import net.server.Server;
 import net.server.guild.Guild;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
 import scripting.event.EventManager;
 import scripting.npc.NPCScriptManager;
 import server.ItemInformationProvider;
 import server.Marriage;
+import server.TimerManager;
 import server.expeditions.Expedition;
 import server.expeditions.ExpeditionBossLog;
 import server.expeditions.ExpeditionType;
@@ -51,17 +54,21 @@ import server.maps.MapleMap;
 import server.partyquest.PartyQuest;
 import server.partyquest.Pyramid;
 import server.quest.Quest;
+import server.TotemEventData;
 import tools.PacketCreator;
 import tools.Pair;
 
+
+import javax.script.ScriptException;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 
 public class AbstractPlayerInteraction {
-
+    private static final Logger log = LoggerFactory.getLogger(AbstractPlayerInteraction.class);
     public Client c;
 
     public AbstractPlayerInteraction(Client c) {
@@ -200,6 +207,7 @@ public class AbstractPlayerInteraction {
         return getPlayer().getInventory(type);
     }
 
+
     public boolean hasItem(int itemid) {
         return haveItem(itemid, 1);
     }
@@ -238,6 +246,22 @@ public class AbstractPlayerInteraction {
 
     public boolean canHold(int itemid, int quantity, int removeItemid, int removeQuantity) {
         return canHoldAllAfterRemoving(Collections.singletonList(itemid), Collections.singletonList(quantity), Collections.singletonList(removeItemid), Collections.singletonList(removeQuantity));
+    }
+
+    public boolean canHold(List<Pair<Item, InventoryType>> gainList) {
+        List<Integer> toAddItemids = new LinkedList<>();
+        List<Integer> toAddQuantity = new LinkedList<>();
+
+        for (Pair<Item, InventoryType> item : gainList) {
+            Item it = item.getLeft();
+
+            if (it.getQuantity() > 0) {
+                toAddItemids.add(it.getItemId());
+                toAddQuantity.add((int) it.getQuantity());
+            }
+        }
+
+        return canHoldAll(toAddItemids, toAddQuantity, true);
     }
 
     private List<Integer> convertToIntegerList(List<Object> objects) {
@@ -291,7 +315,7 @@ public class AbstractPlayerInteraction {
         int size = Math.min(itemids.size(), quantity.size());
 
         List<List<Pair<Integer, Integer>>> invList = new ArrayList<>(6);
-        for (int i = InventoryType.UNDEFINED.getType(); i <= InventoryType.CASH.getType(); i++) {
+        for (int i = InventoryType.UNDEFINED.getType(); i < InventoryType.CASH.getType(); i++) {
             invList.add(new LinkedList<>());
         }
 
@@ -885,6 +909,26 @@ public class AbstractPlayerInteraction {
         }
     }
 
+    public void removeOne(int id) {
+        removeOne(id, c);
+    }
+
+    public void removeOne(int id, Client client) {
+        InventoryType invType = ItemConstants.getInventoryType(id);
+        int possessed = client.getPlayer().getInventory(invType).countById(id);
+        if (possessed > 0) {
+            InventoryManipulator.removeById(client, invType, id, 1, true, false);
+            client.sendPacket(PacketCreator.getShowItemGain(id, (short) -1, true));
+        }
+
+        if (invType == InventoryType.EQUIP) {
+            if (client.getPlayer().getInventory(InventoryType.EQUIPPED).countById(id) > 0) {
+                InventoryManipulator.removeById(client, InventoryType.EQUIPPED, id, 1, true, false);
+                client.sendPacket(PacketCreator.getShowItemGain(id, (short) -1, true));
+            }
+        }
+    }
+
     public int getMapId() {
         return c.getPlayer().getMap().getId();
     }
@@ -970,6 +1014,14 @@ public class AbstractPlayerInteraction {
             map.addMapObject(npc);
             map.broadcastMessage(PacketCreator.spawnNPC(npc));
         }
+    }
+
+    public void spawnNpc(int npcId) {
+        spawnNpc(npcId, getPlayer().getPosition());
+    }
+
+    public void spawnNpc(int npcId, Point pos) {
+        spawnNpc(npcId, pos, getMap());
     }
 
     public void spawnMonster(int id, int x, int y) {
@@ -1095,6 +1147,12 @@ public class AbstractPlayerInteraction {
         }
     }
 
+
+    public int getBossLogEntries(int boss) {
+       Optional<ExpeditionBossLog.BossLogEntry> ble= Arrays.stream(ExpeditionBossLog.BossLogEntry.values()).filter(bossLogEntry -> bossLogEntry.getIndex()==(boss+1)).findFirst();
+        return ble.isEmpty() ? -1 : ExpeditionBossLog.getPlayerEntryCount(getPlayer().getId(), ble.get());
+    }
+
     public void endExpedition(Expedition exped) {
         exped.dispose(true);
         exped.removeChannelExpedition(getPlayer().getClient().getChannelServer());
@@ -1211,12 +1269,12 @@ public class AbstractPlayerInteraction {
         sendBlueNotice(map, message);
     }
 
-    private void applySealSkill(Monster monster) {
+    public void applySealSkill(Monster monster) {
         MobSkill sealSkill = MobSkillFactory.getMobSkillOrThrow(MobSkillType.SEAL_SKILL, 1);
         sealSkill.applyEffect(monster);
     }
 
-    private void applyReduceAvoid(Monster monster) {
+    public void applyReduceAvoid(Monster monster) {
         MobSkill reduceAvoidSkill = MobSkillFactory.getMobSkillOrThrow(MobSkillType.EVA, 2);
         reduceAvoidSkill.applyEffect(monster);
     }
@@ -1224,4 +1282,67 @@ public class AbstractPlayerInteraction {
     private void sendBlueNotice(MapleMap map, String message) {
         map.dropMessage(6, message);
     }
+
+    public void logMessage(String scriptName, String message) {
+        log.info("[{}] - {}", scriptName, message);
+    }
+
+    public void logToConsole(String message) {
+        System.out.println(message);
+    }
+
+    public TotemEventData startEventTimer(long time) {
+        long timeStarted = System.currentTimeMillis();
+        long eventTime = time;
+
+        for (Character chr : getMap().getAllPlayers()) {
+            chr.sendPacket(PacketCreator.getClock((int) (time / 1000)));
+        }
+
+
+
+        ScheduledFuture<?> event_schedule = TimerManager.getInstance().schedule(() -> {
+            dismissEventTimer();
+        }, time);
+
+        return new TotemEventData();
+    }
+
+    private void dismissEventTimer() {
+        for (Character chr : getMap().getAllPlayers()) {
+            chr.sendPacket(PacketCreator.removeClock());
+        }
+
+        getMap().resetFully();
+    }
+
+    public boolean resetQuest(short id) {
+        return resetQuest((int) id);
+    }
+
+    public boolean resetQuest(int id) {
+        try {
+            Quest.getInstance(id).reset(getPlayer());
+            return true;
+        } catch (NullPointerException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean reachedRewardLimit(ExpeditionType type) {
+        Character player = getPlayer();
+        return ExpeditionBossLog.reachedBossRewardLimit(player.getId(), type);
+    }
+
+    public void spawnItemDropOnMap(Point pos, int itemId, short quantity){
+        Item toDrop = new Item(itemId, (short) 0, quantity);
+       // toDrop.setExpiration(expiration)
+        c.getPlayer().getMap().spawnItemDrop(c.getPlayer(), c.getPlayer(), toDrop, pos, true, false);
+    }
+
+    public void gainSp(int spGain) {
+        getChar().gainSp(spGain, GameConstants.getSkillBook(getJobId()),false);
+    }
 }
+

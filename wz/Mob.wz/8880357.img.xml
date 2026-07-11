@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="8880357.img">
+    <imgdir name="info">
+        <int name="level" value="250"/>
+        <int name="maxHP" value="2000000000"/>
+        <int name="maxMP" value="100000"/>
+        <int name="mpRecovery" value="10000"/>
+        <int name="PADamage" value="22000"/>
+        <int name="MADamage" value="24000"/>
+        <int name="PDRate" value="300"/>
+        <int name="MDRate" value="300"/>
+        <int name="PDDamage" value="16200"/>
+        <int name="MDDamage" value="16088"/>
+        <int name="acc" value="9999"/>
+        <int name="eva" value="750"/>
+        <int name="pushed" value="1000000000"/>
+        <float name="fs" value="10.0"/>
+        <int name="speed" value="-60"/>
+        <int name="ignoreMoveImpact" value="1"/>
+        <int name="exp" value="1"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="8"/>
+        <string name="mobType" value="1N"/>
+        <int name="hideHP" value="1"/>
+        <int name="hideName" value="1"/>
+        <int name="boss" value="1"/>
+        <string name="elemAttr" value="P2H2F2I2S2L2D2"/>
+        <int name="firstAttack" value="1"/>
+        <int name="invincible" value="1"/>
+        <int name="noFlip" value="1"/>
+        <imgdir name="skill">
+            <imgdir name="0">
+                <int name="action" value="1"/>
+                <int name="skill" value="242"/>
+                <int name="level" value="12"/>
+                <int name="effectAfter" value="0"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="action" value="2"/>
+                <int name="skill" value="201"/>
+                <int name="level" value="240"/>
+                <int name="effectAfter" value="0"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="firstAttackRange">
+            <vector name="lt" x="-2500" y="-768"/>
+            <vector name="rb" x="2500" y="768"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="1" name="0" width="1"/>
+    </imgdir>
+    <imgdir name="attack1">
+        <imgdir name="info">
+            <imgdir name="range">
+                <vector name="lt" x="-275" y="-175"/>
+                <vector name="rb" x="0" y="0"/>
+            </imgdir>
+            <imgdir name="hit">
+                <canvas height="105" name="0" width="103">
+                    <vector name="origin" x="53" y="53"/>
+                    <int name="z" value="0"/>
+                </canvas>
+                <canvas height="147" name="1" width="149">
+                    <vector name="origin" x="73" y="76"/>
+                    <int name="z" value="0"/>
+                </canvas>
+                <canvas height="176" name="2" width="174">
+                    <vector name="origin" x="84" y="92"/>
+                    <int name="z" value="0"/>
+                </canvas>
+                <canvas height="178" name="3" width="176">
+                    <vector name="origin" x="86" y="92"/>
+                    <int name="z" value="0"/>
+                </canvas>
+                <canvas height="179" name="4" width="175">
+                    <vector name="origin" x="85" y="92"/>
+                    <int name="z" value="0"/>
+                </canvas>
+                <canvas height="175" name="5" width="175">
+                    <vector name="origin" x="85" y="89"/>
+                    <int name="z" value="0"/>
+                </canvas>
+            </imgdir>
+            <int name="action" value="1"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="3"/>
+            <int name="fixDamR" value="10"/>
+        </imgdir>
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="skill1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="skill2">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

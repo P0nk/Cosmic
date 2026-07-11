@@ -25,11 +25,7 @@ import client.Character;
 import client.Client;
 import client.Skill;
 import client.SkillFactory;
-import constants.skills.BlazeWizard;
-import constants.skills.Evan;
-import constants.skills.FPMage;
-import constants.skills.NightWalker;
-import constants.skills.Shadower;
+import constants.skills.*;
 import net.packet.Packet;
 import server.StatEffect;
 import server.life.MobSkill;
@@ -140,14 +136,14 @@ public class Mist extends AbstractMapObject {
 
     public final Packet makeSpawnData() {
         if (owner != null) {
-            return PacketCreator.spawnMist(getObjectId(), owner.getId(), getSourceSkill().getId(), owner.getSkillLevel(SkillFactory.getSkill(source.getSourceId())), this);
+            return PacketCreator.spawnMist(getObjectId(), owner.getId(), getSourceSkill().getId(), owner.getSkillLevel(SkillFactory.getSkill(source.getSourceId())), this, false);
         }
         return PacketCreator.spawnMobMist(getObjectId(), mob.getId(), skill.getId(), this);
     }
 
-    public final Packet makeFakeSpawnData(int level) {
+    public final Packet makeFakeSpawnData(int level, boolean veil) {
         if (owner != null) {
-            return PacketCreator.spawnMist(getObjectId(), owner.getId(), getSourceSkill().getId(), level, this);
+            return PacketCreator.spawnMist(getObjectId(), owner.getId(), 8001007, level, this, veil);
         }
         return PacketCreator.spawnMobMist(getObjectId(), mob.getId(), skill.getId(), this);
     }

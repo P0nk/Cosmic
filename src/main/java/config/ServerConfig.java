@@ -7,10 +7,10 @@ public class ServerConfig {
 
     //Database Configuration
     public String DB_URL_FORMAT;
+    public String DATA_PATH;
     public String DB_HOST;
     public String DB_USER;
     public String DB_PASS;
-    public String DATA_PATH;
     public int INIT_CONNECTION_POOL_TIMEOUT;
 
     //Login Configuration
@@ -36,6 +36,7 @@ public class ServerConfig {
     public boolean BCRYPT_MIGRATION;
     public boolean COLLECTIVE_CHARSLOT;
     public boolean DETERRED_MULTICLIENT;
+    public boolean USE_EXP_GAIN_LOG;
 
     //Besides blocking logging in with several client sessions on the same machine, this also blocks suspicious login attempts for players that tries to login on an account using several diferent remote addresses.
 
@@ -69,6 +70,7 @@ public class ServerConfig {
     public boolean USE_MTS;
     public boolean USE_CPQ;
     public boolean USE_AUTOHIDE_GM;
+    public boolean USE_BUYBACK_SYSTEM;
     public boolean USE_FIXED_RATIO_HPMP_UPDATE;
     public boolean USE_FAMILY_SYSTEM;
     public boolean USE_DUEY;
@@ -82,7 +84,6 @@ public class ServerConfig {
     public boolean USE_STARTING_AP_4;
     public boolean USE_AUTOBAN;
     public boolean USE_AUTOBAN_LOG;
-    public boolean USE_EXP_GAIN_LOG;
     public boolean USE_AUTOSAVE;
     public boolean USE_SERVER_AUTOASSIGNER;
     public boolean USE_REFRESH_RANK_MOVE;
@@ -98,6 +99,7 @@ public class ServerConfig {
     public boolean USE_ENFORCE_MERCHANT_SAVE;
     public boolean USE_ENFORCE_MDOOR_POSITION;
     public boolean USE_SPAWN_CLEAN_MDOOR;
+    public boolean USE_SPAWN_LOOT_ON_ANIMATION;
     public boolean USE_SPAWN_RELEVANT_LOOT;
     public boolean USE_ERASE_PERMIT_ON_OPENSHOP;
     public boolean USE_ERASE_UNTRADEABLE_DROP;
@@ -105,8 +107,10 @@ public class ServerConfig {
     public boolean USE_BUFF_MOST_SIGNIFICANT;
     public boolean USE_BUFF_EVERLASTING;
     public boolean USE_MULTIPLE_SAME_EQUIP_DROP;
+    public boolean USE_BANISHABLE_TOWN_SCROLL;
     public boolean USE_ENABLE_FULL_RESPAWN;
     public boolean USE_ENABLE_CHAT_LOG;
+    public boolean USE_REBIRTH_SYSTEM;
     public boolean USE_MAP_OWNERSHIP_SYSTEM;
     public boolean USE_FISHING_SYSTEM;
     public boolean USE_NPCS_SCRIPTABLE;
@@ -131,6 +135,10 @@ public class ServerConfig {
     //Maker Configuration
     public boolean USE_MAKER_PERMISSIVE_ATKUP;
     public boolean USE_MAKER_FEE_HEURISTICS;
+
+    //Custom Configuration
+    public boolean USE_ENABLE_CUSTOM_NPC_SCRIPT;
+    public boolean USE_STARTER_MERGE;
 
     //Commands Configuration
     public boolean BLOCK_GENERATE_CASH_ITEM;
@@ -160,6 +168,7 @@ public class ServerConfig {
     public long NAME_CHANGE_COOLDOWN;
     public long WORLD_TRANSFER_COOLDOWN = NAME_CHANGE_COOLDOWN;//Cooldown for world tranfers, default is same as name change (30 days).
     public boolean INSTANT_NAME_CHANGE;
+    public int REBIRTH_NPC_ID;
 
     //Dangling Items/Locks Configuration
     public int ITEM_EXPIRE_TIME;
@@ -187,6 +196,7 @@ public class ServerConfig {
     public boolean USE_PERFECT_SCROLLING;
     public boolean USE_ENHANCED_CHSCROLL;
     public boolean USE_ENHANCED_CRAFTING;
+    public boolean USE_ENHANCED_CLEAN_SLATE;
     public int SCROLL_CHANCE_ROLLS;
     public int CHSCROLL_STAT_RATE;
     public int CHSCROLL_STAT_RANGE;
@@ -208,6 +218,17 @@ public class ServerConfig {
     public boolean USE_ADD_RATES_BY_LEVEL;
     public boolean USE_STACK_COUPON_RATES;
     public boolean USE_PERFECT_PITCH;
+    public int REBIRTH_FIRST_RATE;
+    public int REBIRTH_SECOND_RATE;
+    public int REBIRTH_THIRD_RATE;
+
+    public int REBIRTH_RESET_LEVEL;
+
+    public int REBIRTH_FINAL_RATE;
+    public int AUTOLOOT_ITEM_ID;
+    public int JUMPQUEST_CUSTOM_EXP_MESOS_REWARD;
+    public int JUMPQUEST_BASE_EXP_REWARD;
+    public int JUMPQUEST_BASE_MESOS_REWARD;
 
     //Quest Configuration
     public boolean USE_QUEST_RATE;
@@ -236,6 +257,7 @@ public class ServerConfig {
     public boolean USE_EQUIPMNT_LVLUP_SLOTS;
     public boolean USE_EQUIPMNT_LVLUP_POWER;
     public boolean USE_EQUIPMNT_LVLUP_CASH;
+    public boolean USE_SPIKES_AVOID_BANISH;
     public int MAX_EQUIPMNT_LVLUP_STAT_UP;
     public int MAX_EQUIPMNT_STAT;
     public int USE_EQUIPMNT_LVLUP;
@@ -286,6 +308,14 @@ public class ServerConfig {
     public int WEDDING_GIFT_LIMIT;
     public boolean WEDDING_BLESSER_SHOWFX;
 
+    //Buyback Configuration
+    public boolean USE_BUYBACK_WITH_MESOS;
+    public float BUYBACK_FEE;
+    public float BUYBACK_LEVEL_STACK_FEE;
+    public int BUYBACK_MESO_MULTIPLIER;
+    public int BUYBACK_RETURN_MINUTES;
+    public int BUYBACK_COOLDOWN_MINUTES;
+
     // Login timeout by shavit
     public long TIMEOUT_DURATION;
 
@@ -300,4 +330,25 @@ public class ServerConfig {
 
     //Custom NPC overrides. List of NPC IDs.
     public Map<String, String> NPCS_SCRIPTABLE = new HashMap<>();
+
+    // amount of characters that can receive expedition rewards on the same HWID
+    public int EXPEDITION_HWID_LIMIT;
+
+    // maximum number of transactions that can be pulled for buyback command
+    public int MAXIMUM_TRANSACTIONS_FOR_BUYBACK;
+
+    // determine if the thread tracker will be used to improve visibly for deadlocks
+    public boolean USE_THREAD_TRACKER;
+
+    // Starforce
+    public int STARFORCE_MAX_MESO_COST;
+    public int STARFORCE_MAX_SPELL_TRACE_COST;
+    public double STARFORCE_BOOST_PERCENTAGE;
+    public double STARFORCE_BOOST_PERCENTAGE2;
+
+    // BACKPACK
+    public int BACKPACK_MAX_ITEMS_PER_PAGE;
+    public int BACKPACK_MAX_STORAGE_PER_ITEM;
+    public int BACKPACK_MINIMUM_SEARCH_LENGTH;
+    public int BACKPACK_MAX_UNIQUE_ITEMS;
 }

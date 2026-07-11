@@ -4,10 +4,7 @@ import provider.wz.WZFiles;
 import server.ItemInformationProvider;
 import tools.DatabaseConnection;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -24,7 +21,7 @@ import java.util.Map;
  */
 
 public class SkillMakerFetcher {
-    private static final Path INPUT_FILE = WZFiles.ETC.getFile().resolve("ItemMake.img.xml");
+    private static final Path INPUT_FILE = ToolConstants.getInputFile("ItemMake.img.xml");
     private static final Path OUTPUT_FILE = ToolConstants.getOutputFile("maker-data.sql");
     private static final int INITIAL_STRING_LENGTH = 50;
 

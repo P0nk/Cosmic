@@ -156,7 +156,7 @@ public class ItemAction extends AbstractQuestAction {
         for (ItemData iEntry : giveItem) {
             int itemid = iEntry.getId(), count = iEntry.getCount(), period = iEntry.getPeriod();    // thanks Vcoc for noticing quest milestone item not getting removed from inventory after a while
 
-            InventoryManipulator.addById(chr.getClient(), itemid, (short) count, "", -1, period > 0 ? (System.currentTimeMillis() + MINUTES.toMillis(period)) : -1);
+            InventoryManipulator.addById(chr, itemid, (short) count, "", -1, period > 0 ? (System.currentTimeMillis() + MINUTES.toMillis(period)) : -1);
             chr.sendPacket(PacketCreator.getShowItemGain(itemid, (short) count, true));
         }
     }

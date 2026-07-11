@@ -1,4 +1,4 @@
-var leverSequenceExit = true;
+var leverSequenceExit = false;
 
 function enterLeverSequence(pi) {
     var map = pi.getMap();

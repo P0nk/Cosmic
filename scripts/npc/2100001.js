@@ -2,6 +2,7 @@
 	NPC Name: 		Muhammad
 	Map(s): 		Ariant:The Town of Ariant(260000200)
 	Description: 	Jewel Refiner
+* This old man has retired from refining jewels.
 */
 
 var status = 0;
@@ -36,7 +37,10 @@ function action(mode, type, selection) {
     }
 
     if (status == 0) {
-        cm.sendYesNo("Are you here to refine the ores of a mineral or a jewel? It doesn't matter how many ores you have, if you don't have them refined by a master like me, then they won't see the light of day. What do you think, do you want to refine them right now?");
+        cm.sendOk("Hi, thank you for coming by, but I have #rretired from refining ores#k. Please go to #b#eNimble#n#k in the #bFree Market#k, he has been my apprentice for many years and has since \r\n#esurpassed me in refining all types of ores and jewels#n. He can even #renhance advanced equipment#k for you when crafting. \r\nI'm so proud of who he's become.");
+        //cm.sendYesNo("Are you here to refine the ores of a mineral or a jewel? It doesn't matter how many ores you have, if you don't have them refined by a master like me, then they won't see the light of day. What do you think, do you want to refine them right now?");
+        cm.dispose();
+        return;
     }
     if (status == 1 && mode == 1) {
         var selStr = "I like your attitude! Let's just take care of this right now. What kind of ores would you like to refine? #b";

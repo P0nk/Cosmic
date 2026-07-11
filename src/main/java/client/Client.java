@@ -39,16 +39,13 @@ import net.server.Server;
 import net.server.channel.Channel;
 import net.server.coordinator.login.LoginBypassCoordinator;
 import net.server.coordinator.session.Hwid;
+import net.server.coordinator.session.IpAddresses;
 import net.server.coordinator.session.SessionCoordinator;
 import net.server.coordinator.session.SessionCoordinator.AntiMulticlientResult;
 import net.server.guild.Guild;
 import net.server.guild.GuildCharacter;
 import net.server.guild.GuildPackets;
-import net.server.world.MessengerCharacter;
-import net.server.world.Party;
-import net.server.world.PartyCharacter;
-import net.server.world.PartyOperation;
-import net.server.world.World;
+import net.server.world.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractPlayerInteraction;
@@ -77,23 +74,9 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
+import java.sql.*;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -150,6 +133,12 @@ public class Client extends ChannelInboundHandlerAdapter {
     private long lastPacket = System.currentTimeMillis();
     private int lang = 0;
 
+    public byte autolog = 0;
+
+    public int autoch = 1;
+
+    public int autochar = 1;
+
     public enum Type {
         LOGIN,
         CHANNEL
@@ -193,7 +182,10 @@ public class Client extends ChannelInboundHandlerAdapter {
     private static String getRemoteAddress(io.netty.channel.Channel channel) {
         String remoteAddress = "null";
         try {
-            remoteAddress = ((InetSocketAddress) channel.remoteAddress()).getAddress().getHostAddress();
+            String hostAddress = ((InetSocketAddress) channel.remoteAddress()).getAddress().getHostAddress();
+            if (hostAddress != null) {
+                remoteAddress = IpAddresses.evaluateRemoteAddress(hostAddress); // thanks dyz for noticing Local/LAN/WAN connections not interacting properly
+            }
         } catch (NullPointerException npe) {
             log.warn("Unable to get remote address for client", npe);
         }
@@ -638,18 +630,19 @@ public class Client extends ChannelInboundHandlerAdapter {
         return false;
     }
 
-    public int login(String login, String pwd, Hwid hwid) {
+    public int login(String login, String pwd, Hwid hwid, boolean auto) {
         int loginok = 5;
-
-        loginattempt++;
-        if (loginattempt > 4) {
-            loggedIn = false;
-            SessionCoordinator.getInstance().closeSession(this, false);
-            return 6;   // thanks Survival_Project for finding out an issue with AUTOMATIC_REGISTER here
+        if (!auto) {
+            loginattempt++;
+            if (loginattempt > 4) {
+                loggedIn = false;
+                SessionCoordinator.getInstance().closeSession(this, false);
+                return 6;   // thanks Survival_Project for finding out an issue with AUTOMATIC_REGISTER here
+            }
         }
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT id, password, gender, banned, pin, pic, characterslots, tos, language FROM accounts WHERE name = ?")) {
+             PreparedStatement ps = con.prepareStatement("SELECT id, password, gender, banned, pin, pic, characterslots, tos, ip, language FROM accounts WHERE name = ?")) {
             ps.setString(1, login);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -826,12 +819,13 @@ public class Client extends ChannelInboundHandlerAdapter {
         }
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("UPDATE accounts SET loggedin = ?, lastlogin = ? WHERE id = ?")) {
+             PreparedStatement ps = con.prepareStatement("UPDATE accounts SET loggedin = ?, lastlogin = ?, ip = ? WHERE id = ?")) {
             // using sql currenttime here could potentially break the login, thanks Arnah for pointing this out
 
             ps.setInt(1, newState);
             ps.setTimestamp(2, new java.sql.Timestamp(Server.getInstance().getCurrentTime()));
-            ps.setInt(3, getAccID());
+            ps.setString(3, remoteAddress);
+            ps.setInt(4, getAccID());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -953,7 +947,7 @@ public class Client extends ChannelInboundHandlerAdapter {
                 if (MapId.isDojo(mapId)) {
                     this.getChannelServer().freeDojoSectionIfEmpty(mapId);
                 }
-                
+
                 if (player.getMap().getHPDec() > 0) {
                     getWorldServer().removePlayerHpDecrease(player);
                 }
@@ -993,9 +987,9 @@ public class Client extends ChannelInboundHandlerAdapter {
             final MessengerCharacter chrm = new MessengerCharacter(player, 0);
             final GuildCharacter chrg = player.getMGC();
             final Guild guild = player.getGuild();
-
+            getMostRecentAccountFromIP(remoteAddress);
             player.cancelMagicDoor();
-
+            player.clearSummons();
             final World wserv = getWorldServer();   // obviously wserv is NOT null if this player was online on it
             try {
                 removePlayer(wserv, this.serverTransition);
@@ -1256,6 +1250,28 @@ public class Client extends ChannelInboundHandlerAdapter {
         }
     }
 
+    public void getMostRecentAccountFromIP(String ip) {
+        int accountId = -1; // Default value if no account is found
+        Timestamp latestLogin = null;
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT `id`, `lastlogin`, `name`, `autochar`, `autoch`, `autologin`, `loggedin` FROM accounts WHERE ip = ? ORDER BY `lastlogin` DESC LIMIT 1")) {
+                ps.setString(1, ip);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        accountId = rs.getInt("id");
+                        accountName = rs.getString("name");
+                        autochar = rs.getInt("autochar");
+                        autolog = rs.getByte("autologin");
+                        autoch = rs.getInt("autoch");
+                        latestLogin = rs.getTimestamp("lastlogin");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     public int getVotePoints() {
         int points = 0;
         try (Connection con = DatabaseConnection.getConnection();
@@ -1498,6 +1514,11 @@ public class Client extends ChannelInboundHandlerAdapter {
             return;
         }
 
+        EventInstanceManager eventInstanceManager = player.getEventInstance();
+        if (eventInstanceManager != null) {
+            eventInstanceManager.playerDisconnected(player);
+        }
+
         player.closePlayerInteractions();
         player.closePartySearchInteractions();
 
@@ -1512,12 +1533,14 @@ public class Client extends ChannelInboundHandlerAdapter {
         player.cancelBuffExpireTask();
         player.cancelDiseaseExpireTask();
         player.cancelSkillCooldownTask();
+        player.cancelTotemCooldownTask();
         player.cancelQuestExpirationTask();
         //Cancelling magicdoor? Nope
         //Cancelling mounts? Noty
 
         player.getInventory(InventoryType.EQUIPPED).checked(false); //test
         player.getMap().removePlayer(player);
+        player.clearBanishPlayerData();
         player.getClient().getChannelServer().removePlayer(player);
 
         player.saveCharToDB();
@@ -1597,5 +1620,20 @@ public class Client extends ChannelInboundHandlerAdapter {
 
     public void setLanguage(int lingua) {
         this.lang = lingua;
+    }
+
+    public String convertHWID(String newHwid) {
+        StringBuilder hwid = new StringBuilder();
+        String[] split = newHwid.split("_");
+        if (split.length > 1 && split[1].length() == 8) {
+            String convert = split[1];
+
+            int len = convert.length();
+            for (int i = len - 2; i >= 0; i -= 2) {
+                hwid.append(convert, i, i + 2);
+            }
+            hwid.insert(4, "-");
+        }
+        return hwid.toString();
     }
 }

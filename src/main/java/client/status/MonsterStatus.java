@@ -52,7 +52,8 @@ public enum MonsterStatus {
     SEAL_SKILL(0x4000000),
     INERTMOB(0x10000000),
     WEAPON_REFLECT(0x20000000, true),
-    MAGIC_REFLECT(0x40000000, true);
+    MAGIC_REFLECT(0x40000000, true),
+    STOP_POTION(0x80000000);
 
     private final int i;
     private final boolean first;

@@ -63,7 +63,7 @@ public class SpawnPetProcessor {
                         }
                         long expiration = chr.getInventory(InventoryType.CASH).getItem(slot).getExpiration();
                         InventoryManipulator.removeById(c, InventoryType.CASH, petid, (short) 1, false, false);
-                        InventoryManipulator.addById(c, evolveid, (short) 1, null, petId, expiration);
+                        InventoryManipulator.addById(c.getPlayer(), evolveid, (short) 1, null, petId, expiration);
 
                         c.sendPacket(PacketCreator.enableActions());
                         return;

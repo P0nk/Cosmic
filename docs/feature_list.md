@@ -302,7 +302,7 @@ Localhost:
 * Removed caps for MATK, WDEF, MDEF, ACC and AVOID.
 * Removed "AP excess" popup and "Admin/MWLB" action block, original credits to kevintjuh93.
 * Removed "You've gained a level!" popup, original credits to PrinceReborn.
-* Removed "Cannot enter MTS from this map." popup on maps that blocks transitions (such change channel, CS/MTS).
+* Removed "Cannot enter MTS from this map." popup on maps that blocks transitions (such change channel, CS/MTS), rendering the buyback option now available for all maps.
 * Removed a check for players wishing to create/join a party being novices under level 10.
 * Set a new high cap for SPEED.
 * Removed the AP assign block for novices.

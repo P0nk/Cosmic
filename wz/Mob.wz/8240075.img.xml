@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8240075.img">
+    <imgdir name="info">
+        <string name="elemAttr" value="S1"/>
+        <int name="level" value="110"/>
+        <int name="bodyAttack" value="1"/>
+        <int name="maxHP" value="330000000"/>
+        <int name="maxMP" value="500"/>
+        <int name="speed" value="3"/>
+        <int name="PADamage" value="1"/>
+        <int name="PDDamage" value="12"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="46"/>
+        <int name="MDDamage" value="40"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="23"/>
+        <int name="eva" value="1"/>
+        <int name="pushed" value="1000"/>
+        <float name="fs" value="10.0"/>
+        <int name="summonType" value="1"/>
+        <string name="mobType" value="8N"/>
+        <int name="invincible" value="1"/>
+        <int name="boss" value="1"/>
+        <imgdir name="patrol">
+            <int name="range" value="300"/>
+            <int name="detectX" value="150"/>
+            <int name="senseX" value="100"/>
+            <imgdir name="patrolMark">
+                <imgdir name="sense">
+                    <canvas name="0" width="56" height="49">
+                        <vector name="origin" x="28" y="36"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="1" width="56" height="49">
+                        <vector name="origin" x="28" y="36"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                </imgdir>
+                <imgdir name="userDetect">
+                    <canvas name="0" width="84" height="88">
+                        <vector name="origin" x="40" y="87"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="1" width="84" height="88">
+                        <vector name="origin" x="40" y="87"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                </imgdir>
+                <imgdir name="attractDetect">
+                    <canvas name="0" width="56" height="49">
+                        <vector name="origin" x="28" y="36"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="1" width="56" height="49">
+                        <vector name="origin" x="28" y="36"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                </imgdir>
+                <imgdir name="attractArrive">
+                    <canvas name="0" width="31" height="45">
+                        <vector name="origin" x="15" y="33"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="1" width="15" height="60">
+                        <vector name="origin" x="6" y="44"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="2" width="33" height="51">
+                        <vector name="origin" x="16" y="49"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="3" width="33" height="59">
+                        <vector name="origin" x="16" y="49"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="4" width="31" height="32">
+                        <vector name="origin" x="15" y="48"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="5" width="11" height="30">
+                        <vector name="origin" x="4" y="42"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                    <canvas name="6" width="27" height="28">
+                        <vector name="origin" x="13" y="32"/>
+                        <int name="z" value="0"/>
+                    </canvas>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <imgdir name="ban">
+            <int name="banType" value="1"/>
+            <string name="banMsg" value="경비병에게 들키고 말았다. 일단 후퇴하자."/>
+            <imgdir name="banMap">
+                <imgdir name="0">
+                    <int name="field" value="350044001"/>
+                    <string name="portal" value="in00"/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas name="0" width="52" height="82">
+            <vector name="origin" x="26" y="82"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="3000"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="move">
+        <canvas name="0" width="52" height="81">
+            <vector name="origin" x="27" y="81"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-27" y="-80"/>
+            <vector name="rb" x="25" y="-3"/>
+            <vector name="head" x="-2" y="-65"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <canvas name="1" width="52" height="80">
+            <vector name="origin" x="27" y="80"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-27" y="-80"/>
+            <vector name="rb" x="25" y="-3"/>
+            <vector name="head" x="-2" y="-65"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <canvas name="2" width="52" height="81">
+            <vector name="origin" x="27" y="81"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-27" y="-80"/>
+            <vector name="rb" x="25" y="-3"/>
+            <vector name="head" x="-2" y="-65"/>
+            <int name="delay" value="120"/>
+        </canvas>
+        <canvas name="3" width="52" height="80">
+            <vector name="origin" x="27" y="80"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-27" y="-80"/>
+            <vector name="rb" x="25" y="-3"/>
+            <vector name="head" x="-2" y="-65"/>
+            <int name="delay" value="120"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../move/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../move/0"/>
+    </imgdir>
+    <imgdir name="patrolSense">
+        <uol name="0" value="../move/0"/>
+        <uol name="1" value="../move/1"/>
+        <uol name="2" value="../move/2"/>
+        <uol name="3" value="../move/3"/>
+    </imgdir>
+    <imgdir name="patrolUserdetect">
+        <uol name="0" value="../move/0"/>
+        <uol name="1" value="../move/1"/>
+        <uol name="2" value="../move/2"/>
+        <uol name="3" value="../move/3"/>
+    </imgdir>
+    <imgdir name="patrolAttractdetect">
+        <uol name="0" value="../move/0"/>
+        <uol name="1" value="../move/1"/>
+        <uol name="2" value="../move/2"/>
+        <uol name="3" value="../move/3"/>
+    </imgdir>
+    <imgdir name="patrolAttractarrive">
+        <uol name="0" value="../move/0"/>
+        <uol name="1" value="../move/1"/>
+        <uol name="2" value="../move/2"/>
+        <uol name="3" value="../move/3"/>
+    </imgdir>
+</imgdir>

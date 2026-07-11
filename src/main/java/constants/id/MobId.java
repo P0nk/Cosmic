@@ -70,6 +70,7 @@ public class MobId {
 
     // Catch mobs
     public static final int TAMABLE_HOG = 9300101;
+    public static final int MUTANT_PIG = 8600003;
     public static final int GHOST = 9500197;
     public static final int ARPQ_SCORPION = 9300157;
     public static final int LOST_RUDOLPH = 9500320;

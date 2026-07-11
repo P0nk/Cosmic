@@ -23,6 +23,7 @@ package server.life;
 
 import client.Character;
 import net.server.Server;
+import server.maps.MapleMap;
 
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,7 +101,7 @@ public class SpawnPoint {
             public void monsterDamaged(Character from, int trueDmg) {}
 
             @Override
-            public void monsterHealed(int trueHeal) {}
+            public void monsterHealed(long trueHeal) {}
         });
         if (mobTime == 0) {
             nextPossibleSpawn = Server.getInstance().getCurrentTime() + mobInterval;

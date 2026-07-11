@@ -27,6 +27,7 @@ public enum EquipSlot {
     SADDLE("Sd", -19),
     MEDAL("Me", -49),
     BELT("Be", -50),
+    SHOULDER("Sh", -51),
     PET_EQUIP;
 
     private String name;

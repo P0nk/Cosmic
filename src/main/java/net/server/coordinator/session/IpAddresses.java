@@ -1,5 +1,7 @@
 package net.server.coordinator.session;
 
+import config.YamlConfig;
+
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -12,6 +14,14 @@ public class IpAddresses {
         return Stream.of("10\\.", "192\\.168\\.", "172\\.(1[6-9]|2[0-9]|3[0-1])\\.")
                 .map(Pattern::compile)
                 .collect(Collectors.toList());
+    }
+
+    public static String evaluateRemoteAddress(String inetAddress) {
+        if (isLocalAddress(inetAddress) || isLanAddress(inetAddress)) {
+            return YamlConfig.config.server.HOST;
+        } else {
+            return inetAddress;
+        }
     }
 
     public static boolean isLocalAddress(String inetAddress) {

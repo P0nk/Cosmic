@@ -21,7 +21,8 @@
 */
 package provider.wz;
 
-public enum DataType {
+public enum
+DataType {
     NONE,
     IMG_0x00,
     SHORT,

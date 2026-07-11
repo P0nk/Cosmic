@@ -59,7 +59,7 @@ public final class NPCMoreTalkHandler extends AbstractPacketHandler {
             if (p.available() >= 4) {
                 selection = p.readInt();
             } else if (p.available() > 0) {
-                selection = p.readUnsignedByte();
+                selection = p.readByte();
             }
             if (c.getQM() != null) {
                 if (c.getQM().isStart()) {

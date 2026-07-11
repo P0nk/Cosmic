@@ -21,21 +21,9 @@
  */
 package net.server.channel.handlers;
 
-import client.BuddyList;
-import client.BuddylistEntry;
 import client.Character;
-import client.CharacterNameAndId;
-import client.Client;
-import client.Disease;
-import client.Family;
-import client.FamilyEntry;
-import client.Mount;
-import client.SkillFactory;
-import client.inventory.Equip;
-import client.inventory.Inventory;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.Pet;
+import client.*;
+import client.inventory.*;
 import client.keybind.KeyBinding;
 import config.YamlConfig;
 import constants.game.GameConstants;
@@ -68,13 +56,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class PlayerLoggedinHandler extends AbstractPacketHandler {
@@ -239,6 +222,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             if (diseases != null) {
                 player.silentApplyDiseases(diseases);
             }
+            //DamageSkin.validateDamageSkin(player, false);
 
             c.sendPacket(PacketCreator.getCharInfo(player));
             if (!player.isHidden()) {
@@ -363,7 +347,12 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             c.sendPacket(PacketCreator.enableReport());
             player.changeSkillLevel(SkillFactory.getSkill(10000000 * player.getJobType() + 12), (byte) (player.getLinkedLevel() / 10), 20, -1);
             player.checkBerserk(player.isHidden());
-
+            player.changeSkillLevel(SkillFactory.getSkill(1054) , (byte)  1, 1, -1);
+            player.changeSkillLevel(SkillFactory.getSkill(1050) , (byte)  1, 1, -1);
+            player.changeSkillLevel(SkillFactory.getSkill(10001054) , (byte)  1, 1, -1);
+            player.changeSkillLevel(SkillFactory.getSkill(10001050) , (byte)  1, 1, -1);
+            player.changeSkillLevel(SkillFactory.getSkill(20001054) , (byte)  1, 1, -1);
+            player.changeSkillLevel(SkillFactory.getSkill(20001050) , (byte)  1, 1, -1);
             if (newcomer) {
                 for (Pet pet : player.getPets()) {
                     if (pet != null) {
@@ -393,16 +382,13 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                         c.sendPacket(PacketCreator.giveDebuff(debuff, e.getValue().getRight()));
                     }
                 }
-            } else {
-                if (player.isRidingBattleship()) {
-                    player.announceBattleshipHp();
-                }
             }
 
             player.buffExpireTask();
             player.diseaseExpireTask();
             player.skillCooldownTask();
             player.expirationTask();
+            player.totemCooldownTask();
             player.questExpirationTask();
             if (GameConstants.hasSPTable(player.getJob()) && player.getJob().getId() != 2001) {
                 player.createDragon();
@@ -417,6 +403,19 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             }
 
             player.setWorldRates();
+            if (player.getReborns() > 0) {
+                if (player.getReborns() == 1) {
+                    player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_FIRST_RATE);
+                } else if (player.getReborns() == 2) {
+                    player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_SECOND_RATE);
+                } else if (player.getReborns() == 3) {
+                    if (player.getLevel() >= 200) {
+                        player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_FINAL_RATE); // Use final rate for level 200+
+                    } else {
+                        player.setPlayerExpRatesCerezeth(YamlConfig.config.server.REBIRTH_THIRD_RATE);
+                    }
+                }
+            }
             player.updateCouponRates();
 
             player.receivePartyMemberHP();
@@ -448,12 +447,29 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
                                 Entry::getValue
                         ));
 
+                // Any npc be specified as the rebirth npc. Allow the npc to use custom scripts explicitly.
+                if (YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
+                    npcsIds.put(YamlConfig.config.server.REBIRTH_NPC_ID, "Rebirth");
+                }
+
                 c.sendPacket(PacketCreator.setNPCScriptable(npcsIds));
             }
 
             if (newcomer) {
                 player.setLoginTime(System.currentTimeMillis());
             }
+            int MobItem = 1113232;
+            Inventory equipped = c.getPlayer().getInventory(InventoryType.EQUIPPED);
+            Equip eq = (Equip) equipped.findById(MobItem);
+
+            if (eq == null) {
+                // If not found in EQUIPPED, search in EQUIP inventory
+                Inventory equipInventory = c.getPlayer().getInventory(InventoryType.EQUIP);
+                eq = (Equip) equipInventory.findById(MobItem);
+            }
+
+            c.getPlayer().forceUpdateItem(eq);
+            c.getPlayer().applyLinkStatsBoost();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

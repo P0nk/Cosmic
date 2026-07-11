@@ -21,63 +21,8 @@
 */
 package client;
 
-import constants.skills.Aran;
-import constants.skills.Archer;
-import constants.skills.Assassin;
-import constants.skills.Bandit;
-import constants.skills.Beginner;
-import constants.skills.Bishop;
-import constants.skills.BlazeWizard;
-import constants.skills.Bowmaster;
-import constants.skills.Buccaneer;
-import constants.skills.ChiefBandit;
-import constants.skills.Cleric;
-import constants.skills.Corsair;
-import constants.skills.Crossbowman;
-import constants.skills.Crusader;
-import constants.skills.DarkKnight;
-import constants.skills.DawnWarrior;
-import constants.skills.DragonKnight;
-import constants.skills.Evan;
-import constants.skills.FPArchMage;
-import constants.skills.FPMage;
-import constants.skills.FPWizard;
-import constants.skills.Fighter;
-import constants.skills.GM;
-import constants.skills.Gunslinger;
-import constants.skills.Hermit;
-import constants.skills.Hero;
-import constants.skills.Hunter;
-import constants.skills.ILArchMage;
-import constants.skills.ILMage;
-import constants.skills.ILWizard;
-import constants.skills.Legend;
-import constants.skills.Magician;
-import constants.skills.Marauder;
-import constants.skills.Marksman;
-import constants.skills.NightLord;
-import constants.skills.NightWalker;
-import constants.skills.Noblesse;
-import constants.skills.Page;
-import constants.skills.Paladin;
-import constants.skills.Pirate;
-import constants.skills.Priest;
-import constants.skills.Ranger;
-import constants.skills.Rogue;
-import constants.skills.Shadower;
-import constants.skills.Sniper;
-import constants.skills.Spearman;
-import constants.skills.SuperGM;
-import constants.skills.ThunderBreaker;
-import constants.skills.Warrior;
-import constants.skills.WhiteKnight;
-import constants.skills.WindArcher;
-import provider.Data;
-import provider.DataDirectoryEntry;
-import provider.DataFileEntry;
-import provider.DataProvider;
-import provider.DataProviderFactory;
-import provider.DataTool;
+import constants.skills.*;
+import provider.*;
 import provider.wz.WZFiles;
 import server.StatEffect;
 import server.life.Element;
@@ -230,14 +175,12 @@ public class SkillFactory {
                 case Magician.MAGIC_ARMOR:
                 case FPWizard.MEDITATION:
                 case FPWizard.SLOW:
-                case FPMage.SEAL:
                 case FPMage.SPELL_BOOSTER:
                 case FPArchMage.HEROS_WILL:
                 case FPArchMage.INFINITY:
                 case FPArchMage.MANA_REFLECTION:
                 case FPArchMage.MAPLE_WARRIOR:
                 case ILWizard.MEDITATION:
-                case ILMage.SEAL:
                 case ILWizard.SLOW:
                 case ILMage.SPELL_BOOSTER:
                 case ILArchMage.HEROS_WILL:
@@ -247,7 +190,6 @@ public class SkillFactory {
                 case Cleric.INVINCIBLE:
                 case Cleric.BLESS:
                 case Priest.DISPEL:
-                case Priest.DOOM:
                 case Priest.HOLY_SYMBOL:
                 case Priest.MYSTIC_DOOR:
                 case Bishop.HEROS_WILL:
@@ -309,13 +251,13 @@ public class SkillFactory {
                 case DawnWarrior.SOUL:
                 case DawnWarrior.SOUL_CHARGE:
                 case DawnWarrior.SWORD_BOOSTER:
+                case DawnWarrior.STANCE:
                 case BlazeWizard.ELEMENTAL_RESET:
                 case BlazeWizard.FLAME:
                 case BlazeWizard.IFRIT:
                 case BlazeWizard.MAGIC_ARMOR:
                 case BlazeWizard.MAGIC_GUARD:
                 case BlazeWizard.MEDITATION:
-                case BlazeWizard.SEAL:
                 case BlazeWizard.SLOW:
                 case BlazeWizard.SPELL_BOOSTER:
                 case WindArcher.BOW_BOOSTER:
@@ -367,6 +309,14 @@ public class SkillFactory {
                 case Evan.MAGIC_RESISTANCE:
                 case Evan.MAGIC_SHIELD:
                 case Evan.SLOW:
+                case ILArchMage.ICE_DEMON:
+                case 13121008:
+                case 12111002:
+                case 2111004:
+                case 2211004:
+                case 2311005:
+                case 5221014:
+                case 5221018:
                     isBuff = true;
                     break;
             }
@@ -400,6 +350,23 @@ public class SkillFactory {
             }
         }
 
+        return null;
+    }
+
+    public static String getSkillDesc(int skillid) {
+        Data data = DataProviderFactory.getDataProvider(WZFiles.STRING).getData("Skill.img");
+        StringBuilder skill = new StringBuilder();
+        skill.append(String.valueOf(skillid));
+        if (skill.length() == 4) {
+            skill.delete(0, 4);
+            skill.append("000").append(String.valueOf(skillid));
+        }
+        if (data.getChildByPath(skill.toString()) != null) {
+            for (Data skilldata : data.getChildByPath(skill.toString()).getChildren()) {
+                if (skilldata.getName().equals("desc"))
+                    return DataTool.getString(skilldata, null);
+            }
+        }
         return null;
     }
 }

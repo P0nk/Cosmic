@@ -519,15 +519,6 @@ public class Equip extends Item {
                     jump += statUp;
                     lvupStr += "+" + statUp + "JUMP ";
                     break;
-
-                case incVicious:
-                    vicious -= stat.getRight();
-                    gotVicious = true;
-                    break;
-                case incSlot:
-                    upgradeSlots += stat.getRight();
-                    gotSlot = true;
-                    break;
             }
         }
 
@@ -547,37 +538,6 @@ public class Equip extends Item {
             }
         }
 
-        if (!stats.isEmpty()) {
-            if (YamlConfig.config.server.USE_EQUIPMNT_LVLUP_SLOTS) {
-                if (vicious > 0) {
-                    getUnitSlotUpgrade(stats, StatUpgrade.incVicious);
-                }
-                getUnitSlotUpgrade(stats, StatUpgrade.incSlot);
-            }
-        } else {
-            isUpgradeable = false;
-
-            improveDefaultStats(stats);
-            if (YamlConfig.config.server.USE_EQUIPMNT_LVLUP_SLOTS) {
-                if (vicious > 0) {
-                    getUnitSlotUpgrade(stats, StatUpgrade.incVicious);
-                }
-                getUnitSlotUpgrade(stats, StatUpgrade.incSlot);
-            }
-
-            if (isUpgradeable) {
-                while (stats.isEmpty()) {
-                    improveDefaultStats(stats);
-                    if (YamlConfig.config.server.USE_EQUIPMNT_LVLUP_SLOTS) {
-                        if (vicious > 0) {
-                            getUnitSlotUpgrade(stats, StatUpgrade.incVicious);
-                        }
-                        getUnitSlotUpgrade(stats, StatUpgrade.incSlot);
-                    }
-                }
-            }
-        }
-
         itemLevel++;
 
         String lvupStr = "'" + ItemInformationProvider.getInstance().getName(this.getItemId()) + "' is now level " + itemLevel + "! ";
@@ -585,17 +545,6 @@ public class Equip extends Item {
 
         Pair<String, Pair<Boolean, Boolean>> res = this.gainStats(stats);
         lvupStr += res.getLeft();
-        boolean gotSlot = res.getRight().getLeft();
-        boolean gotVicious = res.getRight().getRight();
-
-        if (gotVicious) {
-            //c.getPlayer().dropMessage(6, "A new Vicious Hammer opportunity has been found on the '" + ItemInformationProvider.getInstance().getName(getItemId()) + "'!");
-            lvupStr += "+VICIOUS ";
-        }
-        if (gotSlot) {
-            //c.getPlayer().dropMessage(6, "A new upgrade slot has been found on the '" + ItemInformationProvider.getInstance().getName(getItemId()) + "'!");
-            lvupStr += "+UPGSLOT ";
-        }
 
         c.getPlayer().equipChanged();
 

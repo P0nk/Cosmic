@@ -24,7 +24,7 @@
  */
 
 var isPq = true;
-var minPlayers = 2, maxPlayers = 2;
+var minPlayers = 1, maxPlayers = 2;
 var minLevel = 100, maxLevel = 255;
 var entryMap = 922020100;
 var exitMap = 220050300;
@@ -238,6 +238,9 @@ function monsterKilled(mob, eim) {
         if (killed == 1) {
             eim.showClearEffect();
             eim.clearPQ();
+            party = eim.getPlayers()
+            for (var i = 0; i < party.size(); i++)
+            eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001006, 1);
         } else {
             eim.setIntProperty("boss", killed + 1);
         }

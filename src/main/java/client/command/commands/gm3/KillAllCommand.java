@@ -49,7 +49,8 @@ public class KillAllCommand extends Command {
         for (MapObject monstermo : monsters) {
             Monster monster = (Monster) monstermo;
             if (!monster.getStats().isFriendly() && !(monster.getId() >= MobId.DEAD_HORNTAIL_MIN && monster.getId() <= MobId.HORNTAIL)) {
-                map.damageMonster(player, monster, Integer.MAX_VALUE);
+                //monster.killBy(player); // Test kill monster as player instead of map.
+                map.damageMonster(player, monster, monster.getMaxHp());
                 count++;
             }
         }

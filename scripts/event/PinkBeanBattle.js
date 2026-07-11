@@ -22,6 +22,7 @@
  * @author: Ronan
  * @event: Pink Bean Battle
  */
+const ExpeditionType = Java.type("server.expeditions.ExpeditionType");
 
 var isPq = true;
 var minPlayers = 6, maxPlayers = 30;
@@ -91,7 +92,7 @@ function setEventRewards(eim) {
 
 function afterSetup(eim) {
     eim.dropMessage(5, "The first wave will start within 15 seconds, prepare yourselves.");
-    eim.schedule("startWave", 15 * 1000);
+    eim.schedule("startWave", 1 * 1000);
 }
 
 function setup(channel) {
@@ -212,7 +213,7 @@ function giveRandomEventReward(eim, player) {
 
 function clearPQ(eim) {
     eim.stopEventTimer();
-    eim.setEventCleared();
+    eim.setEventCleared(ExpeditionType.PINKBEAN);
 }
 
 function isPinkBean(mob) {
@@ -230,12 +231,23 @@ function noJrBossesLeft(map) {
 }
 
 function spawnJrBoss(mobObj, gotKilled) {
+    if (!mobObj) {
+        // Handle the case where mobObj is null or undefined.
+        return;
+    }
+
+    var spawnid;
+
     if (gotKilled) {
         spawnid = mobObj.getId() + 17;
-
     } else {
-        mobObj.getMap().killMonster(mobObj.getId());
-        spawnid = mobObj.getId() - 17;
+        if (mobObj.getMap()) {
+            mobObj.getMap().killMonster(mobObj.getId());
+            spawnid = mobObj.getId() - 17;
+        } else {
+            // Handle the case where mobObj's map is null.
+            return;
+        }
     }
 
     const LifeFactory = Java.type('server.life.LifeFactory');
@@ -243,15 +255,19 @@ function spawnJrBoss(mobObj, gotKilled) {
     mobObj.getMap().spawnMonsterOnGroundBelow(mob, mobObj.getPosition());
 }
 
+
 function monsterKilled(mob, eim) {
     if (isPinkBean(mob)) {
         eim.setIntProperty("defeatedBoss", 1);
         eim.showClearEffect(mob.getMap().getId());
         mob.getMap().killAllMonsters();
         eim.clearPQ();
-
+        party = eim.getPlayers()
+        for (var i = 0; i < party.size(); i++)
+        eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001126, 50);
+        
         var ch = eim.getIntProperty("channel");
-        mob.getMap().broadcastPinkBeanVictory(ch);
+       // mob.getMap().broadcastPinkBeanVictory(ch);
     } else if (isJrBoss(mob)) {
         if (noJrBossesLeft(mob.getMap())) {
             var stage = eim.getIntProperty("stage");
@@ -265,14 +281,21 @@ function monsterKilled(mob, eim) {
                 var dropper = eim.getPlayers().get(0);
                 mapObj.spawnItemDrop(dropper, dropper, itemObj, reactObj.getPosition(), true, true);
 
-
                 eim.dropMessage(6, "With the last of its guardians fallen, Pink Bean loses its invulnerability. The real fight starts now!");
+
+
+
+
+
+    const LifeFactory = Java.type('server.life.LifeFactory');
+    var pinkBean = LifeFactory.getMonster(8820001);
+    mob.getMap().spawnMonsterOnGroundBelow(pinkBean, mob.getPosition());
             } else {
                 stage++;
                 eim.setIntProperty("stage", stage);
 
                 eim.dropMessage(5, "The next wave will start within 15 seconds, prepare yourselves.");
-                eim.schedule("startWave", 15 * 1000);
+                eim.schedule("startWave", 1 * 1000);
             }
         }
     }

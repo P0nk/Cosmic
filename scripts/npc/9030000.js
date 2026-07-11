@@ -38,7 +38,9 @@ function action(mode, type, selection) {
         return;
     }
     if (status == 0) {
-        if (!cm.hasMerchant() && cm.hasMerchantItems()) {
+		cm.sendOk("Sorry, shops are disabled for now.");
+		cm.dispose();		
+        /*if (!cm.hasMerchant() && cm.hasMerchantItems()) {
             cm.showFredrick();
             cm.dispose();
         } else {
@@ -49,6 +51,6 @@ function action(mode, type, selection) {
                 cm.sendOk("You don't have any items or mesos to be retrieved.");
                 cm.dispose();
             }
-        }
+        }*/
     }
 }

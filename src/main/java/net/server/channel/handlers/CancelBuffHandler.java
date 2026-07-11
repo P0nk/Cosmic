@@ -23,14 +23,7 @@ package net.server.channel.handlers;
 
 import client.Client;
 import client.SkillFactory;
-import constants.skills.Bishop;
-import constants.skills.Bowmaster;
-import constants.skills.Corsair;
-import constants.skills.Evan;
-import constants.skills.FPArchMage;
-import constants.skills.ILArchMage;
-import constants.skills.Marksman;
-import constants.skills.WindArcher;
+import constants.skills.*;
 import net.AbstractPacketHandler;
 import net.PacketHandler;
 import net.packet.InPacket;

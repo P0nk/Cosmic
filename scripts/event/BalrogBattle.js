@@ -123,7 +123,7 @@ function setup(level, lobbyid) {
 
     eim.getInstanceMap(105100300).resetPQ(level);
     eim.getInstanceMap(105100301).resetPQ(level);
-    eim.schedule("releaseLeftClaw", releaseClawTime * 60000);
+    eim.schedule("releaseLeftClaw", releaseClawTime * 5000);
 
     respawnStages(eim);
     eim.startEventTimer(eventTime * 60000);
@@ -257,7 +257,7 @@ function monsterKilled(mob, eim) {
 
             eim.dispatchRaiseQuestMobCount(bossMobId, entryMap);
             eim.dispatchRaiseQuestMobCount(9101003, entryMap); // thanks Atoot for noticing quest not getting updated after boss kill
-            mob.getMap().broadcastBalrogVictory(eim.getLeader().getName());
+            //mob.getMap().broadcastBalrogVictory(eim.getLeader().getName());
         } else {
             if (count == 1) {
                 var mapobj = eim.getInstanceMap(entryMap);

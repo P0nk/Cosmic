@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="2008011.img">
+    <imgdir name="info">
+        <string name="info" value="크리세_코어수집"/>
+    </imgdir>
+    <imgdir name="0">
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="1"/>
+                <vector name="lt" x="-66" y="-66"/>
+                <vector name="rb" x="66" y="31"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="24" y="17"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/6902000.img/0/hit/0"/>
+            </canvas>
+            <canvas name="1" width="1" height="1">
+                <vector name="origin" x="32" y="31"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/6902000.img/0/hit/1"/>
+            </canvas>
+        </imgdir>
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="24" y="17"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/6902000.img/0/hit/0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="1">
+        <uol name="0" value="../0/0"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="2"/>
+                <vector name="lt" x="-66" y="-66"/>
+                <vector name="rb" x="66" y="31"/>
+            </imgdir>
+        </imgdir>
+        <uol name="hit" value="../0/hit"/>
+    </imgdir>
+    <imgdir name="2">
+        <uol name="0" value="../0/0"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="3"/>
+                <vector name="lt" x="-66" y="-66"/>
+                <vector name="rb" x="66" y="31"/>
+            </imgdir>
+        </imgdir>
+        <uol name="hit" value="../0/hit"/>
+    </imgdir>
+    <imgdir name="3">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+        </canvas>
+    </imgdir>
+    <string name="action" value="dropCore"/>
+</imgdir>

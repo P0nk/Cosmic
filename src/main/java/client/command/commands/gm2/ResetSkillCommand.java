@@ -24,10 +24,7 @@
 package client.command.commands.gm2;
 
 import client.Character;
-import client.Client;
-import client.Job;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.command.Command;
 import provider.Data;
 import provider.DataProviderFactory;

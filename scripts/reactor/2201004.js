@@ -20,8 +20,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 function act() {
-    rm.mapMessage(5, "The dimensional hole has been filled by the <Piece of Cracked Dimension>.");
+    if (rm.getPlayer().getEventInstance() != null) {
+        rm.getPlayer().getEventInstance().setProperty("summoned", "true");
+        rm.getPlayer().getEventInstance().setProperty("canEnter", "false");
+    }
     rm.changeMusic("Bgm09/TimeAttack");
-    rm.spawnMonster(8500000, -410, -400);
+    rm.spawnMonster(8500000, 1, -410, -400);
     rm.createMapMonitor(220080001, "in00");
+    rm.mapMessage(5, "The dimensional hole has been filled by the <Piece of Cracked Dimension>.");
 }

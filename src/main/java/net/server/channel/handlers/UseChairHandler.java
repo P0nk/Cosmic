@@ -26,6 +26,14 @@ import client.inventory.InventoryType;
 import constants.id.ItemId;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
+import server.ItemInformationProvider;
+import server.movement.LifeMovement;
+import server.movement.LifeMovementFragment;
+import server.movement.TeleportMovement;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class UseChairHandler extends AbstractPacketHandler {
     @Override
@@ -36,6 +44,18 @@ public final class UseChairHandler extends AbstractPacketHandler {
         if (!ItemId.isChair(itemId) || c.getPlayer().getInventory(InventoryType.SETUP).findById(itemId) == null) {
             return;
         }
+
+//        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+//
+//        Point bodyRelMovePoint = ii.getBodyRelMove(itemId);
+//        Point playerPosition = c.getPlayer().getPosition();
+//        playerPosition.translate(bodyRelMovePoint.x, bodyRelMovePoint.y);
+//
+//        List<LifeMovementFragment> moves = new ArrayList<>();
+//        TeleportMovement tm = new TeleportMovement((byte)11, new Point(playerPosition.x, playerPosition.y), c.getPlayer().getStance());
+//        tm.setPixelsPerSecond(new Point(0, 0));
+//
+//        moves.add(tm);
 
         if (c.tryacquireClient()) {
             try {

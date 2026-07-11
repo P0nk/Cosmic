@@ -28,10 +28,7 @@ import provider.DataProviderFactory;
 import provider.DataTool;
 import provider.wz.WZFiles;
 import scripting.event.EventInstanceManager;
-import server.life.AbstractLoadedLife;
-import server.life.LifeFactory;
-import server.life.Monster;
-import server.life.PlayerNPC;
+import server.life.*;
 import server.partyquest.GuardianSpawnPoint;
 import tools.DatabaseConnection;
 import tools.StringUtil;
@@ -41,13 +38,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class MapFactory {
+    public record MapObjectProperties(Point pos, Map<String, String> tags) {
+        public String getTag(String name) {
+            return tags.get(name);
+        }
+
+        public int getTagInt(String name) {
+            return Integer.parseInt(getTag(name));
+        }
+
+        public int getTagInt(String name, int def) {
+            try {
+                return Integer.parseInt(getTag(name));
+            } catch(NumberFormatException e) {
+                return def;
+            }
+        }
+    }
     private static final Data nameData;
     private static final DataProvider mapSource;
 
@@ -150,6 +164,9 @@ public class MapFactory {
         map = new MapleMap(mapid, world, channel, DataTool.getInt("returnMap", infoData), monsterRate);
         map.setEventInstance(event);
 
+        String fieldScript = DataTool.getString(infoData.getChildByPath("fieldScript"), String.valueOf(mapid));
+        map.setFieldScript(fieldScript.equals("") ? String.valueOf(mapid) : fieldScript);
+
         String onFirstEnter = DataTool.getString(infoData.getChildByPath("onFirstUserEnter"), String.valueOf(mapid));
         map.setOnFirstUserEnter(onFirstEnter.equals("") ? String.valueOf(mapid) : onFirstEnter);
 
@@ -160,7 +177,7 @@ public class MapFactory {
         map.setMobInterval((short) DataTool.getInt(infoData.getChildByPath("createMobInterval"), 5000));
         PortalFactory portalFactory = new PortalFactory();
         for (Data portal : mapData.getChildByPath("portal")) {
-            map.addPortal(portalFactory.makePortal(DataTool.getInt(portal.getChildByPath("pt")), portal));
+            map.addPortal(portalFactory.makePortal(DataTool.getInt(portal.getChildByPath("pt")), map.getId(), portal));
         }
         Data timeMob = infoData.getChildByPath("timeMob");
         if (timeMob != null) {
@@ -251,6 +268,13 @@ public class MapFactory {
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
+            }
+
+            List<PlayerNPC> dnpcs = PlayerNPCFactory.getDeveloperNpcsFromMapid(mapid);
+            if (dnpcs != null) {
+                for (PlayerNPC dnpc : dnpcs) {
+                    map.addPlayerNPCMapObject(dnpc);
+                }
             }
         }
 
@@ -428,4 +452,36 @@ public class MapFactory {
         }
     }
 
+    public static List<MapObjectProperties> getMapObjectProperties(int mapId, String l1, String l2) {
+        List<MapObjectProperties> ret = new ArrayList<>();
+        String mapPath = getMapName(mapId);
+        Data mapData = mapSource.getData(mapPath);
+        mapData.forEach(md -> {
+            if(Pattern.matches("\\d+", md.getName())) {
+                md.getChildByPath("obj").forEach(object -> {
+                    if(DataTool.getString("l1", object).equals(l1) && DataTool.getString("l2", object).equals(l2)) {
+                        int x = DataTool.getIntConvert("x", object);
+                        int y = DataTool.getIntConvert("y", object);
+                        String tagsText = DataTool.getString("tags", object, null);
+                        Map<String, String> tags = Collections.emptyMap();
+                        if(tagsText != null) {
+                            try {
+                                tags = new HashMap<>();
+                                for(String tagText : tagsText.split(";")) {
+                                    String[] keyValue = tagText.split("=");
+                                    tags.put(keyValue[0], keyValue[1]);
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Error when parsing tags on map object \"" + l1 + "/" + l2 + "\" in map " + mapId + ".");
+                                //e.printStackTrace(); (optional, doesn't tell you why the format is invalid)
+                            }
+
+                        }
+                        ret.add(new MapObjectProperties(new Point(x, y), tags));
+                    }
+                });
+            }
+        });
+        return ret;
+    }
 }

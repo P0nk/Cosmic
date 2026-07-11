@@ -46,7 +46,7 @@ function action(mode, type, selection) {
         cm.dispose();
         return;
     }
-    if (cm.getMeso() < price) {
+    if (cm.getMeso < price) {
         cm.sendOk("Please check and see if you have " + price + " mesos to enter this place.");
     } else {
         cm.gainMeso(-price);

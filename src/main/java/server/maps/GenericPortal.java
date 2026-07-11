@@ -129,7 +129,26 @@ public class GenericPortal implements Portal {
     @Override
     public void enterPortal(Client c) {
         boolean changed = false;
-        if (getScriptName() != null) {
+
+        Character chr = c.getPlayer();
+
+        // GM Level 2+ will teleport skipping scripts except if there is no destination and preventing double entry
+        if (chr.gmLevel() >= 2) {
+            if (getTargetMapId() != MapId.NONE) {
+                changed = attemptTeleportForUnscriptedPortal(c, chr, changed);
+            } else if (getScriptName() != null) {
+                try {
+                    scriptLock.lock();
+                    try {
+                        changed = PortalScriptManager.getInstance().executePortalScript(this, c);
+                    } finally {
+                        scriptLock.unlock();
+                    }
+                } catch (NullPointerException npe) {
+                    npe.printStackTrace();
+                }
+            }
+        } else if (getScriptName() != null) {
             try {
                 scriptLock.lock();
                 try {
@@ -141,22 +160,27 @@ public class GenericPortal implements Portal {
                 npe.printStackTrace();
             }
         } else if (getTargetMapId() != MapId.NONE) {
-            Character chr = c.getPlayer();
-            if (!(chr.getChalkboard() != null && GameConstants.isFreeMarketRoom(getTargetMapId()))) {
-                MapleMap to = chr.getEventInstance() == null ? c.getChannelServer().getMapFactory().getMap(getTargetMapId()) : chr.getEventInstance().getMapInstance(getTargetMapId());
-                Portal pto = to.getPortal(getTarget());
-                if (pto == null) {// fallback for missing portals - no real life case anymore - interesting for not implemented areas
-                    pto = to.getPortal(0);
-                }
-                chr.changeMap(to, pto); //late resolving makes this harder but prevents us from loading the whole world at once
-                changed = true;
-            } else {
-                chr.dropMessage(5, "You cannot enter this map with the chalkboard opened.");
-            }
+            changed = attemptTeleportForUnscriptedPortal(c, chr, changed);
         }
+
         if (!changed) {
             c.sendPacket(PacketCreator.enableActions());
         }
+    }
+
+    private boolean attemptTeleportForUnscriptedPortal(Client c, Character chr, boolean changed) {
+        if (!(chr.getChalkboard() != null && GameConstants.isFreeMarketRoom(getTargetMapId()))) {
+            MapleMap to = chr.getEventInstance() == null ? c.getChannelServer().getMapFactory().getMap(getTargetMapId()) : chr.getEventInstance().getMapInstance(getTargetMapId());
+            Portal pto = to.getPortal(getTarget());
+            if (pto == null) {// fallback for missing portals - no real life case anymore - interesting for not implemented areas
+                pto = to.getPortal(0);
+            }
+            chr.changeMap(to, pto); //late resolving makes this harder but prevents us from loading the whole world at once
+            changed = true;
+        } else {
+            chr.dropMessage(5, "You cannot enter this map with the chalkboard opened.");
+        }
+        return changed;
     }
 
     @Override

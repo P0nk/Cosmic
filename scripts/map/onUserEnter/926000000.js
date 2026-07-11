@@ -6,5 +6,5 @@ function start(ms) {
         map.spawnMonsterOnGroundBelow(LifeFactory.getMonster(9100013), new java.awt.Point(82, 200));
     }
 
-    return (true);
+    return true;
 }

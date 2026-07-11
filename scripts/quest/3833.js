@@ -12,7 +12,6 @@ function end(mode, type, selection) {
             if (qm.getPlayer().getInventory(InventoryType.USE).getNumFreeSlot() >= 2) {
                 if (qm.haveItem(4000294, 1000)) {
                     qm.gainItem(4000294, -1000);
-                    qm.gainItem(2040501, 1);
                     qm.gainItem(2000005, 50);
                     qm.gainExp(54000);
                     qm.forceCompleteQuest();

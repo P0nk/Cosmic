@@ -19,18 +19,14 @@
 */
 package server.expeditions;
 
+import client.Client;
 import config.YamlConfig;
+import net.server.Server;
 import tools.DatabaseConnection;
 import tools.Pair;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -42,29 +38,51 @@ import static java.util.concurrent.TimeUnit.HOURS;
 public class ExpeditionBossLog {
 
     public enum BossLogEntry {
-        ZAKUM(2, 1, false),
-        HORNTAIL(2, 1, false),
-        PINKBEAN(1, 1, false),
-        SCARGA(1, 1, false),
-        PAPULATUS(2, 1, false);
+        ZAKUM(1, 5, 25, 24, false),
+        HORNTAIL(2,6, 20, 24, false),
+        PINKBEAN(3, 7, 20, 24, false),
+        SCARGA(4, 1, 10, 24, false),
+        PAPULATUS(5, 2, 30, 24, false),
+        VONLEON(6, 8, 18, 24, false),
+        CYGNUS(7, 9, 16, 24, false),
+        WILLSPIDER(8, 11, 8, 24, false),
+        VERUS(9, 12, 8, 24, false),
+        DARKNELL(10, 13, 8, 24, false),
+        KREXEL(11, 3, 20, 24, false),
+        CASTELLAN(12, 4, 20, 24, false),
+        LUCID(13, 10, 8, 24, false),
+        NLUCID(14, 10, 12, 24, false),
+        NWILLSPIDER(15, 10, 12, 24, false),
+        NVERUS(16, 10, 12, 24, false),
+        NDARKNELL(17, 10, 12, 24, false),
+        MAGNUS(18, 10, 8, 24, false);
 
         private final int entries;
+        private final int ordinal;
         private final int timeLength;
         private final int minChannel;
         private final int maxChannel;
         private final boolean week;
+        private final int index;
 
-        BossLogEntry(int entries, int timeLength, boolean week) {
-            this(entries, 0, Integer.MAX_VALUE, timeLength, week);
+        BossLogEntry(int index, int ordinal, int entries, int timeLength, boolean week) {
+            this(index, ordinal, entries, 0, Integer.MAX_VALUE, timeLength, week);
         }
 
-        BossLogEntry(int entries, int minChannel, int maxChannel, int timeLength, boolean week) {
+        BossLogEntry(int index, int ordinal, int entries, int minChannel, int maxChannel, int timeLength, boolean week) {
+            this.index = index;
+            this.ordinal = ordinal;
             this.entries = entries;
             this.minChannel = minChannel;
             this.maxChannel = maxChannel;
             this.timeLength = timeLength;
             this.week = week;
         }
+
+        public int getIndex() { return this.index; }
+        public int getEntries() { return this.entries; }
+        public int getOrdinal() { return this.ordinal; }
+        public boolean getIsWeekly() { return this.week; }
 
         private static List<Pair<Timestamp, BossLogEntry>> getBossLogResetTimestamps(Calendar timeNow, boolean week) {
             List<Pair<Timestamp, BossLogEntry>> resetTimestamps = new LinkedList<>();
@@ -79,7 +97,7 @@ public class ExpeditionBossLog {
             return resetTimestamps;
         }
 
-        private static BossLogEntry getBossEntryByName(String name) {
+        public static BossLogEntry getBossEntryByName(String name) {
             for (BossLogEntry b : BossLogEntry.values()) {
                 if (name.contentEquals(b.name())) {
                     return b;
@@ -143,7 +161,8 @@ public class ExpeditionBossLog {
         return week ? "bosslog_weekly" : "bosslog_daily";
     }
 
-    private static int countPlayerEntries(int cid, BossLogEntry boss) {
+
+    public static int getPlayerEntryCount(int cid, BossLogEntry boss) {
         int ret_count = 0;
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM " + getBossLogTable(boss.week) + " WHERE characterid = ? AND bosstype LIKE ?")) {
@@ -164,7 +183,30 @@ public class ExpeditionBossLog {
         }
     }
 
-    private static void insertPlayerEntry(int cid, BossLogEntry boss) {
+
+
+    public static int countPlayerEntries(int cid, BossLogEntry boss) {
+        int ret_count = 0;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM " + getBossLogTable(boss.week) + " WHERE characterid = ? AND bosstype LIKE ?")) {
+            ps.setInt(1, cid);
+            ps.setString(2, boss.name());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ret_count = rs.getInt(1);
+                } else {
+                    ret_count = -1;
+                }
+            }
+            return ret_count;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    public static void insertPlayerEntry(int cid, BossLogEntry boss) {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("INSERT INTO " + getBossLogTable(boss.week) + " (characterid, bosstype) VALUES (?,?)")) {
             ps.setInt(1, cid);
@@ -193,9 +235,180 @@ public class ExpeditionBossLog {
             return false;
         }
 
-        if (log) {
-            insertPlayerEntry(cid, boss);
-        }
         return true;
+    }
+
+    public static Map<BossLogEntry, BossLogData> getWeeklyBossEntries(int cid, boolean showZeros) {
+        return getBossEntries(cid, showZeros, true);
+    }
+
+    public static Map<BossLogEntry, BossLogData> getBossEntries(int cid, boolean showZeros, boolean weekly) {
+        Map<BossLogEntry, BossLogData> bossData = new LinkedHashMap<>();
+
+        // Initialize all types in order based on ordinal
+        for (BossLogEntry e : Arrays.stream(BossLogEntry.values()).sorted(Comparator.comparingInt(BossLogEntry::getOrdinal)).toList()) {
+            bossData.put(e, new BossLogData());
+        }
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement("SELECT bosstype, complete FROM " + getBossLogTable(weekly) + " WHERE characterid = ?" )) {
+                ps.setInt(1, cid);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String boss = rs.getString("bosstype");
+                        boolean completed = rs.getBoolean("complete");
+
+                        BossLogData data = bossData.get(BossLogEntry.getBossEntryByName(boss));
+                        if (data != null) {
+                            data.updateAttempts(completed);
+                            bossData.put(BossLogEntry.getBossEntryByName(boss), data);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // remove entries if all have 0 count
+        if (!showZeros) {
+            int zeroCount = 0;
+            for (Map.Entry<BossLogEntry, BossLogData> entry : bossData.entrySet()) {
+                if (entry.getValue().getAttempts() == 0) {
+                    zeroCount += 1;
+                }
+            }
+
+            if (zeroCount == bossData.size())
+                return new LinkedHashMap<>();
+        }
+
+        return bossData;
+    }
+
+    // Count successful boss encounters for use of reward limitation
+    public static int countPlayerEntriesByHwid(int cid, BossLogEntry boss) {
+        int count;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT COUNT(*) FROM " + getBossLogTable(boss.week) + " WHERE " +
+                            "characterid IN (SELECT c.id FROM characters c JOIN accounts a ON c.accountid=a.id WHERE " +
+                            "a.hwid = (SELECT a1.hwid FROM accounts a1 JOIN characters c1 ON c1.accountid=a1.id WHERE " +
+                            "c1.id=? and bosstype LIKE ?)) AND completed=1")) {
+                ps.setInt(1, cid);
+                ps.setString(2, boss.name());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        count = rs.getInt(1);
+                    } else {
+                        count = -1;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
+        return count;
+    }
+
+    public static void removePlayerEntry(int cid, BossLogEntry boss, int removeCount) {
+        try {
+            Connection con = DatabaseConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement("DELETE FROM " + getBossLogTable(boss.week) + " WHERE characterid = ? and bosstype LIKE ? LIMIT ?");
+            ps.setInt(1, cid);
+            ps.setString(2, boss.name());
+            ps.setInt(3, removeCount);
+            ps.executeUpdate();
+            ps.close();
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean reachedBossRewardLimit(int cid, ExpeditionType type) {
+        BossLogEntry boss = BossLogEntry.getBossEntryByName(type.name());
+
+        return boss != null && countPlayerEntriesByHwid(cid, boss) > YamlConfig.config.server.EXPEDITION_HWID_LIMIT * boss.entries;
+    }
+
+    public static void setExpeditionCompleted(Client c, ExpeditionType type) {
+        setExpeditionCompleted(c.getPlayer().getId(), type);
+    }
+
+    public static void setExpeditionCompleted(Client c, ExpeditionType type, long duration) {
+        setExpeditionCompleted(c.getPlayer().getId(), type, duration, 0, null);
+    }
+
+    public static void setExpeditionCompleted(Client c, ExpeditionType type, long duration, long damageDealt) {
+        setExpeditionCompleted(c.getPlayer().getId(), type, duration, damageDealt, null);
+    }
+
+    public static void setExpeditionCompleted(Client c, ExpeditionType type, long duration, long damageDealt, String partyUUID) {
+        setExpeditionCompleted(c.getPlayer().getId(), type, duration, damageDealt, partyUUID);
+    }
+
+    public static void setExpeditionCompleted(int id, ExpeditionType type) {
+        setExpeditionCompleted(id, type, 0, 0, null);
+    }
+
+    public static void setExpeditionCompleted(int id, ExpeditionType type, long duration, long damageDealt, String partyUUID) {
+        BossLogEntry boss = BossLogEntry.getBossEntryByName(type.name());
+
+        if (boss != null) {
+            try (Connection con = DatabaseConnection.getConnection()) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE " + getBossLogTable(boss.week) + " SET complete=1, duration=?, damage=?, party_uuid=? WHERE " +
+                                "characterid=? and bosstype LIKE ? ORDER BY attempttime DESC LIMIT 1")) {
+                    ps.setLong(1, duration);
+                    ps.setLong(2, damageDealt);
+                    ps.setString(3, partyUUID);
+                    ps.setInt(4, id);
+                    ps.setString(5, boss.name());
+                    ps.executeUpdate();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static List<ExpeditionBossLogRecord> getBossLogRecordsForParty(ExpeditionType type, String partyUUID) {
+        BossLogEntry boss = BossLogEntry.getBossEntryByName(type.name());
+        if (boss == null) {
+            return new ArrayList<>();
+        }
+
+        List<ExpeditionBossLogRecord> bossLogRecords = new ArrayList<>();
+
+        String sql = "SELECT bl.*, c.name AS characterName " +
+                "FROM " + getBossLogTable(boss.week) + " bl " +
+                "JOIN mapleroot.characters c ON bl.characterid = c.id " +
+                "WHERE bl.party_uuid = ? AND bl.bosstype LIKE ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, partyUUID);
+            ps.setString(2, boss.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int id = rs.getInt("bl.id");
+                    int characterId = rs.getInt("bl.characterid");
+                    String characterName = rs.getString("characterName");
+                    long duration = rs.getLong("bl.duration");
+                    long damageDealt = rs.getLong("bl.damage");
+                    boolean complete = rs.getBoolean("bl.complete");
+                    Timestamp timestamp = rs.getTimestamp("bl.attempttime");
+
+                    ExpeditionBossLogRecord record = new ExpeditionBossLogRecord(id, characterId, characterName, boss.name(), timestamp, damageDealt, duration, partyUUID, complete);
+                    bossLogRecords.add(record);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return bossLogRecords;
     }
 }

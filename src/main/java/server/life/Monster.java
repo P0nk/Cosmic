@@ -21,26 +21,13 @@
  */
 package server.life;
 
-import client.BuffStat;
 import client.Character;
-import client.Client;
-import client.FamilyEntry;
-import client.Job;
-import client.Skill;
-import client.SkillFactory;
+import client.*;
 import client.status.MonsterStatus;
 import client.status.MonsterStatusEffect;
 import config.YamlConfig;
 import constants.id.MobId;
-import constants.skills.Crusader;
-import constants.skills.FPMage;
-import constants.skills.Hermit;
-import constants.skills.ILMage;
-import constants.skills.NightLord;
-import constants.skills.NightWalker;
-import constants.skills.Priest;
-import constants.skills.Shadower;
-import constants.skills.WhiteKnight;
+import constants.skills.*;
 import net.packet.Packet;
 import net.server.channel.Channel;
 import net.server.coordinator.world.MonsterAggroCoordinator;
@@ -56,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
 import server.StatEffect;
 import server.TimerManager;
+import server.life.LifeFactory.BanishInfo;
 import server.loot.LootManager;
 import server.maps.AbstractAnimatedMapObject;
 import server.maps.MapObjectType;
@@ -68,17 +56,9 @@ import tools.Randomizer;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -90,7 +70,7 @@ public class Monster extends AbstractLoadedLife {
 
     private ChangeableStats ostats = null;  //unused, v83 WZs offers no support for changeable stats.
     private MonsterStats stats;
-    private final AtomicInteger hp = new AtomicInteger(1);
+    private final AtomicLong hp = new AtomicLong(1);
     private final AtomicLong maxHpPlusHeal = new AtomicLong(1);
     private int mp;
     private WeakReference<Character> controller = new WeakReference<>(null);
@@ -235,23 +215,23 @@ public class Monster extends AbstractLoadedLife {
         return r;
     }
 
-    public int getHp() {
+    public long getHp() {
         return hp.get();
     }
 
-    public synchronized void addHp(int hp) {
+    public synchronized void addHp(long hp) {
         if (this.hp.get() <= 0) {
             return;
         }
         this.hp.addAndGet(hp);
     }
 
-    public synchronized void setStartingHp(int hp) {
+    public synchronized void setStartingHp(long hp) {
         stats.setHp(hp);    // refactored mob stats after non-static HP pool suggestion thanks to twigs
         this.hp.set(hp);
     }
 
-    public int getMaxHp() {
+    public long getMaxHp() {
         return stats.getHp();
     }
 
@@ -351,24 +331,24 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    public synchronized Integer applyAndGetHpDamage(int delta, boolean stayAlive) {
-        int curHp = hp.get();
+    public synchronized long applyAndGetHpDamage(long delta, boolean stayAlive) {
+        long curHp = hp.get();
         if (curHp <= 0) {       // this monster is already dead
-            return null;
+            return 0;
         }
 
         if (delta >= 0) {
             if (stayAlive) {
                 curHp--;
             }
-            int trueDamage = Math.min(curHp, delta);
+            long trueDamage = Math.min(curHp, delta);
 
             hp.addAndGet(-trueDamage);
             return trueDamage;
         } else {
-            int trueHeal = -delta;
-            int hp2Heal = curHp + trueHeal;
-            int maxHp = getMaxHp();
+            long trueHeal = -delta;
+            long hp2Heal = curHp + trueHeal;
+            long maxHp = getMaxHp();
 
             if (hp2Heal > maxHp) {
                 trueHeal -= (hp2Heal - maxHp);
@@ -403,7 +383,7 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    public boolean damage(Character attacker, int damage, boolean stayAlive) {
+    public boolean damage(Character attacker, long damage, boolean stayAlive) {
         boolean lastHit = false;
 
         this.lockMonster();
@@ -444,7 +424,6 @@ public class Monster extends AbstractLoadedLife {
         } finally {
             this.unlockMonster();
         }
-
         return lastHit;
     }
 
@@ -453,9 +432,9 @@ public class Monster extends AbstractLoadedLife {
      * @param damage
      * @param stayAlive
      */
-    private void applyDamage(Character from, int damage, boolean stayAlive, boolean fake) {
-        Integer trueDamage = applyAndGetHpDamage(damage, stayAlive);
-        if (trueDamage == null) {
+    private void applyDamage(Character from, long damage, boolean stayAlive, boolean fake) {
+        long trueDamage = applyAndGetHpDamage(damage, stayAlive);
+        if (trueDamage == 0) {
             return;
         }
 
@@ -464,13 +443,13 @@ public class Monster extends AbstractLoadedLife {
         }
 
         if (!fake) {
-            dispatchMonsterDamaged(from, trueDamage);
+            dispatchMonsterDamaged(from, (int)trueDamage);
         }
 
         if (!takenDamage.containsKey(from.getId())) {
-            takenDamage.put(from.getId(), new AtomicLong(trueDamage));
+            takenDamage.put(from.getId(), new AtomicLong(fake ? 1 : trueDamage));
         } else {
-            takenDamage.get(from.getId()).addAndGet(trueDamage);
+            takenDamage.get(from.getId()).addAndGet(fake ? 1 : trueDamage);
         }
 
         broadcastMobHpBar(from);
@@ -480,12 +459,11 @@ public class Monster extends AbstractLoadedLife {
         applyDamage(from, damage, stayAlive, true);
     }
 
-    public void heal(int hp, int mp) {
-        Integer hpHealed = applyAndGetHpDamage(-hp, false);
-        if (hpHealed == null) {
+    public void heal(long hp, int mp) {
+        long hpHealed = applyAndGetHpDamage(-hp, false);
+        if (hpHealed == 0) {
             return;
         }
-
         int mp2Heal = getMp() + mp;
         int maxMp = getMaxMp();
         if (mp2Heal >= maxMp) {
@@ -668,6 +646,8 @@ public class Monster extends AbstractLoadedLife {
             float exp = chrParticipation.getValue() * expPerDmg;
             Character chr = chrParticipation.getKey();
 
+            exp *= chr.getMap().getExpRateMultiplier();
+
             distributePlayerExperience(chr, exp, 0.0f, chr.getLevel(), true, isWhiteExpGain(chr, personalRatio, sdevRatio), false);
         }
 
@@ -680,6 +660,8 @@ public class Monster extends AbstractLoadedLife {
             Character chr = mapPlayers.get(killerId);
             if (chr != null) {
                 eim.monsterKilled(chr, this);
+                if(this.isBoss())
+                    eim.addDmgDealt(takenDamage, this.getMaxHp());
             }
         }
 
@@ -825,18 +807,19 @@ public class Monster extends AbstractLoadedLife {
                                 }
 
                                 if (htKilled) {
-                                    reviveMap.killMonster(ht, killer, true, (short) 0);
+                                    reviveMap.killMonster(ht, killer, true);
                                 }
                             }
 
                             for (int i = MobId.DEAD_HORNTAIL_MAX; i >= MobId.DEAD_HORNTAIL_MIN; i--) {
-                                reviveMap.killMonster(reviveMap.getMonsterById(i), killer, true, (short) 0);
+                                reviveMap.killMonster(reviveMap.getMonsterById(i), killer, true);
                             }
                         } else if (controller != null) {
                             mob.aggroSwitchController(controller, aggro);
                         }
 
                         if (eim != null) {
+                            // log.info("[KilledBy] EIM is not null, notifying event");
                             eim.reviveMonster(mob);
                         }
                     }
@@ -951,7 +934,7 @@ public class Monster extends AbstractLoadedLife {
         }
     }
 
-    private void dispatchMonsterHealed(int trueHeal) {
+    private void dispatchMonsterHealed(long trueHeal) {
         MonsterListener[] listenersList;
         statiLock.lock();
         try {
@@ -1004,7 +987,7 @@ public class Monster extends AbstractLoadedLife {
         return controller.get();
     }
 
-    private void setController(Character controller) {
+    public void setController(Character controller) {
         this.controller = new WeakReference<>(controller);
     }
 
@@ -1012,7 +995,7 @@ public class Monster extends AbstractLoadedLife {
         return !fake && controllerHasAggro;
     }
 
-    private void setControllerHasAggro(boolean controllerHasAggro) {
+    public void setControllerHasAggro(boolean controllerHasAggro) {
         if (!fake) {
             this.controllerHasAggro = controllerHasAggro;
         }
@@ -1022,7 +1005,7 @@ public class Monster extends AbstractLoadedLife {
         return !fake && controllerKnowsAboutAggro;
     }
 
-    private void setControllerKnowsAboutAggro(boolean controllerKnowsAboutAggro) {
+    public void setControllerKnowsAboutAggro(boolean controllerKnowsAboutAggro) {
         if (!fake) {
             this.controllerKnowsAboutAggro = controllerKnowsAboutAggro;
         }
@@ -1033,7 +1016,7 @@ public class Monster extends AbstractLoadedLife {
     }
 
     public Packet makeBossHPBarPacket() {
-        return PacketCreator.showBossHP(getId(), getHp(), getMaxHp(), getTagColor(), getTagBgColor());
+        return PacketCreator.customShowBossHP((byte)0x05, getId(), getHp(), getMaxHp(), getTagColor(), getTagBgColor());
     }
 
     public boolean hasBossHPBar() {
@@ -1131,10 +1114,10 @@ public class Monster extends AbstractLoadedLife {
     }
 
     public boolean applyStatus(Character from, final MonsterStatusEffect status, boolean poison, long duration) {
-        return applyStatus(from, status, poison, duration, false);
+        return applyStatus(from, status, poison, duration, false, false);
     }
 
-    public boolean applyStatus(Character from, final MonsterStatusEffect status, boolean poison, long duration, boolean venom) {
+    public boolean applyStatus(Character from, final MonsterStatusEffect status, boolean poison, long duration, boolean venom, boolean bossBypass) {
         switch (getMonsterEffectiveness(status.getSkill().getElement())) {
             case IMMUNE:
             case STRONG:
@@ -1266,16 +1249,6 @@ public class Monster extends AbstractLoadedLife {
             overtimeAction = new DamageTask(webDamage, from, status, 1);
             overtimeDelay = 3500;
             */
-        } else if (status.getSkill().getId() == 4121004 || status.getSkill().getId() == 4221004) { // Ninja Ambush
-            final Skill skill = SkillFactory.getSkill(status.getSkill().getId());
-            final byte level = from.getSkillLevel(skill);
-            final int damage = (int) ((from.getStr() + from.getLuk()) * ((3.7 * skill.getEffect(level).getDamage()) / 100));
-
-            status.setValue(MonsterStatus.NINJA_AMBUSH, damage);
-            animationTime = broadcastStatusEffect(status);
-
-            overtimeAction = new DamageTask(damage, from, status, 2);
-            overtimeDelay = 1000;
         } else {
             animationTime = broadcastStatusEffect(status);
         }
@@ -1356,7 +1329,7 @@ public class Monster extends AbstractLoadedLife {
         aggroUpdateController();
     }
 
-    private void debuffMobStat(MonsterStatus stat) {
+    public void debuffMobStat(MonsterStatus stat) {
         MonsterStatusEffect oldEffect;
         statiLock.lock();
         try {
@@ -1390,17 +1363,21 @@ public class Monster extends AbstractLoadedLife {
                     if (skillid == Crusader.ARMOR_CRASH) {
                         if (!isBuffed(MonsterStatus.WEAPON_REFLECT)) {
                             debuffMobStat(MonsterStatus.WEAPON_IMMUNITY);
+                            debuffMobStat(MonsterStatus.MAGIC_IMMUNITY);
                         }
                         if (!isBuffed(MonsterStatus.MAGIC_REFLECT)) {
+                            debuffMobStat(MonsterStatus.WEAPON_IMMUNITY);
                             debuffMobStat(MonsterStatus.MAGIC_IMMUNITY);
                         }
                     } else if (skillid == WhiteKnight.MAGIC_CRASH) {
                         if (!isBuffed(MonsterStatus.MAGIC_REFLECT)) {
+                            debuffMobStat(MonsterStatus.WEAPON_IMMUNITY);
                             debuffMobStat(MonsterStatus.MAGIC_IMMUNITY);
                         }
                     } else {
                         if (!isBuffed(MonsterStatus.WEAPON_REFLECT)) {
                             debuffMobStat(MonsterStatus.WEAPON_IMMUNITY);
+                            debuffMobStat(MonsterStatus.MAGIC_IMMUNITY);
                         }
                     }
                 }
@@ -1626,14 +1603,14 @@ public class Monster extends AbstractLoadedLife {
 
         @Override
         public void run() {
-            int curHp = hp.get();
+            long curHp = hp.get();
             if (curHp <= 1) {
                 MobStatusService service = (MobStatusService) map.getChannelServer().getServiceAccess(ChannelServices.MOB_STATUS);
                 service.interruptMobStatus(map.getId(), status);
                 return;
             }
 
-            int damage = dealDamage;
+            long damage = dealDamage;
             if (damage >= curHp) {
                 damage = curHp - 1;
                 if (type == 1 || type == 2) {
@@ -1644,16 +1621,16 @@ public class Monster extends AbstractLoadedLife {
             if (damage > 0) {
                 lockMonster();
                 try {
-                    applyDamage(chr, damage, true, false);
+                    applyDamage(chr, (int)damage, true, false);
                 } finally {
                     unlockMonster();
                 }
 
                 if (type == 1) {
-                    map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), damage), getPosition());
+                    map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), (int)damage), getPosition());
                 } else if (type == 2) {
                     if (damage < dealDamage) {    // ninja ambush (type 2) is already displaying DOT to the caster
-                        map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), damage), getPosition());
+                        map.broadcastMessage(PacketCreator.damageMonster(getObjectId(), (int)damage), getPosition());
                     }
                 }
             }
@@ -1748,7 +1725,7 @@ public class Monster extends AbstractLoadedLife {
         return ostats;
     }
 
-    public final int getMobMaxHp() {
+    public final long getMobMaxHp() {
         if (ostats != null) {
             return ostats.hp;
         }

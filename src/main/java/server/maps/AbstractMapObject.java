@@ -41,6 +41,11 @@ public abstract class AbstractMapObject implements MapObject {
     }
 
     @Override
+    public void translatePosition(Point relativePosition) {
+        this.position.translate(relativePosition.x, relativePosition.y);
+    }
+
+    @Override
     public int getObjectId() {
         return objectId;
     }

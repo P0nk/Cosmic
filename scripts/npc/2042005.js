@@ -6,8 +6,8 @@
  **/
 
 var cpqMinLvl = 51;
-var cpqMaxLvl = 70;
-var cpqMinAmt = 2;
+var cpqMaxLvl = 200;
+var cpqMinAmt = 1;
 var cpqMaxAmt = 6;
 
 function start() {

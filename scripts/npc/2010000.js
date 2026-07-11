@@ -29,97 +29,97 @@ eQuestPrizes[1] = [[2000003, 20],	// Blue Potions
     [2000001, 30],	// Orange Potions
     [2010001, 40],	// Meats
     [4003001, 20],	// Processed Wood
-    [2040002, 1]];	// 10% Helm Def
+];	// 10% Helm Def
 eQuestPrizes[2] = [[2000002, 25],	// White Potions
     [2000006, 10],	// Mana Elixir
     [2022000, 5],	// Pure Water
     [4000030, 15],	// Dragon Skins
-    [2040902, 1]];	// 10% Shield Def
+];	// 10% Shield Def
 eQuestPrizes[3] = [[2000002, 30],	// White Potions
     [2000006, 15],	// Mana Elixir
     [2020000, 20],	// Salad
     [4003000, 5],	// Screws
-    [2041016, 1]];	// 10% Cape Int
+];	// 10% Cape Int
 eQuestPrizes[4] = [[2000002, 15],	// White Potions
     [2010004, 15],	// Lemons
     [2000003, 25],	// Blue Potions
     [4003001, 30],	// Processed Wood
-    [2040302, 1]];	// 10% Earring Int
+];	// 10% Earring Int
 eQuestPrizes[5] = [[2000002, 30],	// White Potions
     [2000006, 15],	// Mana Elixir
     [2020000, 20],	// Salad
     [4003000, 5],	// Screws
-    [2040402, 1]];	// 10% Top Def
+];	// 10% Top Def
 eQuestPrizes[6] = [[2000002, 30],	// White Potions
     [2020000, 20],	// Salad
     [2000006, 15],	// Mana Elixir
     [4003000, 5],	// Screws
-    [2040402, 1]];	// 10% Top Def
+];	// 10% Top Def
 eQuestPrizes[7] = [[2000006, 25],	// Mana Elixir
     [2020000, 20],	// Salad
     [4020000, 7],	// Garnet Ore
     [4020001, 7],	// Amethyst Ore
     [4020002, 3],	// Aquamarine Ore
     [4020007, 2],	// Diamond Ore
-    [2040708, 1]];	// 10% Shoe Speed
+];	// 10% Shoe Speed
 eQuestPrizes[8] = [[2020005, 30],	// Hotdogs
     [2020006, 15],	// Hotdog Supremes
     [2022001, 30],	// Red Bean Soup
     [4003003, 1],	// Fairy Wing
-    [2040505, 1]];	// 10% O/All Def
+];	// 10% O/All Def
 eQuestPrizes[9] = [[2000006, 25],	// Mana Elixir
     [4020005, 7],	// Sapphire Ore
     [4020003, 7],	// Emerald Ore
     [4020004, 7],	// Opal Ore
     [4020008, 2],	// Black Crystal Ore
-    [2040802, 1]];	// 10% Glove Dex
+];	// 10% Glove Dex
 eQuestPrizes[10] = [[2002004, 15],	// Warrior Potion
     [2002005, 15],	// Sniper Potion
     [2002003, 15],	// Wizard Potion
     [4001005, 1],	// Ancient Scroll
-    [2040502, 1]];	// 10% O/All Dex
+];	// 10% O/All Dex
 eQuestPrizes[11] = [[2000006, 20],	// Mana Elixir
     [4010004, 7],	// Silver Ore
     [4010003, 7],	// Adamantium Ore
     [4010005, 7],	// Orihalcon Ore
     [4003002, 1],	// Piece of Ice
-    [2040602, 1]];	// 10% Bottom Def
+];	// 10% Bottom Def
 eQuestPrizes[12] = [[2000006, 20],	// Mana Elixir
     [4010002, 7],	// Mithril Ore
     [4010001, 7],	// Steel Ore
     [4010000, 7],	// Bronze Ore
     [4010006, 2],	// Gold Ore
     [4003000, 5],	// Screwa
-    [2040702, 1]];	// 10% Shoe Dex
+];	// 10% Shoe Dex
 eQuestPrizes[13] = [[2000006, 20],	// Mana Elixir
     [4010004, 7],	// Silver Ore
     [4010005, 7],	// Orihalcon Ore
     [4010006, 3],	// Gold Ore
     [4020007, 2],	// Diamond Ore
     [4020008, 2],	// Black Crystal Ore
-    [2040705, 1]];	// 10% Shoe Jump
+];	// 10% Shoe Jump
 eQuestPrizes[14] = [[2000006, 30],	// Mana Elixir
     [4020006, 7],	// Topaz Ore
     [4020008, 2],	// Black Crystal Ore
     [4020007, 2],	// Diamond Ore
     [2070010, 1],	// Icicle Stars
-    [2040805, 1]];   // 10% Glove Attack
+];   // 10% Glove Attack
 eQuestPrizes[15] = [[2000006, 30],   // Mana Elixir
     [4020006, 7],	// Topaz Ore
     [4020008.2],	// Black Crystal Ore
     [4020007, 2],	// Diamond Ore
-    [2041020, 1]];	// 10% Cape Dex
+];	// 10% Cape Dex
 eQuestPrizes[16] = [[2000001, 30],	// Orange Potions
     [2000003, 20],	// Blue Potions
     [4003001, 20],	// Processed Wood
     [2010001, 40],	// Meats
-    [2040002, 1]];	// 10% Helm Def
+];	// 10% Helm Def
 eQuestPrizes[17] = [[2000002, 15],	// White Potions
     [2000003, 25],	// Blue Potions
     [2010004, 15],	// Lemons
     [2050004, 15],	// Divine Elixir
     [4003001, 30],	// Processed Wood
-    [2040302, 1]];	// 10% Earring Int
+];	// 10% Earring Int
 eQuestPrizes[18] = [[2000006, 25],	// Mana Elixir
     [2020006, 25],	// Hotdog Supreme
     [4010004, 8],	// Silver Ore
@@ -127,28 +127,28 @@ eQuestPrizes[18] = [[2000006, 25],	// Mana Elixir
     [4010006, 3],	// Gold Ore
     [4020007, 2],	// Diamond Ore
     [4020008, 2],	// Black Crystal Ore
-    [2040705, 1]];	// 10% Shoe Jump
+];	// 10% Shoe Jump
 eQuestPrizes[19] = [[2000002, 30],	// White Potions
     [2020000, 20],	// Salad
     [2000006, 15],	// Mana Elixir
     [4003000, 5],	// Screws
-    [2041005, 1]];	// 10% Cape Wep Def
+];	// 10% Cape Wep Def
 eQuestPrizes[20] = [[2000002, 30],	// White Potions
     [2020000, 20],	// Salad
     [2000006, 15],	// Mana Elixir
     [4003000, 5],	// Screws
-    [2041005, 1]];	// 10% Cape Wep Def
+];	// 10% Cape Wep Def
 eQuestPrizes[21] = [[2000002, 30],	// White Potions
     [2020000, 20],	// Salad
     [2000006, 15],	// Mana Elixir
     [4003000, 5],	// Screws
-    [2041005, 1]];	// 10% Cape Wep Def
+];	// 10% Cape Wep Def
 eQuestPrizes[22] = [[2000006, 20],	// Mana Elixir
     [2020005, 30],	// Hotdogs
     [2020006, 15],	// Hotdog Supremes
     [2050004, 20],	// Divine Elixirs
     [4003003, 1],	// Fairy Wing
-    [2041002, 1]];	// 10% Cape Mag Def
+];	// 10% Cape Mag Def
 eQuestPrizes[23] = [[2000006, 25],	// Mana Elixir
     [2050004, 50],	// Divine Elixir
     [2022001, 35],	// Red Bean Soup
@@ -156,12 +156,11 @@ eQuestPrizes[23] = [[2000006, 25],	// Mana Elixir
     [4020001, 8],	// Amethyst Ore
     [4020002, 8],	// Aquamarine Ore
     [4020007, 2],	// Diamond Ore
-    [2041023, 1]];	// 10% Cape LUK
+];	// 10% Cape LUK
 eQuestPrizes[24] = [[2000006, 35],	// Mana Elixir
     [4020006, 9],	// Topaz Ore
     [4010008, 4],	// Black Crystal Ore
-    [4020007, 4],	// Diamond Ore
-    [2041008, 1]];   // 10% Cape HP
+];   // 10% Cape HP
 var requiredItem = 0;
 var lastSelection = 0;
 var prizeItem = 0;

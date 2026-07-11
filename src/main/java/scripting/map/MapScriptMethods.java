@@ -25,11 +25,22 @@ import client.Character.DelayedQuestUpdate;
 import client.Client;
 import client.QuestStatus;
 import constants.id.MapId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scripting.AbstractPlayerInteraction;
+import scripting.AbstractScriptManager;
+import scripting.event.EventInstanceManager;
+import scripting.event.EventManager;
+import server.life.Monster;
+import server.maps.MapleMap;
 import server.quest.Quest;
 import tools.PacketCreator;
 
+import java.util.List;
+
 public class MapScriptMethods extends AbstractPlayerInteraction {
+
+    private static final Logger log = LoggerFactory.getLogger(MapScriptMethods.class);
 
     private final String rewardstring = " title has been rewarded. Please see NPC Dalair to receive your Medal.";
 
@@ -159,5 +170,30 @@ public class MapScriptMethods extends AbstractPlayerInteraction {
         } else {
             showInfoText("The One Who's Touched the Sky title in progress. " + status + "/5 Completed");
         }
+    }
+
+    public void weakenAllMonstersOnCurrentMap()
+    {
+        for (Monster monster : getAllMonstersInCurrentMap()) {
+            applySealSkill(monster);
+            applyReduceAvoid(monster);
+        }
+    }
+
+    public void registerPlayerForMonsterWeakeningEventInstance() {
+        EventManager eventManager = getEventManager("MonsterWeakening");
+        EventInstanceManager eim = eventManager.getInstance("Monster Weakening");
+
+        if (eim == null) {
+            return;
+        }
+
+        eim.registerPlayer(getPlayer());
+    }
+
+    private List<Monster> getAllMonstersInCurrentMap()
+    {
+        MapleMap map = getMap();
+        return map.getAllMonsters();
     }
 }

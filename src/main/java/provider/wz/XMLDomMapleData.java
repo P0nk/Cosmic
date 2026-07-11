@@ -34,18 +34,18 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class XMLDomMapleData implements Data {
     private final Node node;
-    private File imageDataDir;
+    private Path imageDataDir;
 
-    public XMLDomMapleData(FileInputStream fis, File imageDataDir) {
+    public XMLDomMapleData(FileInputStream fis, Path imageDataDir) {
         try {
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -79,7 +79,8 @@ public class XMLDomMapleData implements Data {
             boolean foundChild = false;
             for (int i = 0; i < childNodes.getLength(); i++) {
                 Node childNode = childNodes.item(i);
-                if (childNode.getNodeType() == Node.ELEMENT_NODE && childNode.getAttributes().getNamedItem("name").getNodeValue().equals(s)) {
+                if (childNode.getNodeType() == Node.ELEMENT_NODE
+                        && childNode.getAttributes().getNamedItem("name").getNodeValue().equals(s)) {
                     myNode = childNode;
                     foundChild = true;
                     break;
@@ -91,7 +92,7 @@ public class XMLDomMapleData implements Data {
         }
 
         XMLDomMapleData ret = new XMLDomMapleData(myNode);
-        ret.imageDataDir = new File(imageDataDir, getName() + "/" + path).getParentFile();
+        ret.imageDataDir = imageDataDir.resolve(getName().trim()).resolve(path).getParent();
         return ret;
     }
 
@@ -104,7 +105,7 @@ public class XMLDomMapleData implements Data {
             Node childNode = childNodes.item(i);
             if (childNode.getNodeType() == Node.ELEMENT_NODE) {
                 XMLDomMapleData child = new XMLDomMapleData(childNode);
-                child.imageDataDir = new File(imageDataDir, getName());
+                child.imageDataDir = imageDataDir.resolve(getName().trim());
                 ret.add(child);
             }
         }
@@ -193,7 +194,7 @@ public class XMLDomMapleData implements Data {
             return null;
         }
         XMLDomMapleData parentData = new XMLDomMapleData(parentNode);
-        parentData.imageDataDir = imageDataDir.getParentFile();
+        parentData.imageDataDir = imageDataDir.getParent();
         return parentData;
     }
 

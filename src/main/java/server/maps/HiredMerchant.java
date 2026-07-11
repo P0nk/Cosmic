@@ -43,14 +43,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,7 +58,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class HiredMerchant extends AbstractMapObject {
     private static final int VISITOR_HISTORY_LIMIT = 10;
     private static final int BLACKLIST_LIMIT = 20;
-
     private final int ownerId;
     private final int itemId;
     private final int mesos = 0;
@@ -353,7 +348,7 @@ public class HiredMerchant extends AbstractMapObject {
                 return;
             }
             try {
-                this.saveItems(false);
+                this.saveItems();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -391,7 +386,7 @@ public class HiredMerchant extends AbstractMapObject {
         Server.getInstance().getWorld(world).unregisterHiredMerchant(this);
 
         try {
-            saveItems(true);
+            saveItems();
             synchronized (items) {
                 items.clear();
             }
@@ -438,7 +433,7 @@ public class HiredMerchant extends AbstractMapObject {
                         if (mpsi.getItem().getInventoryType().equals(InventoryType.EQUIP)) {
                             InventoryManipulator.addFromDrop(c, mpsi.getItem(), false);
                         } else {
-                            InventoryManipulator.addById(c, mpsi.getItem().getItemId(), (short) (mpsi.getBundles() * mpsi.getItem().getQuantity()), mpsi.getItem().getOwner(), -1, mpsi.getItem().getFlag(), mpsi.getItem().getExpiration());
+                            InventoryManipulator.addById(c.getPlayer(), mpsi.getItem().getItemId(), (short) (mpsi.getBundles() * mpsi.getItem().getQuantity()), mpsi.getItem().getOwner(), -1, mpsi.getItem().getFlag(), mpsi.getItem().getExpiration());
                         }
                     }
                 }
@@ -449,7 +444,7 @@ public class HiredMerchant extends AbstractMapObject {
             }
 
             try {
-                this.saveItems(timeout);
+                this.saveItems();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -487,6 +482,12 @@ public class HiredMerchant extends AbstractMapObject {
                 this.setOpen(false);
                 this.removeAllVisitors();
 
+                List<PlayerShopItem> existingItems = new ArrayList<>();
+                for (PlayerShopItem item : getItems()) {
+                    if (item.isExist()) existingItems.add(item);
+                }
+
+                chr.setHiredMerchant(this);
                 chr.sendPacket(PacketCreator.getHiredMerchant(chr, this, false));
             } else if (!this.isOpen()) {
                 chr.sendPacket(PacketCreator.getMiniRoomError(18));
@@ -528,13 +529,12 @@ public class HiredMerchant extends AbstractMapObject {
         visitorLock.lock();
         try {
             Character[] copy = new Character[3];
-            for (int i = 0; i < visitors.length; i++) {
+            System.arraycopy(visitors, 0, copy, 0, visitors.length);
+            /*for (int i = 0; i < visitors.length; i++) {
                 Visitor visitor = visitors[i];
                 if (visitor != null) {
                     copy[i] = visitor.chr;
-                }
-            }
-
+                }*/
             return copy;
         } finally {
             visitorLock.unlock();
@@ -568,7 +568,7 @@ public class HiredMerchant extends AbstractMapObject {
         }
     }
 
-    public void clearInexistentItems() {
+    public void clearNonexistentItems() {
         synchronized (items) {
             for (int i = items.size() - 1; i >= 0; i--) {
                 if (!items.get(i).isExist()) {
@@ -577,7 +577,7 @@ public class HiredMerchant extends AbstractMapObject {
             }
 
             try {
-                this.saveItems(false);
+                this.saveItems();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
@@ -585,12 +585,14 @@ public class HiredMerchant extends AbstractMapObject {
     }
 
     private void removeFromSlot(int slot) {
-        items.remove(slot);
+        synchronized (items) {
+            items.remove(slot);
 
-        try {
-            this.saveItems(false);
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+            try {
+                this.saveItems();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -638,7 +640,7 @@ public class HiredMerchant extends AbstractMapObject {
         broadcastToVisitorsThreadsafe(PacketCreator.hiredMerchantChat(message, slot));
     }
 
-    public List<PlayerShopItem> sendAvailableBundles(int itemid) {
+    public List<PlayerShopItem> sendAvailableBundles(int itemId) {
         List<PlayerShopItem> list = new LinkedList<>();
         List<PlayerShopItem> all = new ArrayList<>();
 
@@ -651,14 +653,14 @@ public class HiredMerchant extends AbstractMapObject {
         }
 
         for (PlayerShopItem mpsi : all) {
-            if (mpsi.getItem().getItemId() == itemid && mpsi.getBundles() > 0 && mpsi.isExist()) {
+            if (mpsi.getItem().getItemId() == itemId && mpsi.getBundles() > 0 && mpsi.isExist()) {
                 list.add(mpsi);
             }
         }
         return list;
     }
 
-    public void saveItems(boolean shutdown) throws SQLException {
+    public void saveItems() throws SQLException {
         List<Pair<Item, InventoryType>> itemsWithType = new ArrayList<>();
         List<Short> bundles = new ArrayList<>();
 
@@ -666,11 +668,8 @@ public class HiredMerchant extends AbstractMapObject {
             Item newItem = pItems.getItem();
             short newBundle = pItems.getBundles();
 
-            if (shutdown) { //is "shutdown" really necessary?
-                newItem.setQuantity(pItems.getItem().getQuantity());
-            } else {
-                newItem.setQuantity(pItems.getItem().getQuantity());
-            }
+            newItem.setQuantity(pItems.getItem().getQuantity());
+
             if (newBundle > 0) {
                 itemsWithType.add(new Pair<>(newItem, newItem.getInventoryType()));
                 bundles.add(newBundle);
@@ -794,13 +793,13 @@ public class HiredMerchant extends AbstractMapObject {
 
     public class SoldItem {
 
-        int itemid, mesos;
+        int itemId, mesos;
         short quantity;
         String buyer;
 
-        public SoldItem(String buyer, int itemid, short quantity, int mesos) {
+        public SoldItem(String buyer, int itemId, short quantity, int mesos) {
             this.buyer = buyer;
-            this.itemid = itemid;
+            this.itemId = itemId;
             this.quantity = quantity;
             this.mesos = mesos;
         }
@@ -810,7 +809,7 @@ public class HiredMerchant extends AbstractMapObject {
         }
 
         public int getItemId() {
-            return itemid;
+            return itemId;
         }
 
         public short getQuantity() {

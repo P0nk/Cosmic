@@ -26,8 +26,8 @@
 */
 
 var disabled = false;
-var belts = Array(1132000, 1132001, 1132002, 1132003, 1132004);
-var belt_level = Array(25, 35, 45, 60, 75);
+var belts = Array(1132000, 1132001);
+var belt_reborns = Array(0, 0);
 var belt_on_inventory;
 var belt_points;
 
@@ -43,7 +43,7 @@ function start() {
     }
 
     const YamlConfig = Java.type('config.YamlConfig');
-    belt_points = YamlConfig.config.server.USE_FAST_DOJO_UPGRADE ? Array(10, 90, 200, 460, 850) : Array(200, 1800, 4000, 9200, 17000);
+    belt_points = YamlConfig.config.server.USE_FAST_DOJO_UPGRADE ? Array(10, 90) : Array(100, 250);
 
     belt_on_inventory = [];
     for (var i = 0; i < belts.length; i++) {
@@ -75,7 +75,7 @@ function action(mode, type, selection) {
                     text += "#L2#I want to record my score up to this point#l";
                 }
                 cm.sendSimple(text);
-            } else if (cm.getPlayer().getLevel() >= 25) {
+            } else if (cm.getChar().getReborns() >= 0) {
                 if (cm.getPlayer().getMap().getId() == 925020001) {
                     cm.sendSimple("My master is the strongest person in Mu Lung, and you want to challenge him? Fine, but you'll regret it later.\r\n\r\n#b#L0#I want to challenge him alone.#l\r\n#L1#I want to challenge him with a party.#l\r\n\r\n#L2#I want to receive a belt.#l\r\n#L3#I want to reset my training points.#l\r\n#L4#I want to receive a medal.#l\r\n#L5#What is a Mu Lung Dojo?#l");
                 } else {
@@ -213,18 +213,18 @@ function action(mode, type, selection) {
                             cm.sendSimple(selStr);
                         } else if (status == 2) {
                             var belt = belts[selection];
-                            var level = belt_level[selection];
+                            var reborns = belt_reborns[selection];
                             var points = belt_points[selection];
 
                             var oldbelt = (selection > 0) ? belts[selection - 1] : -1;
                             var haveOldbelt = (oldbelt == -1 || cm.haveItemWithId(oldbelt, false));
 
                             if (selection > 0 && !belt_on_inventory[selection - 1]) {
-                                sendBeltRequirements(belt, oldbelt, haveOldbelt, level, points);
+                                sendBeltRequirements(belt, oldbelt, haveOldbelt, reborns, points);
                             } else if (cm.getPlayer().getDojoPoints() >= points) {
                                 if (selection > 0 && !haveOldbelt) {
-                                    sendBeltRequirements(belt, oldbelt, haveOldbelt, level, points);
-                                } else if (cm.getPlayer().getLevel() > level) {
+                                    sendBeltRequirements(belt, oldbelt, haveOldbelt, reborns, points);
+                                } else if (cm.getChar().getReborns() >= reborns) {
                                     if (selection > 0) {
                                         cm.gainItem(oldbelt, -1);
                                     }
@@ -232,10 +232,10 @@ function action(mode, type, selection) {
                                     cm.getPlayer().setDojoPoints(cm.getPlayer().getDojoPoints() - points);
                                     cm.sendNext("There is the #i" + belt + "# #b#t" + belt + "##k. You have proven your valor to ascend on the Dojo ranks. Well done!");
                                 } else {
-                                    sendBeltRequirements(belt, oldbelt, haveOldbelt, level, points);
+                                    sendBeltRequirements(belt, oldbelt, haveOldbelt, reborns, points);
                                 }
                             } else {
-                                sendBeltRequirements(belt, oldbelt, haveOldbelt, level, points);
+                                sendBeltRequirements(belt, oldbelt, haveOldbelt, reborns, points);
                             }
 
                             cm.dispose();
@@ -389,14 +389,14 @@ function action(mode, type, selection) {
     }
 }
 
-function sendBeltRequirements(belt, oldbelt, haveOldbelt, level, points) {
+function sendBeltRequirements(belt, oldbelt, haveOldbelt, reborns, points) {
     var beltReqStr = (oldbelt != -1) ? " you must have the #i" + oldbelt + "# belt in your inventory," : "";
 
     var pointsLeftStr = (points - cm.getPlayer().getDojoPoints() > 0) ? " you need #r" + (points - cm.getPlayer().getDojoPoints()) + "#k more training points" : "";
     var beltLeftStr = (!haveOldbelt) ? " you must have the needed belt unequipped and available in your EQP inventory" : "";
     var conjStr = (pointsLeftStr.length > 0 && beltLeftStr.length > 0) ? " and" : "";
 
-    cm.sendNext("In order to receive #i" + belt + "# #b#t" + belt + "##k," + beltReqStr + " you have to be at least over level #b" + level + "#k and you need to have earned at least #b" + points + " training points#k.\r\n\r\nIf you want to obtain this belt," + beltLeftStr + conjStr + pointsLeftStr + ".");
+    cm.sendNext("In order to receive #i" + belt + "# #b#t" + belt + "##k," + beltReqStr + " you need at least #b" + reborns + " #krebirths and you need to have earned at least #b" + points + " training points#k.\r\n\r\nIf you want to obtain this belt," + beltLeftStr + conjStr + pointsLeftStr + ".");
 }
 
 function isRestingSpot(id) {

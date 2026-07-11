@@ -23,11 +23,7 @@ package net.server.channel.handlers;
 
 import client.Character;
 import client.Client;
-import client.inventory.Equip;
-import client.inventory.Inventory;
-import client.inventory.InventoryType;
-import client.inventory.Item;
-import client.inventory.ModifyInventory;
+import client.inventory.*;
 import config.YamlConfig;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
