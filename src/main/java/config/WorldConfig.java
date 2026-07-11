@@ -1,7 +1,7 @@
 package config;
 
 public class WorldConfig {
-    public int flag = 0;
+    public int flag = 2;
     public String server_message = "Welcome to ForgeMS!";
     public String event_message = "Test Event message :D";
     public String why_am_i_recommended = "";

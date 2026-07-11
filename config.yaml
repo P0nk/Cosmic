@@ -1,13 +1,13 @@
-#World Name: (0 "ForgeMS", 1 "Bera", 2 "Broa", 3 "Windia", 4 "Khaini", 5 "Bellocan", 6 "Mardia", 7 "Kradia", 8 "Yellonde", 9 "Demethos", 10 "Galicia", 11 "El Nido", 12 "Zenith", 13 "Arcenia", 14 "Kastia", 15 "Judis", 16 "Plana", 17 "Kalluna", 18 "Stius", 19 "Croa", 20 "Medere")
+#World Name: (0 "Forge", 1 "Bera", 2 "Broa", 3 "Windia", 4 "Khaini", 5 "Bellocan", 6 "Mardia", 7 "Kradia", 8 "Yellonde", 9 "Demethos", 10 "Galicia", 11 "El Nido", 12 "Zenith", 13 "Arcenia", 14 "Kastia", 15 "Judis", 16 "Plana", 17 "Kalluna", 18 "Stius", 19 "Croa", 20 "Medere")
 #Flag types: (0 = nothing, 1 = event, 2 = new, 3 = hot)
 #Recommended to use only up to 15 worlds
 worlds:
     #Properties for ForgeMS 0
-  - flag: 0
+  - flag: 2
     server_message: Welcome to ForgeMs!
-    event_message: Even Test message :D enjoy!
+    event_message: Alpha Testing!
     why_am_i_recommended: Welcome to the forge!
-    channels: 4
+    channels: 8
     exp_rate: 750
     meso_rate: 50
     drop_rate: 500
@@ -16,8 +16,8 @@ worlds:
     fishing_rate: 10                        #Multiplier for success likelihood on meso thrown during fishing.
     travel_rate: 10                         #Means of transportation rides/departs using 1/N of the default time.
 
-    #Properties for Bera 1
-  - flag: 0
+    #Properties for Test 1
+  - flag: 2
     server_message: Welcome to Bera!
     event_message: Bera!
     why_am_i_recommended: Welcome to Bera!
@@ -167,7 +167,7 @@ server:
     INIT_CONNECTION_POOL_TIMEOUT: 90    # Seconds
 
     #Login Configuration
-    WORLDS: 1                           #Initial number of worlds on the server.
+    WORLDS: 1                          #Initial number of worlds on the server.
     WLDLIST_SIZE: 21                    #Max possible worlds on the server.
     CHANNEL_SIZE: 20                    #Max possible channels per world (which is 20, based on the channel list on login phase).
     CHANNEL_LOAD: 100                   #Max players per channel (limit actually used to calculate the World server capacity).
