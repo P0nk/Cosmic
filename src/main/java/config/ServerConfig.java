@@ -111,6 +111,9 @@ public class ServerConfig {
     public boolean USE_ENABLE_FULL_RESPAWN;
     public boolean USE_ENABLE_CHAT_LOG;
     public boolean USE_REBIRTH_SYSTEM;
+    public boolean USE_AUTO_REBIRTH;
+    public int AUTO_REBIRTH_LEVEL;
+    public boolean REQUIRE_FIRST_MANUAL_REBIRTH;
     public boolean USE_MAP_OWNERSHIP_SYSTEM;
     public boolean USE_FISHING_SYSTEM;
     public boolean USE_NPCS_SCRIPTABLE;

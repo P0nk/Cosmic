@@ -1261,8 +1261,8 @@ public class Client extends ChannelInboundHandlerAdapter {
                     if (rs.next()) {
                         accountId = rs.getInt("id");
                         accountName = rs.getString("name");
-                        autochar = rs.getInt("autochar");
                         autolog = rs.getByte("autologin");
+                        autochar = rs.getInt("autochar");
                         autoch = rs.getInt("autoch");
                         latestLogin = rs.getTimestamp("lastlogin");
                     }

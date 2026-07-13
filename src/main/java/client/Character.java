@@ -293,6 +293,7 @@ public class Character extends AbstractCharacterObject {
     public boolean inExpedition = false;
     private int reborns;
     private int getLinkedStats;
+    private boolean autoRebirth;
 
     //Monster Books Tiers
     private int Tier1;
@@ -7790,8 +7791,9 @@ public class Character extends AbstractCharacterObject {
                     ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
                     ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
                     ret.reborns = rs.getInt("reborns");
+                    ret.autoRebirth = rs.getBoolean("autorebirth");
                     ret.bankMesos = rs.getLong("bank");
-                   // ret.damageSkin = rs.getInt("damageskin");
+                    // ret.damageSkin = rs.getInt("damageskin");
 
                     wserv = Server.getInstance().getWorld(ret.world);
 
@@ -12054,6 +12056,26 @@ public class Character extends AbstractCharacterObject {
 
     public void addReborns() {
         setReborns(getReborns() + 1);
+    }
+
+    public boolean isAutoRebirth() {
+        return autoRebirth;
+    }
+
+    public void setAutoRebirth(boolean autoRebirth) {
+        this.autoRebirth = autoRebirth;
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE characters SET autorebirth = ? WHERE id = ?")) {
+
+            ps.setBoolean(1, autoRebirth);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getReborns() {

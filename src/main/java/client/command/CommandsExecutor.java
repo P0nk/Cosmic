@@ -177,6 +177,7 @@ public class CommandsExecutor {
         addCommand("worldchat", WorldChatCommand.class);
         addCommand("bp", BackPackCommand.class);
         addCommand("backpack", BackPackToggleCommand.class);
+        addCommand("autorb", AutoRbCommand.class);
         addCommand("gfx", GfxCommand.class);
         addCommand("bank", BankCommand.class);
         addCommand("check", CheckCommand.class);

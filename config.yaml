@@ -234,6 +234,10 @@ server:
     USE_STARTING_AP_4: false             #Use early-GMS 4/4/4/4 starting stats. To overcome AP shortage, this gives 4AP/5AP at 1st/2nd job advancements.
     USE_AUTOBAN: false                  #Commands the server to detect infractors automatically.
     USE_AUTOBAN_LOG: true               #Log autoban related messages. Still logs even with USE_AUTOBAN disabled.
+    USE_REBIRTH_SYSTEM: true            #Uses rebirth system
+    USE_AUTO_REBIRTH: true              # enables autorebirth system - @autorb
+    AUTO_REBIRTH_LEVEL: 200             # set lvl 200 as auto rebirth lvl limit
+    REQUIRE_FIRST_MANUAL_REBIRTH: true  # players needs to manually rebirth 1 time before player command
     USE_EXP_GAIN_LOG: false #Logs characters exp gains; logs world rate & coupon exp, total gained exp, and current exp, level can be calculated from "ExpTable".
     USE_AUTOSAVE: true                  #Enables server autosaving feature (saves characters to DB each 1 hour).
     USE_SERVER_AUTOASSIGNER: false       #HeavenMS-builtin autoassigner, uses algorithm based on distributing AP accordingly with required secondary stat on equipments.

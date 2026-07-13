@@ -458,18 +458,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             if (newcomer) {
                 player.setLoginTime(System.currentTimeMillis());
             }
-            int MobItem = 1113232;
-            Inventory equipped = c.getPlayer().getInventory(InventoryType.EQUIPPED);
-            Equip eq = (Equip) equipped.findById(MobItem);
 
-            if (eq == null) {
-                // If not found in EQUIPPED, search in EQUIP inventory
-                Inventory equipInventory = c.getPlayer().getInventory(InventoryType.EQUIP);
-                eq = (Equip) equipInventory.findById(MobItem);
-            }
-
-            c.getPlayer().forceUpdateItem(eq);
-            c.getPlayer().applyLinkStatsBoost();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
