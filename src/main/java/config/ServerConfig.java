@@ -349,9 +349,9 @@ public class ServerConfig {
     public double STARFORCE_BOOST_PERCENTAGE;
     public double STARFORCE_BOOST_PERCENTAGE2;
 
-    // BACKPACK
-    public int BACKPACK_MAX_ITEMS_PER_PAGE;
-    public int BACKPACK_MAX_STORAGE_PER_ITEM;
-    public int BACKPACK_MINIMUM_SEARCH_LENGTH;
-    public int BACKPACK_MAX_UNIQUE_ITEMS;
+    // Mule
+    public int Mule_MAX_ITEMS_PER_PAGE;
+    public int Mule_MAX_STORAGE_PER_ITEM;
+    public int Mule_MINIMUM_SEARCH_LENGTH;
+    public int Mule_MAX_UNIQUE_ITEMS;
 }

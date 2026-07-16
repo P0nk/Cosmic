@@ -26,6 +26,7 @@ import client.*;
 import client.inventory.*;
 import client.inventory.manipulator.InventoryManipulator;
 import client.keybind.KeyBinding;
+import client.creator.MakeCharInfoValidator;
 import config.YamlConfig;
 import constants.game.GameConstants;
 import constants.id.MapId;
@@ -139,6 +140,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
     public void resetItemScript() {
         this.itemScript = false;
     }
+
 
     public void dispose() {
         NPCScriptManager.getInstance().dispose(this);
@@ -293,6 +295,7 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         getPlayer().gainExp(gain, true, true);
     }
 
+
     @Override
     public void showEffect(String effect) {
         getPlayer().getMap().broadcastMessage(PacketCreator.environmentChange(effect, 3));
@@ -316,6 +319,37 @@ public class NPCConversationManager extends AbstractPlayerInteraction {
         getPlayer().equipChanged();
     }
 
+    public int[] getAllHairIds() {
+        return MakeCharInfoValidator.getValidHairIds()
+                .stream()
+                .mapToInt(Integer::intValue)
+                .sorted()
+                .toArray();
+    }
+
+    public int[] getAllFaceIds() {
+        return MakeCharInfoValidator.getValidFaceIds()
+                .stream()
+                .mapToInt(Integer::intValue)
+                .sorted()
+                .toArray();
+    }
+
+    public int[] getAllHairColorIds() {
+        return MakeCharInfoValidator.getValidHairColors()
+                .stream()
+                .mapToInt(Integer::intValue)
+                .sorted()
+                .toArray();
+    }
+
+    public int[] getAllSkinIds() {
+        return MakeCharInfoValidator.getValidSkinIds()
+                .stream()
+                .mapToInt(Integer::intValue)
+                .sorted()
+                .toArray();
+    }
     public int itemQuantity(int itemid) {
         return getPlayer().getInventory(ItemConstants.getInventoryType(itemid)).countById(itemid);
     }

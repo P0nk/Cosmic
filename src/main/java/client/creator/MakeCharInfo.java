@@ -2,14 +2,17 @@ package client.creator;
 
 import client.Character;
 import client.Job;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import client.inventory.InventoryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import provider.Data;
 import provider.DataTool;
 
-import java.util.HashSet;
-import java.util.Set;
+
 
 public class MakeCharInfo {
     private static final Logger log = LoggerFactory.getLogger(MakeCharInfo.class);
@@ -114,6 +117,23 @@ public class MakeCharInfo {
         return this.charWeapons.contains(id);
     }
 
+    public Set<Integer> getValidHairIds() {
+        return Set.copyOf(charHairs);
+    }
+
+    public Set<Integer> getValidFaceIds() {
+        return Set.copyOf(charFaces);
+    }
+
+    public Set<Integer> getValidHairColors() {
+        return Set.copyOf(charHairColors);
+    }
+
+    public Set<Integer> getValidSkinIds() {
+        return Set.copyOf(charSkins);
+    }
+
+
     public boolean verifyCharacter(Character character) {
         if (!verifyFaceId(character.getFace())) return false;
         if (!verifyHairId(character.getHair())) return false;
@@ -137,4 +157,6 @@ public class MakeCharInfo {
 
         return true;
     }
+
+
 }

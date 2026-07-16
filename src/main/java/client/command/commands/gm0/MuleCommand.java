@@ -27,7 +27,7 @@ import client.Client;
 import client.command.Command;
 import scripting.npc.NPCScriptManager;
 
-public class BackPackCommand extends Command {
+public class MuleCommand extends Command {
     @Override
     public void execute(Client c, String[] splitted) {
         NPCScriptManager.getInstance().start(c, 3004039, "3004039", c.getPlayer());

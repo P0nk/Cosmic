@@ -40,6 +40,6 @@ public class DisposeCommand extends Command {
         QuestScriptManager.getInstance().dispose(c);
         c.sendPacket(PacketCreator.enableActions());
         c.removeClickedNPC();
-        c.getPlayer().message("You've been disposed.");
+        c.getPlayer().message("Your interaction has been reset.");
     }
 }

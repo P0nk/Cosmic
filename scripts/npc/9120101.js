@@ -1,114 +1,337 @@
+
+/* Midori will become Ingrid ForgeMS style changer
+	Change to any style available in the server.
+*/
 /*
-	This file is part of the OdinMS Maple Story Server
-    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc> 
-                       Matthias Butz <matze@odinms.de>
-                       Jan Christian Meyer <vimes@odinms.de>
+ * Ingrid — ForgeMS Braidmaster
+ * NPC ID: 9120101
+ *
+ * Universal cosmetic selector:
+ * - Reads valid cosmetics directly from the server
+ * - No coupons
+ * - No NX or meso cost
+ * - No level requirement
+ * - No gender restriction
+ *
+ * Current options:
+ * - Hairstyle
+ * - Hair color
+ * - Face / eyes
+ * - Eye color
+ * - Skin tone
+ *
+ * Sex change is intentionally excluded for now.
+ */
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License version 3
-    as published by the Free Software Foundation. You may not use, modify
-    or distribute this program under any other version of the
-    GNU Affero General Public License.
+var status = -1;
+var category = -1;
+var choices = null;
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/* Midori
-	Showa Random Hair/Hair Color Change.
-
-        GMS-like revised by Ronan -- contents found thanks to Mitsune (GamerBewbs), Waltzing, AyumiLove
-*/
-var status = 0;
-var beauty = 0;
-var hairprice = 1000000;
-var haircolorprice = 1000000;
-var mhair_r = Array(30260, 30280, 30340, 30360, 30710, 30780, 30790, 30800, 30810, 30820, 30920);
-var fhair_r = Array(31350, 31410, 31460, 31540, 31550, 31710, 31720, 31770, 31790, 31800, 31850, 34000);
-var hairnew = Array();
-
-function pushIfItemExists(array, itemid) {
-    if ((itemid = cm.getCosmeticItem(itemid)) != -1 && !cm.isCosmeticEquipped(itemid)) {
-        array.push(itemid);
-    }
-}
+var HAIR_STYLE = 0;
+var HAIR_COLOR = 1;
+var FACE_STYLE = 2;
+var EYE_COLOR = 3;
+var SKIN_TONE = 4;
 
 function start() {
-    status = -1;
     action(1, 0, 0);
 }
 
 function action(mode, type, selection) {
-    if (mode < 1) {  // disposing issue with stylishs found thanks to Vcoc
+    if (mode === -1) {
         cm.dispose();
-    } else {
-        if (mode == 1) {
-            status++;
-        } else {
-            status--;
+        return;
+    }
+
+    if (mode === 0) {
+        cm.dispose();
+        return;
+    }
+
+    status++;
+
+    if (status === 0) {
+        showMainMenu();
+        return;
+    }
+
+    if (status === 1) {
+        category = selection;
+        showCosmeticOptions();
+        return;
+    }
+
+    if (status === 2) {
+        applyCosmetic(selection);
+        return;
+    }
+
+    cm.dispose();
+}
+
+function showMainMenu() {
+    cm.sendSimple(
+        "#eEvery braid, scar, and strand tells a story.#n\r\n\r\n" +
+        "Whether you are returning from battle or preparing for the next " +
+        "expedition, I can help you look the part.\r\n\r\n" +
+        "What would you like to change?\r\n\r\n" +
+
+        "#L" + HAIR_STYLE + "##bHairstyle#k#l\r\n" +
+        "#L" + HAIR_COLOR + "##bHair Color#k#l\r\n" +
+        "#L" + FACE_STYLE + "##bFace and Eyes#k#l\r\n" +
+        "#L" + EYE_COLOR + "##bEye Color#k#l\r\n" +
+        "#L" + SKIN_TONE + "##bSkin Tone#k#l"
+    );
+}
+
+function showCosmeticOptions() {
+    if (category === HAIR_STYLE) {
+        choices = buildHairStyleChoices();
+
+        if (choices.length === 0) {
+            failNoOptions("hairstyles");
+            return;
         }
-        if (status == 0) {
-            cm.sendSimple("Hi, I'm the assistant here. Don't worry, I'm plenty good enough for this. If you have #b#t5150008##k or #b#t5151008##k by any chance, then allow me to take care of the rest, alright?\r\n#L1#Haircut: #i5150008##t5150008##l\r\n#L2#Dye your hair: #i5151008##t5151008##l");
-        } else if (status == 1) {
-            if (selection == 1) {
-                beauty = 1;
-                hairnew = Array();
-                if (cm.getPlayer().getGender() == 0) {
-                    for (var i = 0; i < mhair_r.length; i++) {
-                        pushIfItemExists(hairnew, mhair_r[i] + parseInt(cm.getPlayer().getHair() % 10));
-                    }
-                }
-                if (cm.getPlayer().getGender() == 1) {
-                    for (var i = 0; i < fhair_r.length; i++) {
-                        pushIfItemExists(hairnew, fhair_r[i] + parseInt(cm.getPlayer().getHair() % 10));
-                    }
-                }
-                cm.sendYesNo("If you use the REG coupon your hair will change RANDOMLY with a chance to obtain a new experimental style that I came up with. Are you going to use #b#t5150008##k and really change your hairstyle?");
-            } else if (selection == 2) {
-                beauty = 2;
-                haircolor = Array();
-                var current = parseInt(cm.getPlayer().getHair() / 10) * 10;
-                for (var i = 0; i < 8; i++) {
-                    pushIfItemExists(haircolor, current + i);
-                }
-                cm.sendYesNo("If you use a regular coupon your hair will change RANDOMLY. Do you still want to use #b#t5151008##k and change it up?");
-            }
-        } else if (status == 2) {
-            cm.dispose();
-            if (beauty == 1) {
-                if (cm.haveItem(5150008)) {
-                    cm.gainItem(5150008, -1);
-                    cm.setHair(hairnew[Math.floor(Math.random() * hairnew.length)]);
-                    cm.sendOk("Enjoy your new and improved hairstyle!");
-                } else {
-                    cm.sendOk("Hmmm...it looks like you don't have our designated coupon...I'm afraid I can't give you a haircut without it. I'm sorry...");
-                }
-            } else if (beauty == 2) {
-                if (cm.haveItem(5151008)) {
-                    cm.gainItem(5151008, -1);
-                    cm.setHair(haircolor[Math.floor(Math.random() * haircolor.length)]);
-                    cm.sendOk("Enjoy your new and improved haircolor!");
-                } else {
-                    cm.sendOk("Hmmm...it looks like you don't have our designated coupon...I'm afraid I can't dye your hair without it. I'm sorry...");
-                }
-            } else if (beauty == 0) {
-                if (selection == 0 && cm.getMeso() >= hairprice) {
-                    cm.gainMeso(-hairprice);
-                    cm.gainItem(5150008, 1);
-                    cm.sendOk("Enjoy!");
-                } else if (selection == 1 && cm.getMeso() >= haircolorprice) {
-                    cm.gainMeso(-haircolorprice);
-                    cm.gainItem(5151008, 1);
-                    cm.sendOk("Enjoy!");
-                } else {
-                    cm.sendOk("You don't have enough mesos to buy a coupon!");
-                }
-            }
+
+        cm.sendStyle(
+            "Choose the hairstyle that best suits you.",
+            choices
+        );
+        return;
+    }
+
+    if (category === HAIR_COLOR) {
+        choices = buildHairColorChoices();
+
+        if (choices.length === 0) {
+            failNoOptions("hair colors");
+            return;
+        }
+
+        cm.sendStyle(
+            "Choose a new hair color.",
+            choices
+        );
+        return;
+    }
+
+    if (category === FACE_STYLE) {
+        choices = toJavascriptArray(cm.getAllFaceIds());
+
+        if (choices.length === 0) {
+            failNoOptions("faces");
+            return;
+        }
+
+        cm.sendStyle(
+            "Choose the face and eyes that tell your story.",
+            choices
+        );
+        return;
+    }
+
+    if (category === EYE_COLOR) {
+        choices = buildEyeColorChoices();
+
+        if (choices.length === 0) {
+            failNoOptions("eye colors for your current face");
+            return;
+        }
+
+        cm.sendStyle(
+            "Choose a new eye color.",
+            choices
+        );
+        return;
+    }
+
+    if (category === SKIN_TONE) {
+        choices = toJavascriptArray(cm.getAllSkinIds());
+
+        if (choices.length === 0) {
+            failNoOptions("skin tones");
+            return;
+        }
+
+        cm.sendStyle(
+            "Choose your preferred skin tone.",
+            choices
+        );
+        return;
+    }
+
+    cm.sendOk("That service is not currently available.");
+    cm.dispose();
+}
+
+function applyCosmetic(selection) {
+    if (choices === null ||
+        selection < 0 ||
+        selection >= choices.length) {
+
+        cm.sendOk(
+            "I could not identify that selection. Please speak with me again."
+        );
+        cm.dispose();
+        return;
+    }
+
+    var selectedId = parseInt(choices[selection]);
+
+    if (category === HAIR_STYLE || category === HAIR_COLOR) {
+        cm.setHair(selectedId);
+        cm.sendOk(
+            "#eThere we are.#n\r\n\r\n" +
+            "Your new hairstyle has been set."
+        );
+        cm.dispose();
+        return;
+    }
+
+    if (category === FACE_STYLE || category === EYE_COLOR) {
+        cm.setFace(selectedId);
+        cm.sendOk(
+            "#eA fine choice.#n\r\n\r\n" +
+            "Your new appearance has been set."
+        );
+        cm.dispose();
+        return;
+    }
+
+    if (category === SKIN_TONE) {
+        cm.setSkin(selectedId);
+        cm.sendOk(
+            "#eFinished.#n\r\n\r\n" +
+            "Your new skin tone has been set."
+        );
+        cm.dispose();
+        return;
+    }
+
+    cm.sendOk("That service is not currently available.");
+    cm.dispose();
+}
+
+/*
+ * Preserves the player's current hair color while displaying every
+ * valid hairstyle known by the server.
+ */
+function buildHairStyleChoices() {
+    var allHairIds = toJavascriptArray(cm.getAllHairIds());
+    var currentHair = cm.getPlayer().getHair();
+    var currentColor = currentHair % 10;
+
+    var results = [];
+    var used = {};
+
+    for (var i = 0; i < allHairIds.length; i++) {
+        var baseHair = parseInt(allHairIds[i]);
+        baseHair -= baseHair % 10;
+
+        var candidate = baseHair + currentColor;
+
+        if (!used[candidate]) {
+            used[candidate] = true;
+            results.push(candidate);
         }
     }
+
+    results.sort(compareNumbers);
+    return results;
+}
+
+/*
+ * Builds complete hair IDs by combining the player's current hairstyle
+ * with every valid hair-color value exposed by the server.
+ */
+function buildHairColorChoices() {
+    var colorIds = toJavascriptArray(cm.getAllHairColorIds());
+    var currentHair = cm.getPlayer().getHair();
+    var baseHair = currentHair - (currentHair % 10);
+
+    var results = [];
+    var used = {};
+
+    for (var i = 0; i < colorIds.length; i++) {
+        var color = parseInt(colorIds[i]);
+        var candidate = baseHair + color;
+
+        if (!used[candidate]) {
+            used[candidate] = true;
+            results.push(candidate);
+        }
+    }
+
+    results.sort(compareNumbers);
+    return results;
+}
+
+/*
+ * Eye-color variants in v83 face IDs generally share:
+ * - the same 10,000-series family; and
+ * - the same final two digits.
+ *
+ * This keeps the player's current face style while listing the valid
+ * color variants present in the server's face data.
+ */
+function buildEyeColorChoices() {
+    var allFaceIds = toJavascriptArray(cm.getAllFaceIds());
+    var currentFace = cm.getPlayer().getFace();
+
+    var currentFamily = Math.floor(currentFace / 10000);
+    var currentStyle = currentFace % 100;
+
+    var results = [];
+    var used = {};
+
+    for (var i = 0; i < allFaceIds.length; i++) {
+        var faceId = parseInt(allFaceIds[i]);
+        var faceFamily = Math.floor(faceId / 10000);
+        var faceStyle = faceId % 100;
+
+        if (faceFamily === currentFamily &&
+            faceStyle === currentStyle &&
+            !used[faceId]) {
+
+            used[faceId] = true;
+            results.push(faceId);
+        }
+    }
+
+    /*
+     * Fallback: if the current face uses an unusual custom numbering
+     * pattern, show the current face rather than returning an empty menu.
+     */
+    if (results.length === 0) {
+        results.push(currentFace);
+    }
+
+    results.sort(compareNumbers);
+    return results;
+}
+
+function toJavascriptArray(javaArray) {
+    var result = [];
+
+    if (javaArray === null) {
+        return result;
+    }
+
+    for (var i = 0; i < javaArray.length; i++) {
+        result.push(parseInt(javaArray[i]));
+    }
+
+    return result;
+}
+
+function compareNumbers(a, b) {
+    return a - b;
+}
+
+function failNoOptions(categoryName) {
+    cm.sendOk(
+        "I could not find any valid " + categoryName +
+        " in the server data."
+    );
+    cm.dispose();
 }
