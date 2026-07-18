@@ -31,6 +31,7 @@ import client.command.commands.gm3.*;
 import client.command.commands.gm4.*;
 import client.command.commands.gm5.*;
 import client.command.commands.gm6.*;
+import com.oracle.truffle.js.builtins.DatePrototypeBuiltins;
 import constants.id.MapId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,6 +240,8 @@ public class CommandsExecutor {
         addCommand("leaf", GlCommand.class);
         addCommand("autogl", AutoGlCommand.class);
         addCommand("autoleaf", AutoGlCommand.class);
+        addCommand("belt", BeltCommand.class);
+        addCommand("msi", MsiCommand.class);
         addCommand("enableauth", EnableAuthCommand.class);
         addCommand("mylawn", MapOwnerClaimCommand.class);
         addCommand("bosshp", BossHpCommand.class);
