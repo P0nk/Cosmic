@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8659072.img">
+    <imgdir name="info">
+        <string name="info" value="펜의 황금"/>
+        <vector name="lt" x="-66" y="-50"/>
+        <vector name="rb" x="71" y="12"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="91" height="110">
+            <vector name="origin" x="42" y="110"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <canvas name="1" width="89" height="109">
+            <vector name="origin" x="41" y="109"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <canvas name="2" width="89" height="109">
+            <vector name="origin" x="41" y="109"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <canvas name="3" width="93" height="108">
+            <vector name="origin" x="43" y="108"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <canvas name="4" width="93" height="109">
+            <vector name="origin" x="43" y="109"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <int name="repeat" value="1"/>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="11"/>
+                <int name="state" value="1"/>
+                <string name="act" value="reactor0"/>
+                <int name="actCount" value="1"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <uol name="0" value="../0"/>
+            <uol name="1" value="../1"/>
+            <uol name="2" value="../2"/>
+            <uol name="3" value="../3"/>
+            <uol name="4" value="../4"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="81" height="60">
+            <vector name="origin" x="40" y="60"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="2"/>
+                <vector name="lt" x="-70" y="-50"/>
+                <vector name="rb" x="70" y="20"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+            </canvas>
+        </imgdir>
+        <int name="follow" value="1"/>
+    </imgdir>
+    <imgdir name="2">
+        <canvas name="0" width="60" height="80">
+            <vector name="origin" x="26" y="80"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <int name="repeat" value="1"/>
+        <imgdir name="event">
+            <int name="timeOut" value="60000"/>
+            <imgdir name="0">
+                <int name="type" value="11"/>
+                <int name="state" value="1"/>
+                <string name="act" value="reactor0"/>
+                <int name="actCount" value="1"/>
+                <vector name="lt" x="-70" y="-50"/>
+                <vector name="rb" x="70" y="20"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="type" value="101"/>
+                <int name="state" value="3"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <uol name="0" value="../0"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="3">
+        <canvas name="0" width="1" height="1">
+        </canvas>
+    </imgdir>
+    <string name="action" value="gatherCarry"/>
+</imgdir>

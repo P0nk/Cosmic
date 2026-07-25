@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9020102.img">
+    <imgdir name="info">
+        <int name="firstAttack" value="1"/>
+        <int name="level" value="115"/>
+        <int name="bodyAttack" value="1"/>
+        <int name="maxHP" value="5250000"/>
+        <int name="maxMP" value="10000"/>
+        <int name="speed" value="0"/>
+        <int name="PADamage" value="6200"/>
+        <int name="PDRate" value="30"/>
+        <int name="MADamage" value="6200"/>
+        <int name="MDRate" value="30"/>
+        <int name="acc" value="423"/>
+        <int name="eva" value="115"/>
+        <int name="pushed" value="1000000000"/>
+        <float name="fs" value="10.0"/>
+        <float name="walkJump" value="1.3"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="8"/>
+        <string name="mobType" value="7N"/>
+        <int name="exp" value="0"/>
+        <int name="tombEffect" value="1"/>
+        <int name="notSeperateSoul" value="1"/>
+        <int name="boss" value="1"/>
+        <int name="decreaseUserDamR" value="50"/>
+        <int name="PDDamage" value="0"/>
+        <int name="MDDamage" value="0"/>
+        <int name="eva" value="0"/>
+        <int name="acc" value="999"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="120" name="0" width="145">
+            <vector name="origin" x="73" y="120"/>
+            <vector name="head" x="0" y="-112"/>
+            <vector name="lt" x="-74" y="-120"/>
+            <vector name="rb" x="72" y="1"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="move">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="attack1">
+        <imgdir name="info">
+            <imgdir name="range">
+                <vector name="lt" x="-300" y="-200"/>
+                <vector name="rb" x="-30" y="5"/>
+            </imgdir>
+            <imgdir name="hit">
+                <canvas height="139" name="0" width="138">
+                    <vector name="origin" x="69" y="79"/>
+                    <int name="delay" value="90"/>
+                </canvas>
+                <canvas height="145" name="1" width="124">
+                    <vector name="origin" x="61" y="88"/>
+                    <int name="delay" value="90"/>
+                </canvas>
+            </imgdir>
+            <int name="action" value="1"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="11"/>
+            <int name="conMP" value="2"/>
+        </imgdir>
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

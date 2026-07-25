@@ -42,6 +42,7 @@ public class JobCommand extends Command {
                 player.message("Jobid " + jobid + " is not available.");
                 return;
             }
+
             player.changeJob(Job.getById(jobid));
             player.equipChanged();
         } else if (params.length == 2) {

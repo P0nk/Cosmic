@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9405007.img">
+    <imgdir name="info">
+        <string name="info" value="Lift and carry reactor"/>
+        <vector name="lt" x="-70" y="-50"/>
+        <vector name="rb" x="70" y="20"/>
+        <int name="frontTile" value="1"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="85" height="105">
+            <vector name="origin" x="43" y="99"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="11"/>
+                <int name="state" value="1"/>
+                <string name="act" value="reactor0"/>
+                <int name="actCount" value="1"/>
+                <vector name="lt" x="-50" y="-50"/>
+                <vector name="rb" x="35" y="10"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+            </canvas>
+        </imgdir>
+        <int name="repeat" value="1"/>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="78" height="73">
+            <vector name="origin" x="43" y="73"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="0"/>
+                <int name="state" value="2"/>
+                <vector name="lt" x="-54" y="-39"/>
+                <vector name="rb" x="54" y="5"/>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="0" y="0"/>
+            </canvas>
+        </imgdir>
+        <int name="follow" value="1"/>
+    </imgdir>
+    <imgdir name="2">
+        <canvas name="0" width="78" height="73">
+            <vector name="origin" x="43" y="67"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="11"/>
+                <int name="state" value="1"/>
+                <string name="act" value="reactor0"/>
+                <int name="actCount" value="1"/>
+                <vector name="lt" x="-50" y="-50"/>
+                <vector name="rb" x="35" y="10"/>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="3">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+        </canvas>
+    </imgdir>
+    <string name="action" value="maze_crack"/>
+    <imgdir name="4">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+        </canvas>
+    </imgdir>
+</imgdir>

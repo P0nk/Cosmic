@@ -7,8 +7,8 @@ function start() {
         "#b@exchange#k - Allows you to exchange ores at a 2:1 ratio.\r\n" +
         "#b@check#k - Shows the current time, daily and weekly reset times, and server rates.\r\n" +
         "#b@qs#k - Lets you select items to sell in bulk.\r\n" +
-        "#b@mule#k - Opens the Mule system.\r\n" +
-        "#b@Muletoggle#k - Enables or disables direct looting into the Mule.\r\n" +
+        "#b@bp#k - Opens the backpack system.\r\n" +
+        "#b@backpack <on/off>#k - Enables or disables direct looting into the backpack.\r\n" +
         "#b@shop#k - Opens the all-in-one shop for various items.\r\n" +
         "#b@elb#k - Displays the Expedition Leaderboard with daily and weekly ranks.\r\n" +
         "#b@bb#k - Allows you to buy back recently sold items.\r\n" +

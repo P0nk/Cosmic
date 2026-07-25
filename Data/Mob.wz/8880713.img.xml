@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="8880713.img">
+    <imgdir name="info">
+        <int name="level" value="220"/>
+        <int name="maxHP" value="2100000000"/>
+        <int name="maxMP" value="10000000"/>
+        <int name="speed" value="-60"/>
+        <int name="PADamage" value="22000"/>
+        <int name="PDDamage" value="600"/>
+        <int name="PDRate" value="300"/>
+        <int name="MADamage" value="24000"/>
+        <int name="MDDamage" value="450"/>
+        <int name="MDRate" value="300"/>
+        <int name="acc" value="9999"/>
+        <int name="eva" value="750"/>
+        <int name="pushed" value="1000000000"/>
+        <int name="boss" value="1"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="12"/>
+        <int name="category" value="8"/>
+        <int name="mpRecovery" value="10000"/>
+        <string name="mobType" value="1N"/>
+        <string name="defaultHP" unicode="true" value="측정불가"/>
+        <string name="defaultMP" unicode="true" value="측정불가"/>
+        <int name="hideHP" value="1"/>
+        <float name="fs" value="10.0"/>
+        <int name="ignoreMoveImpact" value="1"/>
+        <int name="showNotRemoteDam" value="1"/>
+        <int name="ignoreFieldOut" value="1"/>
+        <string name="elemAttr" value="P2H2F2I2S2L2D2"/>
+        <int name="ignoreMovable" value="1"/>
+        <imgdir name="firstAttackRange">
+            <vector name="lt" x="-2500" y="-768"/>
+            <vector name="rb" x="2500" y="768"/>
+        </imgdir>
+        <int name="firstAttack" value="1"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="1" name="0" width="1">
+            <vector name="origin" x="0" y="0"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="attack1">
+        <canvas height="1" name="0" width="1">
+            <int name="delay" value="60"/>
+            <vector name="origin" x="64" y="63"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="info">
+            <imgdir name="hit">
+                <uol name="0" value="../../0"/>
+            </imgdir>
+            <imgdir name="range">
+                <vector name="lt" x="-120" y="-120"/>
+                <vector name="rb" x="120" y="120"/>
+            </imgdir>
+            <imgdir name="areaWarning">
+                <uol name="0" value="../../0"/>
+            </imgdir>
+            <int name="action" value="1"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="0"/>
+            <int name="conMP" value="0"/>
+            <int name="magic" value="1"/>
+            <int name="fixDamR" value="10"/>
+            <int name="onlyFsm" value="1"/>
+            <int name="disease" value="123"/>
+            <int name="level" value="124"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="attack2">
+        <imgdir name="info">
+            <imgdir name="range">
+                <vector name="lt" x="-1" y="-1"/>
+                <vector name="rb" x="1" y="1"/>
+            </imgdir>
+            <imgdir name="hit">
+                <canvas height="180" name="0" width="172">
+                    <vector name="origin" x="75" y="80"/>
+                    <int name="z" value="0"/>
+                    <int name="delay" value="60"/>
+                </canvas>
+                <canvas height="140" name="1" width="144">
+                    <vector name="origin" x="68" y="67"/>
+                    <int name="z" value="0"/>
+                    <int name="delay" value="60"/>
+                </canvas>
+                <canvas height="140" name="2" width="144">
+                    <vector name="origin" x="68" y="68"/>
+                    <int name="z" value="0"/>
+                    <int name="delay" value="60"/>
+                </canvas>
+                <canvas height="140" name="3" width="140">
+                    <vector name="origin" x="67" y="69"/>
+                    <int name="z" value="0"/>
+                    <int name="delay" value="60"/>
+                </canvas>
+            </imgdir>
+            <imgdir name="areaWarning">
+                <uol name="0" value="../../../attack1/0"/>
+            </imgdir>
+            <int name="action" value="2"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="0"/>
+            <int name="conMP" value="0"/>
+            <int name="magic" value="1"/>
+            <int name="fixDamR" value="10"/>
+            <int name="disease" value="123"/>
+            <int name="level" value="122"/>
+            <int name="onlyFsm" value="1"/>
+        </imgdir>
+        <uol name="0" value="../attack1/0"/>
+    </imgdir>
+    <imgdir name="attack3">
+        <uol name="0" value="../stand/0"/>
+        <int name="attackAfter" value="1770"/>
+        <int name="randDelayAttack" value="12000"/>
+        <imgdir name="info">
+            <imgdir name="range">
+                <vector name="lt" x="-125" y="-225"/>
+                <vector name="rb" x="125" y="30"/>
+                <int name="start" value="0"/>
+                <int name="areaCount" value="11"/>
+                <int name="attackCount" value="10"/>
+                <int name="areaMBR" value="1"/>
+            </imgdir>
+            <imgdir name="hit">
+                <uol name="0" value="../../../attack1/0"/>
+            </imgdir>
+            <int name="action" value="3"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="0"/>
+            <int name="conMP" value="0"/>
+            <int name="magic" value="1"/>
+            <int name="fixDamR" value="10"/>
+            <int name="onlyFsm" value="1"/>
+            <int name="disease" value="126"/>
+            <int name="level" value="53"/>
+        </imgdir>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <canvas height="1" name="0" width="1"/>
+    </imgdir>
+    <imgdir name="attack4">
+        <canvas height="1" name="0" width="1">
+            <int name="delay" value="3000"/>
+        </canvas>
+        <imgdir name="info">
+            <imgdir name="hit">
+                <uol name="0" value="../../0"/>
+            </imgdir>
+            <imgdir name="range">
+                <vector name="lt" x="-57" y="-87"/>
+                <vector name="rb" x="63" y="6"/>
+            </imgdir>
+            <int name="action" value="4"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="0"/>
+            <int name="conMP" value="0"/>
+            <int name="magic" value="1"/>
+            <int name="fixDamR" value="5"/>
+            <int name="onlyFsm" value="1"/>
+        </imgdir>
+    </imgdir>
+</imgdir>

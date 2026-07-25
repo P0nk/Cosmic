@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="3012002.img">
+    <imgdir name="info">
+        <string name="info" value="Crimsonwood Keep : Demon Hunter&apos;s Key Piece"/>
+        <int name="dcMark" value="1"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="24" y="17"/>
+            <int name="z" value="0"/>
+            <string name="_outlink" value="Reactor/6902000.img/0/hit/0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="9"/>
+                <int name="state" value="1"/>
+                <vector name="lt" x="-32" y="-31"/>
+                <vector name="rb" x="33" y="15"/>
+                <imgdir name="clickArea">
+                    <vector name="lt" x="-90" y="-33"/>
+                    <vector name="rb" x="90" y="21"/>
+                    <string name="Message" value="You don&apos;t know any box-opening magic. Get closer and do it the old-fashioned way."/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="24" y="17"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/6902000.img/0/hit/0"/>
+            </canvas>
+            <canvas name="1" width="1" height="1">
+                <vector name="origin" x="32" y="31"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+                <string name="_outlink" value="Reactor/6902000.img/0/hit/1"/>
+            </canvas>
+        </imgdir>
+        <int name="repeat" value="1"/>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+        </canvas>
+    </imgdir>
+    <string name="action" value="CWitem2"/>
+</imgdir>

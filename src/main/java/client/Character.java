@@ -27,7 +27,6 @@ import client.creator.CharacterFactoryRecipe;
 import client.inventory.*;
 import client.inventory.Equip.StatUpgrade;
 import client.inventory.manipulator.CashIdGenerator;
-import client.command.ForgeEconomyConstants;
 import client.inventory.manipulator.InventoryManipulator;
 import client.keybind.KeyBinding;
 import client.keybind.QuickslotBinding;
@@ -169,13 +168,11 @@ public class Character extends AbstractCharacterObject {
     private final AtomicLong exp = new AtomicLong();
     private final AtomicInteger gachaexp = new AtomicInteger();
     private final AtomicInteger meso = new AtomicInteger();
-    private Stat autoStatTarget = null;
     private final AtomicInteger chair = new AtomicInteger(-1);
     private int merchantmeso;
     private BuddyList buddylist;
     private EventInstanceManager eventInstance = null;
-    private boolean autoGoldLeafEnabled = false;
-    private boolean autoGoldLeafConverting = false;
+
     private FieldInstanceManager fieldInstance = null;
     private HiredMerchant hiredMerchant = null;
     private Client client;
@@ -296,7 +293,6 @@ public class Character extends AbstractCharacterObject {
     public boolean inExpedition = false;
     private int reborns;
     private int getLinkedStats;
-    private boolean autoRebirth;
 
     //Monster Books Tiers
     private int Tier1;
@@ -315,6 +311,16 @@ public class Character extends AbstractCharacterObject {
     private int deathCounter = 0;
 
     private boolean worldChat = false;
+
+    private long lastBackpackCommandTime = 0;
+
+    public long getLastBackpackCommandTime() {
+        return lastBackpackCommandTime;
+    }
+
+    public void setLastBackpackCommandTime(long time) {
+        this.lastBackpackCommandTime = time;
+    }
 
     private boolean useModifiedPickupItem = false;
 
@@ -3819,10 +3825,8 @@ public class Character extends AbstractCharacterObject {
         } else {
             sendPacket(PacketCreator.enableActions());
         }
-        if (gain > 0) {
-            tryAutoGoldLeafConversion();
-        }
     }
+
     public void genericGuildMessage(int code) {
         this.sendPacket(GuildPackets.genericGuildMessage((byte) code));
     }
@@ -7062,90 +7066,6 @@ public class Character extends AbstractCharacterObject {
             gainSp(spGain, GameConstants.getSkillBook(job.getId()), true);
         }
     }
-    public boolean isAutoGoldLeafEnabled() {
-        return autoGoldLeafEnabled;
-    }
-
-    public void setAutoGoldLeafEnabled(boolean autoGoldLeafEnabled) {
-        this.autoGoldLeafEnabled = autoGoldLeafEnabled;
-    }
-    public void tryAutoGoldLeafConversion() {
-        if (!autoGoldLeafEnabled || autoGoldLeafConverting) {
-            return;
-        }
-
-        int leafId =
-                ForgeEconomyConstants.GOLDEN_MAPLE_LEAF_ID;
-
-        int exchangeCost =
-                ForgeEconomyConstants.MESOS_PER_GOLDEN_MAPLE_LEAF;
-
-        if (getMeso() < exchangeCost) {
-            return;
-        }
-
-        if (!canHold(leafId)) {
-            dropMessage(
-                    5,
-                    "Automatic Golden Maple Leaf conversion failed because your ETC inventory is full."
-            );
-            return;
-        }
-
-        autoGoldLeafConverting = true;
-
-        try {
-            int leavesCreated = 0;
-
-            while (getMeso() >= exchangeCost && canHold(leafId)) {
-                InventoryManipulator.addById(
-                        getClient(),
-                        leafId,
-                        (short) 1,
-                        "",
-                        -1
-                );
-
-                /*
-                 * The recursion guard prevents this negative gainMeso call
-                 * from starting another conversion.
-                 */
-                gainMeso(
-                        -exchangeCost,
-                        false,
-                        false,
-                        false
-                );
-
-                leavesCreated++;
-            }
-
-            if (leavesCreated > 0) {
-                sendPacket(
-                        PacketCreator.getShowItemGain(
-                                leafId,
-                                (short) leavesCreated,
-                                true
-                        )
-                );
-
-                dropMessage(
-                        5,
-                        "Automatically converted "
-                                + String.format(
-                                "%,d",
-                                (long) exchangeCost * leavesCreated
-                        )
-                                + " mesos into "
-                                + leavesCreated
-                                + " Golden Maple Leaf"
-                                + (leavesCreated == 1 ? "." : "s.")
-                );
-            }
-        } finally {
-            autoGoldLeafConverting = false;
-        }
-    }
 
     public synchronized void levelUp(boolean takeexp) {
         Skill improvingMaxHP = null;
@@ -7211,7 +7131,6 @@ public class Character extends AbstractCharacterObject {
                 currentAP = 50;
             }
             gainAp(currentAP, true);
-            applyAutoStat(currentAP);
         }
 
         int addhp = 0, addmp = 0;
@@ -7871,9 +7790,8 @@ public class Character extends AbstractCharacterObject {
                     ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
                     ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
                     ret.reborns = rs.getInt("reborns");
-                    ret.autoRebirth = rs.getBoolean("autorebirth");
                     ret.bankMesos = rs.getLong("bank");
-                    // ret.damageSkin = rs.getInt("damageskin");
+                   // ret.damageSkin = rs.getInt("damageskin");
 
                     wserv = Server.getInstance().getWorld(ret.world);
 
@@ -12138,26 +12056,6 @@ public class Character extends AbstractCharacterObject {
         setReborns(getReborns() + 1);
     }
 
-    public boolean isAutoRebirth() {
-        return autoRebirth;
-    }
-
-    public void setAutoRebirth(boolean autoRebirth) {
-        this.autoRebirth = autoRebirth;
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "UPDATE characters SET autorebirth = ? WHERE id = ?")) {
-
-            ps.setBoolean(1, autoRebirth);
-            ps.setInt(2, id);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public int getReborns() {
         if (!YamlConfig.config.server.USE_REBIRTH_SYSTEM) {
             yellowMessage("Rebirth system is not enabled!");
@@ -12333,32 +12231,7 @@ public class Character extends AbstractCharacterObject {
         ArrayNode jsonArray = objectMapper.valueToTree(jsonDataList);
         return jsonArray.toString();
     }
-    public Stat getAutoStatTarget() {
-        return autoStatTarget;
-    }
 
-    public void setAutoStatTarget(Stat autoStatTarget) {
-        this.autoStatTarget = autoStatTarget;
-    }
-    private void applyAutoStat(int gainedAp) {
-        if (autoStatTarget == null || gainedAp <= 0) {
-            return;
-        }
-
-        boolean assigned = CharacterManipulator.adjustStat(
-                getClient(),
-                autoStatTarget,
-                gainedAp
-        );
-
-        if (!assigned) {
-            dropMessage(
-                    5,
-                    "Autostat could not assign the newly gained AP. "
-                            + "Your selected stat may have reached its limit."
-            );
-        }
-    }
     //EVENTS
     private byte team = 0;
     private Fitness fitness;

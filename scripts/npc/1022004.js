@@ -1,472 +1,212 @@
 /*
- * ForgeMS MSI Exchange
- * Temporary NPC Base: Mr. Smith
- * NPC ID: 1022004
- *
- * Phase 1:
- * - Non-NX equipment only.
- * - Requires 32,767 STR, DEX, INT and LUK.
- * - Transfers those stats into one selected equipment item.
- * - Resets the player's base stats to 4.
- *
- * Future:
- * - Track completion of required non-NX base equipment slots.
- * - Unlock NX MSI exchanges only after the base set is complete.
- */
+	This file is part of the OdinMS Maple Story Server
+    Copyright (C) 2008 Patrick Huy <patrick.huy@frz.cc>
+		       Matthias Butz <matze@odinms.de>
+		       Jan Christian Meyer <vimes@odinms.de>
 
-var status = -1;
-var mainSelection = -1;
-var selectedInventorySlot = 0;
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation version 3 as published by
+    the Free Software Foundation. You may not use, modify or distribute
+    this program under any other version of the GNU Affero General Public
+    License.
 
-var MAX_STAT = 32767;
-var RESET_STAT = 4;
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/* Mr. Smith
+	Victoria Road: Perion (102000000)
+	
+	Refining NPC: 
+	* Warrior Gloves - 10-60 + upgrades
+	* Processed Wood/Screws
+*/
+
+var status = 0;
+var selectedType = -1;
+var selectedItem = -1;
+var item;
+var mats;
+var matQty;
+var cost;
+var qty;
+var equip;
 
 function start() {
+    cm.getPlayer().setCS(true);
     status = -1;
     action(1, 0, 0);
 }
 
 function action(mode, type, selection) {
-    if (mode === -1) {
+    if (mode == 1) {
+        status++;
+    } else {
         cm.dispose();
-        return;
     }
+    if (status == 0 && mode == 1) {
+        var selStr = "Um... Hi, I'm Mr. Thunder's apprentice. He's getting up there in age, so he handles most of the heavy-duty work while I handle some of the lighter jobs. What can I do for you?#b"
+        var options = ["Make a glove", "Upgrade a glove", "Create materials"];
+        for (var i = 0; i < options.length; i++) {
+            selStr += "\r\n#L" + i + "# " + options[i] + "#l";
+        }
 
-    if (mode === 0) {
-        if (status <= 0) {
+        cm.sendSimple(selStr);
+    } else if (status == 1 && mode == 1) {
+        selectedType = selection;
+        if (selectedType == 0) { //glove refine
+            var selStr = "Okay, so which glove do you want me to make?#b";
+            var items = ["Juno#k - Warrior Lv. 10#b", "Steel Fingerless Gloves#k - Warrior Lv. 15#b", "Venon#k - Warrior Lv. 20#b", "White Fingerless Gloves#k - Warrior Lv. 25#b",
+                "Bronze Missel#k - Warrior Lv. 30#b", "Steel Briggon#k - Warrior Lv. 35#b", "Iron Knuckle#k - Warrior Lv. 40#b", "Steel Brist#k - Warrior Lv. 50#b", "Bronze Clench#k - Warrior Lv. 60#b"];
+            for (var i = 0; i < items.length; i++) {
+                selStr += "\r\n#L" + i + "# " + items[i] + "#l";
+            }
+            cm.sendSimple(selStr);
+            equip = true;
+        } else if (selectedType == 1) { //glove upgrade
+            var selStr = "Upgrade a glove? That shouldn't be too difficult. Which did you have in mind?#b";
+            var crystals = ["Steel Missel#k - Warrior Lv. 30#b", "Orihalcon Missel#k - Warrior Lv. 30#b", "Yellow Briggon#k - Warrior Lv. 35#b", "Dark Briggon#k - Warrior Lv. 35#b",
+                "Adamantium Knuckle#k - Warrior Lv. 40#b", "Dark Knuckle#k - Warrior Lv. 40#b", "Mithril Brist#k - Warrior Lv. 50#b", "Gold Brist#k - Warrior Lv. 50#b",
+                "Sapphire Clench#k - Warrior Lv. 60#b", "Dark Clench#k - Warrior Lv. 60#b"];
+            for (var i = 0; i < crystals.length; i++) {
+                selStr += "\r\n#L" + i + "# " + crystals[i] + "#l";
+            }
+            cm.sendSimple(selStr);
+            equip = true;
+        } else if (selectedType == 2) { //material refine
+            var selStr = "Materials? I know of a few materials that I can make for you...#b";
+            var materials = ["Make Processed Wood with Tree Branch", "Make Processed Wood with Firewood", "Make Screws (packs of 15)"];
+            for (var i = 0; i < materials.length; i++) {
+                selStr += "\r\n#L" + i + "# " + materials[i] + "#l";
+            }
+            cm.sendSimple(selStr);
+            equip = false;
+        }
+        if (equip) {
+            status++;
+        }
+    } else if (status == 2 && mode == 1) {
+        selectedItem = selection;
+        if (selectedType == 2) { //material refine
+            var itemSet = [4003001, 4003001, 4003000];
+            var matSet = [4000003, 4000018, [4011000, 4011001]];
+            var matQtySet = [10, 5, [1, 1]];
+            var costSet = [0, 0, 0];
+            item = itemSet[selectedItem];
+            mats = matSet[selectedItem];
+            matQty = matQtySet[selectedItem];
+            cost = costSet[selectedItem];
+        }
+
+        var prompt = "So, you want me to make some #t" + item + "#s? In that case, how many do you want me to make?";
+
+        cm.sendGetNumber(prompt, 1, 1, 100)
+    } else if (status == 3 && mode == 1) {
+        if (equip) {
+            selectedItem = selection;
+            qty = 1;
+        } else {
+            qty = (selection > 0) ? selection : (selection < 0 ? -selection : 1);
+        }
+
+        if (selectedType == 0) { //glove refine
+            var itemSet = [1082003, 1082000, 1082004, 1082001, 1082007, 1082008, 1082023, 1082009, 1082059];
+            var matSet = [[4000021, 4011001], 4011001, [4000021, 4011000], 4011001, [4011000, 4011001, 4003000], [4000021, 4011001, 4003000], [4000021, 4011001, 4003000],
+                [4011001, 4021007, 4000030, 4003000], [4011007, 4011000, 4011006, 4000030, 4003000]];
+            var matQtySet = [[15, 1], 2, [40, 2], 2, [3, 2, 15], [30, 4, 15], [50, 5, 40], [3, 2, 30, 45], [1, 8, 2, 50, 50]];
+            var costSet = [1000, 2000, 5000, 10000, 20000, 30000, 40000, 50000, 70000];
+            item = itemSet[selectedItem];
+            mats = matSet[selectedItem];
+            matQty = matQtySet[selectedItem];
+            cost = costSet[selectedItem];
+        } else if (selectedType == 1) { //glove upgrade
+            var itemSet = [1082005, 1082006, 1082035, 1082036, 1082024, 1082025, 1082010, 1082011, 1082060, 1082061];
+            var matSet = [[1082007, 4011001], [1082007, 4011005], [1082008, 4021006], [1082008, 4021008], [1082023, 4011003], [1082023, 4021008],
+                [1082009, 4011002], [1082009, 4011006], [1082059, 4011002, 4021005], [1082059, 4021007, 4021008]];
+            var matQtySet = [[1, 1], [1, 2], [1, 3], [1, 1], [1, 4], [1, 2], [1, 5], [1, 4], [1, 3, 5], [1, 2, 2]];
+            var costSet = [20000, 25000, 30000, 40000, 45000, 50000, 55000, 60000, 70000, 80000];
+            item = itemSet[selectedItem];
+            mats = matSet[selectedItem];
+            matQty = matQtySet[selectedItem];
+            cost = costSet[selectedItem];
+        }
+
+        var prompt = "You want me to make ";
+        if (qty == 1) {
+            prompt += "a #t" + item + "#?";
+        } else {
+            prompt += qty + " #t" + item + "#?";
+        }
+
+        prompt += " In that case, I'm going to need specific items from you in order to make it. Make sure you have room in your inventory, though!#b";
+
+        if (mats instanceof Array) {
+            for (var i = 0; i < mats.length; i++) {
+                prompt += "\r\n#i" + mats[i] + "# " + matQty[i] * qty + " #t" + mats[i] + "#";
+            }
+        } else {
+            prompt += "\r\n#i" + mats + "# " + matQty * qty + " #t" + mats + "#";
+        }
+
+        if (cost > 0) {
+            prompt += "\r\n#i4031138# " + cost * qty + " meso";
+        }
+
+        cm.sendYesNo(prompt);
+    } else if (status == 4 && mode == 1) {
+        var complete = true;
+        var recvItem = item, recvQty;
+
+        if (item == 4003000)//screws
+        {
+            recvQty = 15 * qty;
+        } else {
+            recvQty = qty;
+        }
+
+        if (!cm.canHold(recvItem, recvQty)) {
+            cm.sendOk("Check your inventory for a free slot first.");
             cm.dispose();
             return;
-        }
-
-        cm.sendOk(
-            "The forge will remain ready when you return."
-        );
-        cm.dispose();
-        return;
-    }
-
-    status++;
-
-    if (status === 0) {
-        showMainMenu();
-        return;
-    }
-
-    if (status === 1) {
-        mainSelection = selection;
-
-        if (mainSelection === 0) {
-            beginExchange();
+        } else if (cm.getMeso() < cost * qty) {
+            cm.sendOk("I may still be an apprentice, but I do need to earn a living.");
+            cm.dispose();
             return;
+        } else {
+            if (mats instanceof Array) {
+                for (var i = 0; complete && i < mats.length; i++) {
+                    if (!cm.haveItem(mats[i], matQty[i] * qty)) {
+                        complete = false;
+                    }
+                }
+            } else if (!cm.haveItem(mats, matQty * qty)) {
+                complete = false;
+            }
         }
 
-        if (mainSelection === 1) {
-            showRequirements();
-            return;
+        if (!complete) {
+            cm.sendOk("I'm still an apprentice, I don't know if I can substitute other items in yet... Can you please bring what the recipe calls for?");
+        } else {
+            if (mats instanceof Array) {
+                for (var i = 0; i < mats.length; i++) {
+                    cm.gainItem(mats[i], -matQty[i] * qty);
+                }
+            } else {
+                cm.gainItem(mats, -matQty * qty);
+            }
+
+            if (cost > 0) {
+                cm.gainMeso(-cost * qty);
+            }
+
+            cm.gainItem(recvItem, recvQty);
+            cm.sendOk("Did that come out right? Come by me again if you have anything for me to practice on.");
         }
-
-        if (mainSelection === 2) {
-            showExchangeRules();
-            return;
-        }
-
         cm.dispose();
-        return;
     }
-
-    if (status === 2 && mainSelection === 0) {
-        selectedInventorySlot = selection;
-        confirmSelectedItem();
-        return;
-    }
-
-    if (status === 3 && mainSelection === 0) {
-        completeExchange();
-        return;
-    }
-
-    cm.dispose();
-}
-
-function showMainMenu() {
-    cm.sendSimple(
-        "Greetings, adventurer.\r\n\r\n" +
-        "I am #bEitri#k, Master Smith of the Coalition.\r\n\r\n" +
-        "Those who have forged every attribute to its mortal limit " +
-        "may bind that strength into their equipment.\r\n\r\n" +
-        "What would you like to do?\r\n\r\n" +
-        "#L0##bExchange stats into an item.#k#l\r\n" +
-        "#L1##bView MSI requirements.#k#l\r\n" +
-        "#L2##bView exchange rules.#k#l"
-    );
-}
-
-function beginExchange() {
-    if (!hasMaximumPlayerStats()) {
-        showMissingStats();
-        return;
-    }
-
-    var menu = buildEligibleItemMenu();
-
-    if (menu === "") {
-        cm.sendOk(
-            "You do not currently have any eligible equipment in your " +
-            "#bEQUIP inventory#k.\r\n\r\n" +
-            "The item must:\r\n\r\n" +
-            "#b•#k Be a non-NX equipment item.\r\n" +
-            "#b•#k Be located in your EQUIP inventory.\r\n" +
-            "#b•#k Not already contain 32,767 of every base stat.\r\n\r\n" +
-            "Unequip the item you wish to forge and speak with me again."
-        );
-        cm.dispose();
-        return;
-    }
-
-    cm.sendSimple(
-        "#eSelect an item to forge into an MSI:#n\r\n\r\n" +
-        "#rThe selected item will be permanently modified and your " +
-        "base STR, DEX, INT and LUK will each reset to " +
-        RESET_STAT + ".#k\r\n\r\n" +
-        menu
-    );
-}
-
-function buildEligibleItemMenu() {
-    var inventory = getEquipInventory();
-    var list = inventory.list();
-    var iterator = list.iterator();
-    var menu = "";
-
-    while (iterator.hasNext()) {
-        var item = iterator.next();
-
-        if (item === null) {
-            continue;
-        }
-
-        var position = Number(item.getPosition());
-
-        /*
-         * Positive positions are items in the EQUIP inventory.
-         * Equipped items normally use negative positions.
-         */
-        if (position <= 0) {
-            continue;
-        }
-
-        if (!isEligibleEquipment(item)) {
-            continue;
-        }
-
-        var itemId = Number(item.getItemId());
-
-        menu +=
-            "#L" + position + "#" +
-            "#i" + itemId + "# " +
-            "#b#t" + itemId + "##k" +
-            "#l\r\n";
-    }
-
-    return menu;
-}
-
-function confirmSelectedItem() {
-    var item = getSelectedItem();
-
-    if (item === null) {
-        cm.sendOk(
-            "I could not locate that item. It may have been moved."
-        );
-        cm.dispose();
-        return;
-    }
-
-    if (!isEligibleEquipment(item)) {
-        cm.sendOk(
-            "That item is no longer eligible for the MSI exchange."
-        );
-        cm.dispose();
-        return;
-    }
-
-    var itemId = Number(item.getItemId());
-
-    cm.sendYesNo(
-        "You have selected:\r\n\r\n" +
-        "#i" + itemId + "# #b#t" + itemId + "##k\r\n\r\n" +
-        "The item will receive:\r\n\r\n" +
-        "#b+" + formatNumber(MAX_STAT) + " STR\r\n" +
-        "+" + formatNumber(MAX_STAT) + " DEX\r\n" +
-        "+" + formatNumber(MAX_STAT) + " INT\r\n" +
-        "+" + formatNumber(MAX_STAT) + " LUK#k\r\n\r\n" +
-        "Your character’s base STR, DEX, INT and LUK will each be " +
-        "reset to #r" + RESET_STAT + "#k.\r\n\r\n" +
-        "#rThis exchange cannot be undone.#k\r\n\r\n" +
-        "Do you wish to continue?"
-    );
-}
-
-function completeExchange() {
-    /*
-     * Recheck everything before modifying the character or item.
-     */
-    if (!hasMaximumPlayerStats()) {
-        cm.sendOk(
-            "You no longer meet the MSI stat requirements."
-        );
-        cm.dispose();
-        return;
-    }
-
-    var item = getSelectedItem();
-
-    if (item === null) {
-        cm.sendOk(
-            "The selected item could not be found. The exchange was cancelled."
-        );
-        cm.dispose();
-        return;
-    }
-
-    if (!isEligibleEquipment(item)) {
-        cm.sendOk(
-            "The selected item is no longer eligible. The exchange was cancelled."
-        );
-        cm.dispose();
-        return;
-    }
-
-    /*
-     * The inventory item must be an Equip object for stat setters.
-     */
-    var equip = item;
-
-    equip.setStr(MAX_STAT);
-    equip.setDex(MAX_STAT);
-    equip.setInt(MAX_STAT);
-    equip.setLuk(MAX_STAT);
-
-    resetPlayerStats();
-
-    /*
-     * Notify the client that the inventory item was modified.
-     */
-    forceInventoryUpdate(equip);
-
-    var itemId = Number(equip.getItemId());
-
-    cm.sendOk(
-        "The forging is complete.\r\n\r\n" +
-        "#i" + itemId + "# #b#t" + itemId + "##k\r\n\r\n" +
-        "This item now contains:\r\n\r\n" +
-        "#b+" + formatNumber(MAX_STAT) + " STR\r\n" +
-        "+" + formatNumber(MAX_STAT) + " DEX\r\n" +
-        "+" + formatNumber(MAX_STAT) + " INT\r\n" +
-        "+" + formatNumber(MAX_STAT) + " LUK#k\r\n\r\n" +
-        "Your strength has been returned to the beginning. " +
-        "Forge it again."
-    );
-
-    cm.dispose();
-}
-
-function isEligibleEquipment(item) {
-    if (item === null) {
-        return false;
-    }
-
-    var itemId = Number(item.getItemId());
-
-    /*
-     * Block all NX equipment during Phase 1.
-     */
-    if (isNxItem(itemId)) {
-        return false;
-    }
-
-    /*
-     * Prevent repeatedly exchanging an already completed MSI.
-     */
-    if (isAlreadyMsi(item)) {
-        return false;
-    }
-
-    return true;
-}
-
-function isAlreadyMsi(item) {
-    return Number(item.getStr()) >= MAX_STAT &&
-        Number(item.getDex()) >= MAX_STAT &&
-        Number(item.getInt()) >= MAX_STAT &&
-        Number(item.getLuk()) >= MAX_STAT;
-}
-
-function hasMaximumPlayerStats() {
-    var player = cm.getPlayer();
-
-    return Number(player.getStr()) >= MAX_STAT &&
-        Number(player.getDex()) >= MAX_STAT &&
-        Number(player.getInt()) >= MAX_STAT &&
-        Number(player.getLuk()) >= MAX_STAT;
-}
-
-function showMissingStats() {
-    var player = cm.getPlayer();
-
-    var str = Number(player.getStr());
-    var dex = Number(player.getDex());
-    var intStat = Number(player.getInt());
-    var luk = Number(player.getLuk());
-
-    cm.sendOk(
-        "#eMSI Exchange Requirements#n\r\n\r\n" +
-        "You must reach the maximum value in all four base stats.\r\n\r\n" +
-        buildStatLine("STR", str) +
-        buildStatLine("DEX", dex) +
-        buildStatLine("INT", intStat) +
-        buildStatLine("LUK", luk) +
-        "\r\nContinue forging your character and return when every " +
-        "attribute has reached #r" + formatNumber(MAX_STAT) + "#k."
-    );
-
-    cm.dispose();
-}
-
-function buildStatLine(name, currentValue) {
-    var met = currentValue >= MAX_STAT;
-    var marker = met ? "#bComplete#k" : "#rIncomplete#k";
-
-    return (
-        "#b•#k " + name + ": " +
-        formatNumber(currentValue) + " / " +
-        formatNumber(MAX_STAT) + " — " +
-        marker + "\r\n"
-    );
-}
-
-function showRequirements() {
-    cm.sendOk(
-        "#eForgeMS MSI Requirements#n\r\n\r\n" +
-        "Your character must have:\r\n\r\n" +
-        "#b•#k " + formatNumber(MAX_STAT) + " STR\r\n" +
-        "#b•#k " + formatNumber(MAX_STAT) + " DEX\r\n" +
-        "#b•#k " + formatNumber(MAX_STAT) + " INT\r\n" +
-        "#b•#k " + formatNumber(MAX_STAT) + " LUK\r\n\r\n" +
-        "A successful exchange places those four stats onto the " +
-        "selected equipment item and resets your character’s four " +
-        "base stats to " + RESET_STAT + "."
-    );
-
-    cm.dispose();
-}
-
-function showExchangeRules() {
-    cm.sendOk(
-        "#eForgeMS MSI Exchange Rules#n\r\n\r\n" +
-        "#b•#k All four base stats must be " +
-        formatNumber(MAX_STAT) + ".\r\n" +
-        "#b•#k The selected item must be inside the EQUIP inventory.\r\n" +
-        "#b•#k Existing attack, defense, upgrades and other item stats remain.\r\n" +
-        "#b•#k The item receives " + formatNumber(MAX_STAT) +
-        " STR, DEX, INT and LUK.\r\n" +
-        "#b•#k Your character’s four base stats reset after the exchange.\r\n" +
-        "#b•#k An item that is already MSI cannot be exchanged again.\r\n" +
-        "#b•#k NX equipment is currently locked.\r\n" +
-        "#b•#k Players must complete the required non-NX base MSI set " +
-        "before NX MSI equipment becomes available."
-    );
-
-    cm.dispose();
-}
-
-/*
- * Inventory access
- *
- * Cosmic builds may call this enum InventoryType.EQUIP.
- * If your source uses MapleInventoryType instead, this import/function
- * will need the corresponding enum name changed.
- */
-function getEquipInventory() {
-    var InventoryType = Java.type("client.inventory.InventoryType");
-    return cm.getPlayer().getInventory(InventoryType.EQUIP);
-}
-
-function getSelectedItem() {
-    var inventory = getEquipInventory();
-    return inventory.getItem(selectedInventorySlot);
-}
-
-/*
- * Checks the WZ cash/NX flag through ItemInformationProvider.
- *
- * Depending on your Cosmic revision, the provider class or method may be:
- *
- * ItemInformationProvider.getInstance().isCash(itemId)
- *
- * or:
- *
- * MapleItemInformationProvider.getInstance().isCash(itemId)
- */
-function isNxItem(itemId) {
-    var ItemInformationProvider =
-        Java.type("server.ItemInformationProvider");
-
-    return ItemInformationProvider
-        .getInstance()
-        .isCash(itemId);
-}
-
-function resetPlayerStats() {
-    var player = cm.getPlayer();
-
-    player.setStr(RESET_STAT);
-    player.setDex(RESET_STAT);
-    player.setInt(RESET_STAT);
-    player.setLuk(RESET_STAT);
-
-    /*
-     * Recalculates and sends updated character stats.
-     */
-    player.updateSingleStat(
-        Java.type("client.Stat").STR,
-        RESET_STAT
-    );
-
-    player.updateSingleStat(
-        Java.type("client.Stat").DEX,
-        RESET_STAT
-    );
-
-    player.updateSingleStat(
-        Java.type("client.Stat").INT,
-        RESET_STAT
-    );
-
-    player.updateSingleStat(
-        Java.type("client.Stat").LUK,
-        RESET_STAT
-    );
-}
-
-/*
- * Sends the modified equipment back to the client.
- *
- * The exact inventory update helper can vary between Cosmic revisions.
- */
-function forceInventoryUpdate(equip) {
-    var InventoryManipulator =
-        Java.type("server.InventoryManipulator");
-
-    InventoryManipulator.updateItem(
-        cm.getClient(),
-        getEquipInventory().getType(),
-        equip
-    );
-
-    cm.getPlayer().equipChanged();
-}
-
-function formatNumber(number) {
-    return String(number).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }

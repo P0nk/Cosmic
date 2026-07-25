@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="8880318.img">
+    <imgdir name="info">
+        <int name="level" value="250"/>
+        <int name="maxHP" value="2000000000"/>
+        <int name="maxMP" value="1000"/>
+        <int name="PADamage" value="10000"/>
+        <int name="PDDamage" value="300"/>
+        <int name="PDRate" value="50"/>
+        <int name="MADamage" value="10000"/>
+        <int name="MDDamage" value="300"/>
+        <int name="MDRate" value="50"/>
+        <int name="acc" value="9999"/>
+        <int name="eva" value="750"/>
+        <int name="pushed" value="50000000"/>
+        <int name="boss" value="1"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="6"/>
+        <string name="elemAttr" value="F2I2L2S2H2D2"/>
+        <string name="mobType" value="14N"/>
+        <int name="hideName" value="1"/>
+        <int name="exp" value="0"/>
+        <int name="wp" value="0"/>
+        <imgdir name="revive">
+            <int name="0" value="8880319"/>
+        </imgdir>
+        <int name="hideUserDamage" value="1"/>
+        <int name="noDebuff" value="1"/>
+        <int name="ignoreMovable" value="1"/>
+        <int name="removeAfter" value="2"/>
+        <int name="flySpeed" value="-20"/>
+        <imgdir name="firstAttackRange">
+            <vector name="lt" x="-1366" y="-100"/>
+            <vector name="rb" x="1366" y="700"/>
+        </imgdir>
+        <int name="firstAttack" value="1"/>
+        <int name="isNotChaseSummoned" value="1"/>
+    </imgdir>
+    <imgdir name="regen">
+        <canvas height="1" name="0" width="1">
+            <vector name="origin" x="0" y="0"/>
+            <vector name="head" x="-109" y="-338"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../regen/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../regen/0"/>
+    </imgdir>
+    <imgdir name="fly">
+        <uol name="0" value="../regen/0"/>
+    </imgdir>
+</imgdir>

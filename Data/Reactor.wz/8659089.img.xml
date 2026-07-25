@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8659089.img">
+    <imgdir name="info">
+        <string name="info" value="스윙해머 멈추기 발판"/>
+        <int name="activateByTouch" value="1"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="55" y="24"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="250"/>
+            <string name="_outlink" value="Reactor/8659088.img/0/0"/>
+        </canvas>
+        <imgdir name="hit">
+            <canvas name="0" width="1" height="1">
+                <vector name="origin" x="55" y="19"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="100"/>
+                <string name="_outlink" value="Reactor/8659088.img/0/hit/0"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="55" y="19"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="250"/>
+            <string name="_outlink" value="Reactor/8659088.img/0/hit/0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="101"/>
+                <int name="state" value="0"/>
+            </imgdir>
+            <int name="timeOut" value="250"/>
+        </imgdir>
+        <uol name="hit" value="../0/hit"/>
+    </imgdir>
+    <string name="action" value="reactor_8659089"/>
+</imgdir>

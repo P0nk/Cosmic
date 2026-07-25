@@ -7,7 +7,6 @@ public class ServerConfig {
 
     //Database Configuration
     public String DB_URL_FORMAT;
-    public String DATA_PATH;
     public String DB_HOST;
     public String DB_USER;
     public String DB_PASS;
@@ -36,7 +35,6 @@ public class ServerConfig {
     public boolean BCRYPT_MIGRATION;
     public boolean COLLECTIVE_CHARSLOT;
     public boolean DETERRED_MULTICLIENT;
-    public boolean USE_EXP_GAIN_LOG;
 
     //Besides blocking logging in with several client sessions on the same machine, this also blocks suspicious login attempts for players that tries to login on an account using several diferent remote addresses.
 
@@ -111,9 +109,6 @@ public class ServerConfig {
     public boolean USE_ENABLE_FULL_RESPAWN;
     public boolean USE_ENABLE_CHAT_LOG;
     public boolean USE_REBIRTH_SYSTEM;
-    public boolean USE_AUTO_REBIRTH;
-    public int AUTO_REBIRTH_LEVEL;
-    public boolean REQUIRE_FIRST_MANUAL_REBIRTH;
     public boolean USE_MAP_OWNERSHIP_SYSTEM;
     public boolean USE_FISHING_SYSTEM;
     public boolean USE_NPCS_SCRIPTABLE;
@@ -349,9 +344,9 @@ public class ServerConfig {
     public double STARFORCE_BOOST_PERCENTAGE;
     public double STARFORCE_BOOST_PERCENTAGE2;
 
-    // Mule
-    public int Mule_MAX_ITEMS_PER_PAGE;
-    public int Mule_MAX_STORAGE_PER_ITEM;
-    public int Mule_MINIMUM_SEARCH_LENGTH;
-    public int Mule_MAX_UNIQUE_ITEMS;
+    // BACKPACK
+    public int BACKPACK_MAX_ITEMS_PER_PAGE;
+    public int BACKPACK_MAX_STORAGE_PER_ITEM;
+    public int BACKPACK_MINIMUM_SEARCH_LENGTH;
+    public int BACKPACK_MAX_UNIQUE_ITEMS;
 }

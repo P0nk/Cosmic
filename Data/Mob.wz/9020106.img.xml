@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9020106.img">
+    <imgdir name="info">
+        <int name="invincible" value="1"/>
+        <int name="level" value="1"/>
+        <int name="maxHP" value="2090000000"/>
+        <int name="PADamage" value="3"/>
+        <int name="PDRate" value="25"/>
+        <int name="MADamage" value="1"/>
+        <int name="MDRate" value="25"/>
+        <int name="acc" value="4"/>
+        <int name="pushed" value="1"/>
+        <float name="fs" value="10.0"/>
+        <int name="boss" value="1"/>
+        <int name="summonType" value="1"/>
+        <string name="mobType" value="7N"/>
+        <int name="PDDamage" value="0"/>
+        <int name="MDDamage" value="0"/>
+        <int name="eva" value="0"/>
+        <int name="acc" value="999"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="1" name="0" width="1">
+            <vector name="origin" x="36" y="53"/>
+            <vector name="head" x="77" y="990"/>
+            <int name="delay" value="90"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas height="1" name="0" width="1">
+            <vector name="origin" x="36" y="53"/>
+            <int name="delay" value="90"/>
+            <vector name="head" x="77" y="990"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+</imgdir>

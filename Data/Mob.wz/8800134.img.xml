@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="8800134.img">
+    <imgdir name="info">
+        <imgdir name="skill">
+            <imgdir name="0">
+                <int name="skill" value="214"/>
+                <int name="action" value="1"/>
+                <int name="level" value="13"/>
+                <int name="effectAfter" value="0"/>
+            </imgdir>
+            <imgdir name="1">
+                <int name="skill" value="201"/>
+                <int name="action" value="2"/>
+                <int name="level" value="167"/>
+                <int name="effectAfter" value="0"/>
+                <int name="skillAfter" value="1200"/>
+                <int name="onlyFsm" value="1"/>
+            </imgdir>
+        </imgdir>
+        <int name="level" value="125"/>
+        <int name="bodyAttack" value="1"/>
+        <int name="maxHP" value="5000000"/>
+        <int name="maxMP" value="200"/>
+        <int name="PADamage" value="775"/>
+        <int name="PDDamage" value="300"/>
+        <int name="PDRate" value="25"/>
+        <int name="MADamage" value="694"/>
+        <int name="MDDamage" value="500"/>
+        <int name="MDRate" value="25"/>
+        <int name="acc" value="160"/>
+        <int name="eva" value="39"/>
+        <int name="pushed" value="100000000"/>
+        <float name="fs" value="10.0"/>
+        <int name="boss" value="1"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="8"/>
+        <string name="elemAttr" value="F2I3"/>
+        <string name="mobType" value="7N"/>
+        <int name="firstAttack" value="1"/>
+        <imgdir name="firstAttackRange">
+            <vector name="lt" x="-1024" y="-800"/>
+            <vector name="rb" x="1024" y="800"/>
+        </imgdir>
+        <int name="removeAfter" value="28"/>
+        <long name="noFlip" value="1"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="1" name="0" width="1">
+            <vector name="origin" x="0" y="0"/>
+            <vector name="head" x="151" y="-340"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="skill1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="skill2">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

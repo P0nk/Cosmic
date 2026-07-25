@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9402097.img">
+<imgdir name="info">
+<int name="level" value="33"/>
+<int name="maxHP" value="1"/>
+<int name="maxMP" value="1"/>
+<int name="speed" value="5"/>
+<int name="PADamage" value="7500"/>
+<int name="PDDamage" value="3000"/>
+<int name="PDRate" value="50"/>
+<int name="MADamage" value="7500"/>
+<int name="MDDamage" value="3000"/>
+<int name="MDRate" value="40"/>
+<int name="acc" value="400"/>
+<int name="eva" value="200"/>
+<int name="exp" value="0"/>
+<int name="pushed" value="500000"/>
+<int name="mpRecovery" value="1000"/>
+<int name="boss" value="1"/>
+<int name="summonType" value="1"/>
+<int name="firstAttack" value="1"/>
+<int name="category" value="1"/>
+<string name="mobType" value="7N"/>
+<string name="elemAttr" value="P2H2F2I2S2L2D2"/>
+<int name="nonLevelCheckACC" value="1"/>
+<int name="nonLevelCheckEVA" value="1"/>
+<int name="notConsiderFieldSet" value="1"/>
+<imgdir name="revive">
+<int name="0" value="9402080"/>
+</imgdir>
+<imgdir name="damageModification">
+<imgdir name="0">
+<imgdir name="cond">
+<imgdir name="quest">
+<int name="questID" value="63205"/>
+<string name="questEx" value="damage"/>
+<string name="value" value="0"/>
+</imgdir>
+</imgdir>
+<imgdir name="value">
+<string name="type" value="fixed"/>
+<int name="value" value="0"/>
+</imgdir>
+</imgdir>
+<imgdir name="1">
+<imgdir name="cond">
+<imgdir name="quest">
+<int name="questID" value="63205"/>
+<string name="questEx" value="damage"/>
+<string name="value" value="1"/>
+</imgdir>
+</imgdir>
+<imgdir name="value">
+<string name="type" value="fixed"/>
+<int name="value" value="999"/>
+</imgdir>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="stand">
+<canvas name="0" width="65" height="62">
+<vector name="origin" x="32" y="62"/>
+<vector name="lt" x="-60" y="-163"/>
+<vector name="rb" x="98" y="-5"/>
+<vector name="head" x="7" y="-181"/>
+<int name="delay" value="120"/>
+</canvas>
+</imgdir>
+<imgdir name="hit1">
+<uol name="0" value="../stand/0"/>
+</imgdir>
+<imgdir name="die1">
+<uol name="0" value="../stand/0"/>
+<canvas name="1" width="129" height="139">
+<vector name="origin" x="61" y="114"/>
+<int name="z" value="0"/>
+</canvas>
+<canvas name="2" width="122" height="133">
+<vector name="origin" x="57" y="110"/>
+<int name="z" value="0"/>
+</canvas>
+<canvas name="3" width="122" height="128">
+<vector name="origin" x="57" y="106"/>
+<int name="z" value="0"/>
+</canvas>
+<canvas name="4" width="117" height="120">
+<vector name="origin" x="54" y="102"/>
+<int name="z" value="0"/>
+</canvas>
+<canvas name="5" width="109" height="103">
+<vector name="origin" x="50" y="91"/>
+<int name="z" value="0"/>
+</canvas>
+<canvas name="6" width="94" height="86">
+<vector name="origin" x="41" y="85"/>
+<int name="z" value="0"/>
+</canvas>
+<canvas name="7" width="23" height="43">
+<vector name="origin" x="6" y="60"/>
+<int name="z" value="0"/>
+</canvas>
+</imgdir>
+</imgdir>

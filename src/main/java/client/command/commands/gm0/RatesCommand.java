@@ -29,55 +29,24 @@ import client.command.Command;
 import config.YamlConfig;
 
 public class RatesCommand extends Command {
-
-    public RatesCommand() {
-        setDescription("Display the current ForgeMS server rates.");
+    {
+        setDescription("Show your rates.");
     }
 
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
 
-        StringBuilder rates = new StringBuilder();
-
-        rates.append("#e========== ForgeMS Server Rates ==========#n\r\n\r\n");
-
-        rates.append("#bEXP Rate:#k ")
-                .append(player.getExpRate())
-                .append("x");
-
-        if (player.hasNoviceExpRate()) {
-            rates.append(" #g(Novice Rate)#k");
-        }
-
-        rates.append("\r\n");
-
-        rates.append("#bMeso Rate:#k ")
-                .append(player.getMesoRate())
-                .append("x\r\n");
-
-        rates.append("#bDrop Rate:#k ")
-                .append(player.getDropRate())
-                .append("x\r\n");
-
-        rates.append("#bBoss Drop Rate:#k ")
-                .append(player.getBossDropRate())
-                .append("x\r\n");
-
+        // travel rates not applicable since it's intrinsically a server/environment rate rather than a character rate
+        String showMsg_ = "#eCHARACTER RATES#n" + "\r\n\r\n";
+        showMsg_ += "EXP Rate: #e#b" + player.getExpRate() + "x#k#n" + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
+        showMsg_ += "MESO Rate: #e#b" + player.getMesoRate() + "x#k#n" + "\r\n";
+        showMsg_ += "DROP Rate: #e#b" + player.getDropRate() + "x#k#n" + "\r\n";
+        showMsg_ += "BOSS DROP Rate: #e#b" + player.getBossDropRate() + "x#k#n" + "\r\n";
         if (YamlConfig.config.server.USE_QUEST_RATE) {
-            rates.append("#bQuest EXP Rate:#k ")
-                    .append(c.getWorldServer().getQuestRate())
-                    .append("x\r\n");
+            showMsg_ += "QUEST Rate: #e#b" + c.getWorldServer().getQuestRate() + "x#k#n" + "\r\n";
         }
 
-        rates.append("\r\n");
-        rates.append("#dRebirth Level:#k 200\r\n");
-        rates.append("#dAuto Rebirth:#k Available after your first manual rebirth\r\n");
-
-        rates.append("\r\n");
-        rates.append("#ePrestige is earned. Power is forged.#n\r\n");
-        rates.append("============================================");
-
-        player.showHint(rates.toString(), 400);
+        player.showHint(showMsg_, 300);
     }
 }

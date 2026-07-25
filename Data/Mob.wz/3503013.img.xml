@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="3503013.img">
+    <imgdir name="info">
+        <int name="level" value="1"/>
+        <int name="maxHP" value="1"/>
+        <int name="maxMP" value="1"/>
+        <int name="PADamage" value="1"/>
+        <int name="PDDamage" value="1"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="1"/>
+        <int name="MDDamage" value="1"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="1"/>
+        <int name="eva" value="1"/>
+        <int name="pushed" value="10000"/>
+        <float name="fs" value="10.0"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="8"/>
+        <string name="mobType" value="1N"/>
+        <int name="boss" value="1"/>
+        <int name="removeAfter" value="300"/>
+        <imgdir name="revive">
+            <int name="0" value="3503012"/>
+        </imgdir>
+        <int name="invincible" value="1"/>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+            <vector name="head" x="-37" y="-236"/>
+            <int name="delay" value="200"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../stand/0"/>
+    </imgdir>
+</imgdir>

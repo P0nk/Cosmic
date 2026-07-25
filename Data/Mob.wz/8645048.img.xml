@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8645048.img">
+    <imgdir name="info">
+        <int name="firstAttack" value="1"/>
+        <int name="hpTagColor" value="1"/>
+        <int name="hpTagBgcolor" value="5"/>
+        <int name="level" value="200"/>
+        <int name="maxHP" value="2100000000"/>
+        <int name="maxMP" value="100000"/>
+        <int name="speed" value="-60"/>
+        <int name="PADamage" value="22000"/>
+        <int name="PDDamage" value="100"/>
+        <int name="PDRate" value="30"/>
+        <int name="MADamage" value="24000"/>
+        <int name="MDDamage" value="100"/>
+        <int name="MDRate" value="30"/>
+        <int name="acc" value="9999"/>
+        <int name="eva" value="0"/>
+        <int name="pushed" value="1000000000"/>
+        <int name="boss" value="1"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="12"/>
+        <int name="category" value="8"/>
+        <int name="mpRecovery" value="10000"/>
+        <string name="mobType" value="1N"/>
+        <string name="defaultHP" value="Unknown"/>
+        <string name="defaultMP" value="Unknown"/>
+        <int name="hideHP" value="1"/>
+        <float name="fs" value="10.0"/>
+        <int name="ignoreMoveImpact" value="1"/>
+        <int name="showNotRemoteDam" value="1"/>
+        <int name="ignoreFieldOut" value="1"/>
+        <string name="elemAttr" value="P2H2F2I2S2L2D2"/>
+        <imgdir name="firstAttackRange">
+            <vector name="lt" x="-5000" y="-768"/>
+            <vector name="rb" x="5000" y="768"/>
+        </imgdir>
+        <imgdir name="actionParticle">
+            <imgdir name="0">
+                <imgdir name="action">
+                    <string name="0" value="stand"/>
+                    <string name="1" value="hit1"/>
+                    <string name="2" value="skill1"/>
+                    <string name="3" value="skill2"/>
+                    <string name="4" value="skill3"/>
+                    <string name="5" value="skill4"/>
+                    <string name="6" value="skill5"/>
+                    <string name="7" value="skill6"/>
+                </imgdir>
+                <int name="z" value="-1"/>
+                <vector name="pos" x="0" y="-325"/>
+                <imgdir name="particle">
+                    <int name="totalParticle" value="20"/>
+                    <float name="duration" value="-1.0"/>
+                    <int name="blendFuncSrc" value="5"/>
+                    <int name="blendFuncDst" value="2"/>
+                    <int name="MiddlePoint0" value="21"/>
+                    <int name="MiddlePointAlpha0" value="120"/>
+                    <int name="MiddlePoint1" value="76"/>
+                    <int name="MiddlePointAlpha1" value="120"/>
+                    <float name="startSize" value="200.0"/>
+                    <float name="startSizeVar" value="100.0"/>
+                    <float name="endSize" value="800.0"/>
+                    <float name="endSizeVar" value="200.0"/>
+                    <float name="posVarX" value="-47.0"/>
+                    <float name="posVarY" value="-26.0"/>
+                    <float name="life" value="16.0"/>
+                    <canvas name="texture" width="448" height="506">
+                        <vector name="origin" x="224" y="253"/>
+                        <int name="z" value="0"/>
+                        <string name="_hash" value="caea3d12eb1f07e49cb37db434553d1ea50a0d7b7019ff41caebd163ab08fb92"/>
+                    </canvas>
+                    <float name="DeltaTime" value="1.0"/>
+                    <int name="startColor" value="11665663"/>
+                    <int name="endColor" value="14818439"/>
+                    <float name="posY" value="0.0"/>
+                    <float name="angle" value="0.0"/>
+                    <float name="startSpin" value="40.0"/>
+                    <float name="endSpin" value="-40.0"/>
+                    <float name="angleVar" value="0.0"/>
+                    <int name="startColorVar" value="0"/>
+                    <int name="endColorVar" value="0"/>
+                    <float name="posX" value="0.0"/>
+                    <float name="startSpinVar" value="30.0"/>
+                    <float name="endSpinVar" value="30.0"/>
+                    <float name="lifeVar" value="5.0"/>
+                    <int name="opacityModifyRGB" value="0"/>
+                    <int name="positionType" value="0"/>
+                    <imgdir name="RADIUS">
+                        <float name="startRadius" value="0.0"/>
+                        <float name="startRadiusVar" value="0.0"/>
+                        <float name="endRadius" value="0.0"/>
+                        <float name="endRadiusVar" value="0.0"/>
+                        <float name="rotatePerSecond" value="0.0"/>
+                        <float name="rotatePerSecondVar" value="0.0"/>
+                    </imgdir>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <canvas name="thumbnail" width="456" height="644">
+            <vector name="origin" x="218" y="612"/>
+            <int name="z" value="0"/>
+            <int name="delay" value="180"/>
+            <vector name="head" x="0" y="-449"/>
+            <vector name="lt" x="-138" y="-465"/>
+            <vector name="rb" x="138" y="-80"/>
+            <string name="_hash" value="86169079de2e6f97cde82e74e3109f16cdeef64b84fa5e0614eaaca47e327119"/>
+        </canvas>
+        <int name="ignoreMovable" value="1"/>
+        <int name="noFlip" value="1"/>
+        <imgdir name="revive">
+            <int name="0" value="8880515"/>
+        </imgdir>
+        <int name="bodyAttack" value="1"/>
+        <int name="fixedBodyAttackDamageR" value="3"/>
+        <imgdir name="skill">
+            <imgdir name="0">
+                <int name="action" value="5"/>
+                <int name="skill" value="136"/>
+                <int name="level" value="26"/>
+                <int name="skillAfter" value="1500"/>
+            </imgdir>
+        </imgdir>
+        <string name="link" value="8880502"/>
+        <int name="hpNoticePerNum" value="10000"/>
+    </imgdir>
+</imgdir>

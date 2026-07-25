@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="9402205.img">
+<imgdir name="info">
+<int name="hideName" value="1"/>
+<int name="level" value="1"/>
+<int name="bodyAttack" value="1"/>
+<int name="maxHP" value="50000"/>
+<int name="maxMP" value="50000"/>
+<int name="PADamage" value="340"/>
+<int name="MADamage" value="334"/>
+<int name="pushed" value="99999999"/>
+<int name="firstAttack" value="1"/>
+<int name="boss" value="1"/>
+<int name="invincible" value="1"/>
+<imgdir name="attack">
+<imgdir name="0">
+<int name="action" value="1"/>
+<int name="attackRatio" value="100"/>
+<int name="type" value="0"/>
+<int name="fixAttack" value="1"/>
+<imgdir name="callSkillWithData">
+<int name="skill" value="211"/>
+<int name="level" value="17"/>
+<int name="delay" value="0"/>
+</imgdir>
+<int name="cooltime" value="8000"/>
+<int name="notMissAttack" value="1"/>
+<int name="fixDamR" value="20"/>
+</imgdir>
+</imgdir>
+<imgdir name="skill">
+<imgdir name="0">
+<int name="skill" value="211"/>
+<int name="action" value="1"/>
+<int name="level" value="17"/>
+<int name="effectAfter" value="0"/>
+</imgdir>
+</imgdir>
+<int name="ignoreMoveImpact" value="1"/>
+<int name="ignoreMovable" value="1"/>
+<int name="noFlip" value="1"/>
+<int name="PDDamage" value="0"/>
+<int name="MDDamage" value="0"/>
+<int name="eva" value="0"/>
+<int name="acc" value="999"/>
+</imgdir>
+<imgdir name="stand">
+<canvas name="0" width="233" height="291">
+<vector name="origin" x="121" y="290"/>
+<int name="z" value="0"/>
+</canvas>
+</imgdir>
+<imgdir name="attack1">
+<imgdir name="info">
+<imgdir name="range">
+<vector name="lt" x="-420" y="-160"/>
+<vector name="rb" x="0" y="0"/>
+</imgdir>
+<imgdir name="hit">
+<int name="attach" value="1"/>
+<canvas name="0" width="1" height="1">
+</canvas>
+</imgdir>
+<int name="attackAfter" value="1080"/>
+</imgdir>
+<uol name="0" value="../stand/0"/>
+</imgdir>
+<imgdir name="skill1">
+<uol name="0" value="../stand/0"/>
+</imgdir>
+<imgdir name="die1">
+<uol name="0" value="../stand/0"/>
+</imgdir>
+</imgdir>

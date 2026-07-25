@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="2316000.img">
+    <imgdir name="info">
+        <string name="info" value="Gigatoad Crate"/>
+        <int name="dcMark" value="1"/>
+    </imgdir>
+    <imgdir name="0">
+        <canvas name="0" width="115" height="72">
+            <vector name="origin" x="59" y="38"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="1">
+        <canvas name="0" width="115" height="72">
+            <vector name="origin" x="59" y="38"/>
+            <int name="z" value="0"/>
+        </canvas>
+        <imgdir name="event">
+            <imgdir name="0">
+                <int name="type" value="9"/>
+                <int name="state" value="2"/>
+                <vector name="lt" x="-59" y="-35"/>
+                <vector name="rb" x="57" y="38"/>
+                <imgdir name="clickArea">
+                    <vector name="lt" x="-109" y="-52"/>
+                    <vector name="rb" x="111" y="56"/>
+                    <string name="Message" value="You are standing too far away from the crate to open it."/>
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <imgdir name="hit">
+            <canvas name="0" width="115" height="72">
+                <vector name="origin" x="59" y="38"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="1" width="115" height="72">
+                <vector name="origin" x="59" y="38"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="2" width="118" height="72">
+                <vector name="origin" x="59" y="38"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="3" width="121" height="83">
+                <vector name="origin" x="61" y="49"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="4" width="126" height="113">
+                <vector name="origin" x="65" y="79"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="5" width="130" height="115">
+                <vector name="origin" x="70" y="81"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="6" width="122" height="116">
+                <vector name="origin" x="68" y="82"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+            <canvas name="7" width="120" height="116">
+                <vector name="origin" x="66" y="82"/>
+                <int name="z" value="0"/>
+                <int name="delay" value="150"/>
+            </canvas>
+        </imgdir>
+    </imgdir>
+    <imgdir name="2">
+        <canvas name="0" width="120" height="116">
+            <vector name="origin" x="66" y="82"/>
+            <int name="z" value="0"/>
+        </canvas>
+    </imgdir>
+    <string name="action" value="SC_npc00"/>
+</imgdir>

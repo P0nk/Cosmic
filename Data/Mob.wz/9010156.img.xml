@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9010156.img">
+    <imgdir name="info">
+        <int name="level" value="120"/>
+        <int name="bodyAttack" value="1"/>
+        <int name="maxHP" value="1990904"/>
+        <int name="maxMP" value="3000"/>
+        <int name="speed" value="-50"/>
+        <int name="PDDamage" value="845"/>
+        <int name="PDRate" value="10"/>
+        <int name="MDDamage" value="580"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="360"/>
+        <int name="eva" value="360"/>
+        <int name="pushed" value="453600"/>
+        <int name="exp" value="10592"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="6"/>
+        <string name="elemAttr" value="F2L3"/>
+        <string name="mobType" value="1N"/>
+        <int name="PADamage" value="1200"/>
+        <int name="MADamage" value="1250"/>
+    </imgdir>
+    <imgdir name="move">
+        <canvas height="224" name="0" width="212">
+            <vector name="origin" x="91" y="224"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="82" y="-14"/>
+            <vector name="head" x="3" y="-128"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="222" name="1" width="212">
+            <vector name="origin" x="92" y="224"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-128"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="223" name="2" width="212">
+            <vector name="origin" x="93" y="222"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-126"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="221" name="3" width="212">
+            <vector name="origin" x="93" y="220"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-124"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="224" name="4" width="212">
+            <vector name="origin" x="91" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-124"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="225" name="5" width="212">
+            <vector name="origin" x="90" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="3" y="-126"/>
+            <int name="delay" value="100"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="223" name="0" width="215">
+            <vector name="origin" x="91" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-128"/>
+            <int name="delay" value="110"/>
+        </canvas>
+        <canvas height="222" name="1" width="215">
+            <vector name="origin" x="92" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="1" y="-128"/>
+            <int name="delay" value="110"/>
+        </canvas>
+        <canvas height="224" name="2" width="215">
+            <vector name="origin" x="93" y="222"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-128"/>
+            <int name="delay" value="110"/>
+        </canvas>
+        <canvas height="222" name="3" width="215">
+            <vector name="origin" x="93" y="220"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="1" y="-126"/>
+            <int name="delay" value="110"/>
+        </canvas>
+        <canvas height="222" name="4" width="216">
+            <vector name="origin" x="92" y="220"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-124"/>
+            <int name="delay" value="110"/>
+        </canvas>
+        <canvas height="225" name="5" width="215">
+            <vector name="origin" x="90" y="222"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="3" y="-127"/>
+            <int name="delay" value="110"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="attack1">
+        <imgdir name="info">
+            <imgdir name="range">
+                <vector name="sp" x="-94" y="-64"/>
+                <int name="r" value="300"/>
+            </imgdir>
+            <imgdir name="ball">
+                <canvas height="43" name="0" width="63">
+                    <vector name="origin" x="21" y="21"/>
+                </canvas>
+                <canvas height="43" name="1" width="68">
+                    <vector name="origin" x="21" y="21"/>
+                </canvas>
+            </imgdir>
+            <imgdir name="hit">
+                <canvas height="96" name="0" width="81">
+                    <vector name="origin" x="40" y="49"/>
+                </canvas>
+                <canvas height="100" name="1" width="101">
+                    <vector name="origin" x="55" y="49"/>
+                </canvas>
+                <canvas height="80" name="2" width="77">
+                    <vector name="origin" x="44" y="40"/>
+                    <int name="delay" value="300"/>
+                    <int name="a0" value="255"/>
+                    <int name="a1" value="0"/>
+                </canvas>
+            </imgdir>
+            <int name="attackAfter" value="540"/>
+            <int name="action" value="1"/>
+            <int name="attackRatio" value="100"/>
+            <int name="type" value="2"/>
+            <int name="magic" value="1"/>
+            <string name="elemAttr" value="F"/>
+        </imgdir>
+        <canvas height="231" name="0" width="266">
+            <vector name="origin" x="145" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="3" y="-127"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="226" name="1" width="265">
+            <vector name="origin" x="145" y="224"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-128"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="223" name="2" width="250">
+            <vector name="origin" x="131" y="222"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-126"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="227" name="3" width="265">
+            <vector name="origin" x="146" y="220"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-124"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="224" name="4" width="235">
+            <vector name="origin" x="114" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-124"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="225" name="5" width="237">
+            <vector name="origin" x="115" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="3" y="-126"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="224" name="6" width="231">
+            <vector name="origin" x="110" y="224"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="3" y="-128"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="222" name="7" width="236">
+            <vector name="origin" x="116" y="224"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-128"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="223" name="8" width="238">
+            <vector name="origin" x="119" y="222"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-126"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="221" name="9" width="245">
+            <vector name="origin" x="126" y="220"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="0" y="-124"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="224" name="10" width="243">
+            <vector name="origin" x="122" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="2" y="-124"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <canvas height="225" name="11" width="212">
+            <vector name="origin" x="90" y="223"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="78" y="-14"/>
+            <vector name="head" x="3" y="-127"/>
+            <int name="delay" value="90"/>
+        </canvas>
+        <uol name="12" value="../stand/0"/>
+        <uol name="13" value="../stand/1"/>
+        <uol name="14" value="../stand/2"/>
+        <uol name="15" value="../stand/3"/>
+        <uol name="16" value="../stand/4"/>
+        <uol name="17" value="../stand/5"/>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas height="222" name="0" width="209">
+            <vector name="origin" x="90" y="222"/>
+            <vector name="lt" x="-84" y="-173"/>
+            <vector name="rb" x="80" y="-10"/>
+            <vector name="head" x="4" y="-129"/>
+            <int name="delay" value="600"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <canvas height="200" name="0" width="200">
+            <vector name="origin" x="88" y="213"/>
+            <vector name="head" x="4" y="-129"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="202" name="1" width="200">
+            <vector name="origin" x="88" y="221"/>
+            <vector name="head" x="4" y="-127"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="176" name="2" width="200">
+            <vector name="origin" x="88" y="207"/>
+            <vector name="head" x="4" y="-123"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="157" name="3" width="200">
+            <vector name="origin" x="88" y="199"/>
+            <vector name="head" x="4" y="-116"/>
+            <int name="delay" value="100"/>
+        </canvas>
+        <canvas height="124" name="4" width="200">
+            <vector name="origin" x="88" y="180"/>
+            <vector name="head" x="5" y="-95"/>
+            <int name="delay" value="300"/>
+            <int name="a0" value="255"/>
+            <int name="a1" value="0"/>
+        </canvas>
+    </imgdir>
+</imgdir>

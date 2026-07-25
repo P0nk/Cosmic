@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="5000929.img">
+<imgdir name="info">
+<canvas name="icon" width="34" height="27">
+<vector name="origin" x="1" y="27"/>
+<string name="_hash" value="aad0dd60306adf3039e2032940b98af1142ad19aaf25044de389002f69b90c36"/>
+</canvas>
+<canvas name="iconRaw" width="34" height="25">
+<vector name="origin" x="1" y="27"/>
+<string name="_hash" value="256be720181f2d337e5c79a2c31daf362bc6e2d3f6e1399b9dbab375bce37dc5"/>
+</canvas>
+<canvas name="iconD" width="34" height="27">
+<vector name="origin" x="1" y="27"/>
+<string name="_hash" value="9a97637c009700f11121c460261faf93526a81f7df56090dbff1887bdc7f4587"/>
+</canvas>
+<canvas name="iconRawD" width="34" height="25">
+<vector name="origin" x="1" y="27"/>
+<string name="_hash" value="aaadc4ee873d946971b9891419d534f8baea6be51803102f977cfe5ef3f051fd"/>
+</canvas>
+<int name="hungry" value="2"/>
+<int name="cash" value="1"/>
+<int name="life" value="90"/>
+<int name="pickupItem" value="1"/>
+<int name="multiPet" value="1"/>
+<int name="chatBalloon" value="343"/>
+<int name="nameTag" value="343"/>
+</imgdir>
+<imgdir name="interact">
+<imgdir name="0">
+<string name="command" value="c1"/>
+<int name="inc" value="1"/>
+<int name="prob" value="30"/>
+<int name="l0" value="1"/>
+<int name="l1" value="9"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="stand1"/>
+<string name="0" value="c1_s1"/>
+<string name="1" value="c1_s2"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="stand1"/>
+<string name="0" value="c1_f1"/>
+<string name="1" value="c1_f2"/>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="1">
+<string name="command" value="c2"/>
+<int name="inc" value="1"/>
+<int name="prob" value="45"/>
+<int name="l0" value="10"/>
+<int name="l1" value="19"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="chat"/>
+<string name="0" value="c2_s1"/>
+<string name="1" value="c2_s2"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="stand1"/>
+<string name="0" value="c2_f1"/>
+<string name="1" value="c2_f2"/>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="2">
+<string name="command" value="c3"/>
+<int name="inc" value="1"/>
+<int name="prob" value="60"/>
+<int name="l0" value="20"/>
+<int name="l1" value="29"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="chat"/>
+<string name="0" value="c3_s1"/>
+<string name="1" value="c3_s2"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="stand1"/>
+<string name="0" value="c3_f1"/>
+<string name="1" value="c3_f2"/>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="3">
+<string name="command" value="c4"/>
+<int name="inc" value="1"/>
+<int name="prob" value="60"/>
+<int name="l0" value="30"/>
+<int name="l1" value="30"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="chat"/>
+<string name="0" value="c4_s1"/>
+<string name="1" value="c4_s2"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="chat"/>
+<string name="0" value="c4_f1"/>
+<string name="1" value="c4_f2"/>
+</imgdir>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="food">
+<imgdir name="0">
+<int name="l0" value="1"/>
+<int name="l1" value="9"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="eat"/>
+<string name="0" value="f1_s"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="stand1"/>
+<string name="0" value="f1_f"/>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="1">
+<int name="l0" value="10"/>
+<int name="l1" value="19"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="eat"/>
+<string name="0" value="f2_s"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="stand1"/>
+<string name="0" value="f2_f"/>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="2">
+<int name="l0" value="20"/>
+<int name="l1" value="29"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="eat"/>
+<string name="0" value="f3_s"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="chat"/>
+<string name="0" value="f3_f"/>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="3">
+<int name="l0" value="30"/>
+<int name="l1" value="30"/>
+<imgdir name="success">
+<imgdir name="0">
+<string name="act" value="eat"/>
+<string name="0" value="f4_s"/>
+</imgdir>
+</imgdir>
+<imgdir name="fail">
+<imgdir name="0">
+<string name="act" value="chat"/>
+<string name="0" value="f4_f"/>
+</imgdir>
+</imgdir>
+</imgdir>
+</imgdir>
+<imgdir name="slang">
+<imgdir name="0">
+<int name="l0" value="1"/>
+<int name="l1" value="9"/>
+<string name="act" value="stand1"/>
+<string name="0" value="s1"/>
+</imgdir>
+<imgdir name="1">
+<int name="l0" value="10"/>
+<int name="l1" value="19"/>
+<string name="act" value="stand1"/>
+<string name="0" value="s2"/>
+</imgdir>
+<imgdir name="2">
+<int name="l0" value="20"/>
+<int name="l1" value="29"/>
+<string name="act" value="chat"/>
+<string name="0" value="s3"/>
+</imgdir>
+<imgdir name="3">
+<int name="l0" value="30"/>
+<int name="l1" value="30"/>
+<string name="act" value="chat"/>
+<string name="0" value="s4"/>
+</imgdir>
+</imgdir>
+<imgdir name="stand0">
+<canvas name="0" width="39" height="27">
+<vector name="origin" x="18" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+<string name="_hash" value="336ef0643a69e109cff323e5023ff34087c384e56088293b63ec99d7649edefe"/>
+</canvas>
+<canvas name="1" width="42" height="33">
+<vector name="origin" x="18" y="31"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="2"/>
+<string name="_hash" value="d5927f8f109c5d595fe1e3fbd1f9d2e083c60370282c96c487ed433a29c09b29"/>
+</canvas>
+<canvas name="2" width="42" height="35">
+<vector name="origin" x="18" y="34"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="1"/>
+<string name="_hash" value="370d2f09bae1d256d5fbd0dd31e1f06615bce4f1b299d7d54629b619e77daec9"/>
+</canvas>
+<canvas name="3" width="39" height="36">
+<vector name="origin" x="18" y="35"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+<string name="_hash" value="a62ab243a592021c3ddc54995e31e2d514996af0dd4c366436796c210a7a394b"/>
+</canvas>
+<canvas name="4" width="39" height="38">
+<vector name="origin" x="18" y="37"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+<string name="_hash" value="a573e08d47df0db8a5d9b9af79829af1bdf6062bb2b38f6ae67cbbf366ca4fd1"/>
+</canvas>
+<canvas name="5" width="42" height="39">
+<vector name="origin" x="18" y="37"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="2"/>
+<string name="_hash" value="073c4f208b9796d230ac8e77303c9157d1c17a5676eec6876310f870b8c0eb1e"/>
+</canvas>
+<canvas name="6" width="42" height="41">
+<vector name="origin" x="18" y="40"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="1"/>
+<string name="_hash" value="080c0c4d5a110183407983dfd08ba4d73d5d6f9d5f23ca18047435d13f44174c"/>
+</canvas>
+<canvas name="7" width="39" height="27">
+<vector name="origin" x="18" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+<string name="_hash" value="3f2c9f65ead237ab275f4cdc22ec2886a0cf3df2b330d3520b6b7c382b86229c"/>
+</canvas>
+</imgdir>
+<imgdir name="stand1">
+<canvas name="0" width="38" height="28">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="23" y="2"/>
+<string name="_hash" value="1f209cb4b5fbbd95e9b34dbab78ed4d652f4914473506fd47621c75d7fa7d564"/>
+</canvas>
+<canvas name="1" width="41" height="30">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="7494ecb931182d8dcc555ed4ef93b4345887b67f2f7e7eb10cbb670dbc3f753d"/>
+</canvas>
+<canvas name="2" width="41" height="28">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="26" y="2"/>
+<string name="_hash" value="e79363e4eec6b52e2425f066c7b6bd370eb23249d399c0ec02a2df3534ad5232"/>
+</canvas>
+<canvas name="3" width="38" height="27">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="23" y="1"/>
+<string name="_hash" value="ccf90ed2f2a52172cde13138b1ef1796628fe04a690392b0a8454ed0b70eab4f"/>
+</canvas>
+<canvas name="4" width="38" height="28">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="23" y="2"/>
+</canvas>
+<canvas name="5" width="41" height="30">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="5040dd3f4a8e88409b1abb57268869a1498d2d5384b1396308b96aeeadc28240"/>
+</canvas>
+<canvas name="6" width="41" height="28">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="26" y="2"/>
+</canvas>
+<canvas name="7" width="38" height="27">
+<vector name="origin" x="15" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-26"/>
+<vector name="rb" x="23" y="1"/>
+<string name="_hash" value="01c4a7ea9b9c27c530681081bbe2d58930b9557f69c4933d3e7886e43aa3a82a"/>
+</canvas>
+</imgdir>
+<imgdir name="move">
+<canvas name="0" width="39" height="28">
+<vector name="origin" x="18" y="28"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-18" y="-28"/>
+<vector name="rb" x="21" y="0"/>
+<string name="_hash" value="fd76680070aa3f3b04d8f42879b43ba25491c9829cfd10d67f7a360ad84d7ffb"/>
+</canvas>
+<canvas name="1" width="41" height="28">
+<vector name="origin" x="19" y="29"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-19" y="-29"/>
+<vector name="rb" x="22" y="-1"/>
+<string name="_hash" value="6c4c4ac13dd806a987e7217fd0fa29f9b6d3ec2fcce5aa7e5fb1bcbc58ab0091"/>
+</canvas>
+<canvas name="2" width="42" height="27">
+<vector name="origin" x="20" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-20" y="-27"/>
+<vector name="rb" x="22" y="0"/>
+<string name="_hash" value="5f48be6c6efaae5721ff3f176f50c7775bc25cfd140af8ce74005de388b365ad"/>
+</canvas>
+<canvas name="3" width="38" height="27">
+<vector name="origin" x="20" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-20" y="-26"/>
+<vector name="rb" x="18" y="1"/>
+<string name="_hash" value="f08da0937c304c9effbd8b952fcdd8385540dcc6a3f5cefb723152bc48653a5a"/>
+</canvas>
+<canvas name="4" width="39" height="28">
+<vector name="origin" x="18" y="28"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-18" y="-28"/>
+<vector name="rb" x="21" y="0"/>
+<string name="_hash" value="784e24672905c861bcd75c215694736c1981884ef577752295519e129404223c"/>
+</canvas>
+<canvas name="5" width="41" height="28">
+<vector name="origin" x="19" y="29"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-19" y="-29"/>
+<vector name="rb" x="22" y="-1"/>
+<string name="_hash" value="277beaf86b2585317b59accdfee348c2ad1285dd495aa93ebfc60167eb63444e"/>
+</canvas>
+<canvas name="6" width="42" height="27">
+<vector name="origin" x="20" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-20" y="-27"/>
+<vector name="rb" x="22" y="0"/>
+<string name="_hash" value="ff4bc215ee25aa48e4732e6fb77bccb2bb4c65b04caecdb15f02cb7da2231d23"/>
+</canvas>
+<canvas name="7" width="38" height="27">
+<vector name="origin" x="20" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="120"/>
+<vector name="lt" x="-20" y="-26"/>
+<vector name="rb" x="18" y="1"/>
+<string name="_hash" value="d973a7400f1e19249f041a3749e62bf614079232b77a452174fec8804c4be702"/>
+</canvas>
+</imgdir>
+<imgdir name="jump">
+<canvas name="0" width="41" height="28">
+<vector name="origin" x="20" y="30"/>
+<int name="z" value="0"/>
+<vector name="lt" x="-20" y="-30"/>
+<vector name="rb" x="21" y="-2"/>
+<int name="delay" value="300"/>
+<string name="_hash" value="9c9e2cb7052f3a226afc1e14217d186b68523d4c9a205d07806b7db2616c4192"/>
+</canvas>
+</imgdir>
+<imgdir name="hang">
+<canvas name="0" width="27" height="43">
+<vector name="origin" x="12" y="45"/>
+<int name="z" value="0"/>
+<vector name="lt" x="-12" y="-45"/>
+<vector name="rb" x="15" y="-2"/>
+<int name="delay" value="150"/>
+<string name="_hash" value="6aecf5ec63b32aedfee7da5929dbd13a45f3ec39d9f8a4b5cf73ef6a0ed0995d"/>
+</canvas>
+</imgdir>
+<imgdir name="hungry">
+<canvas name="0" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-19"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="4288511f5cadccebea3c2d29e84fd01975e4ee77c2643cb7f34dd1ac3aa9b4b1"/>
+</canvas>
+<canvas name="1" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-18"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="af23cb5e3d01d05aaf38c991e9f93c4c129b0b93989b96ade3abb4e4dd192004"/>
+</canvas>
+<canvas name="2" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-18"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="d7facd25c82956f740717effd52c5ddc251af2845d8c88221b242bd0c34454aa"/>
+</canvas>
+<canvas name="3" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-18"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="717346831932128f7f3133cb9e6f17d914882c6d9762f41d44f0a73e8fa1693a"/>
+</canvas>
+<canvas name="4" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-18"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="08c5449fd1f171cb2e8dc381b1447985c9eb51c35739144f20600e38852e4652"/>
+</canvas>
+<canvas name="5" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-19"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="af2f8736524e36ac24d7485a81b1a3b3365cc2db9f6258a19ab36d80fa9e4ac7"/>
+</canvas>
+<canvas name="6" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-19"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="caabfc469a0a7c0730d6d5c13a0cdf796c163ddec00db520d6dc2bf810ddbee6"/>
+</canvas>
+<canvas name="7" width="51" height="31">
+<vector name="origin" x="25" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-23" y="-19"/>
+<vector name="rb" x="26" y="4"/>
+<string name="_hash" value="60758edcc2ad7ad7677f0dbc228442b2e5283649180d6c9157d8c271600d19eb"/>
+</canvas>
+</imgdir>
+<imgdir name="eat">
+<canvas name="0" width="37" height="30">
+<vector name="origin" x="17" y="27"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-14" y="-27"/>
+<vector name="rb" x="20" y="3"/>
+<string name="_hash" value="bdf3468a334ef91190583fbf4a8f947c2a2daa45ec0232477ed4f3154a40fe8a"/>
+</canvas>
+<canvas name="1" width="40" height="39">
+<vector name="origin" x="17" y="34"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-13" y="-26"/>
+<vector name="rb" x="23" y="5"/>
+<string name="_hash" value="d0c8a5e6126c33a80bc432fefc387dd915347253d35b09cd84993c4209825a21"/>
+</canvas>
+<canvas name="2" width="40" height="40">
+<vector name="origin" x="17" y="37"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-14" y="-27"/>
+<vector name="rb" x="23" y="3"/>
+<string name="_hash" value="7927d9e8c093f87ecc0d1aa10525d6783aa9a0842f292f5283ef8da552315568"/>
+</canvas>
+<canvas name="3" width="37" height="42">
+<vector name="origin" x="17" y="40"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-14" y="-27"/>
+<vector name="rb" x="20" y="2"/>
+<string name="_hash" value="a3891ebc964a499e7542f3b04cfc2b034b3339cbaeaae3e20689b20a0858e502"/>
+</canvas>
+<canvas name="4" width="37" height="45">
+<vector name="origin" x="17" y="42"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-14" y="-27"/>
+<vector name="rb" x="20" y="3"/>
+<string name="_hash" value="9ba811364f59c010373779af33783ea797bfb5df81dad075c2e4e7beec2fa3a8"/>
+</canvas>
+<canvas name="5" width="40" height="42">
+<vector name="origin" x="17" y="37"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-14" y="-27"/>
+<vector name="rb" x="23" y="5"/>
+<string name="_hash" value="3921eaa88d15b294fe0dfcb90e32dbcde27d81738d9fb7b0aafbedf3da2a587f"/>
+</canvas>
+<canvas name="6" width="40" height="42">
+<vector name="origin" x="17" y="39"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-14" y="-27"/>
+<vector name="rb" x="23" y="3"/>
+<string name="_hash" value="c409c23ac25621761d972a075d1f31044a87ff8b1a667fee05d1ce194e445d9b"/>
+</canvas>
+<canvas name="7" width="37" height="42">
+<vector name="origin" x="17" y="40"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-15" y="-27"/>
+<vector name="rb" x="20" y="2"/>
+<string name="_hash" value="8b254d3c1f2689f4e5ccb1c7002ff7402fe89b9264a9b3292996c4d23e48ab1a"/>
+</canvas>
+</imgdir>
+<imgdir name="chat">
+<canvas name="0" width="39" height="27">
+<vector name="origin" x="18" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+</canvas>
+<canvas name="1" width="42" height="36">
+<vector name="origin" x="18" y="34"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="2"/>
+<string name="_hash" value="6743c40cd65d897da5b1b5330c2aafb2871ea2fdbd86405f2dd74f940ece83d3"/>
+</canvas>
+<canvas name="2" width="42" height="34">
+<vector name="origin" x="18" y="33"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="1"/>
+<string name="_hash" value="671e39923ef8128995525e31b717627f79ba720a024d49cc3f6c91ea5d4abe17"/>
+</canvas>
+<canvas name="3" width="39" height="34">
+<vector name="origin" x="18" y="33"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+<string name="_hash" value="995ec026c0ab312912c23afdf68e7b680a590a1ee357a3f0ab52f86044350fa4"/>
+</canvas>
+<canvas name="4" width="39" height="35">
+<vector name="origin" x="18" y="34"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+<string name="_hash" value="834c0ffa03c6122ec65d7a0b4b785dcf0446d0f6ec21300f8a23d7a9f18d01eb"/>
+</canvas>
+<canvas name="5" width="42" height="35">
+<vector name="origin" x="18" y="33"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="2"/>
+<string name="_hash" value="8d27f82577995e3a1365d814ea5dd249f84ffa3141289c4ce2cf4282911b7cfe"/>
+</canvas>
+<canvas name="6" width="42" height="33">
+<vector name="origin" x="18" y="32"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="24" y="1"/>
+<string name="_hash" value="960578dc947e38e50806307a1075fe32454b048ebbbb2606fbb08bf279dbc988"/>
+</canvas>
+<canvas name="7" width="39" height="27">
+<vector name="origin" x="18" y="26"/>
+<int name="z" value="0"/>
+<int name="delay" value="150"/>
+<vector name="lt" x="-18" y="-26"/>
+<vector name="rb" x="21" y="1"/>
+</canvas>
+</imgdir>
+<imgdir name="fly">
+<uol name="0" value="../jump/0"/>
+</imgdir>
+<imgdir name="warp">
+<canvas name="0" width="43" height="45">
+<vector name="origin" x="24" y="36"/>
+<vector name="lt" x="-24" y="-36"/>
+<vector name="rb" x="19" y="9"/>
+<int name="delay" value="150"/>
+<string name="_hash" value="c0259f59c9b73fb15fa07f64c122b10f586dd89d591091bc238e6d3ed845e55e"/>
+</canvas>
+<canvas name="1" width="43" height="45">
+<vector name="origin" x="22" y="37"/>
+<vector name="lt" x="-22" y="-37"/>
+<vector name="rb" x="19" y="-8"/>
+<int name="delay" value="150"/>
+<string name="_hash" value="2edbedd6674b0df5b8ae5aaa0a4a7e7524d15c1a366a7262fdb92783dd5634d8"/>
+</canvas>
+</imgdir>
+</imgdir>

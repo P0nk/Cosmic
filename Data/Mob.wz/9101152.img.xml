@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<imgdir name="9101152.img">
+    <imgdir name="info">
+        <int name="level" value="30"/>
+        <int name="maxHP" value="2000"/>
+        <int name="maxMP" value="1000"/>
+        <int name="speed" value="-60"/>
+        <int name="PADamage" value="200"/>
+        <int name="PDDamage" value="200"/>
+        <int name="PDRate" value="10"/>
+        <int name="MADamage" value="100"/>
+        <int name="MDDamage" value="100"/>
+        <int name="MDRate" value="10"/>
+        <int name="acc" value="832"/>
+        <int name="eva" value="240"/>
+        <int name="pushed" value="1200"/>
+        <float name="fs" value="10.0"/>
+        <int name="exp" value="0"/>
+        <int name="summonType" value="1"/>
+        <int name="category" value="1"/>
+        <string name="mobType" value="1N"/>
+        <int name="boss" value="1"/>
+        <int name="defenseMob" value="1"/>
+        <imgdir name="skill">
+            <imgdir name="0">
+                <int name="skill" value="217"/>
+                <int name="action" value="1"/>
+                <int name="level" value="22"/>
+                <int name="effectAfter" value="0"/>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas height="139" name="0" width="236">
+            <vector name="origin" x="101" y="138"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas height="139" name="0" width="236">
+            <vector name="origin" x="101" y="138"/>
+            <int name="z" value="0"/>
+            <vector name="sp" x="-71" y="14"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <canvas height="139" name="0" width="236">
+            <vector name="origin" x="101" y="138"/>
+            <int name="z" value="0"/>
+            <vector name="sp" x="-71" y="14"/>
+            <int name="delay" value="750"/>
+            <int name="a0" value="255"/>
+            <int name="a1" value="0"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="skill1">
+        <uol name="0" value="../hit1/0"/>
+        <canvas height="187" name="1" width="326">
+            <vector name="origin" x="191" y="186"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+        <canvas height="187" name="2" width="317">
+            <vector name="origin" x="182" y="186"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+        <canvas height="193" name="3" width="325">
+            <vector name="origin" x="190" y="192"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+        <canvas height="196" name="4" width="328">
+            <vector name="origin" x="193" y="195"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+        <canvas height="200" name="5" width="333">
+            <vector name="origin" x="198" y="199"/>
+            <int name="z" value="0"/>
+            <vector name="lt" x="-103" y="-140"/>
+            <vector name="rb" x="137" y="0"/>
+            <vector name="head" x="-3" y="-104"/>
+        </canvas>
+    </imgdir>
+</imgdir>

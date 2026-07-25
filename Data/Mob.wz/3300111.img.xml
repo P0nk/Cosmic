@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="3300111.img">
+    <imgdir name="info">
+        <int name="firstAttack" value="1"/>
+        <int name="level" value="60"/>
+        <int name="maxHP" value="1"/>
+        <int name="maxMP" value="1"/>
+        <int name="speed" value="-100"/>
+        <int name="PADamage" value="2145"/>
+        <int name="PDDamage" value="1800"/>
+        <int name="PDRate" value="30"/>
+        <int name="MADamage" value="2000"/>
+        <int name="MDDamage" value="1800"/>
+        <int name="MDRate" value="30"/>
+        <int name="acc" value="900"/>
+        <int name="eva" value="97"/>
+        <int name="pushed" value="999999"/>
+        <float name="fs" value="10.0"/>
+        <int name="exp" value="0"/>
+        <int name="category" value="8"/>
+        <int name="hpRecovery" value="10000"/>
+        <int name="mpRecovery" value="50000"/>
+        <string name="mobType" value="7N"/>
+        <int name="hideName" value="1"/>
+        <int name="hideHP" value="1"/>
+        <int name="invincible" value="1"/>
+        <imgdir name="skill">
+            <imgdir name="0">
+                <int name="skill" value="201"/>
+                <int name="level" value="110"/>
+                <int name="skillAfter" value="0"/>
+                <int name="action" value="1"/>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="stand">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+            <int name="delay" value="1800"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="hit1">
+        <canvas name="0" width="1" height="1">
+            <vector name="origin" x="0" y="0"/>
+            <int name="delay" value="1620"/>
+        </canvas>
+    </imgdir>
+    <imgdir name="die1">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+    <imgdir name="skill1">
+        <uol name="0" value="../hit1/0"/>
+    </imgdir>
+</imgdir>
