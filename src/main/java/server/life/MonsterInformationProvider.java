@@ -45,6 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MonsterInformationProvider {
     private static final Logger log = LoggerFactory.getLogger(MonsterInformationProvider.class);
@@ -58,7 +59,7 @@ public class MonsterInformationProvider {
 
     private final Map<Integer, List<MonsterDropEntry>> drops = new HashMap<>();
     private final List<MonsterGlobalDropEntry> globaldrops = new ArrayList<>();
-    private final Map<Integer, List<MonsterGlobalDropEntry>> continentDrops = new HashMap<>();
+    private final Map<Integer, List<MonsterGlobalDropEntry>> continentDrops = new ConcurrentHashMap<>();    // hit concurrently from channel threads on monster death
 
     private final Map<Integer, List<Integer>> dropsChancePool = new HashMap<>();    // thanks to ronan
     private final Set<Integer> hasNoMultiEquipDrops = new HashSet<>();
@@ -67,10 +68,10 @@ public class MonsterInformationProvider {
     private final Map<Pair<Integer, Integer>, Integer> mobAttackAnimationTime = new HashMap<>();
     private final Map<MobSkill, Integer> mobSkillAnimationTime = new HashMap<>();
 
-    private final Map<Integer, Pair<Integer, Integer>> mobAttackInfo = new HashMap<>();
+    private final Map<Integer, Pair<Integer, Integer>> mobAttackInfo = new ConcurrentHashMap<>();    // same exposure as continentDrops
 
-    private final Map<Integer, Boolean> mobBossCache = new HashMap<>();
-    private final Map<Integer, String> mobNameCache = new HashMap<>();
+    private final Map<Integer, Boolean> mobBossCache = new ConcurrentHashMap<>();
+    private final Map<Integer, String> mobNameCache = new ConcurrentHashMap<>();
 
     protected MonsterInformationProvider() {
         retrieveGlobal();
