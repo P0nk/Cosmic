@@ -1914,7 +1914,15 @@ public class Server {
     }
 
     public final Runnable shutdown(final boolean restart) {//no player should be online when trying to shutdown!
-        return () -> shutdownInternal(restart);
+        return () -> {
+            try {
+                shutdownInternal(restart);
+            } catch (Throwable t) {
+                // !shutdown schedules this on the TimerManager pool, which swallows task exceptions;
+                // without this the server silently stays half-up (worlds online, no exit) and nothing is logged.
+                log.error("Shutdown aborted by an unexpected failure", t);
+            }
+        };
     }
 
     private synchronized void shutdownInternal(boolean restart) {
