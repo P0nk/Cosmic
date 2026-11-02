@@ -82,6 +82,14 @@ try {
     $clientOut | ForEach-Object { Write-Host $_ }
     if ($clientExit -ne 0) { throw "scenario '$Scenario' failed (exit $clientExit)" }
 
+    if ($Scenario -eq "login-enter-map") {
+        $entered = $clientOut | Where-Object { "$_" -match "ENTERED MAP \d+ \(.+\)" } | Select-Object -First 1
+        if (-not $entered) { throw "scenario output has no 'ENTERED MAP <id> (<name>)' line" }
+        Write-Host "[testclient] OK: $entered"
+        $echo = $clientOut | Where-Object { "$_" -match "map chat echo OK" } | Select-Object -First 1
+        if (-not $echo) { throw "scenario output has no 'map chat echo OK' line (server did not treat us as inside the map)" }
+    }
+
     if (-not $NoServer -and $Scenario -eq "login-enter-map") {
         # Give the server a moment to finish logging the disconnect; poll rather than sleep a fixed time.
         $deadline = (Get-Date).AddSeconds(10)
@@ -92,6 +100,17 @@ try {
         } while ((Get-Date) -lt $deadline)
         if (-not $enter) { throw "server log has no 'Received packet id 20' (PLAYER_LOGGEDIN) line in $outLog" }
         Write-Host "[testclient] server log OK: $($enter[0].Line.Trim())"
+        # Chat (opcode 0x31 = 49) is only handled for a player who is inside a map; it must come after login (20).
+        $deadline = (Get-Date).AddSeconds(10)
+        do {
+            $ids = @(Get-Content $outLog -ErrorAction SilentlyContinue | Where-Object { $_ -match "Received packet id (20|49)$" } | ForEach-Object { $_ -replace '.*Received packet id ', '' })
+            $i20 = [array]::IndexOf($ids, "20")
+            $inMap = ($i20 -ge 0) -and ([array]::IndexOf($ids, "49") -gt $i20)
+            if ($inMap) { break }
+            Start-Sleep -Milliseconds 250
+        } while ((Get-Date) -lt $deadline)
+        if (-not $inMap) { throw "server log shows no in-map chat packet (id 49) after PLAYER_LOGGEDIN (id 20)" }
+        Write-Host "[testclient] server log OK: player logged in (id 20), then chatted inside the map (id 49)"
         $deadline = (Get-Date).AddSeconds(10)
         do {
             $saved = Select-String -Path $outLog -Pattern "Attempting to save chr" -ErrorAction SilentlyContinue

@@ -22,6 +22,7 @@ public final class LoginEnterMapScenario implements Scenario {
         int charId;
         String charName;
         int mapId;
+        int enteredMapId;
         String channelHost;
         int channelPort;
 
@@ -86,10 +87,37 @@ public final class LoginEnterMapScenario implements Scenario {
         try (HeadlessClient game = new HeadlessClient(channelHost, channelPort, ctx.logger())) {
             game.send(RecvOpcode.PLAYER_LOGGEDIN, w -> w.writeInt(charId));
             PacketReader setField = game.expect(SendOpcode.SET_FIELD);
-            ctx.log("SET_FIELD received (" + setField.available() + " bytes): " + charName + " is in the map");
+            ctx.log("SET_FIELD received (" + setField.available() + " bytes)");
+            // Login-time SET_FIELD (PacketCreator.getCharInfo): channel, 1, 1, short 0, 3 random ints, then the full
+            // character data, whose stats block carries the map the server put the character in.
+            setField.skip(4 + 1 + 1 + 2 + 12);
+            setField.skip(8 + 1);   // inventory-flags long, 0 byte
+            int enteredId = setField.readInt();
+            String enteredName = setField.readFixedString(13);
+            int enteredMap = readMapIdAfterName(setField);
+            check(enteredId == charId, "SET_FIELD is for character id " + enteredId + ", expected " + charId);
+            check(enteredName.equals(charName), "SET_FIELD is for character '" + enteredName + "', expected '" + charName + "'");
+            check(mapId > 0, "could not read the saved map id from the character list");
+            check(enteredMap == mapId, "SET_FIELD map " + enteredMap + " != saved map " + mapId);
+            ctx.log("ENTERED MAP " + enteredMap + " (" + mapName(ctx.wzPath, enteredMap) + ")");
+
+            // Prove the server really placed us in a map: say something and expect the map broadcast back to us.
+            String token = "qa-" + Long.toHexString(System.nanoTime());
+            game.send(RecvOpcode.GENERAL_CHAT, w -> w.writeString(token).writeByte(0));
+            while (true) {
+                PacketReader chat = game.expect(SendOpcode.CHATTEXT);
+                int from = chat.readInt();
+                chat.readByte();
+                String text = chat.readString();
+                if (from == charId && text.equals(token)) {
+                    break;
+                }
+            }
+            ctx.log("map chat echo OK: server delivered our chat to everyone in map " + enteredMap);
+            enteredMapId = enteredMap;
         } // close == clean logout
 
-        return "character=" + charName + " id=" + charId + " map=" + mapId + " channel=" + (ctx.channel + 1);
+        return "character=" + charName + " id=" + charId + " entered-map=" + enteredMapId + " channel=" + (ctx.channel + 1);
     }
 
     /** CHECK_CHAR_NAME then CREATE_CHAR a Beginner; returns the ADD_NEW_CHAR_ENTRY cursor at the entry start. */
@@ -115,23 +143,41 @@ public final class LoginEnterMapScenario implements Scenario {
         return added;
     }
 
-    /**
-     * Cursor is just after the 13-byte name. Reads CharacterStats up to the map id. Only valid for jobs without an SP
-     * table (Beginner, Noblesse, Aran-as-beginner, all 1st-job and above except Evan); returns -1 otherwise.
-     */
+    /** Cursor is just after the 13-byte name; returns the saved map id from CharacterStats, or -1 if unreadable. */
     private static int readMapId(PacketReader e) {
         try {
-            e.skip(1 + 1 + 4 + 4 + 24); // gender, skin, face, hair, 3 pet ids
-            e.skip(1);                  // level
-            int job = e.readShort();
-            if (job == 2001 || (job >= 2200 && job <= 2218)) {
-                return -1;              // Evan uses the SP table layout
-            }
-            e.skip(4 * 2 + 4 * 2 + 2 + 2); // str dex int luk, hp maxhp mp maxmp, ap, sp
-            e.skip(4 + 2 + 4);          // exp, fame, gacha exp
-            return e.readInt();
+            return readMapIdAfterName(e);
         } catch (RuntimeException ex) {
             return -1;
+        }
+    }
+
+    /** Cursor just after the 13-byte name: skip through CharacterStats and read its map id. */
+    static int readMapIdAfterName(PacketReader e) {
+        e.skip(1 + 1 + 4 + 4 + 24); // gender, skin, face, hair, 3 pet ids
+        e.skip(1);                  // level
+        int job = e.readShort();
+        e.skip(4 * 2 + 4 * 2);      // str dex int luk, hp maxhp mp maxmp
+        e.skip(2);                  // ap
+        if (job == 2001 || (job >= 2200 && job <= 2218)) {
+            e.skip(e.readByte() * 2); // Evan: SP table (count, then id+amount pairs)
+        } else {
+            e.skip(2);              // sp
+        }
+        e.skip(4 + 2 + 4);          // exp, fame, gacha exp
+        return e.readInt();
+    }
+
+    /** Map display name from the server's String.wz export ("Street - Map"), or "unknown" if not found. */
+    static String mapName(String wzPath, int mapId) {
+        try {
+            java.nio.file.Path f = java.nio.file.Path.of(wzPath, "String.wz", "Map.img.xml");
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("<imgdir name=\"" + mapId + "\">\\s*<string name=\"streetName\" value=\"([^\"]*)\"/>\\s*<string name=\"mapName\" value=\"([^\"]*)\"")
+                    .matcher(java.nio.file.Files.readString(f));
+            return m.find() ? m.group(1) + " - " + m.group(2) : "unknown";
+        } catch (Exception ex) {
+            return "unknown";
         }
     }
 }

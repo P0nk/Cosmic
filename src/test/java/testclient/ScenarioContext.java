@@ -10,6 +10,7 @@ public final class ScenarioContext {
     public final String password;
     public final int world;
     public final int channel; // 0-based on the wire (channel 1 == 0)
+    public String wzPath = "wz"; // server XML export, used only to print map names
     private final Consumer<String> log;
 
     public ScenarioContext(String host, int loginPort, String account, String password, int world, int channel,

@@ -20,6 +20,7 @@ public final class TestClientMain {
         int port = 8484;
         String user = "admin";
         String pass = "admin";
+        String wz = "wz";
         int world = 0;
         int channel = 1;
 
@@ -29,6 +30,7 @@ public final class TestClientMain {
                 case "--port" -> port = Integer.parseInt(args[++i]);
                 case "--user" -> user = args[++i];
                 case "--pass" -> pass = args[++i];
+                case "--wz" -> wz = args[++i];
                 case "--world" -> world = Integer.parseInt(args[++i]);
                 case "--channel" -> channel = Integer.parseInt(args[++i]);
                 case "--list" -> {
@@ -48,6 +50,7 @@ public final class TestClientMain {
 
         ScenarioContext ctx = new ScenarioContext(host, port, user, pass, world, channel - 1,
                 msg -> System.out.println("[testclient] " + msg));
+        ctx.wzPath = wz;
         try {
             String summary = scenario.run(ctx);
             System.out.println("SCENARIO " + name + " PASS " + summary);
