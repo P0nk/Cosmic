@@ -54,3 +54,33 @@ Phase 2: drive sims through the E0 protocol client instead (gives load testing f
   dev play-testing — `127.0.0.1` already works end to end.
 - Quality-of-life exe patches (damage cap, window/resolution, etc.) only when a server feature needs them.
 - WZ fixes found by E1 that need client data changes.
+
+---
+
+## Go-public checklist (sharing the server with other people) - NOT STARTED
+Do this only after E0 is done and the server is stable. Everything today is set to 127.0.0.1 (this PC only).
+Needs the human for the steps marked [human].
+
+Security first:
+- [ ] Change the default `admin` / `admin` password (and review every default account)
+- [ ] Decide on `AUTOMATIC_REGISTER` (config.yaml): true lets anyone create an account
+- [ ] Never expose MySQL port 3306 to the internet - game ports only
+- [ ] Set a real MySQL root password and put it in config.yaml (do not commit it)
+
+Network:
+- [ ] [human] Find the public IP, or set up a stable address (dynamic DNS) - home IPs change
+- [ ] Set `HOST` in config.yaml (WAN IPv4) to that address
+- [ ] [human] Router port forwarding: login 8484 + the channel ports (7575-7577 for Scania; more for other worlds)
+- [ ] [human] Windows Firewall allows the server program on those ports
+- [ ] Check the internet provider allows incoming connections
+
+Client:
+- [ ] Card for cosmic-client: patched exe pointing at the public address (spec in client-patches/exe/)
+- [ ] [human] Apply the patch and test from a different network (e.g. phone hotspot)
+- [ ] Decide how friends get the client and WZ files (do not commit client binaries to the repo)
+
+Running it:
+- [ ] Server PC stays on; auto-start MySQL and the server; log rotation
+- [ ] Backups of the `cosmic` database (daily)
+- [ ] GM tools and ban process ready (E4)
+- [ ] Rules/abuse plan: who can GM, what to do about dupers
