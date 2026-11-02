@@ -84,3 +84,7 @@ Running it:
 - [ ] Backups of the `cosmic` database (daily)
 - [ ] GM tools and ban process ready (E4)
 - [ ] Rules/abuse plan: who can GM, what to do about dupers
+
+## Concurrency cap (set by human 2026-11-03)
+Max 2 cards `running`/`ready` at once (token budget). Decompose cards must not auto-start children: create
+sub-cards blocked, and the lead unblocks them 1-2 at a time in E0 -> E1 -> E2 order. E3/E5 stay paused.
