@@ -1,4 +1,6 @@
-# This workflow will build a Java project with Maven
+# This workflow will build a Java project with Maven.
+# Overridden from upstream to run on windows-latest, since this fork's agents develop and deploy on native
+# Windows — CI should match the actual target, not upstream's Ubuntu default.
 
 name: Run build
 on:
@@ -8,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 21
@@ -17,4 +19,4 @@ jobs:
         java-version: '21'
         distribution: 'corretto'
     - name: Build with Maven (compile -> test -> package)
-      run: mvn -B package --file pom.xml
+      run: .\mvnw.cmd -B package

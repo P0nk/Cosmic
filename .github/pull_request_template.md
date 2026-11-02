@@ -1,11 +1,18 @@
-## Description
-<!-- Describe your changes in detail -->
+## Kanban card
+<!-- t_xxxx — title -->
 
-## Checklist before requesting a review
-<!-- Mark with "x" inside the square brackets -->
-- [ ] I have performed a self-review of my code
-- [ ] I have tested my changes
-- [ ] I have added unit tests that prove my changes work
+## What changed
+<!-- 2-5 bullets -->
 
-## Screenshots
-<!-- If applicable, add screenshots to help explain your changes -->
+## v83 accuracy / sources
+<!-- How do we know this matches GMS v83? Links, WZ paths, captures. "Custom" features: name the config flag. -->
+
+## Verification
+- [ ] `.\mvnw.cmd -B package`
+- [ ] `powershell tools/agent/smoke_test.ps1` (paste PASS line or explain why not needed)
+- [ ] Tests added/updated:
+- [ ] Packet layout changed? If yes, opcode + struct documented below
+- [ ] Needs client change? Link `client-patches/` PR / card
+
+## Risk
+<!-- dupes, crashes, DB migration, performance, merge-conflict hot files (PacketCreator, config.yaml) -->
