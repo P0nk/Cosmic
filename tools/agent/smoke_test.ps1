@@ -22,6 +22,13 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (& git rev-parse --show-toplevel).Trim()
 Set-Location $repoRoot
 
+# mvnw.cmd needs JAVA_HOME; agent shells often lack it. Fall back to a JDK under Program Files\Java.
+if (-not $env:JAVA_HOME -or -not (Test-Path (Join-Path $env:JAVA_HOME "bin\java.exe"))) {
+    $jdk = Get-ChildItem "C:\Program Files\Java\jdk-*" -Directory -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending | Select-Object -First 1
+    if ($jdk) { $env:JAVA_HOME = $jdk.FullName; $env:PATH = "$($jdk.FullName)\bin;$env:PATH" }
+}
+
 $timeoutSec = if ($env:SMOKE_TIMEOUT) { [int]$env:SMOKE_TIMEOUT } else { 420 }
 $allowErrors = $env:SMOKE_ALLOW_ERRORS -eq "1"
 $keepUp = $env:KEEP_UP -eq "1"
@@ -53,6 +60,8 @@ try {
     if (-not $jar) { throw "no jar found in target\ after build" }
 
     Write-Host "[smoke] starting server ($($jar.Name)) ..."
+    # Optional: config overlay for the SERVER process only (set after the build so unit tests don't see it).
+    if ($env:SMOKE_SERVER_LOCAL_CONFIG) { $env:COSMIC_LOCAL_CONFIG = $env:SMOKE_SERVER_LOCAL_CONFIG }
     $proc = Start-Process -FilePath "java" `
         -ArgumentList @("-Xmx2048m", "-Dwz-path=wz", "-jar", $jar.FullName) `
         -RedirectStandardOutput $outLog -RedirectStandardError $errLog `
@@ -83,11 +92,32 @@ try {
         }
     }
 
-    $errors = Select-String -Path $outLog, $errLog -Pattern " ERROR |Exception" -ErrorAction SilentlyContinue |
-        Select-Object -First 40
-    if ($errors) {
-        Write-Host "[smoke] errors/exceptions during startup (first 40):"
-        $errors | ForEach-Object { Write-Host "  $($_.Line)" }
+    # Compare against docs/agents/BASELINE.md: only lines NOT matching a known-baseline regex count as NEW.
+    $baselineFile = Join-Path $repoRoot "docs\agents\BASELINE.md"
+    $known = @()
+    if (Test-Path $baselineFile) {
+        $inBlock = $false
+        foreach ($l in Get-Content $baselineFile) {
+            if ($l -match '^```') { $inBlock = (-not $inBlock) -and ($l -match 'baseline-patterns'); continue }
+            if ($inBlock -and $l.Trim() -and -not $l.TrimStart().StartsWith("#")) { $known += $l.Trim() }
+        }
+    } else {
+        Write-Host "[smoke] WARN: $baselineFile not found - every error counts as NEW"
+    }
+    Write-Host "[smoke] $($known.Count) known-baseline pattern(s) loaded"
+
+    $errors = @(Select-String -Path $outLog, $errLog -Pattern " ERROR |Exception" -ErrorAction SilentlyContinue)
+    $newErrors = @()
+    $knownHits = 0
+    foreach ($e in $errors) {
+        $isKnown = $false
+        foreach ($k in $known) { if ($e.Line -match $k) { $isKnown = $true; break } }
+        if ($isKnown) { $knownHits++ } else { $newErrors += $e }
+    }
+    Write-Host "[smoke] startup errors: $($errors.Count) total, $knownHits known (baseline), $($newErrors.Count) NEW"
+    if ($newErrors.Count -gt 0) {
+        Write-Host "[smoke] NEW errors/exceptions not in docs/agents/BASELINE.md (first 40):"
+        $newErrors | Select-Object -First 40 | ForEach-Object { Write-Host "  $($_.Line)" }
         if (-not $allowErrors) { $fail = $true }
     }
 }
