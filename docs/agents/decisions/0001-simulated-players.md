@@ -1,6 +1,6 @@
 # ADR 0001 — How simulated players work
 
-Status: **Proposed** (human to accept before E3 cards move to `ready`)
+Status: **Proposed, deferred** (human postponed E3 on 2026-11-02; revisit when E3 is re-activated)
 
 ## Context
 The live-server feel needs other "players" in towns, training maps and the Free Market. Options:

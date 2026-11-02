@@ -3,7 +3,9 @@
 Owner: `cosmic-lead` keeps this file current. Each epic becomes a parent Kanban card; the lead decomposes it into
 child cards ≤ 1 day of agent work each, using `TASK_TEMPLATE.md`.
 
-Priority order: **E0 → E1 → (E2, E3 in parallel) → E4 → E5**. The lead must not start E4/E5 cards until E0 is done.
+Priority order: **E0 → E1 → E2 → E4 → E5 → E3 (deferred)**. The lead must not start E4/E5 cards until E0 is done.
+E3 (simulated players) is DEFERRED by the human (2026-11-02): low priority, large effort. No E3 cards until the human
+re-activates it. E2 no longer runs in parallel with E3.
 
 ---
 
@@ -29,7 +31,7 @@ Agents can't fix what they can't test.
 - Anti-dupe/exploit review of every item-moving handler (pairs with cosmic-reviewer).
 - Economy telemetry: daily mesos created/destroyed, item price index from merchant listings → `docs/agents/economy.md`.
 
-## E3 — Simulated players (cosmic-sim) — see ADR 0001
+## E3 — Simulated players (cosmic-sim) — see ADR 0001 — **DEFERRED, do not start**
 Phase 1 (server-side "residents"):
 - Socketless `Client` + real `Character` rows flagged `is_sim`, spawned into towns/training maps on a schedule.
 - Behaviour tree: idle/walk in town, train in level-appropriate maps (move + use attack skill packets broadcast
