@@ -27,3 +27,6 @@ cosmic-core | cosmic-content | cosmic-sim | cosmic-liveops | cosmic-client | cos
 ```
 
 Sizing: if a card needs more than ~1 day or touches more than 2 lanes, split it and link with `--parent`.
+
+## PR descriptions
+Workers must follow docs/agents/PR_STYLE.md (plain-language, human-approvable).
