@@ -53,6 +53,8 @@ try {
     if (-not $jar) { throw "no jar found in target\ after build" }
 
     Write-Host "[smoke] starting server ($($jar.Name)) ..."
+    # Optional: config overlay for the SERVER process only (set after the build so unit tests don't see it).
+    if ($env:SMOKE_SERVER_LOCAL_CONFIG) { $env:COSMIC_LOCAL_CONFIG = $env:SMOKE_SERVER_LOCAL_CONFIG }
     $proc = Start-Process -FilePath "java" `
         -ArgumentList @("-Xmx2048m", "-Dwz-path=wz", "-jar", $jar.FullName) `
         -RedirectStandardOutput $outLog -RedirectStandardError $errLog `
