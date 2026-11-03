@@ -46,6 +46,14 @@ Write-Host "[smoke] lock acquired"
 $proc = $null
 $fail = $false
 try {
+    # Fail fast if something already owns the login port (a leftover server would otherwise cost the full timeout).
+    $busy = Get-NetTCPConnection -LocalPort 8484 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($busy) {
+        $owner = Get-CimInstance Win32_Process -Filter "ProcessId = $($busy.OwningProcess)" -ErrorAction SilentlyContinue
+        $cmd = if ($owner -and $owner.CommandLine) { $owner.CommandLine } else { "(command line unavailable)" }
+        throw "port 8484 is already in use by PID $($busy.OwningProcess): $cmd -- stop it first (powershell -File tools/agent/stop_servers.ps1)"
+    }
+
     $db = Test-NetConnection -ComputerName "127.0.0.1" -Port 3306 -WarningAction SilentlyContinue
     if (-not $db.TcpTestSucceeded) {
         throw "MySQL not reachable on 127.0.0.1:3306. Install MySQL for Windows, start it, and create the " +
@@ -62,7 +70,10 @@ try {
     Write-Host "[smoke] starting server ($($jar.Name)) ..."
     # Optional: config overlay for the SERVER process only (set after the build so unit tests don't see it).
     if ($env:SMOKE_SERVER_LOCAL_CONFIG) { $env:COSMIC_LOCAL_CONFIG = $env:SMOKE_SERVER_LOCAL_CONFIG }
-    $proc = Start-Process -FilePath "java" `
+    # Use the real JDK java.exe, not the Oracle javapath shim (the shim spawns the real java as a child).
+    $javaExe = "java"
+    if ($env:JAVA_HOME -and (Test-Path (Join-Path $env:JAVA_HOME "bin\java.exe"))) { $javaExe = Join-Path $env:JAVA_HOME "bin\java.exe" }
+    $proc = Start-Process -FilePath $javaExe `
         -ArgumentList @("-Xmx2048m", "-Dwz-path=wz", "-jar", $jar.FullName) `
         -RedirectStandardOutput $outLog -RedirectStandardError $errLog `
         -WindowStyle Hidden -PassThru
@@ -126,8 +137,9 @@ catch {
     $fail = $true
 }
 finally {
-    if ($proc -and -not $proc.HasExited -and -not $keepUp) {
-        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    if ($proc -and -not $keepUp) {
+        # /T kills the whole process tree, so a launcher shim cannot leave the real server behind.
+        & taskkill /PID $proc.Id /T /F 2>&1 | Out-Null
     }
     $mutex.ReleaseMutex()
 }
