@@ -8,8 +8,8 @@ worlds:
     event_message: Scania!
     why_am_i_recommended: Welcome to Scania!
     channels: 3
-    exp_rate: 10
-    meso_rate: 10
+    exp_rate: 1
+    meso_rate: 1
     drop_rate: 10
     boss_drop_rate: 10                      #NOTE: Boss drop rate OVERRIDES common drop rate, for bosses-only.
     quest_rate: 5                           #Multiplier for Exp & Meso gains when completing a quest. Only available when USE_QUEST_RATE is true. Stacks with server Exp & Meso rates.
@@ -178,8 +178,8 @@ server:
     COUPON_INTERVAL: 3600000            #60 minutes, 3600000.
     UPDATE_INTERVAL: 777                #Dictates the frequency on which the "centralized server time" is updated.
 
-    ENABLE_PIC: true               #Pick true/false to enable or disable Pic. Delete character requires PIC available.
-    ENABLE_PIN: true               #Pick true/false to enable or disable Pin.
+    ENABLE_PIC: false               #Pick true/false to enable or disable Pic. Delete character requires PIC available.
+    ENABLE_PIN: false               #Pick true/false to enable or disable Pin.
 
     BYPASS_PIC_EXPIRATION: 20           #Enables PIC bypass, which will remain active for that account by that client machine for N minutes. Set 0 to disable.
     BYPASS_PIN_EXPIRATION: 15           #Enables PIN bypass, which will remain active for that account by that client machine for N minutes. Set 0 to disable.
@@ -357,6 +357,7 @@ server:
     #Character Configuration
     USE_ADD_SLOTS_BY_LEVEL: false    #Slots are added each 20 levels.
     USE_ADD_RATES_BY_LEVEL: false    #Rates are added each 20 levels.
+    USE_EXP_RATE_BY_LEVEL: true      #EXP rate is multiplied by a per-level multiplier, set in the EXP_RATE_BY_LEVEL table at the end of this file.
     USE_STACK_COUPON_RATES: false   #Multiple coupons effects builds up together.
     USE_PERFECT_PITCH: false         #For lvl 30 or above, each lvlup grants player 1 perfect pitch.
 
@@ -453,3 +454,209 @@ server:
     NPCS_SCRIPTABLE:
       #9200000: Talk to Cody # Cody
       9001105: Rescue Gaga!  # Grandpa moon bunny
+
+    #Level-based EXP rate table, used when USE_EXP_RATE_BY_LEVEL is true. Format: "level: multiplier", one line per level.
+    #Multipliers must be whole numbers of 1 or more. A level that isn't listed uses the closest listed level below it (or 1 if there is none).
+    #The multiplier stacks with the world exp_rate and EXP coupons. Check yours in game with @showrates. Changes need a server restart.
+    #Current curve: +1x every 10 levels (Lv1-9 = 1x, Lv10-19 = 2x, ..., Lv190-199 = 20x, Lv200 = 21x).
+    EXP_RATE_BY_LEVEL:
+      1: 1
+      2: 1
+      3: 1
+      4: 1
+      5: 1
+      6: 1
+      7: 1
+      8: 1
+      9: 1
+      10: 2
+      11: 2
+      12: 2
+      13: 2
+      14: 2
+      15: 2
+      16: 2
+      17: 2
+      18: 2
+      19: 2
+      20: 3
+      21: 3
+      22: 3
+      23: 3
+      24: 3
+      25: 3
+      26: 3
+      27: 3
+      28: 3
+      29: 3
+      30: 4
+      31: 4
+      32: 4
+      33: 4
+      34: 4
+      35: 4
+      36: 4
+      37: 4
+      38: 4
+      39: 4
+      40: 5
+      41: 5
+      42: 5
+      43: 5
+      44: 5
+      45: 5
+      46: 5
+      47: 5
+      48: 5
+      49: 5
+      50: 6
+      51: 6
+      52: 6
+      53: 6
+      54: 6
+      55: 6
+      56: 6
+      57: 6
+      58: 6
+      59: 6
+      60: 7
+      61: 7
+      62: 7
+      63: 7
+      64: 7
+      65: 7
+      66: 7
+      67: 7
+      68: 7
+      69: 7
+      70: 8
+      71: 8
+      72: 8
+      73: 8
+      74: 8
+      75: 8
+      76: 8
+      77: 8
+      78: 8
+      79: 8
+      80: 9
+      81: 9
+      82: 9
+      83: 9
+      84: 9
+      85: 9
+      86: 9
+      87: 9
+      88: 9
+      89: 9
+      90: 10
+      91: 10
+      92: 10
+      93: 10
+      94: 10
+      95: 10
+      96: 10
+      97: 10
+      98: 10
+      99: 10
+      100: 11
+      101: 11
+      102: 11
+      103: 11
+      104: 11
+      105: 11
+      106: 11
+      107: 11
+      108: 11
+      109: 11
+      110: 12
+      111: 12
+      112: 12
+      113: 12
+      114: 12
+      115: 12
+      116: 12
+      117: 12
+      118: 12
+      119: 12
+      120: 13
+      121: 13
+      122: 13
+      123: 13
+      124: 13
+      125: 13
+      126: 13
+      127: 13
+      128: 13
+      129: 13
+      130: 14
+      131: 14
+      132: 14
+      133: 14
+      134: 14
+      135: 14
+      136: 14
+      137: 14
+      138: 14
+      139: 14
+      140: 15
+      141: 15
+      142: 15
+      143: 15
+      144: 15
+      145: 15
+      146: 15
+      147: 15
+      148: 15
+      149: 15
+      150: 16
+      151: 16
+      152: 16
+      153: 16
+      154: 16
+      155: 16
+      156: 16
+      157: 16
+      158: 16
+      159: 16
+      160: 17
+      161: 17
+      162: 17
+      163: 17
+      164: 17
+      165: 17
+      166: 17
+      167: 17
+      168: 17
+      169: 17
+      170: 18
+      171: 18
+      172: 18
+      173: 18
+      174: 18
+      175: 18
+      176: 18
+      177: 18
+      178: 18
+      179: 18
+      180: 19
+      181: 19
+      182: 19
+      183: 19
+      184: 19
+      185: 19
+      186: 19
+      187: 19
+      188: 19
+      189: 19
+      190: 20
+      191: 20
+      192: 20
+      193: 20
+      194: 20
+      195: 20
+      196: 20
+      197: 20
+      198: 20
+      199: 20
+      200: 21

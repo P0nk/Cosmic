@@ -141,7 +141,6 @@ public class Server {
     private final Map<Integer, NewYearCardRecord> newyears = new HashMap<>();
     private final List<Client> processDiseaseAnnouncePlayers = new LinkedList<>();
     private final List<Client> registeredDiseaseAnnouncePlayers = new LinkedList<>();
-
     private final List<List<Pair<String, Integer>>> playerRanking = new LinkedList<>();
 
     private final Lock srvLock = new ReentrantLock();

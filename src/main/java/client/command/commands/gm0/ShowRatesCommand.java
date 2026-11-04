@@ -27,6 +27,7 @@ import client.Character;
 import client.Client;
 import client.command.Command;
 import config.YamlConfig;
+import constants.game.GameConstants;
 
 public class ShowRatesCommand extends Command {
     {
@@ -41,6 +42,9 @@ public class ShowRatesCommand extends Command {
         showMsg += "Player EXP Rate: #k" + player.getRawExpRate() + "x#k" + "\r\n";
         if (player.getCouponExpRate() != 1) {
             showMsg += "Coupon EXP Rate: #k" + player.getCouponExpRate() + "x#k" + "\r\n";
+        }
+        if (YamlConfig.config.server.USE_EXP_RATE_BY_LEVEL) {
+            showMsg += "Level EXP Rate: #k" + GameConstants.getLevelExpRate(player.getLevel()) + "x#k" + "\r\n";
         }
         showMsg += "EXP Rate: #e#b" + player.getExpRate() + "x#k#n" + (player.hasNoviceExpRate() ? " - novice rate" : "") + "\r\n";
 

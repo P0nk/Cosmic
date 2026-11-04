@@ -4939,7 +4939,7 @@ public class Character extends AbstractCharacterObject {
             return 1;
         }
 
-        return expRate;
+        return expRate * GameConstants.getLevelExpRate(level);
     }
 
     public int getCouponExpRate() {
@@ -6451,6 +6451,13 @@ public class Character extends AbstractCharacterObject {
                 revertLastPlayerRates();
                 setPlayerRates();
                 this.yellowMessage("You managed to get level " + level + "! Getting experience and items seems a little easier now, huh?");
+            }
+        }
+
+        if (YamlConfig.config.server.USE_EXP_RATE_BY_LEVEL) {
+            int levelExpRate = GameConstants.getLevelExpRate(level);
+            if (levelExpRate != GameConstants.getLevelExpRate(level - 1)) {
+                this.yellowMessage("You reached level " + level + "! Your level EXP rate is now " + levelExpRate + "x.");
             }
         }
 

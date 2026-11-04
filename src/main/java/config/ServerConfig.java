@@ -205,6 +205,7 @@ public class ServerConfig {
     //Character Configuration
     public boolean USE_ADD_SLOTS_BY_LEVEL;
     public boolean USE_ADD_RATES_BY_LEVEL;
+    public boolean USE_EXP_RATE_BY_LEVEL;
     public boolean USE_STACK_COUPON_RATES;
     public boolean USE_PERFECT_PITCH;
 
@@ -299,4 +300,7 @@ public class ServerConfig {
 
     //Custom NPC overrides. List of NPC IDs.
     public Map<String, String> NPCS_SCRIPTABLE = new HashMap<>();
+
+    //Level-based EXP rate: "level: multiplier" entries, used when USE_EXP_RATE_BY_LEVEL is true.
+    public Map<String, String> EXP_RATE_BY_LEVEL = new HashMap<>();
 }

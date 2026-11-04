@@ -2,6 +2,7 @@ package constants.game;
 
 import client.Disease;
 import client.Job;
+import config.LevelRateTable;
 import config.YamlConfig;
 import constants.id.MapId;
 import constants.skills.Aran;
@@ -29,6 +30,11 @@ public class GameConstants {
     private static final int[] MESO_RATE_GAIN = {1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105};
     private static final int[] EXP_RATE_GAIN = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610};    //fibonacci :3
 
+    // Level-based EXP rate. An invalid table in config.yaml stops the server at startup.
+    private static final LevelRateTable EXP_RATE_BY_LEVEL = YamlConfig.config.server.USE_EXP_RATE_BY_LEVEL
+            ? LevelRateTable.parse("EXP_RATE_BY_LEVEL", YamlConfig.config.server.EXP_RATE_BY_LEVEL)
+            : LevelRateTable.EMPTY;
+
     private static final int[] jobUpgradeBlob = {1, 20, 60, 110, 190};
     private static final int[] jobUpgradeSpUp = {0, 1, 2, 3, 6};
     private final static Map<Integer, String> jobNames = new HashMap<>();
@@ -50,6 +56,10 @@ public class GameConstants {
 
     public static int getPlayerBonusExpRate(int slot) {
         return (EXP_RATE_GAIN[slot]);
+    }
+
+    public static int getLevelExpRate(int level) {
+        return EXP_RATE_BY_LEVEL.getRate(level);
     }
 
     // "goto" command for players
