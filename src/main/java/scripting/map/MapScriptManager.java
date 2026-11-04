@@ -26,17 +26,29 @@ import client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.AbstractScriptManager;
+import scripting.SynchronizedInvocable;
 
 import javax.script.Invocable;
 import javax.script.ScriptException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MapScriptManager extends AbstractScriptManager {
     private static final Logger log = LoggerFactory.getLogger(MapScriptManager.class);
     private static final MapScriptManager instance = new MapScriptManager();
 
-    private final Map<String, Invocable> scripts = new HashMap<>();
+    /**
+     * One engine per script, shared by every player entering any map that uses it - so it is invoked
+     * from whichever channel event loop that player's connection lives on. A GraalJS context refuses
+     * to be entered by a second thread while another is inside it ({@code IllegalStateException:
+     * Multi threaded access requested ... not allowed for language(s) js}), and that exception escaped
+     * {@code MapleMap#addPlayer} halfway through {@code Character#changeMapInternal}, leaving the
+     * character half-transferred and unable to change maps or log back in cleanly. Found when two
+     * party members walked into Kerning City ({@code onUserEnter=explorationPoint}) in the same
+     * instant. Same cure as {@code EventScriptManager}: serialize each engine with
+     * {@link SynchronizedInvocable}; sequential use from different threads is allowed.
+     */
+    private final Map<String, Invocable> scripts = new ConcurrentHashMap<>();
 
     public static MapScriptManager getInstance() {
         return instance;
@@ -63,18 +75,20 @@ public class MapScriptManager extends AbstractScriptManager {
                 iv.invokeFunction("start", new MapScriptMethods(c));
                 return true;
             } catch (final ScriptException | NoSuchMethodException e) {
-                e.printStackTrace();
+                log.error("Error running map script {}", mapScriptPath, e);
+                return false;
             }
         }
 
         try {
-            iv = (Invocable) getInvocableScriptEngine("map/" + mapScriptPath + ".js");
-            if (iv == null) {
+            Invocable created = (Invocable) getInvocableScriptEngine("map/" + mapScriptPath + ".js");
+            if (created == null) {
                 return false;
             }
 
-            scripts.put(mapScriptPath, iv);
-            iv.invokeFunction("start", new MapScriptMethods(c));
+            // Two players can load the same script at once; both must end up using one engine.
+            scripts.putIfAbsent(mapScriptPath, SynchronizedInvocable.of(created));
+            scripts.get(mapScriptPath).invokeFunction("start", new MapScriptMethods(c));
             return true;
         } catch (final Exception e) {
             log.error("Error running map script {}", mapScriptPath, e);
